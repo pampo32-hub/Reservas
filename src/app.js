@@ -137,6 +137,11 @@ class App {
         const bizId = params.businessId || this.selectedBusinessId;
         return bizId ? `#/negocio/${encodeURIComponent(bizId)}` : '#/';
       }
+      case 'review-booking': {
+        const aptId = params.appointmentId || this.selectedAppointmentId;
+        const query = params.rating ? `?rating=${params.rating}` : '';
+        return aptId ? `#/calificar/${encodeURIComponent(aptId)}${query}` : '#/';
+      }
       case 'my-client-bookings':
         return '#/mis-citas';
       case 'owner-dashboard':
@@ -153,6 +158,20 @@ class App {
     const clean = (hash || '').trim();
     if (!clean || clean === '#' || clean === '#/' || clean === '#!/') {
       return { view: 'directory', params: {} };
+    }
+
+    const reviewMatch = clean.match(/^#\/?(calificar|review|valorar)\/([^/?#]+)/i);
+    if (reviewMatch) {
+      const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
+      const urlParams = new URLSearchParams(hashQuery);
+      const ratingParam = urlParams.get('rating');
+      return {
+        view: 'review-booking',
+        params: {
+          appointmentId: decodeURIComponent(reviewMatch[2]),
+          rating: ratingParam ? parseInt(ratingParam, 10) : null
+        }
+      };
     }
 
     const bizMatch = clean.match(/^#\/?negocio\/([^/?#]+)/i);
@@ -178,8 +197,12 @@ class App {
   // --- NAVEGACIÓN ---
   navigateTo(view, params = {}, pushHistory = true) {
     this.currentView = view;
+    this.currentRouteParams = params || {};
     if (params.businessId) {
       this.selectedBusinessId = params.businessId;
+    }
+    if (params.appointmentId) {
+      this.selectedAppointmentId = params.appointmentId;
     }
 
     const targetHash = this.getHashForView(view, params);
@@ -520,6 +543,9 @@ class App {
       case 'business-detail':
         this.renderBusinessDetailView(main);
         break;
+      case 'review-booking':
+        this.renderReviewBookingView(main, this.currentRouteParams?.appointmentId || this.selectedAppointmentId, this.currentRouteParams?.rating);
+        break;
       case 'owner-dashboard':
         this.renderOwnerDashboardView(main);
         break;
@@ -763,6 +789,7 @@ class App {
                   <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
                     <i class="fas fa-tags text-amber-400 text-xs"></i>
                     <span>Ver Planes ($8, $15, $25)</span>
+                    <span>Ver Planes</span>
                   </button>
                   
                   <button id="cta-login-biz-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
@@ -1122,6 +1149,37 @@ class App {
               <h2 class="text-lg font-bold text-slate-900 mb-3">Sobre el Establecimiento</h2>
               <p class="text-sm text-slate-600 leading-relaxed">${biz.description || 'Sin descripción registrada.'}</p>
             </div>
+
+            <!-- Reseñas y Calificaciones Verificadas -->
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-xl font-bold text-slate-900">Opiniones de Clientes</h2>
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-200 flex items-center gap-1">
+                      <i class="fas fa-shield-alt text-[10px]"></i> Verificadas
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5">Calificaciones 100% auténticas de personas que completaron su cita.</p>
+                </div>
+
+                <div class="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-200/80">
+                  <span class="text-3xl font-black text-slate-900">${biz.rating || 5.0}</span>
+                  <div>
+                    <div class="flex text-amber-400 text-xs">
+                      ${Array(5).fill(0).map((_, i) => `<i class="${i < Math.round(biz.rating || 5) ? 'fas' : 'far'} fa-star"></i>`).join('')}
+                    </div>
+                    <span class="text-[11px] font-bold text-slate-500">${biz.reviewsCount || 0} valoraciones</span>
+                  </div>
+                </div>
+              </div>
+
+              <div id="biz-reviews-container" class="space-y-4">
+                <div class="flex items-center justify-center py-6 text-slate-400 gap-2 text-xs">
+                  <i class="fas fa-circle-notch fa-spin text-blue-600"></i> Cargando opiniones verificadas...
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Columna Derecha: Información de Contacto y Horarios (1 col) -->
@@ -1190,6 +1248,52 @@ class App {
       </div>
     `;
 
+    // Cargar opiniones del negocio de forma asíncrona
+    storage.getBusinessReviews(biz.id).then(reviews => {
+      const revBox = document.getElementById('biz-reviews-container');
+      if (!revBox) return;
+
+      if (reviews && reviews.length > 0) {
+        revBox.innerHTML = reviews.map(rev => `
+          <div class="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
+                  ${(rev.clientName || 'C').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-bold text-xs text-slate-900">${this.escapeHtml(rev.clientName)}</span>
+                    <span class="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded font-semibold">✓ Verificado</span>
+                  </div>
+                  <span class="text-[11px] text-blue-600 font-medium">Servicio: ${this.escapeHtml(rev.serviceName || 'Atención')}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="flex text-amber-400 text-xs">
+                  ${Array(5).fill(0).map((_, i) => `<i class="${i < rev.rating ? 'fas' : 'far'} fa-star"></i>`).join('')}
+                </div>
+                <span class="text-[10px] text-slate-400">${this.formatDateDMY(rev.createdAt ? rev.createdAt.split('T')[0] : '')}</span>
+              </div>
+            </div>
+            ${rev.comment ? `
+              <p class="text-xs text-slate-700 leading-relaxed italic bg-white p-3 rounded-xl border border-slate-100">
+                "${this.escapeHtml(rev.comment)}"
+              </p>
+            ` : ''}
+          </div>
+        `).join('');
+      } else {
+        revBox.innerHTML = `
+          <div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <i class="far fa-comment-dots text-slate-300 text-3xl mb-2 block"></i>
+            <p class="text-xs text-slate-500 font-medium">Aún no hay opiniones escritas para este comercio.</p>
+            <p class="text-[11px] text-slate-400 mt-1">Los clientes reciben un correo de valoración automáticamente al finalizar su turno.</p>
+          </div>
+        `;
+      }
+    });
+
     document.getElementById('back-to-directory-btn')?.addEventListener('click', () => this.goBack());
 
     document.querySelectorAll('.book-service-btn').forEach(btn => {
@@ -1197,6 +1301,255 @@ class App {
         const sId = btn.getAttribute('data-service-id');
         this.openBookingModal(biz.id, sId);
       });
+    });
+  }
+
+  // ==========================================
+  // VISTA: PANTALLA DE CALIFICACIÓN Y RESEÑA VERIFICADA (#/calificar/:id)
+  // ==========================================
+  async renderReviewBookingView(container, appointmentId, preselectedRating = null) {
+    if (!appointmentId) {
+      this.navigateTo('directory');
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="max-w-xl mx-auto px-4 py-12 animate-fade-in">
+        <div class="flex items-center justify-center py-20 text-slate-400 gap-3">
+          <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
+          <span class="font-medium text-slate-600">Cargando datos de tu cita...</span>
+        </div>
+      </div>
+    `;
+
+    const info = await storage.getReviewInfo(appointmentId);
+    if (info.error || !info.appointment) {
+      container.innerHTML = `
+        <div class="max-w-md mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 text-center shadow-lg animate-fade-in">
+          <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fas fa-exclamation-circle"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-900 mb-2">No pudimos encontrar la cita</h2>
+          <p class="text-xs text-slate-500 mb-6">${info.error || 'El código de la cita no es válido o ha expirado.'}</p>
+          <button id="review-go-home-btn" class="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition-all text-xs">
+            Ir al Inicio
+          </button>
+        </div>
+      `;
+      document.getElementById('review-go-home-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+      return;
+    }
+
+    const { appointment: apt, alreadyReviewed, review } = info;
+    let currentSelectedRating = preselectedRating && preselectedRating >= 1 && preselectedRating <= 5 ? preselectedRating : (review ? review.rating : 5);
+
+    const ratingLabels = {
+      1: 'Malo 😞',
+      2: 'Regular 😐',
+      3: 'Bueno 🙂',
+      4: 'Muy Bueno 😊',
+      5: '¡Excelente! 🤩'
+    };
+
+    if (alreadyReviewed && review) {
+      container.innerHTML = `
+        <div class="max-w-lg mx-auto px-4 py-10 animate-fade-in">
+          <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl text-center space-y-6">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-md">
+              <i class="fas fa-check"></i>
+            </div>
+            
+            <div>
+              <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-extrabold border border-emerald-200 inline-flex items-center gap-1.5">
+                <i class="fas fa-shield-alt text-[11px]"></i> Reseña Verificada Publicada
+              </span>
+              <h1 class="text-2xl font-black text-slate-900 mt-3">¡Ya calificaste esta atención!</h1>
+              <p class="text-xs text-slate-500 mt-1">Muchas gracias por apoyar la transparencia y calidad de los negocios locales en Costa Rica.</p>
+            </div>
+
+            <!-- Resumen de su calificación -->
+            <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-left space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="font-black text-slate-900 text-sm">${apt.businessName}</h3>
+                  <span class="text-xs text-blue-600 font-semibold">${apt.serviceName}</span>
+                </div>
+                <div class="flex text-amber-400 text-base">
+                  ${Array(5).fill(0).map((_, i) => `<i class="${i < review.rating ? 'fas' : 'far'} fa-star"></i>`).join('')}
+                </div>
+              </div>
+              ${review.comment ? `
+                <p class="text-xs text-slate-700 italic bg-white p-3 rounded-xl border border-slate-100">
+                  "${this.escapeHtml(review.comment)}"
+                </p>
+              ` : ''}
+              <div class="text-[11px] text-slate-400">Fecha de visita: ${this.formatDateDMY(apt.date)}</div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-3 justify-center pt-2">
+              <button id="view-biz-page-btn" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
+                Ver Ficha de ${apt.businessName}
+              </button>
+              <button id="go-explore-home-btn" class="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                Explorar Más Comercios
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('view-biz-page-btn')?.addEventListener('click', () => {
+        this.navigateTo('business-detail', { businessId: apt.businessId });
+      });
+      document.getElementById('go-explore-home-btn')?.addEventListener('click', () => {
+        this.navigateTo('directory');
+      });
+      return;
+    }
+
+    // Formulario de Calificación
+    container.innerHTML = `
+      <div class="max-w-xl mx-auto px-4 py-8 sm:py-12 animate-fade-in">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-6">
+          
+          <!-- Encabezado de la Cita -->
+          <div class="text-center space-y-2 pb-4 border-b border-slate-100">
+            <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-extrabold border border-blue-200/80 inline-flex items-center gap-1.5">
+              <i class="fas fa-shield-alt text-[11px] text-blue-600"></i> Calificación Verificada por Cita Real
+            </span>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900">¿Cómo estuvo tu atención?</h1>
+            <p class="text-xs text-slate-500">Tu opinión ayuda al comercio a mejorar y a otros clientes a elegir el mejor servicio.</p>
+          </div>
+
+          <!-- Tarjeta del Comercio & Servicio -->
+          <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <div class="w-14 h-14 rounded-xl overflow-hidden bg-slate-200 flex-shrink-0 border border-slate-200">
+              <img src="${apt.businessImage || './src/assets/logo.svg'}" alt="${apt.businessName}" class="w-full h-full object-cover">
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-extrabold text-sm text-slate-900 truncate">${apt.businessName}</h3>
+              <p class="text-xs text-blue-600 font-bold">${apt.serviceName}</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Atendido el ${this.formatDateDMY(apt.date)} • ${this.formatTime12h(apt.time)}</p>
+            </div>
+          </div>
+
+          <!-- Selector Interactivo de Estrellas -->
+          <form id="review-submission-form" class="space-y-6">
+            <div class="text-center space-y-3">
+              <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">
+                Selecciona tu puntuación:
+              </label>
+              
+              <div class="flex items-center justify-center gap-2 sm:gap-3 py-2" id="star-rating-selector">
+                ${[1, 2, 3, 4, 5].map(num => `
+                  <button 
+                    type="button" 
+                    class="star-select-btn text-3xl sm:text-4xl transition-transform hover:scale-125 focus:outline-none cursor-pointer ${num <= currentSelectedRating ? 'text-amber-400' : 'text-slate-300'}" 
+                    data-rating="${num}"
+                    title="${ratingLabels[num]}"
+                  >
+                    ★
+                  </button>
+                `).join('')}
+              </div>
+
+              <div id="rating-label-display" class="text-sm font-black text-blue-600 transition-all">
+                ${ratingLabels[currentSelectedRating]}
+              </div>
+            </div>
+
+            <!-- Comentario -->
+            <div class="space-y-1.5">
+              <label for="review-comment" class="block text-xs font-bold text-slate-700">
+                Tu opinión o comentario (Opcional):
+              </label>
+              <textarea 
+                id="review-comment" 
+                rows="4" 
+                class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-xs text-slate-800 transition-all resize-none"
+                placeholder="Cuéntanos qué tal la puntualidad, el trato del personal, las instalaciones y si recomendarías el lugar..."
+              ></textarea>
+            </div>
+
+            <!-- Botón de Envío -->
+            <button 
+              type="submit" 
+              id="submit-review-btn" 
+              class="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-paper-plane"></i> Publicar Reseña Verificada
+            </button>
+          </form>
+
+        </div>
+      </div>
+    `;
+
+    // Listeners del selector de estrellas
+    const starBtns = document.querySelectorAll('.star-select-btn');
+    const labelDisplay = document.getElementById('rating-label-display');
+
+    const updateStarsVisual = (rating) => {
+      starBtns.forEach(btn => {
+        const r = parseInt(btn.getAttribute('data-rating'), 10);
+        if (r <= rating) {
+          btn.classList.remove('text-slate-300');
+          btn.classList.add('text-amber-400');
+        } else {
+          btn.classList.remove('text-amber-400');
+          btn.classList.add('text-slate-300');
+        }
+      });
+      if (labelDisplay) {
+        labelDisplay.textContent = ratingLabels[rating] || '';
+      }
+    };
+
+    starBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentSelectedRating = parseInt(btn.getAttribute('data-rating'), 10);
+        updateStarsVisual(currentSelectedRating);
+      });
+      btn.addEventListener('mouseenter', () => {
+        const hoverRating = parseInt(btn.getAttribute('data-rating'), 10);
+        updateStarsVisual(hoverRating);
+      });
+    });
+
+    document.getElementById('star-rating-selector')?.addEventListener('mouseleave', () => {
+      updateStarsVisual(currentSelectedRating);
+    });
+
+    // Envío del Formulario
+    document.getElementById('review-submission-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submit-review-btn');
+      const comment = document.getElementById('review-comment')?.value || '';
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Publicando reseña...';
+      }
+
+      try {
+        const res = await storage.submitReview({
+          appointmentId: apt.id,
+          rating: currentSelectedRating,
+          comment: comment.trim()
+        });
+
+        this.showToast('¡Muchas gracias! Tu reseña ha sido publicada con éxito.', 'success');
+        
+        // Renderizar vista de agradecimiento
+        this.renderReviewBookingView(container, appointmentId);
+      } catch (err) {
+        console.error('Error enviando reseña:', err);
+        this.showToast(err.message || 'No se pudo publicar la reseña.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Reseña Verificada';
+        }
+      }
     });
   }
 
@@ -1888,8 +2241,11 @@ class App {
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
+                    <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs" data-apt-id="${apt.id}">
+                      <i class="fas fa-star text-amber-500"></i> Calificar Atención
+                    </button>
                     <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
-                      <i class="fas fa-check-circle"></i> Cita Completada
+                      <i class="fas fa-check-circle"></i> Atendida
                     </span>
                   ` : ''}
                 </div>
@@ -1914,6 +2270,13 @@ class App {
       btn.addEventListener('click', () => {
         this.clientAppointmentFilter = btn.getAttribute('data-filter');
         this.renderClientBookingsView(container);
+      });
+    });
+
+    document.querySelectorAll('.client-rate-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        this.navigateTo('review-booking', { appointmentId: aptId });
       });
     });
 

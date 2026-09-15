@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool, initDatabase } from './db.js';
-import { sendBookingConfirmationEmail } from './emailService.js';
+import { sendBookingConfirmationEmail, sendReviewRequestEmail } from './emailService.js';
 import { 
   sendBookingConfirmationWhatsApp, 
   getActiveMetaCredentials, 
@@ -1477,13 +1477,329 @@ app.delete('/api/developer/businesses/:id', async (req, res) => {
   }
 });
 
-// Iniciar base de datos y servidor
+// ==========================================
+// RESEÑAS Y CALIFICACIONES VERIFICADAS POST-CITA
+// ==========================================
+
+/**
+ * Calcula la fecha y hora exacta en que finaliza una cita
+ */
+function parseAppointmentEndTime(dateStr, timeStr, durationMinutes = 30) {
+  try {
+    if (!dateStr || !timeStr) return null;
+    let year, month, day;
+    const cleanDate = String(dateStr).trim();
+    if (cleanDate.includes('-')) {
+      const parts = cleanDate.split('-');
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else if (cleanDate.includes('/')) {
+      const parts = cleanDate.split('/');
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      year = parseInt(parts[2], 10);
+    } else {
+      return null;
+    }
+
+    let hour = 12;
+    let minute = 0;
+    const cleanTime = String(timeStr).trim().toUpperCase();
+    const isPM = cleanTime.includes('PM');
+    const isAM = cleanTime.includes('AM');
+    const timeDigits = cleanTime.replace(/[^0-9:]/g, '');
+    const timeParts = timeDigits.split(':');
+
+    if (timeParts.length >= 1) {
+      hour = parseInt(timeParts[0], 10);
+      if (timeParts.length >= 2) {
+        minute = parseInt(timeParts[1], 10);
+      }
+      if (isPM && hour < 12) hour += 12;
+      if (isAM && hour === 12) hour = 0;
+    }
+
+    const aptDate = new Date(year, month, day, hour, minute, 0, 0);
+    const durationMs = (parseInt(durationMinutes, 10) || 30) * 60 * 1000;
+    return new Date(aptDate.getTime() + durationMs);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Procesa y envía correos de solicitud de calificación a citas terminadas hace 1 hora
+ */
+async function processPendingReviewEmails() {
+  try {
+    const result = await pool.query(`
+      SELECT a.*, b.name as business_name, b.email as business_email
+      FROM reservas_appointments a
+      LEFT JOIN reservas_businesses b ON a.business_id = b.id
+      WHERE a.status != 'cancelled'
+        AND a.client_email IS NOT NULL 
+        AND a.client_email LIKE '%@%'
+        AND a.review_email_sent_at IS NULL
+      ORDER BY a.created_at DESC
+      LIMIT 30
+    `);
+
+    const now = Date.now();
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+
+    for (const apt of result.rows) {
+      const endTime = parseAppointmentEndTime(apt.date, apt.time, apt.service_duration);
+      if (!endTime) continue;
+
+      // Si ya pasó al menos 1 hora desde que terminó la cita
+      const timeSinceEnd = now - endTime.getTime();
+      if (timeSinceEnd >= ONE_HOUR_MS) {
+        console.log(`⏰ Cita #${apt.id} finalizó hace ${Math.round(timeSinceEnd / 60000)} min. Enviando correo de valoración...`);
+        
+        const appointmentObj = {
+          id: apt.id,
+          businessId: apt.business_id,
+          businessName: apt.business_name,
+          serviceName: apt.service_name,
+          date: apt.date,
+          time: apt.time,
+          clientName: apt.client_name,
+          clientEmail: apt.client_email,
+          clientPhone: apt.client_phone
+        };
+
+        const businessObj = {
+          id: apt.business_id,
+          name: apt.business_name
+        };
+
+        const emailRes = await sendReviewRequestEmail(appointmentObj, businessObj);
+        if (emailRes && emailRes.success) {
+          await pool.query('UPDATE reservas_appointments SET review_email_sent_at = NOW() WHERE id = $1', [apt.id]);
+          console.log(`⭐ Correo de valoración registrado exitosamente para la cita #${apt.id}.`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('⚠️ Error en worker de correos de reseñas:', err.message);
+  }
+}
+
+// 1. Obtener información para calificar una cita específica
+app.get('/api/appointments/:id/review-info', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const aptRes = await pool.query(`
+      SELECT a.*, b.name as business_name, b.image as business_image, b.city as business_city
+      FROM reservas_appointments a
+      LEFT JOIN reservas_businesses b ON a.business_id = b.id
+      WHERE a.id = $1
+    `, [id]);
+
+    if (aptRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Cita no encontrada.' });
+    }
+
+    const apt = aptRes.rows[0];
+
+    // Verificar si ya existe reseña para esta cita
+    const revRes = await pool.query('SELECT * FROM reservas_reviews WHERE appointment_id = $1', [id]);
+    const existingReview = revRes.rows.length > 0 ? revRes.rows[0] : null;
+
+    res.json({
+      appointment: {
+        id: apt.id,
+        businessId: apt.business_id,
+        businessName: apt.business_name,
+        businessImage: apt.business_image,
+        businessCity: apt.business_city,
+        serviceName: apt.service_name,
+        servicePrice: parseFloat(apt.service_price),
+        date: apt.date,
+        time: apt.time,
+        clientName: apt.client_name,
+        clientPhone: apt.client_phone,
+        clientEmail: apt.client_email,
+        status: apt.status
+      },
+      alreadyReviewed: Boolean(existingReview),
+      review: existingReview ? {
+        id: existingReview.id,
+        rating: existingReview.rating,
+        comment: existingReview.comment,
+        createdAt: existingReview.created_at
+      } : null
+    });
+  } catch (error) {
+    console.error('Error en /api/appointments/:id/review-info:', error);
+    res.status(500).json({ error: 'Error al consultar datos para calificar.' });
+  }
+});
+
+// 2. Registrar nueva reseña verificada
+app.post('/api/reviews', async (req, res) => {
+  try {
+    const { appointmentId, rating, comment } = req.body;
+    if (!appointmentId || !rating) {
+      return res.status(400).json({ error: 'El ID de la cita y la calificación de estrellas son obligatorios.' });
+    }
+
+    const ratingNum = parseInt(rating, 10);
+    if (isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+      return res.status(400).json({ error: 'La calificación debe ser un número entero entre 1 y 5 estrellas.' });
+    }
+
+    // Verificar que la cita existe
+    const aptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1', [appointmentId]);
+    if (aptRes.rows.length === 0) {
+      return res.status(404).json({ error: 'La cita especificada no existe.' });
+    }
+
+    const apt = aptRes.rows[0];
+
+    // Verificar si ya fue calificada
+    const existing = await pool.query('SELECT id FROM reservas_reviews WHERE appointment_id = $1', [appointmentId]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Esta cita ya ha sido calificada anteriormente.' });
+    }
+
+    const newReviewId = `rev-${Date.now().toString().slice(-6)}`;
+    await pool.query(`
+      INSERT INTO reservas_reviews (
+        id, business_id, appointment_id, client_name, client_phone,
+        client_email, service_name, rating, comment, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+    `, [
+      newReviewId, apt.business_id, apt.id, apt.client_name,
+      apt.client_phone, apt.client_email || '', apt.service_name || '',
+      ratingNum, (comment || '').trim()
+    ]);
+
+    // Marcar cita como completada si aún no lo estaba
+    await pool.query("UPDATE reservas_appointments SET status = 'completed' WHERE id = $1 AND status != 'cancelled'", [appointmentId]);
+
+    // Recalcular el promedio de calificación y conteo de reseñas del negocio
+    const statsRes = await pool.query(`
+      SELECT COUNT(*) as total_reviews, AVG(rating) as avg_rating
+      FROM reservas_reviews
+      WHERE business_id = $1
+    `, [apt.business_id]);
+
+    const totalReviews = parseInt(statsRes.rows[0].total_reviews, 10) || 1;
+    const avgRating = parseFloat(parseFloat(statsRes.rows[0].avg_rating).toFixed(1)) || ratingNum;
+
+    await pool.query(`
+      UPDATE reservas_businesses SET
+        rating = $1,
+        reviews_count = $2
+      WHERE id = $3
+    `, [avgRating, totalReviews, apt.business_id]);
+
+    res.status(201).json({
+      success: true,
+      message: '¡Muchas gracias! Tu reseña verificada ha sido publicada exitosamente.',
+      review: {
+        id: newReviewId,
+        appointmentId: apt.id,
+        businessId: apt.business_id,
+        clientName: apt.client_name,
+        serviceName: apt.service_name,
+        rating: ratingNum,
+        comment: (comment || '').trim()
+      },
+      updatedBusiness: {
+        rating: avgRating,
+        reviewsCount: totalReviews
+      }
+    });
+  } catch (error) {
+    console.error('Error registrando reseña:', error);
+    res.status(500).json({ error: 'Error al registrar la reseña.' });
+  }
+});
+
+// 3. Obtener reseñas de un negocio específico
+app.get('/api/businesses/:id/reviews', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(`
+      SELECT r.*, a.date as appointment_date, a.time as appointment_time
+      FROM reservas_reviews r
+      LEFT JOIN reservas_appointments a ON r.appointment_id = a.id
+      WHERE r.business_id = $1
+      ORDER BY r.created_at DESC
+    `, [id]);
+
+    const reviews = result.rows.map(row => ({
+      id: row.id,
+      businessId: row.business_id,
+      appointmentId: row.appointment_id,
+      clientName: row.client_name,
+      serviceName: row.service_name,
+      rating: parseInt(row.rating, 10),
+      comment: row.comment,
+      createdAt: row.created_at,
+      appointmentDate: row.appointment_date,
+      appointmentTime: row.appointment_time,
+      isVerified: true
+    }));
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('Error consultando reseñas del negocio:', error);
+    res.status(500).json({ error: 'Error al consultar opiniones.' });
+  }
+});
+
+// 4. Endpoint de prueba para enviar correo de calificación a cualquier dirección
+app.post('/api/test-review-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Debes proporcionar un correo electrónico válido.' });
+    }
+
+    const testAppointment = {
+      id: `apt-${Date.now().toString().slice(-6)}`,
+      clientName: 'Cliente VIP de Prueba',
+      clientEmail: email.trim(),
+      clientPhone: '+506 8888 7777',
+      serviceName: 'Corte de Cabello Clásico & Barba',
+      serviceDuration: 45,
+      servicePrice: 10000,
+      date: '2026-09-15',
+      time: '10:00 AM'
+    };
+
+    const testBusiness = {
+      name: 'Barbería & Estilo Vintage',
+      address: 'Av. Escazú, Local 12',
+      city: 'San José, Escazú',
+      phone: '+506 8899 1122'
+    };
+
+    const result = await sendReviewRequestEmail(testAppointment, testBusiness);
+    res.json({ success: true, message: 'Correo de valoración de prueba enviado exitosamente.', result });
+  } catch (error) {
+    console.error('Error en /api/test-review-email:', error);
+    res.status(500).json({ error: error.message || 'Error enviando correo de prueba de valoración.' });
+  }
+});
+
+// Iniciar base de datos, servidor y worker de reseñas
 async function startServer() {
   await initDatabase();
   app.listen(PORT, () => {
     console.log(`🚀 Servidor de Reservas corriendo en http://localhost:${PORT}`);
     console.log(`🐘 Conectado a Neon PostgreSQL`);
+
+    // Iniciar worker de correos de reseñas automáticos cada 5 minutos
+    setInterval(processPendingReviewEmails, 5 * 60 * 1000);
+    // Ejecutar chequeo inicial 10 segundos después del arranque
+    setTimeout(processPendingReviewEmails, 10000);
   });
 }
 
 startServer();
+

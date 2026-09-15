@@ -1009,7 +1009,62 @@ class StorageService {
       return { success: false, error: e.message };
     }
   }
+
+  // --- RESEÑAS Y CALIFICACIONES VERIFICADAS ---
+  async getReviewInfo(appointmentId) {
+    try {
+      const res = await fetch(`${this.apiBase}/appointments/${appointmentId}/review-info`);
+      if (res.ok) return await res.json();
+      const err = await res.json();
+      return { error: err.error || 'No se pudo obtener información de la cita.' };
+    } catch (e) {
+      return { error: e.message || 'Error de conexión con el servidor.' };
+    }
+  }
+
+  async submitReview(reviewData) {
+    try {
+      const res = await fetch(`${this.apiBase}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Refrescar caché de comercios local
+        await this.initAsync();
+        return data;
+      }
+      throw new Error(data.error || 'Error al enviar calificación.');
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async getBusinessReviews(businessId) {
+    try {
+      const res = await fetch(`${this.apiBase}/businesses/${businessId}/reviews`);
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Error consultando reseñas del negocio:', e);
+    }
+    return [];
+  }
+
+  async testReviewEmail(email) {
+    try {
+      const res = await fetch(`${this.apiBase}/test-review-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      return await res.json();
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  }
 }
 
 export const storage = new StorageService();
 export default storage;
+

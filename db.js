@@ -88,12 +88,30 @@ export async function initDatabase() {
         notes TEXT,
         status VARCHAR(50) DEFAULT 'confirmed',
         whatsapp_opt_in BOOLEAN DEFAULT TRUE,
+        review_email_sent_at TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
 
     await client.query(`
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN DEFAULT TRUE;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS review_email_sent_at TIMESTAMP DEFAULT NULL;
+    `);
+
+    // 3.1. Crear tabla de reseñas y calificaciones verificadas
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_reviews (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        appointment_id VARCHAR(50) UNIQUE,
+        client_name VARCHAR(255) NOT NULL,
+        client_phone VARCHAR(50),
+        client_email VARCHAR(150),
+        service_name VARCHAR(255),
+        rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        comment TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
     `);
 
     // 4. Crear tabla de usuarios dueños de negocio

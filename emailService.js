@@ -207,3 +207,128 @@ export async function sendBookingConfirmationEmail(appointment, business) {
   }
 }
 
+/**
+ * Envía correo solicitando calificación y reseña verificada al cliente (1 hora post-cita)
+ */
+export async function sendReviewRequestEmail(appointment, business) {
+  if (!appointment || !appointment.clientEmail || !appointment.clientEmail.includes('@')) {
+    console.log(`ℹ️ No se envió correo de valoración: Cliente sin email válido (${appointment?.clientEmail || 'vacío'}).`);
+    return { success: false, reason: 'no_email' };
+  }
+
+  if (!resend) {
+    console.warn('⚠️ No se ha configurado RESEND_API_KEY en las variables de entorno.');
+    return { success: false, reason: 'no_api_key' };
+  }
+
+  const clientName = appointment.clientName || 'Estimado(a) Cliente';
+  const businessName = business?.name || appointment.businessName || 'el establecimiento';
+  const serviceName = appointment.serviceName || 'tu servicio';
+  const appointmentCode = (appointment.id || 'APT-000').toUpperCase();
+  const dateStr = formatDateDMY(appointment.date);
+  const reviewUrlBase = `${APP_URL}/#/calificar/${appointment.id}`;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¿Cómo fue tu experiencia?</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
+    .container { max-width: 580px; margin: 20px auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background: linear-gradient(135deg, #1e293b, #0f172a); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .header .stars-top { font-size: 28px; margin-bottom: 6px; letter-spacing: 4px; }
+    .header h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+    .header p { margin: 6px 0 0 0; font-size: 13px; color: #94a3b8; }
+    .content { padding: 32px 24px; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+    .message { font-size: 14px; color: #475569; line-height: 1.6; margin-bottom: 24px; }
+    .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 24px; text-align: center; }
+    .card-service { font-size: 15px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+    .card-biz { font-size: 13px; color: #2563eb; font-weight: 700; margin-bottom: 4px; }
+    .card-date { font-size: 12px; color: #64748b; }
+    .stars-selector { text-align: center; margin: 28px 0; }
+    .stars-title { font-size: 13px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .stars-container { display: inline-flex; gap: 8px; justify-content: center; }
+    .star-btn { display: inline-block; text-decoration: none; font-size: 32px; line-height: 1; transition: transform 0.2s; padding: 6px; }
+    .star-btn:hover { transform: scale(1.2); }
+    .badge-verified { display: inline-flex; align-items: center; gap: 6px; background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; margin-top: 14px; }
+    .btn-container { text-align: center; margin: 24px 0 10px 0; }
+    .btn { display: inline-block; background-color: #2563eb; color: #ffffff !important; font-weight: 700; font-size: 14px; padding: 14px 32px; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); }
+    .footer { background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="stars-top">⭐⭐⭐⭐⭐</div>
+      <h1>¿Cómo estuvo tu atención?</h1>
+      <p>Tu opinión nos ayuda a mantener la mejor calidad en Costa Rica</p>
+    </div>
+    
+    <div class="content">
+      <div class="greeting">¡Hola, ${clientName}! 👋</div>
+      <div class="message">
+        Esperamos que hayas tenido una excelente experiencia con tu cita de <strong>${serviceName}</strong> en <strong>${businessName}</strong>.
+        ¿Nos regalas 30 segundos para contarnos cómo te fue?
+      </div>
+
+      <div class="card">
+        <div class="card-biz">${businessName}</div>
+        <div class="card-service">✨ ${serviceName}</div>
+        <div class="card-date">Fecha de atención: ${dateStr} • Cita #${appointmentCode}</div>
+        <div>
+          <span class="badge-verified">🛡️ Reseña Verificada por Cita Real</span>
+        </div>
+      </div>
+
+      <div class="stars-selector">
+        <div class="stars-title">Toca una estrella para calificar:</div>
+        <div class="stars-container">
+          <a href="${reviewUrlBase}?rating=1" class="star-btn" title="1 estrella - Malo">⭐</a>
+          <a href="${reviewUrlBase}?rating=2" class="star-btn" title="2 estrellas - Regular">⭐</a>
+          <a href="${reviewUrlBase}?rating=3" class="star-btn" title="3 estrellas - Bueno">⭐</a>
+          <a href="${reviewUrlBase}?rating=4" class="star-btn" title="4 estrellas - Muy Bueno">⭐</a>
+          <a href="${reviewUrlBase}?rating=5" class="star-btn" title="5 estrellas - ¡Excelente!">⭐</a>
+        </div>
+      </div>
+
+      <div class="btn-container">
+        <a href="${reviewUrlBase}?rating=5" class="btn">⭐ Dejar mi Opinión y Comentario</a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 6px 0;">Solo los clientes que completaron una cita real pueden dejar reseñas verificadas.</p>
+      <p style="margin: 0;">Plataforma de Reservas de Costa Rica 🇨🇷</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`⭐ Enviando correo de solicitud de calificación a: ${appointment.clientEmail}...`);
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [appointment.clientEmail.trim()],
+      subject: `⭐ ¿Cómo fue tu experiencia en ${businessName}? Califica tu cita`,
+      html: htmlContent
+    });
+
+    if (error) {
+      console.warn('⚠️ Resend reportó un aviso al enviar solicitud de reseña:', error.message || error);
+      return { success: false, error };
+    }
+
+    console.log(`✅ Correo de solicitud de calificación enviado exitosamente (ID: ${data?.id})`);
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ Error enviando correo de calificación:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+
