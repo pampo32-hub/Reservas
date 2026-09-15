@@ -124,12 +124,12 @@
   <!-- ================= LÍNEA DIVISORIA INFERIOR ================= -->
   <line x1="70" y1="895" x2="1010" y2="895" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2"/>
 
-  <!-- ================= BRANDING FOOTER: reservascr.com • Powered by GEO SOFT ================= -->
+  <!-- ================= BRANDING FOOTER: reservascr.app • Powered by GEO SOFT ================= -->
   <!-- Dominio Web -->
   <g transform="translate(70, 935)">
     <rect width="360" height="74" rx="22" fill="#ffffff" fill-opacity="0.06" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="1.5"/>
     <text x="24" y="47" font-size="28">🌐</text>
-    <text x="64" y="46" fill="#ffffff" class="font-black" font-size="25">reservascr.com</text>
+    <text x="64" y="46" fill="#ffffff" class="font-black" font-size="25">reservascr.app</text>
   </g>
 
   <!-- Powered by GEO SOFT -->
