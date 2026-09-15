@@ -4,9 +4,9 @@ import twilio from 'twilio';
 dotenv.config();
 
 // Credenciales Meta WhatsApp Cloud API (Oficial Directa)
-const META_TOKEN = process.env.META_WHATSAPP_TOKEN || '';
-const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID || '';
-const META_WABA_ID = process.env.META_WABA_ID || '';
+const META_TOKEN = process.env.META_WHATSAPP_TOKEN || process.env.META_TOKEN || process.env.WHATSAPP_TOKEN || process.env.META_ACCESS_TOKEN || '';
+const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || process.env.META_PHONE_ID || '';
+const META_WABA_ID = process.env.META_WABA_ID || process.env.WABA_ID || '';
 const APP_URL = process.env.APP_URL || 'https://reservas-1cic.onrender.com';
 
 // Fallback Twilio (si aún no se ha configurado Meta)
