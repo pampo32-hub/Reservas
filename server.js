@@ -5,7 +5,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool, initDatabase } from './db.js';
 import { sendBookingConfirmationEmail } from './emailService.js';
-import { sendBookingConfirmationWhatsApp } from './whatsappService.js';
+import { 
+  sendBookingConfirmationWhatsApp, 
+  getActiveMetaCredentials, 
+  sendViaMetaCloudApi, 
+  buildBookingConfirmationText, 
+  formatMetaPhone 
+} from './whatsappService.js';
 
 dotenv.config();
 
@@ -901,7 +907,7 @@ app.post('/api/appointments', async (req, res) => {
 
         // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
         if (optIn && a.clientPhone) {
-          sendBookingConfirmationWhatsApp(createdAppointment, business).catch(waErr => {
+          sendBookingConfirmationWhatsApp(createdAppointment, business, pool).catch(waErr => {
             console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
           });
         }
@@ -918,11 +924,9 @@ app.post('/api/appointments', async (req, res) => {
 });
 
 // Endpoint de diagnóstico de servicios de notificación
-app.get('/api/notifications-status', (req, res) => {
+app.get('/api/notifications-status', async (req, res) => {
   const hasResend = Boolean(process.env.RESEND_API_KEY);
-  const metaToken = process.env.META_WHATSAPP_TOKEN || process.env.META_TOKEN || process.env.WHATSAPP_TOKEN || process.env.META_ACCESS_TOKEN || '';
-  const metaPhoneId = process.env.META_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || process.env.META_PHONE_ID || '';
-  const hasMeta = Boolean(metaToken && metaPhoneId);
+  const metaCreds = await getActiveMetaCredentials(pool);
   const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN);
 
   res.json({
@@ -933,18 +937,77 @@ app.get('/api/notifications-status', (req, res) => {
       note: 'Los correos de confirmación se envían automáticamente al cliente y al negocio.'
     },
     whatsapp: {
-      provider: hasMeta ? 'Meta WhatsApp Cloud API (Directo)' : (hasTwilio ? 'Twilio WhatsApp Sandbox' : 'Sin Configurar'),
-      status: hasMeta ? 'configured_meta' : (hasTwilio ? 'configured_twilio' : 'missing_credentials'),
-      hasToken: Boolean(metaToken),
-      hasPhoneId: Boolean(metaPhoneId),
-      phoneNumberId: metaPhoneId ? `${metaPhoneId.slice(0, 4)}...${metaPhoneId.slice(-4)}` : null,
-      directMetaEnabled: hasMeta,
-      detectedKeys: Object.keys(process.env).filter(k => k.toLowerCase().includes('meta') || k.toLowerCase().includes('whatsapp') || k.toLowerCase().includes('phone')),
-      note: hasMeta 
-        ? 'Conexión directa con Meta WhatsApp Cloud API activa.' 
-        : 'Para activar WhatsApp directo sin Twilio, configura META_WHATSAPP_TOKEN y META_PHONE_NUMBER_ID en .env o en el panel de Render.'
+      provider: metaCreds.isConfigured ? 'Meta WhatsApp Cloud API (Directo)' : (hasTwilio ? 'Twilio WhatsApp Sandbox' : 'Sin Configurar'),
+      status: metaCreds.isConfigured ? 'configured_meta' : (hasTwilio ? 'configured_twilio' : 'missing_credentials'),
+      hasToken: Boolean(metaCreds.token),
+      hasPhoneId: Boolean(metaCreds.phoneNumberId),
+      phoneNumberId: metaCreds.phoneNumberId ? `${metaCreds.phoneNumberId.slice(0, 4)}...${metaCreds.phoneNumberId.slice(-4)}` : null,
+      directMetaEnabled: metaCreds.isConfigured,
+      note: metaCreds.isConfigured 
+        ? 'Conexión directa con Meta WhatsApp Cloud API activa (1.000 conversaciones gratis/mes).' 
+        : 'Puedes configurar tu Token y Phone ID directamente en la pestaña WhatsApp del panel Developer.'
     }
   });
+});
+
+// Obtener configuración de WhatsApp para Developer
+app.get('/api/developer/settings/whatsapp', async (req, res) => {
+  try {
+    const metaCreds = await getActiveMetaCredentials(pool);
+    res.json({
+      configured: metaCreds.isConfigured,
+      tokenMasked: metaCreds.token ? `${metaCreds.token.slice(0, 8)}...${metaCreds.token.slice(-6)}` : '',
+      hasToken: Boolean(metaCreds.token),
+      phoneNumberId: metaCreds.phoneNumberId || '',
+      wabaId: metaCreds.wabaId || '',
+      provider: metaCreds.isConfigured ? 'Meta WhatsApp Cloud API' : 'Twilio Sandbox / Inactivo'
+    });
+  } catch (error) {
+    console.error('Error obteniendo settings de WhatsApp:', error);
+    res.status(500).json({ error: 'Error al consultar configuración de WhatsApp.' });
+  }
+});
+
+// Guardar configuración de WhatsApp en la base de datos (inmediato, sin reinicio)
+app.post('/api/developer/settings/whatsapp', async (req, res) => {
+  try {
+    const { token, phoneNumberId, wabaId } = req.body;
+
+    if (token !== undefined && token.trim()) {
+      await pool.query(`
+        INSERT INTO reservas_system_settings (key, value, updated_at)
+        VALUES ('META_WHATSAPP_TOKEN', $1, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `, [token.trim()]);
+    }
+
+    if (phoneNumberId !== undefined && phoneNumberId.trim()) {
+      await pool.query(`
+        INSERT INTO reservas_system_settings (key, value, updated_at)
+        VALUES ('META_PHONE_NUMBER_ID', $1, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `, [phoneNumberId.trim()]);
+    }
+
+    if (wabaId !== undefined) {
+      await pool.query(`
+        INSERT INTO reservas_system_settings (key, value, updated_at)
+        VALUES ('META_WABA_ID', $1, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `, [(wabaId || '').trim()]);
+    }
+
+    const updated = await getActiveMetaCredentials(pool);
+    res.json({ 
+      success: true, 
+      message: 'Credenciales de Meta WhatsApp guardadas exitosamente.',
+      configured: updated.isConfigured,
+      phoneNumberId: updated.phoneNumberId
+    });
+  } catch (error) {
+    console.error('Error guardando settings de WhatsApp:', error);
+    res.status(500).json({ error: 'Error al guardar configuración de WhatsApp.' });
+  }
 });
 
 // Endpoint para probar el envío de WhatsApp de confirmación
@@ -976,7 +1039,7 @@ app.post('/api/test-whatsapp', async (req, res) => {
       phone: '+506 8877 6655'
     };
 
-    const result = await sendBookingConfirmationWhatsApp(testAppointment, testBusiness);
+    const result = await sendBookingConfirmationWhatsApp(testAppointment, testBusiness, pool);
     res.json({ success: true, message: 'Prueba de WhatsApp procesada', result });
   } catch (error) {
     console.error('Error en /api/test-whatsapp:', error);

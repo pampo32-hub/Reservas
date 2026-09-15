@@ -2523,12 +2523,13 @@ class App {
     `;
 
     try {
-      const [stats, businesses, clients, appointments, alerts] = await Promise.all([
+      const [stats, businesses, clients, appointments, alerts, waSettings] = await Promise.all([
         storage.getDeveloperStats(),
         storage.getDeveloperBusinesses(),
         storage.getDeveloperClients(),
         storage.getDeveloperAppointments(),
-        storage.getDeveloperCategoryAlerts()
+        storage.getDeveloperCategoryAlerts(),
+        storage.getWhatsAppSettings()
       ]);
 
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
@@ -2679,9 +2680,15 @@ class App {
                   <span>Usuarios / Clientes (${clients.length})</span>
                 </button>
 
-                <button id="dev-tab-appointments" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'appointments' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                <button id="dev-tab-appointments" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'appointments' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
                   <i class="fas fa-calendar-alt"></i>
                   <span>Citas Globales (${appointments.length})</span>
+                </button>
+
+                <button id="dev-tab-whatsapp" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fab fa-whatsapp ${this.activeDevTab === 'whatsapp' ? 'text-white' : 'text-emerald-600'}"></i>
+                  <span>WhatsApp & Meta API</span>
+                  ${waSettings.configured ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded font-bold">Por Configurar</span>'}
                 </button>
               </div>
 
@@ -3091,6 +3098,155 @@ class App {
                 </div>
               ` : ''}
 
+              <!-- PESTAÑA 5: WHATSAPP & META CLOUD API -->
+              ${this.activeDevTab === 'whatsapp' ? `
+                <div class="space-y-6">
+                  <!-- Header informativo -->
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 rounded-2xl text-white border border-emerald-500/30 shadow-md">
+                    <div class="space-y-1">
+                      <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                          <i class="fab fa-whatsapp"></i>
+                        </span>
+                        <h3 class="text-lg font-black tracking-tight">Meta WhatsApp Cloud API (Oficial Directa)</h3>
+                      </div>
+                      <p class="text-xs text-slate-300">
+                        Conexión oficial directa con los servidores de Meta Graph API. Incluye <strong>1.000 conversaciones gratis al mes</strong> sin intermediarios.
+                      </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <span class="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${waSettings.configured ? 'bg-emerald-500 text-slate-950' : 'bg-amber-500 text-slate-950'}">
+                        <i class="fas ${waSettings.configured ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                        <span>${waSettings.configured ? 'Conexión Directa Activa' : 'Faltan Credenciales'}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Formulario de Credenciales (Guardar en Neon DB) -->
+                    <div class="lg:col-span-7 bg-slate-50 p-6 rounded-2xl border border-slate-200 space-y-4">
+                      <div>
+                        <h4 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                          <i class="fas fa-key text-blue-600"></i>
+                          <span>Configuración de Credenciales de Meta</span>
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Al guardar aquí, se actualizan al instante en la base de datos PostgreSQL sin necesidad de reiniciar Render.
+                        </p>
+                      </div>
+
+                      <form id="dev-save-wa-form" class="space-y-3.5 text-xs">
+                        <div>
+                          <label class="block font-bold text-slate-700 mb-1">
+                            Token de Acceso de Meta (META_WHATSAPP_TOKEN) *
+                          </label>
+                          <div class="relative">
+                            <input 
+                              type="password" 
+                              id="dev-wa-token" 
+                              placeholder="${waSettings.hasToken ? 'Token configurado (' + waSettings.tokenMasked + ')' : 'Pega tu token EAA...'}" 
+                              class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            >
+                            <button type="button" id="dev-wa-token-toggle" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                              <i class="fas fa-eye"></i>
+                            </button>
+                          </div>
+                          <span class="text-[10px] text-slate-400 block mt-1">Copiado desde Meta for Developers > WhatsApp > API Setup</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label class="block font-bold text-slate-700 mb-1">
+                              Identificador del Teléfono (Phone Number ID) *
+                            </label>
+                            <input 
+                              type="text" 
+                              id="dev-wa-phone-id" 
+                              value="${waSettings.phoneNumberId || ''}" 
+                              placeholder="Ej. 109283746501928" 
+                              class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            >
+                          </div>
+                          <div>
+                            <label class="block font-bold text-slate-700 mb-1">
+                              WABA ID (WhatsApp Business Account)
+                            </label>
+                            <input 
+                              type="text" 
+                              id="dev-wa-waba-id" 
+                              value="${waSettings.wabaId || ''}" 
+                              placeholder="Ej. 102938475610293" 
+                              class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            >
+                          </div>
+                        </div>
+
+                        <div class="pt-2">
+                          <button 
+                            type="submit" 
+                            id="dev-save-wa-btn" 
+                            class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <i class="fas fa-save"></i>
+                            <span>Guardar Credenciales en Base de Datos</span>
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+
+                    <!-- Panel de Prueba en Vivo -->
+                    <div class="lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 flex flex-col justify-between">
+                      <div class="space-y-3">
+                        <div class="flex items-center gap-2 text-emerald-600">
+                          <i class="fas fa-paper-plane"></i>
+                          <h4 class="text-sm font-black text-slate-900">Probar Envío de WhatsApp en Vivo</h4>
+                        </div>
+                        <p class="text-xs text-slate-500">
+                          Envía una notificación real de confirmación de reserva directamente a tu celular.
+                        </p>
+
+                        <div class="space-y-2">
+                          <label class="block font-bold text-slate-700 text-xs">Teléfono de Prueba (Costa Rica o Internacional):</label>
+                          <div class="flex gap-2">
+                            <input 
+                              type="text" 
+                              id="dev-test-phone-input" 
+                              value="62297240" 
+                              placeholder="Ej. 62297240 o +50662297240" 
+                              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            >
+                            <button 
+                              type="button" 
+                              id="dev-send-test-wa-btn" 
+                              class="px-4 py-2.5 bg-slate-900 hover:bg-emerald-600 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all flex-shrink-0 cursor-pointer"
+                            >
+                              <i class="fas fa-play text-[10px]"></i>
+                              <span>Enviar Test</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Consola de Resultados en Vivo -->
+                        <div id="dev-wa-test-result-box" class="p-3.5 bg-slate-900 rounded-xl text-slate-200 font-mono text-[11px] min-h-[90px] max-h-[160px] overflow-y-auto space-y-1">
+                          <span class="text-slate-400 block text-[10px]">// Consola de Diagnóstico Meta API:</span>
+                          <span id="dev-wa-test-result-text" class="text-slate-400">Listo para enviar prueba...</span>
+                        </div>
+                      </div>
+
+                      <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 space-y-1">
+                        <span class="font-bold flex items-center gap-1">
+                          <i class="fas fa-info-circle"></i> Nota sobre Modo Prueba de Meta:
+                        </span>
+                        <p class="text-[10px] text-amber-800">
+                          Recuerda que en el modo de prueba de Meta, tu número debe estar agregado en el selector "Para:" (To) de la pantalla de Meta for Developers.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
             </div>
           </div>
         </div>
@@ -3120,6 +3276,102 @@ class App {
       document.getElementById('dev-tab-appointments')?.addEventListener('click', () => {
         this.activeDevTab = 'appointments';
         this.renderDeveloperDashboardView(container);
+      });
+      document.getElementById('dev-tab-whatsapp')?.addEventListener('click', () => {
+        this.activeDevTab = 'whatsapp';
+        this.renderDeveloperDashboardView(container);
+      });
+
+      // Guardar Configuración de WhatsApp
+      document.getElementById('dev-save-wa-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const tokenInput = document.getElementById('dev-wa-token');
+        const phoneIdInput = document.getElementById('dev-wa-phone-id');
+        const wabaIdInput = document.getElementById('dev-wa-waba-id');
+        const saveBtn = document.getElementById('dev-save-wa-btn');
+
+        const token = tokenInput?.value?.trim();
+        const phoneNumberId = phoneIdInput?.value?.trim();
+        const wabaId = wabaIdInput?.value?.trim();
+
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+        }
+
+        try {
+          const payload = { phoneNumberId, wabaId };
+          if (token) payload.token = token;
+
+          await storage.saveWhatsAppSettings(payload);
+          this.showToast('¡Credenciales de Meta WhatsApp guardadas con éxito!', 'success');
+          this.renderDeveloperDashboardView(container);
+        } catch (err) {
+          this.showToast(err.message || 'Error guardando credenciales.', 'error');
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Credenciales en Base de Datos';
+          }
+        }
+      });
+
+      // Toggle visibilidad del token
+      document.getElementById('dev-wa-token-toggle')?.addEventListener('click', () => {
+        const tokenInput = document.getElementById('dev-wa-token');
+        if (tokenInput) {
+          tokenInput.type = tokenInput.type === 'password' ? 'text' : 'password';
+        }
+      });
+
+      // Enviar WhatsApp de prueba en vivo
+      document.getElementById('dev-send-test-wa-btn')?.addEventListener('click', async () => {
+        const phoneInput = document.getElementById('dev-test-phone-input');
+        const resultText = document.getElementById('dev-wa-test-result-text');
+        const testBtn = document.getElementById('dev-send-test-wa-btn');
+        const phone = phoneInput?.value?.trim();
+
+        if (!phone) {
+          this.showToast('Ingresa un número de teléfono para la prueba.', 'error');
+          return;
+        }
+
+        if (testBtn) {
+          testBtn.disabled = true;
+          testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        }
+        if (resultText) {
+          resultText.className = 'text-amber-400 animate-pulse';
+          resultText.textContent = `Enviando mensaje de prueba a ${phone} mediante Meta Cloud API...`;
+        }
+
+        try {
+          const res = await storage.testWhatsAppNotification(phone);
+          if (res.result?.success) {
+            if (resultText) {
+              resultText.className = 'text-emerald-400 font-bold';
+              resultText.textContent = `✅ ÉXITO: Mensaje enviado por ${res.result.provider || 'Meta'} (ID: ${res.result.messageId || res.result.sid || 'OK'})`;
+            }
+            this.showToast('¡WhatsApp de prueba entregado con éxito!', 'success');
+          } else {
+            const errDetail = res.result?.error || res.error || res.result?.reason || 'Error desconocido';
+            if (resultText) {
+              resultText.className = 'text-rose-400';
+              resultText.textContent = `❌ FALLO DE META: ${errDetail}`;
+            }
+            this.showToast('Error al enviar WhatsApp. Revisa la consola abajo.', 'error');
+          }
+        } catch (e) {
+          if (resultText) {
+            resultText.className = 'text-rose-400';
+            resultText.textContent = `❌ ERROR: ${e.message}`;
+          }
+          this.showToast('Error de conexión al enviar WhatsApp.', 'error');
+        } finally {
+          if (testBtn) {
+            testBtn.disabled = false;
+            testBtn.innerHTML = '<i class="fas fa-play text-[10px]"></i> <span>Enviar Test</span>';
+          }
+        }
       });
 
       // Subfiltros de negocios

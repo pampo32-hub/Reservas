@@ -3,13 +3,6 @@ import twilio from 'twilio';
 
 dotenv.config();
 
-// Credenciales Meta WhatsApp Cloud API (Oficial Directa)
-const META_TOKEN = process.env.META_WHATSAPP_TOKEN || '';
-const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID || '';
-const META_WABA_ID = process.env.META_WABA_ID || '';
-const META_TOKEN = process.env.META_WHATSAPP_TOKEN || process.env.META_TOKEN || process.env.WHATSAPP_TOKEN || process.env.META_ACCESS_TOKEN || '';
-const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || process.env.META_PHONE_ID || '';
-const META_WABA_ID = process.env.META_WABA_ID || process.env.WABA_ID || '';
 const APP_URL = process.env.APP_URL || 'https://reservas-1cic.onrender.com';
 
 // Fallback Twilio (si aún no se ha configurado Meta)
@@ -24,6 +17,35 @@ if (accountSid && authToken && !accountSid.includes('xxx')) {
   } catch (e) {
     console.error('⚠️ Error inicializando cliente fallback de Twilio:', e.message);
   }
+}
+
+/**
+ * Obtiene las credenciales de Meta activas (Revisa DB Postgres primero, luego variables de entorno)
+ */
+export async function getActiveMetaCredentials(pool = null) {
+  let token = process.env.META_WHATSAPP_TOKEN || process.env.META_TOKEN || process.env.WHATSAPP_TOKEN || process.env.META_ACCESS_TOKEN || '';
+  let phoneId = process.env.META_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || process.env.META_PHONE_ID || '';
+  let wabaId = process.env.META_WABA_ID || process.env.WABA_ID || '';
+
+  if (pool) {
+    try {
+      const res = await pool.query("SELECT key, value FROM reservas_system_settings WHERE key IN ('META_WHATSAPP_TOKEN', 'META_PHONE_NUMBER_ID', 'META_WABA_ID')");
+      for (const row of res.rows) {
+        if (row.key === 'META_WHATSAPP_TOKEN' && row.value?.trim()) token = row.value.trim();
+        if (row.key === 'META_PHONE_NUMBER_ID' && row.value?.trim()) phoneId = row.value.trim();
+        if (row.key === 'META_WABA_ID' && row.value?.trim()) wabaId = row.value.trim();
+      }
+    } catch (e) {
+      // Ignorar error si la tabla aún no existe
+    }
+  }
+
+  return {
+    token: token.trim(),
+    phoneNumberId: phoneId.trim(),
+    wabaId: wabaId.trim(),
+    isConfigured: Boolean(token.trim() && phoneId.trim())
+  };
 }
 
 /**
@@ -130,8 +152,13 @@ _¡Gracias por reservar con Reservas CR!_ 🇨🇷`;
 /**
  * Envío directo a través de la API oficial de Meta WhatsApp Cloud
  */
-async function sendViaMetaCloudApi(recipientPhone, messageBody) {
-  const url = `https://graph.facebook.com/v20.0/${META_PHONE_NUMBER_ID}/messages`;
+export async function sendViaMetaCloudApi(recipientPhone, messageBody, credentials = null) {
+  const meta = credentials || await getActiveMetaCredentials();
+  if (!meta.token || !meta.phoneNumberId) {
+    throw new Error('Credenciales de Meta incompletas (Falta META_WHATSAPP_TOKEN o META_PHONE_NUMBER_ID).');
+  }
+
+  const url = `https://graph.facebook.com/v20.0/${meta.phoneNumberId}/messages`;
   const payload = {
     messaging_product: 'whatsapp',
     recipient_type: 'individual',
@@ -146,7 +173,7 @@ async function sendViaMetaCloudApi(recipientPhone, messageBody) {
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${META_TOKEN}`,
+      'Authorization': `Bearer ${meta.token}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(payload)
@@ -155,8 +182,11 @@ async function sendViaMetaCloudApi(recipientPhone, messageBody) {
   const data = await response.json();
 
   if (!response.ok) {
-    const errorMessage = data?.error?.message || response.statusText;
-    throw new Error(`Meta API Error (${response.status}): ${errorMessage}`);
+    const errorObj = data?.error || {};
+    const errorMessage = errorObj.message || response.statusText;
+    const errorCode = errorObj.code;
+    const errorSubcode = errorObj.error_subcode;
+    throw new Error(`Meta API Error [${errorCode || response.status}]: ${errorMessage} (Subcode: ${errorSubcode || 'none'})`);
   }
 
   return {
@@ -170,7 +200,7 @@ async function sendViaMetaCloudApi(recipientPhone, messageBody) {
  * Envío de confirmación de reserva por WhatsApp
  * (Prioriza Meta Cloud API directo, si no está configurado usa Twilio)
  */
-export async function sendBookingConfirmationWhatsApp(appointment, business) {
+export async function sendBookingConfirmationWhatsApp(appointment, business, pool = null) {
   if (!appointment || !appointment.clientPhone) {
     console.log('ℹ️ No se envió WhatsApp: Teléfono no proporcionado.');
     return { success: false, reason: 'no_phone' };
@@ -189,11 +219,13 @@ export async function sendBookingConfirmationWhatsApp(appointment, business) {
     return { success: false, reason: 'invalid_phone' };
   }
 
+  const metaCreds = await getActiveMetaCredentials(pool);
+
   // 1. INTENTO CON META WHATSAPP CLOUD API (DIRECTO)
-  if (META_TOKEN && META_PHONE_NUMBER_ID && !META_TOKEN.includes('xxx')) {
+  if (metaCreds.isConfigured) {
     try {
       console.log(`📲 [Meta API] Enviando WhatsApp directo a +${metaRecipient}...`);
-      const result = await sendViaMetaCloudApi(metaRecipient, messageBody);
+      const result = await sendViaMetaCloudApi(metaRecipient, messageBody, metaCreds);
       console.log(`✅ [Meta API] WhatsApp entregado con ID: ${result.messageId}`);
       return { success: true, provider: 'meta', messageId: result.messageId };
     } catch (metaErr) {
@@ -220,6 +252,6 @@ export async function sendBookingConfirmationWhatsApp(appointment, business) {
     }
   }
 
-  console.warn('⚠️ No hay credenciales de WhatsApp configuradas (Configura META_WHATSAPP_TOKEN y META_PHONE_NUMBER_ID en .env).');
+  console.warn('⚠️ No hay credenciales de WhatsApp configuradas (Configura Meta Token y Phone ID en el panel Developer o .env).');
   return { success: false, reason: 'no_credentials' };
 }

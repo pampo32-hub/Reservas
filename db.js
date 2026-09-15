@@ -152,6 +152,15 @@ export async function initDatabase() {
       );
     `);
 
+    // 8. Crear tabla de configuraciones del sistema (WhatsApp, Meta API, etc.)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_system_settings (
+        key VARCHAR(100) PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';
