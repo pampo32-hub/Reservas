@@ -71,7 +71,7 @@ class App {
     }, 3500);
   }
 
-  // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
+  // --- HEADER / NAVBAR (BOTONES INICIAR SESIÓN Y REGISTRARSE) ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
@@ -101,7 +101,7 @@ class App {
               <i class="fas fa-compass mr-1"></i> Explorar
             </button>
 
-            <!-- 1. ACCESO DE USUARIOS / CLIENTES -->
+            <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
             ${clientUser ? `
               <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
@@ -113,14 +113,9 @@ class App {
                   <i class="fas fa-sign-out-alt text-xs"></i>
                 </button>
               </div>
-            ` : `
-              <button id="nav-client-login-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
-                <i class="fas fa-user text-blue-600"></i>
-                <span>Acceso Usuarios</span>
-              </button>
-            `}
+            ` : ''}
 
-            <!-- 2. ACCESO PANEL DE NEGOCIO (CON CONTRASEÑA) -->
+            <!-- 2. SI EL NEGOCIO ESTÁ LOGUEADO -->
             ${bizUser ? `
               <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl">
                 <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
@@ -131,12 +126,28 @@ class App {
                   <i class="fas fa-sign-out-alt text-xs"></i>
                 </button>
               </div>
-            ` : `
-              <button id="nav-biz-login-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/20 flex items-center gap-1.5 transition-all">
-                <i class="fas fa-store text-indigo-400"></i>
-                <span>Panel de Negocio</span>
+            ` : ''}
+
+            <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
+            ${!clientUser && !bizUser ? `
+              <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
+                <i class="fas fa-sign-in-alt text-blue-600"></i>
+                <span>Iniciar Sesión</span>
               </button>
-            `}
+
+              <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all">
+                <i class="fas fa-user-plus"></i>
+                <span>Registrarse</span>
+              </button>
+            ` : ''}
+
+            <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
+            ${clientUser && !bizUser ? `
+              <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all" title="Acceso al panel de negocio">
+                <i class="fas fa-store text-indigo-600"></i>
+                <span>Soy Negocio</span>
+              </button>
+            ` : ''}
           </div>
         </div>
       </header>
@@ -146,8 +157,12 @@ class App {
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
 
-    // Cliente
-    document.getElementById('nav-client-login-btn')?.addEventListener('click', () => this.renderClientAuthModal());
+    // Botones Iniciar Sesión y Registrarse
+    document.getElementById('nav-login-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'client' }));
+    document.getElementById('nav-register-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'client' }));
+    document.getElementById('nav-biz-extra-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
+
+    // Cliente logueado
     document.getElementById('nav-client-bookings-btn')?.addEventListener('click', () => this.navigateTo('my-client-bookings'));
     document.getElementById('nav-client-logout-btn')?.addEventListener('click', () => {
       storage.logoutClient();
@@ -156,8 +171,7 @@ class App {
       if (this.currentView === 'my-client-bookings') this.navigateTo('directory');
     });
 
-    // Negocio
-    document.getElementById('nav-biz-login-btn')?.addEventListener('click', () => this.renderBusinessAuthModal());
+    // Negocio logueado
     document.getElementById('nav-biz-dashboard-btn')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
     document.getElementById('nav-biz-logout-btn')?.addEventListener('click', () => {
       storage.logoutBusiness();
@@ -222,7 +236,7 @@ class App {
               Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu cita al instante</span>
             </h1>
             <p class="mt-4 text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-              Barberías, spas, dentistas, talleres mecánicos y más en colones (₡ CRC). Selecciona tu horario ideal sin llamadas.
+              Barberías, spas, dentistas, talleres mecánicos y más. Selecciona tu horario ideal sin llamadas.
             </p>
 
             <!-- Search Bar -->
@@ -473,7 +487,7 @@ class App {
             <!-- Servicios -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
               <h2 class="text-xl font-bold text-slate-900 mb-2">Servicios Disponibles</h2>
-              <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas en colones (₡) para ver turnos disponibles y agendar.</p>
+              <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas para ver turnos disponibles y agendar.</p>
 
               <div class="space-y-4">
                 ${biz.services && biz.services.length > 0 ? biz.services.map(srv => `
@@ -1515,108 +1529,354 @@ class App {
   }
 
   // ==========================================
-  // MODALES DE AUTENTICACIÓN
+  // MODAL INTEGRADO DE AUTENTICACIÓN (LOGIN & REGISTRO)
   // ==========================================
-
-  // 1. MODAL LOGIN / REGISTRO NEGOCIO (CON CONTRASEÑA)
-  renderBusinessAuthModal() {
+  renderAuthModal({ mode = 'login', role = 'client' } = {}) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
+    const currentClient = storage.getClientUser();
+
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-8">
-          <!-- Header -->
-          <div class="bg-slate-900 p-6 text-white flex items-center justify-between">
+        <div class="bg-white rounded-3xl shadow-2xl ${role === 'business' && mode === 'register' ? 'max-w-xl' : 'max-w-md'} w-full overflow-hidden border border-slate-200 my-8 max-h-[92vh] flex flex-col">
+          
+          <!-- Header del Modal -->
+          <div class="bg-slate-900 p-5 text-white flex items-center justify-between shrink-0">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg">
-                <i class="fas fa-store"></i>
+              <div class="w-10 h-10 rounded-2xl ${role === 'business' ? 'bg-indigo-600' : 'bg-blue-600'} flex items-center justify-center text-white text-lg shadow-sm">
+                <i class="fas ${role === 'business' ? 'fa-store' : 'fa-user-check'}"></i>
               </div>
               <div>
-                <span class="text-xs uppercase text-indigo-300 font-bold">Portal Comercial</span>
-                <h3 class="text-lg font-bold">Acceso a Panel de Negocio</h3>
+                <span class="text-[11px] uppercase tracking-wider ${role === 'business' ? 'text-indigo-300' : 'text-blue-300'} font-bold">
+                  ${mode === 'login' ? 'Acceso Seguro' : 'Registro de Cuenta'}
+                </span>
+                <h3 class="text-base sm:text-lg font-bold">
+                  ${mode === 'login' ? (role === 'business' ? 'Iniciar Sesión Negocio' : 'Iniciar Sesión Usuario') : (role === 'business' ? 'Registrar mi Negocio' : 'Crear Cuenta de Usuario')}
+                </h3>
               </div>
             </div>
-            <button id="close-biz-auth-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
-              <i class="fas fa-times"></i>
+            <button id="close-auth-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+              <i class="fas fa-times text-sm"></i>
             </button>
           </div>
 
-          <!-- Body -->
-          <div class="p-6 space-y-5">
-            <form id="biz-login-form" class="space-y-4 text-xs sm:text-sm">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico del Negocio *</label>
-                <input type="email" id="biz-login-email" required placeholder="correo@tucomercio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Contraseña *</label>
-                <input type="password" id="biz-login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-              </div>
-
-              <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
-                <i class="fas fa-sign-in-alt"></i>
-                <span>Ingresar al Panel</span>
+          <!-- Pestañas de Modo (Iniciar Sesión / Registrarse) y Selección de Rol (Cliente / Negocio) -->
+          <div class="p-5 pb-0 shrink-0 space-y-3 bg-slate-50 border-b border-slate-200/80">
+            <!-- Tabs Modo: Iniciar Sesión / Registrarse -->
+            <div class="flex p-1 bg-slate-200/80 rounded-2xl">
+              <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
+                <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? 'text-blue-600' : ''}"></i> Iniciar Sesión
               </button>
-            </form>
-
-            <!-- Acceso Rápido Demo -->
-            <div class="pt-4 border-t border-slate-100">
-              <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
-              <div class="grid grid-cols-2 gap-2">
-                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="barberia@demo.cr" data-pass="123">
-                  <span class="font-bold block truncate">Barbería Vintage</span>
-                  <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
-                </button>
-                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="dental@demo.cr" data-pass="123">
-                  <span class="font-bold block truncate">Clínica Dental</span>
-                  <span class="text-[10px] text-slate-400">dental@demo.cr</span>
-                </button>
-                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="spa@demo.cr" data-pass="123">
-                  <span class="font-bold block truncate">Serenity Spa</span>
-                  <span class="text-[10px] text-slate-400">spa@demo.cr</span>
-                </button>
-                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="taller@demo.cr" data-pass="123">
-                  <span class="font-bold block truncate">AutoCheck Taller</span>
-                  <span class="text-[10px] text-slate-400">taller@demo.cr</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Registro nuevo negocio link -->
-            <div class="text-center pt-3 border-t border-slate-100">
-              <span class="text-xs text-slate-500">¿Aún no tienes cuenta para tu negocio?</span>
-              <button id="open-register-from-login-btn" class="text-xs font-bold text-indigo-600 hover:underline block mx-auto mt-1">
-                Registrar nuevo establecimiento comercial
+              <button id="tab-mode-register" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${mode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
+                <i class="fas fa-user-plus text-xs ${mode === 'register' ? 'text-blue-600' : ''}"></i> Registrarse
               </button>
             </div>
+
+            <!-- Tabs Rol: Cliente / Negocio -->
+            <div class="flex gap-2 pb-3">
+              <button id="tab-role-client" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${role === 'client' ? 'bg-blue-600 border-blue-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                <i class="fas fa-user text-xs"></i> Soy Cliente
+              </button>
+              <button id="tab-role-business" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${role === 'business' ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
+                <i class="fas fa-store text-xs"></i> Soy Negocio / Dueño
+              </button>
+            </div>
+          </div>
+
+          <!-- Cuerpo con Formularios Dinámicos -->
+          <div class="p-6 space-y-4 overflow-y-auto flex-1">
+            ${mode === 'login' && role === 'client' ? `
+              <!-- FORM 1: LOGIN CLIENTE -->
+              <p class="text-xs text-slate-500">Ingresa tus datos para identificarte y consultar todas tus reservas activas e historial.</p>
+              
+              <form id="auth-client-login-form" class="space-y-4 text-xs sm:text-sm">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Nombre Completo *</label>
+                  <input type="text" id="cli-log-name" value="${currentClient ? currentClient.name : ''}" required placeholder="Ej. Juan Pérez" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                  <input type="tel" id="cli-log-phone" value="${currentClient ? currentClient.phone : ''}" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
+                  <input type="email" id="cli-log-email" value="${currentClient ? currentClient.email || '' : ''}" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                  <i class="fas fa-sign-in-alt"></i>
+                  <span>Ingresar como Cliente</span>
+                </button>
+              </form>
+            ` : ''}
+
+            ${mode === 'login' && role === 'business' ? `
+              <!-- FORM 2: LOGIN NEGOCIO (CORREO Y CONTRASEÑA) -->
+              <p class="text-xs text-slate-500">Ingresa tus credenciales para administrar tus citas, servicios, precios, fotos y horarios.</p>
+              
+              <form id="auth-biz-login-form" class="space-y-4 text-xs sm:text-sm">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico del Negocio *</label>
+                  <input type="email" id="biz-log-email" required placeholder="correo@tucomercio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Contraseña *</label>
+                  <input type="password" id="biz-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                  <i class="fas fa-sign-in-alt"></i>
+                  <span>Ingresar al Panel de Negocio</span>
+                </button>
+              </form>
+
+              <!-- Acceso Rápido Demo -->
+              <div class="pt-4 border-t border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="barberia@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Barbería Vintage</span>
+                    <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="dental@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Clínica Dental</span>
+                    <span class="text-[10px] text-slate-400">dental@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="spa@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Serenity Spa</span>
+                    <span class="text-[10px] text-slate-400">spa@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="taller@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">AutoCheck Taller</span>
+                    <span class="text-[10px] text-slate-400">taller@demo.cr</span>
+                  </button>
+                </div>
+              </div>
+            ` : ''}
+
+            ${mode === 'register' && role === 'client' ? `
+              <!-- FORM 3: REGISTRO CLIENTE -->
+              <p class="text-xs text-slate-500">Crea tu cuenta de cliente en segundos solo con tus datos de contacto básicos.</p>
+              
+              <form id="auth-client-reg-form" class="space-y-4 text-xs sm:text-sm">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Nombre Completo *</label>
+                  <input type="text" id="cli-reg-name" required placeholder="Ej. Juan Pérez" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                  <input type="tel" id="cli-reg-phone" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
+                  <input type="email" id="cli-reg-email" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                  <i class="fas fa-user-plus"></i>
+                  <span>Crear Cuenta de Cliente</span>
+                </button>
+              </form>
+            ` : ''}
+
+            ${mode === 'register' && role === 'business' ? `
+              <!-- FORM 4: REGISTRO NUEVO NEGOCIO -->
+              <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
+                <!-- Cuenta de Usuario / Credenciales -->
+                <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
+                  <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
+                    <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
+                  </span>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
+                      <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                    </div>
+                    <div>
+                      <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
+                      <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña de Acceso *</label>
+                    <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                  </div>
+                </div>
+
+                <!-- Datos Comerciales -->
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
+                  <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
+                    <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                      <option value="belleza">Belleza y Barbería</option>
+                      <option value="salud">Salud y Bienestar</option>
+                      <option value="spa">Spa y Masajes</option>
+                      <option value="fitness">Fitness y Deporte</option>
+                      <option value="autos">Talleres y Autos</option>
+                      <option value="fotografia">Fotografía y Eventos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
+                    <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                    <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
+                    <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Descripción</label>
+                  <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+                </div>
+
+                <!-- Fotos con Guía de Medidas -->
+                <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
+                  <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
+                    <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
+                  </span>
+
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
+                      <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
+                    </div>
+                    <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                  </div>
+
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
+                      <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
+                    </div>
+                    <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                  </div>
+                </div>
+
+                <!-- Primer Servicio -->
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
+                    <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
+                  </span>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div class="sm:col-span-2">
+                      <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                    </div>
+                    <div>
+                      <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
+                  <i class="fas fa-check-circle"></i>
+                  <span>Crear Cuenta y Registrar Negocio</span>
+                </button>
+              </form>
+            ` : ''}
           </div>
         </div>
       </div>
     `;
 
-    document.getElementById('close-biz-auth-btn')?.addEventListener('click', () => {
+    // Cerrar modal
+    document.getElementById('close-auth-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
     });
 
+    // Pestañas de Modo (Login / Register)
+    document.getElementById('tab-mode-login')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'login', role });
+    });
+    document.getElementById('tab-mode-register')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'register', role });
+    });
+
+    // Pestañas de Rol (Cliente / Negocio)
+    document.getElementById('tab-role-client')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode, role: 'client' });
+    });
+    document.getElementById('tab-role-business')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode, role: 'business' });
+    });
+
+    // Demo Buttons (en login de negocio)
     document.querySelectorAll('.quick-demo-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.getElementById('biz-login-email').value = btn.getAttribute('data-email');
-        document.getElementById('biz-login-password').value = btn.getAttribute('data-pass');
-        document.getElementById('biz-login-form').dispatchEvent(new Event('submit'));
+        const emailInput = document.getElementById('biz-log-email');
+        const passInput = document.getElementById('biz-log-password');
+        if (emailInput && passInput) {
+          emailInput.value = btn.getAttribute('data-email');
+          passInput.value = btn.getAttribute('data-pass');
+          document.getElementById('auth-biz-login-form')?.dispatchEvent(new Event('submit'));
+        }
       });
     });
 
-    document.getElementById('open-register-from-login-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-      this.renderNewBusinessModal();
+    // Evento Submit: Login Cliente
+    document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('cli-log-name').value;
+      const phone = document.getElementById('cli-log-phone').value;
+      const email = document.getElementById('cli-log-email').value;
+
+      try {
+        await storage.loginOrRegisterClient(name, phone, email);
+        this.showToast('¡Bienvenido(a)! Sesión iniciada como cliente.', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+      }
     });
 
-    document.getElementById('biz-login-form')?.addEventListener('submit', async (e) => {
+    // Evento Submit: Registro Cliente
+    document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('biz-login-email').value;
-      const password = document.getElementById('biz-login-password').value;
+      const name = document.getElementById('cli-reg-name').value;
+      const phone = document.getElementById('cli-reg-phone').value;
+      const email = document.getElementById('cli-reg-email').value;
+
+      try {
+        await storage.loginOrRegisterClient(name, phone, email);
+        this.showToast('¡Cuenta de cliente creada exitosamente!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrarse.', 'error');
+      }
+    });
+
+    // Evento Submit: Login Negocio
+    document.getElementById('auth-biz-login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('biz-log-email').value;
+      const password = document.getElementById('biz-log-password').value;
 
       try {
         await storage.loginBusiness(email, password);
@@ -1628,80 +1888,73 @@ class App {
         this.showToast(err.message || 'Error al iniciar sesión.', 'error');
       }
     });
-  }
 
-  // 2. MODAL LOGIN / REGISTRO CLIENTE (ULTRA RÁPIDO: NOMBRE, TELÉFONO, CORREO)
-  renderClientAuthModal() {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    const currentClient = storage.getClientUser();
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 p-6 sm:p-8">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-2.5">
-              <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
-                <i class="fas fa-user-check"></i>
-              </div>
-              <div>
-                <span class="text-[11px] font-bold text-blue-600 uppercase">Acceso Rápido</span>
-                <h3 class="text-base font-bold text-slate-900">Datos de Usuario</h3>
-              </div>
-            </div>
-            <button id="close-client-auth-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <p class="text-xs text-slate-500 mb-5">Ingresa tus datos una sola vez para agendar tus turnos al instante y consultar tus citas.</p>
-
-          <form id="client-auth-form" class="space-y-4 text-xs sm:text-sm">
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Nombre Completo *</label>
-              <input type="text" id="cli-auth-name" value="${currentClient ? currentClient.name : ''}" required placeholder="Ej. Juan Pérez" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-              <input type="tel" id="cli-auth-phone" value="${currentClient ? currentClient.phone : ''}" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
-              <input type="email" id="cli-auth-email" value="${currentClient ? currentClient.email || '' : ''}" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
-              <i class="fas fa-check"></i>
-              <span>Guardar y Continuar</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('close-client-auth-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
-
-    document.getElementById('client-auth-form')?.addEventListener('submit', async (e) => {
+    // Evento Submit: Registro Negocio
+    document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('cli-auth-name').value;
-      const phone = document.getElementById('cli-auth-phone').value;
-      const email = document.getElementById('cli-auth-email').value;
+      const ownerName = document.getElementById('reg-owner-name').value;
+      const email = document.getElementById('reg-biz-email').value;
+      const password = document.getElementById('reg-biz-password').value;
+      const name = document.getElementById('new-biz-name').value;
+      const category = document.getElementById('new-biz-cat').value;
+      const city = document.getElementById('new-biz-city').value;
+      const phone = document.getElementById('new-biz-phone').value;
+      const address = document.getElementById('new-biz-address').value;
+      const description = document.getElementById('new-biz-desc').value;
+      const image = document.getElementById('new-biz-image').value;
+      const coverImage = document.getElementById('new-biz-cover').value;
+      const firstSrvName = document.getElementById('first-srv-name').value;
+      const firstSrvPrice = document.getElementById('first-srv-price').value;
+
+      const catLabels = {
+        belleza: 'Belleza y Barbería',
+        salud: 'Salud y Bienestar',
+        spa: 'Spa y Masajes',
+        fitness: 'Fitness y Deporte',
+        autos: 'Talleres y Autos',
+        fotografia: 'Fotografía y Eventos'
+      };
 
       try {
-        await storage.loginOrRegisterClient(name, phone, email);
-        this.showToast('¡Identificación guardada exitosamente!', 'success');
+        await storage.registerBusinessWithUser(ownerName, email, password, {
+          name,
+          category,
+          categoryLabel: catLabels[category] || 'Servicios',
+          city,
+          phone,
+          email,
+          address,
+          description,
+          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+          isDemo: false,
+          features: ['Sinpe Móvil', 'Atención Personalizada'],
+          services: [
+            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
+          ]
+        });
+
+        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
-        this.renderCurrentView();
+        this.navigateTo('owner-dashboard');
       } catch (err) {
-        this.showToast(err.message || 'Error al guardar datos.', 'error');
+        this.showToast(err.message || 'Error al registrar negocio.', 'error');
       }
     });
+  }
+
+  // Métodos de conveniencia
+  renderBusinessAuthModal() {
+    this.renderAuthModal({ mode: 'login', role: 'business' });
+  }
+
+  renderClientAuthModal() {
+    this.renderAuthModal({ mode: 'login', role: 'client' });
+  }
+
+  renderNewBusinessModal() {
+    this.renderAuthModal({ mode: 'register', role: 'business' });
   }
 
   // --- MODAL PARA AGREGAR SERVICIO ---
@@ -1841,195 +2094,6 @@ class App {
       this.showToast('Servicio actualizado con éxito.', 'success');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
-    });
-  }
-
-  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (CON CONTRASEÑA) ---
-  renderNewBusinessModal() {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            <div>
-              <span class="text-xs font-bold text-emerald-600 uppercase">Onboarding de Comercios 🇨🇷</span>
-              <h3 class="text-xl font-extrabold text-slate-900">Registrar Nuevo Establecimiento</h3>
-            </div>
-            <button id="close-biz-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <form id="new-biz-form" class="space-y-4 text-xs sm:text-sm">
-            <!-- Cuenta de Usuario / Credenciales -->
-            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
-              <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
-                <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
-              </span>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
-                  <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
-                  <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña de Acceso *</label>
-                <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-              </div>
-            </div>
-
-            <!-- Datos Comerciales -->
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
-                <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  <option value="belleza">Belleza y Barbería</option>
-                  <option value="salud">Salud y Bienestar</option>
-                  <option value="spa">Spa y Masajes</option>
-                  <option value="fitness">Fitness y Deporte</option>
-                  <option value="autos">Talleres y Autos</option>
-                  <option value="fotografia">Fotografía y Eventos</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
-                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-                <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Descripción</label>
-              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-            </div>
-
-            <!-- Fotos con Guía de Medidas -->
-            <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
-              <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
-                <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
-              </span>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
-                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
-                </div>
-                <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
-                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
-                </div>
-                <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-              </div>
-            </div>
-
-            <!-- Primer Servicio -->
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-              <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
-              </span>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div class="sm:col-span-2">
-                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-                </div>
-                <div>
-                  <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
-                </div>
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
-              <i class="fas fa-check-circle"></i>
-              <span>Crear Cuenta y Registrar Negocio</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('close-biz-modal-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
-
-    document.getElementById('new-biz-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const ownerName = document.getElementById('reg-owner-name').value;
-      const email = document.getElementById('reg-biz-email').value;
-      const password = document.getElementById('reg-biz-password').value;
-      const name = document.getElementById('new-biz-name').value;
-      const category = document.getElementById('new-biz-cat').value;
-      const city = document.getElementById('new-biz-city').value;
-      const phone = document.getElementById('new-biz-phone').value;
-      const address = document.getElementById('new-biz-address').value;
-      const description = document.getElementById('new-biz-desc').value;
-      const image = document.getElementById('new-biz-image').value;
-      const coverImage = document.getElementById('new-biz-cover').value;
-      const firstSrvName = document.getElementById('first-srv-name').value;
-      const firstSrvPrice = document.getElementById('first-srv-price').value;
-
-      const catLabels = {
-        belleza: 'Belleza y Barbería',
-        salud: 'Salud y Bienestar',
-        spa: 'Spa y Masajes',
-        fitness: 'Fitness y Deporte',
-        autos: 'Talleres y Autos',
-        fotografia: 'Fotografía y Eventos'
-      };
-
-      try {
-        await storage.registerBusinessWithUser(ownerName, email, password, {
-          name,
-          category,
-          categoryLabel: catLabels[category] || 'Servicios',
-          city,
-          phone,
-          email,
-          address,
-          description,
-          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
-          isDemo: false,
-          features: ['Sinpe Móvil', 'Atención Personalizada'],
-          services: [
-            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
-          ]
-        });
-
-        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
-        modalContainer.innerHTML = '';
-        this.renderHeader();
-        this.navigateTo('owner-dashboard');
-      } catch (err) {
-        this.showToast(err.message || 'Error al registrar.', 'error');
-      }
     });
   }
 
