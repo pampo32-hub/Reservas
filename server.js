@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool, initDatabase } from './db.js';
 import { sendBookingConfirmationEmail } from './emailService.js';
+import { sendBookingConfirmationWhatsApp } from './whatsappService.js';
 
 dotenv.config();
 
@@ -819,22 +820,70 @@ app.post('/api/appointments', async (req, res) => {
 
     const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
 
-    // Enviar correo de confirmación de forma asíncrona en segundo plano
-    if (a.clientEmail && a.clientEmail.includes('@')) {
-      pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
-        .then(bizRes => {
-          const business = bizRes.rows[0] || null;
-          return sendBookingConfirmationEmail(createdAppointment, business);
-        })
-        .catch(emailErr => {
-          console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
-        });
-    }
+    // Enviar notificaciones de confirmación de forma asíncrona en segundo plano
+    pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
+      .then(bizRes => {
+        const business = bizRes.rows[0] || null;
+
+        // 1. Enviar correo de confirmación (si proporcionó email)
+        if (a.clientEmail && a.clientEmail.includes('@')) {
+          sendBookingConfirmationEmail(createdAppointment, business).catch(emailErr => {
+            console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+          });
+        }
+
+        // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
+        if (optIn && a.clientPhone) {
+          sendBookingConfirmationWhatsApp(createdAppointment, business).catch(waErr => {
+            console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
+          });
+        }
+      })
+      .catch(err => {
+        console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
+      });
 
     res.status(201).json(createdAppointment);
   } catch (error) {
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });
+  }
+});
+
+// Endpoint para probar el envío de WhatsApp de confirmación
+app.post('/api/test-whatsapp', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Debes proporcionar un número de teléfono.' });
+    }
+
+    const testAppointment = {
+      id: `apt-${Date.now().toString().slice(-6)}`,
+      clientName: 'Cliente de Prueba',
+      clientPhone: phone.trim(),
+      clientEmail: 'prueba@demo.cr',
+      serviceName: 'Corte de Cabello Clásico & Barba',
+      serviceDuration: 45,
+      servicePrice: 10000,
+      date: '2026-09-20',
+      time: '3:30 PM',
+      notes: 'Mensaje de prueba del sistema de reservas WhatsApp',
+      whatsappOptIn: true
+    };
+
+    const testBusiness = {
+      name: 'Barbería & Estilo Vintage',
+      address: 'Av. Escazú, Local 12',
+      city: 'San José, Escazú',
+      phone: '+506 8877 6655'
+    };
+
+    const result = await sendBookingConfirmationWhatsApp(testAppointment, testBusiness);
+    res.json({ success: true, message: 'Prueba de WhatsApp procesada', result });
+  } catch (error) {
+    console.error('Error en /api/test-whatsapp:', error);
+    res.status(500).json({ error: error.message || 'Error enviando WhatsApp de prueba.' });
   }
 });
 
@@ -855,7 +904,7 @@ app.post('/api/test-email', async (req, res) => {
       serviceDuration: 45,
       servicePrice: 10000,
       date: '2026-09-20',
-      time: '15:30',
+      time: '3:30 PM',
       notes: 'Cita de prueba del sistema de correos',
       whatsappOptIn: true
     };
