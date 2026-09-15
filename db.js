@@ -245,6 +245,7 @@ export async function initDatabase() {
         `, [u.id, u.businessId, u.name, u.email, u.password]);
       }
     }
+    console.log('✨ Usuarios demo verificados/creados.');
 
     // Asegurar perfiles demo de Clientes
     for (const c of INITIAL_CLIENTS) {

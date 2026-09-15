@@ -110,6 +110,7 @@ app.post('/api/auth/business/login', async (req, res) => {
         'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
         [cleanEmail, cleanPass]
       );
+
       if (devRes.rows.length > 0) {
         const dev = devRes.rows[0];
         return res.json({
@@ -409,7 +410,7 @@ app.post('/api/auth/client/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error en login de cliente:', error);
-    res.status(500).json({ error: 'Error en el servidor al autenticar.' });
+    res.status(500).json({ error: 'Error al iniciar sesión de cliente.' });
   }
 });
 
@@ -456,8 +457,59 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
 });
 
 // ==========================================
-// ENDPOINTS DE NEGOCIOS Y SERVICIOS
 // ==========================================
+// ENDPOINTS DE NEGOCIOS, CATEGORÍAS Y SERVICIOS
+// ==========================================
+
+// Obtener todas las categorías
+app.get('/api/categories', (req, res) => {
+  res.json([
+    { id: 'all', name: 'Todas las Categorías', icon: 'fa-store' },
+    { id: 'belleza', name: 'Belleza y Barbería', icon: 'fa-scissors' },
+    { id: 'salud', name: 'Salud y Medicina', icon: 'fa-user-md' },
+    { id: 'dental', name: 'Odontología y Dental', icon: 'fa-tooth' },
+    { id: 'spa', name: 'Spa, Masajes y Estética', icon: 'fa-spa' },
+    { id: 'fitness', name: 'Fitness y Deporte', icon: 'fa-dumbbell' },
+    { id: 'mascotas', name: 'Veterinaria y Mascotas', icon: 'fa-paw' },
+    { id: 'autos', name: 'Talleres y Automotriz', icon: 'fa-car' },
+    { id: 'gastronomia', name: 'Restaurantes y Gastronomía', icon: 'fa-utensils' },
+    { id: 'fotografia', name: 'Fotografía y Eventos', icon: 'fa-camera' },
+    { id: 'educacion', name: 'Educación, Cursos y Tutorías', icon: 'fa-graduation-cap' },
+    { id: 'profesionales', name: 'Servicios Legales y Contabilidad', icon: 'fa-balance-scale' },
+    { id: 'hogar', name: 'Hogar, Reparaciones y Limpieza', icon: 'fa-tools' },
+    { id: 'psicologia', name: 'Psicología y Terapia', icon: 'fa-brain' },
+    { id: 'tatuajes', name: 'Tatuajes y Piercing', icon: 'fa-palette' },
+    { id: 'tecnologia', name: 'Tecnología y Soporte', icon: 'fa-laptop-code' },
+    { id: 'otros', name: 'Otros Servicios', icon: 'fa-concierge-bell' }
+  ]);
+});
+
+// Obtener todas las citas globales
+app.get('/api/appointments', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT a.*, b.name as business_name FROM reservas_appointments a LEFT JOIN reservas_businesses b ON a.business_id = b.id ORDER BY a.date DESC, a.time ASC');
+    const appointments = result.rows.map(a => ({
+      id: a.id,
+      businessId: a.business_id,
+      businessName: a.business_name || 'Comercio',
+      serviceId: a.service_id,
+      serviceName: a.service_name,
+      servicePrice: parseFloat(a.service_price),
+      serviceDuration: a.service_duration,
+      date: a.date,
+      time: a.time,
+      clientName: a.client_name,
+      clientPhone: a.client_phone,
+      clientEmail: a.client_email,
+      notes: a.notes,
+      status: a.status
+    }));
+    res.json(appointments);
+  } catch (error) {
+    console.error('Error en GET /api/appointments:', error);
+    res.status(500).json({ error: 'Error al obtener citas.' });
+  }
+});
 
 // Obtener todos los negocios
 app.get('/api/businesses', async (req, res) => {
@@ -684,11 +736,21 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
   }
 });
 
-// Obtener citas de un cliente por teléfono
+// Obtener citas de un cliente por teléfono o email
 app.get('/api/clients/:phone/appointments', async (req, res) => {
   try {
     const { phone } = req.params;
-    const result = await pool.query('SELECT a.*, b.name as business_name FROM reservas_appointments a LEFT JOIN reservas_businesses b ON a.business_id = b.id WHERE a.client_phone = $1 ORDER BY a.date DESC, a.time ASC', [phone]);
+    const { email } = req.query;
+    let query = 'SELECT a.*, b.name as business_name FROM reservas_appointments a LEFT JOIN reservas_businesses b ON a.business_id = b.id WHERE a.client_phone = $1';
+    const params = [phone];
+
+    if (email && email.trim() !== '') {
+      query += ' OR (a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
+      params.push(email.trim());
+    }
+    query += ' ORDER BY a.date DESC, a.time ASC';
+
+    const result = await pool.query(query, params);
 
     const appointments = result.rows.map(a => ({
       id: a.id,
@@ -746,6 +808,40 @@ app.post('/api/appointments', async (req, res) => {
   } catch (error) {
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });
+  }
+});
+
+// Actualizar / Reprogramar / Modificar cita completa
+app.put('/api/appointments/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const a = req.body;
+
+    await pool.query(`
+      UPDATE reservas_appointments SET
+        date = COALESCE($1, date),
+        time = COALESCE($2, time),
+        service_id = COALESCE($3, service_id),
+        service_name = COALESCE($4, service_name),
+        service_price = COALESCE($5, service_price),
+        service_duration = COALESCE($6, service_duration),
+        notes = COALESCE($7, notes),
+        status = COALESCE($8, status),
+        client_name = COALESCE($9, client_name),
+        client_phone = COALESCE($10, client_phone),
+        client_email = COALESCE($11, client_email)
+      WHERE id = $12
+    `, [
+      a.date, a.time, a.serviceId, a.serviceName,
+      a.servicePrice !== undefined ? parseFloat(a.servicePrice) : null,
+      a.serviceDuration !== undefined ? parseInt(a.serviceDuration, 10) : null,
+      a.notes, a.status, a.clientName, a.clientPhone, a.clientEmail, id
+    ]);
+
+    res.json({ success: true, message: 'Cita actualizada y reprogramada correctamente' });
+  } catch (error) {
+    console.error('Error actualizando cita:', error);
+    res.status(500).json({ error: 'Error al actualizar reserva' });
   }
 });
 

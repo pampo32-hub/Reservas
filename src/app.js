@@ -3,7 +3,6 @@ import { storage } from './services/storage.js';
 
 class App {
   constructor() {
-    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings'
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
@@ -11,6 +10,10 @@ class App {
     this.logoClickCount = 0;
     this.logoClickTimer = null;
     
+    // Filtros de citas
+    this.ownerAppointmentFilter = 'all'; // 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'
+    this.clientAppointmentFilter = 'all'; // 'all' | 'active' | 'completed' | 'cancelled'
+
     // Estado del modal de reserva
     this.bookingState = {
       isOpen: false,
@@ -78,8 +81,7 @@ class App {
     }, 3500);
   }
 
-  // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
-  // --- HEADER / NAVBAR (BOTONES INICIAR SESIÓN Y REGISTRARSE) ---
+  // --- HEADER / NAVBAR ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
@@ -92,8 +94,6 @@ class App {
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
-          <!-- Logo -->
-          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
           <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="TurnoYa Costa Rica (Triple clic: Acceso Developer)">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -958,37 +958,317 @@ class App {
   }
 
   // ==========================================
+  // MODAL DE REPROGRAMACIÓN / EDICIÓN DE CITAS
+  // ==========================================
+  renderRescheduleModal(appointment, isOwnerMode = false) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer || !appointment) return;
+
+    const biz = storage.getBusinessById(appointment.businessId);
+    if (!biz) {
+      this.showToast('No se encontró el negocio asociado a esta cita.', 'error');
+      return;
+    }
+
+    let selectedServiceId = appointment.serviceId || (biz.services && biz.services[0]?.id);
+    let selectedDate = appointment.date || this.getTodayDateString();
+    let selectedTime = appointment.time;
+    let currentService = biz.services?.find(s => s.id === selectedServiceId) || {
+      id: appointment.serviceId,
+      name: appointment.serviceName,
+      price: appointment.servicePrice,
+      duration: appointment.serviceDuration || 30
+    };
+
+    const renderModalContent = () => {
+      currentService = biz.services?.find(s => s.id === selectedServiceId) || currentService;
+      const duration = currentService?.duration || 30;
+      const availability = storage.getAvailableSlots(biz.id, selectedDate, duration, appointment.id);
+
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
+            <!-- Header -->
+            <div class="bg-gradient-to-r ${isOwnerMode ? 'from-indigo-700 to-blue-700' : 'from-blue-600 to-indigo-600'} p-6 text-white flex items-center justify-between">
+              <div>
+                <span class="text-xs uppercase tracking-wider text-blue-200 font-bold">
+                  <i class="fas ${isOwnerMode ? 'fa-user-cog' : 'fa-calendar-alt'} mr-1"></i>
+                  ${isOwnerMode ? 'Panel de Negocio: Modificar Cita' : 'Reprogramar mi Turno'}
+                </span>
+                <h3 class="text-xl font-black mt-0.5">${biz.name}</h3>
+                <span class="text-xs text-blue-100 font-mono">CÓDIGO CITA: #${appointment.id.toUpperCase()}</span>
+              </div>
+              <button id="close-reschedule-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+
+            <!-- Body -->
+            <form id="reschedule-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              <!-- Info Actual -->
+              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs">
+                <div>
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Horario Registrado</span>
+                  <span class="font-bold text-slate-700"><i class="far fa-calendar mr-1 text-blue-600"></i>${appointment.date}</span>
+                  <span class="font-bold text-slate-700 ml-2"><i class="far fa-clock mr-1 text-blue-600"></i>${appointment.time}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] uppercase font-bold text-slate-400 block">Estado</span>
+                  <span class="badge-status badge-status-${appointment.status}">${appointment.status === 'confirmed' ? 'Confirmada' : appointment.status === 'pending' ? 'Pendiente' : appointment.status === 'completed' ? 'Completada' : 'Cancelada'}</span>
+                </div>
+              </div>
+
+              <!-- Selector de Servicio -->
+              ${biz.services && biz.services.length > 0 ? `
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Servicio
+                  </label>
+                  <select id="reschedule-service-select" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    ${biz.services.map(s => `
+                      <option value="${s.id}" ${s.id === selectedServiceId ? 'selected' : ''}>
+                        ${s.name} - ${this.formatColones(s.price)} (${s.duration} min)
+                      </option>
+                    `).join('')}
+                  </select>
+                </div>
+              ` : ''}
+
+              <!-- 1. Nueva Fecha -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  1. Seleccionar Fecha
+                </label>
+                <input 
+                  type="date" 
+                  id="reschedule-date-input" 
+                  value="${selectedDate}" 
+                  min="${this.getTodayDateString()}" 
+                  required
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <!-- 2. Horarios Disponibles -->
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    2. Seleccionar Horario (${availability.slots ? availability.slots.length : 0} disponibles)
+                  </label>
+                  ${selectedTime ? `
+                    <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                      Seleccionado: ${selectedTime}
+                    </span>
+                  ` : ''}
+                </div>
+
+                ${availability.isClosed ? `
+                  <div class="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
+                    <i class="fas fa-calendar-times text-base"></i>
+                    <span>${availability.reason}</span>
+                  </div>
+                ` : availability.slots.length === 0 ? `
+                  <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
+                    <i class="fas fa-info-circle text-base"></i>
+                    <span>No hay horarios disponibles en esta fecha. Por favor elige otro día.</span>
+                  </div>
+                ` : `
+                  <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1 bg-slate-50 rounded-2xl border border-slate-200">
+                    ${availability.slots.map(slot => `
+                      <button 
+                        type="button" 
+                        class="reschedule-slot-btn py-2 px-2 text-xs font-bold rounded-xl border transition-all ${selectedTime === slot ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:bg-blue-50'}"
+                        data-slot="${slot}"
+                      >
+                        <i class="far fa-clock mr-1 text-[10px]"></i>${slot}
+                      </button>
+                    `).join('')}
+                  </div>
+                `}
+              </div>
+
+              <!-- Opciones adicionales para Dueño de Negocio -->
+              ${isOwnerMode ? `
+                <div class="pt-3 border-t border-slate-200 space-y-3">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 mb-1">Nombre del Cliente</label>
+                      <input type="text" id="reschedule-client-name" value="${appointment.clientName || ''}" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium">
+                    </div>
+                    <div>
+                      <label class="block text-xs font-bold text-slate-700 mb-1">Teléfono / WhatsApp</label>
+                      <input type="tel" id="reschedule-client-phone" value="${appointment.clientPhone || ''}" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Estado de la Reserva</label>
+                    <select id="reschedule-status-select" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                      <option value="confirmed" ${appointment.status === 'confirmed' ? 'selected' : ''}>✅ Confirmada / Aceptada</option>
+                      <option value="pending" ${appointment.status === 'pending' ? 'selected' : ''}>⏳ Pendiente de Confirmación</option>
+                      <option value="completed" ${appointment.status === 'completed' ? 'selected' : ''}>🎉 Completada / Atendida</option>
+                      <option value="cancelled" ${appointment.status === 'cancelled' ? 'selected' : ''}>❌ Cancelada</option>
+                    </select>
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- Notas adicionales -->
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Notas o Solicitudes Especiales
+                </label>
+                <textarea id="reschedule-notes-input" rows="2" placeholder="Ej: Confirmar si llego 5 minutos tarde..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">${appointment.notes || ''}</textarea>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+                <button type="button" id="cancel-reschedule-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors">
+                  Cerrar
+                </button>
+                <button type="submit" id="save-reschedule-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5">
+                  <i class="fas fa-check-circle"></i> Guardar y Confirmar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      // Eventos del Modal
+      document.getElementById('close-reschedule-modal-btn')?.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+      });
+      document.getElementById('cancel-reschedule-btn')?.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+      });
+
+      document.getElementById('reschedule-service-select')?.addEventListener('change', (e) => {
+        selectedServiceId = e.target.value;
+        renderModalContent();
+      });
+
+      document.getElementById('reschedule-date-input')?.addEventListener('change', (e) => {
+        selectedDate = e.target.value;
+        selectedTime = null;
+        renderModalContent();
+      });
+
+      document.querySelectorAll('.reschedule-slot-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          selectedTime = btn.getAttribute('data-slot');
+          renderModalContent();
+        });
+      });
+
+      document.getElementById('reschedule-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!selectedTime) {
+          this.showToast('Por favor selecciona un horario disponible para la cita.', 'error');
+          return;
+        }
+
+        const srv = biz.services?.find(s => s.id === selectedServiceId) || currentService;
+        const notes = document.getElementById('reschedule-notes-input')?.value.trim() || '';
+
+        const updatedData = {
+          ...appointment,
+          serviceId: srv.id,
+          serviceName: srv.name,
+          servicePrice: srv.price,
+          serviceDuration: srv.duration,
+          date: selectedDate,
+          time: selectedTime,
+          notes
+        };
+
+        if (isOwnerMode) {
+          updatedData.clientName = document.getElementById('reschedule-client-name')?.value.trim() || appointment.clientName;
+          updatedData.clientPhone = document.getElementById('reschedule-client-phone')?.value.trim() || appointment.clientPhone;
+          updatedData.status = document.getElementById('reschedule-status-select')?.value || appointment.status;
+        } else {
+          if (updatedData.status === 'cancelled') {
+            updatedData.status = 'confirmed';
+          }
+        }
+
+        await storage.updateAppointment(appointment.id, updatedData);
+        this.showToast('¡Cita modificada y reprogramada con éxito!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      });
+    };
+
+    renderModalContent();
+  }
+
+  // ==========================================
   // VISTA 4: MIS RESERVAS (HISTORIAL DE CLIENTE)
   // ==========================================
   async renderClientBookingsView(container) {
     const clientUser = storage.getClientUser();
     if (!clientUser) {
-      this.renderClientAuthModal();
+      this.renderAuthModal({ mode: 'login', role: 'client' });
       this.navigateTo('directory');
       return;
     }
 
-    const appointments = await storage.getClientAppointmentsAsync(clientUser.phone);
+    const allAppointments = await storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email);
+    const filter = this.clientAppointmentFilter || 'all';
+
+    let appointments = allAppointments;
+    if (filter === 'active') {
+      appointments = allAppointments.filter(a => a.status === 'pending' || a.status === 'confirmed');
+    } else if (filter === 'completed') {
+      appointments = allAppointments.filter(a => a.status === 'completed');
+    } else if (filter === 'cancelled') {
+      appointments = allAppointments.filter(a => a.status === 'cancelled');
+    }
+
+    const activeCount = allAppointments.filter(a => a.status === 'pending' || a.status === 'confirmed').length;
+    const completedCount = allAppointments.filter(a => a.status === 'completed').length;
+    const cancelledCount = allAppointments.filter(a => a.status === 'cancelled').length;
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span class="text-xs font-bold text-blue-600 uppercase">Portal de Cliente</span>
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Portal de Cliente</span>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
-            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone}</p>
+            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
-          <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
-            <i class="fas fa-sign-out-alt mr-1"></i> Cerrar Sesión
+          <div class="flex items-center gap-2">
+            <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
+              <i class="fas fa-plus mr-1"></i> Nueva Cita
+            </button>
+            <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
+              <i class="fas fa-sign-out-alt mr-1"></i> Salir
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtros de Estado -->
+        <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
+            Todas (${allAppointments.length})
+          </button>
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'active' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="active">
+            Activas (${activeCount})
+          </button>
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
+            Completadas (${completedCount})
+          </button>
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
+            Canceladas (${cancelledCount})
           </button>
         </div>
 
         ${appointments.length === 0 ? `
-          <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8">
+          <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 shadow-xs">
             <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
               <i class="far fa-calendar-alt"></i>
             </div>
-            <h3 class="text-lg font-bold text-slate-800">No tienes reservas activas</h3>
+            <h3 class="text-lg font-bold text-slate-800">No hay citas en esta categoría</h3>
             <p class="text-xs text-slate-500 mt-1">Explora los comercios disponibles y agenda tu primer turno.</p>
             <button id="go-explore-btn" class="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20">
               Explorar Comercios
@@ -997,24 +1277,49 @@ class App {
         ` : `
           <div class="space-y-4">
             ${appointments.map(apt => `
-              <div class="p-5 sm:p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="font-extrabold text-base text-slate-900">${apt.businessName || 'Comercio'}</span>
-                    <span class="badge-status badge-status-${apt.status}">
-                      ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
-                    </span>
+              <div class="p-5 sm:p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-black text-lg text-slate-900">${apt.businessName || 'Comercio'}</span>
+                      <span class="badge-status badge-status-${apt.status}">
+                        ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
+                      </span>
+                    </div>
+                    <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
+                    <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
+                      <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${apt.date}</strong></span>
+                      <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${apt.time}</strong> (${apt.serviceDuration} min)</span>
+                      ${apt.notes ? `<span class="text-slate-400 italic">"${apt.notes}"</span>` : ''}
+                    </div>
                   </div>
-                  <h4 class="font-semibold text-sm text-blue-700">${apt.serviceName}</h4>
-                  <div class="text-xs text-slate-500 mt-1 flex items-center gap-3">
-                    <span><i class="far fa-calendar mr-1"></i>${apt.date}</span>
-                    <span><i class="far fa-clock mr-1"></i>${apt.time} (${apt.serviceDuration} min)</span>
+
+                  <div class="text-right flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                    <span class="text-xl font-black text-slate-900">${this.formatColones(apt.servicePrice)}</span>
+                    <span class="text-[10px] text-slate-400 font-mono mt-0.5">CÓDIGO: #${apt.id.toUpperCase()}</span>
                   </div>
                 </div>
 
-                <div class="text-right flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-                  <span class="text-base font-black text-slate-900">${this.formatColones(apt.servicePrice)}</span>
-                  <span class="text-[10px] text-slate-400 font-mono mt-0.5">CÓDIGO: ${apt.id.toUpperCase()}</span>
+                <!-- Botones de Acción para el Cliente -->
+                <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
+                  ${(apt.status === 'pending' || apt.status === 'confirmed') ? `
+                    <button class="client-reschedule-btn px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" data-apt-id="${apt.id}">
+                      <i class="fas fa-calendar-alt"></i> Reprogramar Turno
+                    </button>
+                    <button class="client-cancel-btn px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" data-apt-id="${apt.id}">
+                      <i class="fas fa-times-circle"></i> Cancelar Reserva
+                    </button>
+                  ` : ''}
+                  ${apt.status === 'cancelled' ? `
+                    <button class="client-reschedule-btn px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5" data-apt-id="${apt.id}">
+                      <i class="fas fa-redo"></i> Reagendar Cita
+                    </button>
+                  ` : ''}
+                  ${apt.status === 'completed' ? `
+                    <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
+                      <i class="fas fa-check-circle"></i> Cita Completada
+                    </span>
+                  ` : ''}
                 </div>
               </div>
             `).join('')}
@@ -1023,12 +1328,42 @@ class App {
       </div>
     `;
 
+    document.getElementById('go-explore-top-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('go-explore-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    
     document.getElementById('client-logout-view-btn')?.addEventListener('click', () => {
       storage.logoutClient();
       this.showToast('Sesión cerrada.', 'info');
       this.renderHeader();
       this.navigateTo('directory');
+    });
+
+    document.querySelectorAll('.client-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.clientAppointmentFilter = btn.getAttribute('data-filter');
+        this.renderClientBookingsView(container);
+      });
+    });
+
+    document.querySelectorAll('.client-reschedule-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const apt = allAppointments.find(a => a.id === aptId);
+        if (apt) {
+          this.renderRescheduleModal(apt, false);
+        }
+      });
+    });
+
+    document.querySelectorAll('.client-cancel-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        if (confirm('¿Estás seguro de que deseas cancelar esta reserva?')) {
+          await storage.updateAppointmentStatus(aptId, 'cancelled');
+          this.showToast('Reserva cancelada correctamente.', 'info');
+          this.renderClientBookingsView(container);
+        }
+      });
     });
   }
 
@@ -1163,23 +1498,60 @@ class App {
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
     if (this.activeDashboardTab === 'appointments') {
+      const filter = this.ownerAppointmentFilter || 'all';
+      let filteredAppointments = appointments;
+
+      if (filter === 'pending') {
+        filteredAppointments = appointments.filter(a => a.status === 'pending');
+      } else if (filter === 'confirmed') {
+        filteredAppointments = appointments.filter(a => a.status === 'confirmed');
+      } else if (filter === 'completed') {
+        filteredAppointments = appointments.filter(a => a.status === 'completed');
+      } else if (filter === 'cancelled') {
+        filteredAppointments = appointments.filter(a => a.status === 'cancelled');
+      }
+
+      const pendingCount = appointments.filter(a => a.status === 'pending').length;
+      const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
+      const completedCount = appointments.filter(a => a.status === 'completed').length;
+      const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
+
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 class="text-lg font-bold text-slate-900">Agenda y Reservas</h2>
-              <p class="text-xs text-slate-500">Gestiona las reservas de tus clientes y cambia sus estados en tiempo real.</p>
+              <p class="text-xs text-slate-500">Gestiona, acepta, reprograma, cancela y actualiza reservas en tiempo real.</p>
             </div>
 
-            <button id="add-manual-appointment-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
+            <button id="add-manual-appointment-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20">
               <i class="fas fa-plus-circle"></i> Nueva Reserva Manual
             </button>
           </div>
 
-          ${appointments.length === 0 ? `
+          <!-- Filtros de Estado para el Dueño -->
+          <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
+              Todas (${appointments.length})
+            </button>
+            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
+              ⏳ Pendientes (${pendingCount})
+            </button>
+            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
+              ✅ Confirmadas (${confirmedCount})
+            </button>
+            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
+              🎉 Completadas (${completedCount})
+            </button>
+            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
+              ❌ Canceladas (${cancelledCount})
+            </button>
+          </div>
+
+          ${filteredAppointments.length === 0 ? `
             <div class="text-center py-12 text-slate-400">
               <i class="far fa-calendar-times text-4xl mb-2"></i>
-              <p class="text-sm font-semibold">Aún no hay reservas registradas para este negocio.</p>
+              <p class="text-sm font-semibold">No hay reservas en esta categoría.</p>
             </div>
           ` : `
             <div class="overflow-x-auto">
@@ -1191,11 +1563,11 @@ class App {
                     <th class="py-3 px-4">Servicio</th>
                     <th class="py-3 px-4">Monto</th>
                     <th class="py-3 px-4">Estado</th>
-                    <th class="py-3 px-4 text-right">Acciones</th>
+                    <th class="py-3 px-4 text-right">Acciones de Gestión</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                  ${appointments.map(apt => `
+                  ${filteredAppointments.map(apt => `
                     <tr class="hover:bg-slate-50/80 transition-colors">
                       <td class="py-3.5 px-4 font-bold text-slate-900">
                         <div>${apt.date}</div>
@@ -1206,7 +1578,7 @@ class App {
                         <div class="text-slate-400 text-[11px]">${apt.clientPhone}</div>
                       </td>
                       <td class="py-3.5 px-4 font-medium text-slate-700">
-                        ${apt.serviceName}
+                        <div class="font-semibold text-slate-800">${apt.serviceName}</div>
                         ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
                       </td>
                       <td class="py-3.5 px-4 font-extrabold text-slate-900">
@@ -1218,17 +1590,34 @@ class App {
                         </span>
                       </td>
                       <td class="py-3.5 px-4 text-right space-x-1">
-                        ${apt.status !== 'completed' ? `
-                          <button class="status-change-btn p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg" data-apt-id="${apt.id}" data-status="completed" title="Marcar como completada">
-                            <i class="fas fa-check"></i>
+                        <!-- Aceptar / Confirmar -->
+                        ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                          <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
+                            <i class="fas fa-check-circle"></i> Aceptar
                           </button>
                         ` : ''}
+
+                        <!-- Marcar como Completada -->
+                        ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
+                          <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
+                            <i class="fas fa-clipboard-check"></i> Completar
+                          </button>
+                        ` : ''}
+
+                        <!-- Reprogramar / Modificar -->
+                        <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
+                          <i class="fas fa-calendar-alt"></i> Modificar
+                        </button>
+
+                        <!-- Cancelar -->
                         ${apt.status !== 'cancelled' ? `
-                          <button class="status-change-btn p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
-                            <i class="fas fa-ban"></i>
+                          <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
+                            <i class="fas fa-ban"></i> Cancelar
                           </button>
                         ` : ''}
-                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg" data-apt-id="${apt.id}" title="Eliminar registro">
+
+                        <!-- Eliminar -->
+                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center" data-apt-id="${apt.id}" title="Eliminar registro">
                           <i class="fas fa-trash-alt"></i>
                         </button>
                       </td>
@@ -1463,12 +1852,35 @@ class App {
 
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
   setupDashboardTabEvents(currentBiz) {
+    document.querySelectorAll('.owner-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.ownerAppointmentFilter = btn.getAttribute('data-filter');
+        this.renderCurrentView();
+      });
+    });
+
+    document.querySelectorAll('.edit-appointment-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+        const apt = appointments.find(a => a.id === aptId);
+        if (apt) {
+          this.renderRescheduleModal(apt, true);
+        }
+      });
+    });
+
     document.querySelectorAll('.status-change-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
         const newStatus = btn.getAttribute('data-status');
         await storage.updateAppointmentStatus(aptId, newStatus);
-        this.showToast(`Estado de cita actualizado a: ${newStatus}`, 'info');
+        const statusMsgs = {
+          confirmed: '¡Reserva aceptada y confirmada con éxito!',
+          completed: '¡Reserva marcada como completada / atendida!',
+          cancelled: 'Reserva cancelada.'
+        };
+        this.showToast(statusMsgs[newStatus] || `Estado actualizado a: ${newStatus}`, newStatus === 'cancelled' ? 'info' : 'success');
         this.renderCurrentView();
       });
     });
@@ -1476,7 +1888,7 @@ class App {
     document.querySelectorAll('.delete-apt-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
-        if (confirm('¿Deseas eliminar este registro de reserva?')) {
+        if (confirm('¿Deseas eliminar este registro de reserva permanentemente?')) {
           await storage.deleteAppointment(aptId);
           this.showToast('Reserva eliminada.', 'info');
           this.renderCurrentView();
@@ -2812,14 +3224,6 @@ class App {
         return;
       }
 
-      const catLabels = {
-        belleza: 'Belleza y Barbería',
-        salud: 'Salud y Bienestar',
-        spa: 'Spa y Masajes',
-        fitness: 'Fitness y Deporte',
-        autos: 'Talleres y Autos',
-        fotografia: 'Fotografía y Eventos'
-      };
       // Procesar Categoría (Estándar o Personalizada)
       let finalCategory = catSelectVal;
       let categoryLabel = '';
@@ -2838,7 +3242,7 @@ class App {
         isCustomCategory = true;
       } else {
         const catObj = storage.getCategories().find(c => c.id === catSelectVal);
-        categoryLabel = catObj ? catObj.name : (catLabels[catSelectVal] || catSelectVal);
+        categoryLabel = catObj ? catObj.name : catSelectVal;
       }
 
       try {

@@ -627,10 +627,11 @@ class StorageService {
     return all.filter(a => a.businessId === businessId);
   }
 
-  async getClientAppointmentsAsync(phone) {
-    if (this.isOnlineApi && phone) {
+  async getClientAppointmentsAsync(phone, email = '') {
+    if (this.isOnlineApi && (phone || email)) {
       try {
-        const res = await fetch(`${this.apiBase}/clients/${encodeURIComponent(phone)}/appointments`);
+        const url = `${this.apiBase}/clients/${encodeURIComponent(phone || 'null')}/appointments?email=${encodeURIComponent(email || '')}`;
+        const res = await fetch(url);
         if (res.ok) {
           return await res.json();
         }
@@ -639,7 +640,7 @@ class StorageService {
       }
     }
     const all = this.getAppointments();
-    return all.filter(a => a.clientPhone === phone);
+    return all.filter(a => (phone && a.clientPhone === phone) || (email && a.clientEmail && a.clientEmail.toLowerCase() === email.toLowerCase()));
   }
 
   async createAppointment(appointmentData) {
@@ -672,6 +673,29 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
     this.appointmentsCache = appointments;
     return newAppointment;
+  }
+
+  async updateAppointment(appointmentId, updatedData) {
+    if (this.isOnlineApi) {
+      try {
+        await fetch(`${this.apiBase}/appointments/${appointmentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedData)
+        });
+      } catch (e) {
+        console.error('Error actualizando y reprogramando cita en Neon:', e);
+      }
+    }
+
+    const appointments = this.getAppointments();
+    const appt = appointments.find(a => a.id === appointmentId);
+    if (appt) {
+      Object.assign(appt, updatedData);
+      localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
+      this.appointmentsCache = appointments;
+    }
+    return true;
   }
 
   async updateAppointmentStatus(appointmentId, newStatus) {
@@ -714,7 +738,7 @@ class StorageService {
   }
 
   // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL ---
-  getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30) {
+  getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null) {
     const business = this.getBusinessById(businessId);
     if (!business || !business.schedule) return [];
 
@@ -745,7 +769,7 @@ class StorageService {
     const serviceDur = parseInt(serviceDurationMinutes, 10) || 30;
 
     const existingAppointments = this.getAppointmentsByBusiness(businessId).filter(
-      appt => appt.date === dateString && appt.status !== 'cancelled'
+      appt => appt.date === dateString && appt.status !== 'cancelled' && (!excludeAppointmentId || appt.id !== excludeAppointmentId)
     );
 
     const bookedRanges = existingAppointments.map(appt => {
