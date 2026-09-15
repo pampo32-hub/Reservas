@@ -11,7 +11,7 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       'Hasta 150 reservas mensuales',
       'Catálogo con todos tus servicios y precios',
-      'Confirmación automática por WhatsApp y correo',
+      'Confirmación automática por correo',
       'Enlace directo a tu perfil para Instagram, TikTok y WhatsApp',
       'Agenda digital y gestión de citas en tiempo real'
     ],
@@ -30,6 +30,7 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       'Hasta 300 reservas mensuales',
       'Todo lo incluido en el Plan Básico',
+      'Confirmación automática por WhatsApp y correo',
       'Reportes de ingresos y estadísticas de clientes frecuentes',
       'Horarios avanzados (bloqueo de descansos, almuerzo y feriados)',
       'Insignia oficial de Negocio Verificado en el directorio'

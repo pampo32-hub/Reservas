@@ -788,7 +788,6 @@ class App {
 
                   <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
                     <i class="fas fa-tags text-amber-400 text-xs"></i>
-                    <span>Ver Planes ($8, $15, $25)</span>
                     <span>Ver Planes</span>
                   </button>
                   
