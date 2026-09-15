@@ -29,6 +29,11 @@ class App {
     return `${y}-${m}-${d}`;
   }
 
+  formatColones(amount) {
+    const num = Number(amount) || 0;
+    return '₡' + num.toLocaleString('es-CR', { maximumFractionDigits: 0 });
+  }
+
   init() {
     this.renderHeader();
     this.renderCurrentView();
@@ -391,7 +396,7 @@ class App {
                     </div>
 
                     <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
-                      <span class="text-lg font-extrabold text-blue-600">$${srv.price}</span>
+                      <span class="text-lg font-extrabold text-blue-600">${this.formatColones(srv.price)}</span>
                       <button 
                         class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
                         data-service-id="${srv.id}"
@@ -540,7 +545,7 @@ class App {
                 <span class="text-xs text-slate-500"><i class="far fa-clock mr-1"></i>${service.duration} minutos</span>
               </div>
               <div class="text-right">
-                <span class="text-lg font-black text-blue-700">$${service.price}</span>
+                <span class="text-lg font-black text-blue-700">${this.formatColones(service.price)}</span>
               </div>
             </div>
 
@@ -736,7 +741,7 @@ class App {
             </div>
             <div class="flex justify-between pt-2 border-t border-slate-200">
               <span class="text-slate-500 font-medium">Total a pagar en local:</span>
-              <span class="font-black text-sm text-slate-900">$${appointment.servicePrice}</span>
+              <span class="font-black text-sm text-slate-900">${this.formatColones(appointment.servicePrice)}</span>
             </div>
           </div>
 
@@ -821,9 +826,9 @@ class App {
           <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
             <div class="flex items-center justify-between text-slate-500 mb-2">
               <span class="text-xs font-semibold uppercase">Ingresos Est.</span>
-              <i class="fas fa-dollar-sign text-emerald-600"></i>
+              <span class="font-extrabold text-emerald-600 text-sm">CRC</span>
             </div>
-            <span class="text-2xl font-black text-slate-900">$${estimatedRevenue}</span>
+            <span class="text-2xl font-black text-slate-900">${this.formatColones(estimatedRevenue)}</span>
             <span class="text-[11px] text-emerald-600 block mt-1">citas confirmadas</span>
           </div>
 
@@ -927,7 +932,7 @@ class App {
                         ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
                       </td>
                       <td class="py-3.5 px-4 font-extrabold text-slate-900">
-                        $${apt.servicePrice}
+                        ${this.formatColones(apt.servicePrice)}
                       </td>
                       <td class="py-3.5 px-4">
                         <span class="badge-status badge-status-${apt.status}">
@@ -979,7 +984,7 @@ class App {
                 <div>
                   <div class="flex items-center justify-between">
                     <h3 class="font-bold text-base text-slate-900">${srv.name}</h3>
-                    <span class="text-base font-black text-blue-600">$${srv.price}</span>
+                    <span class="text-base font-black text-blue-600">${this.formatColones(srv.price)}</span>
                   </div>
                   <span class="inline-block mt-1 px-2.5 py-0.5 rounded-md bg-slate-200 text-slate-700 text-xs font-semibold">
                     <i class="far fa-clock mr-1"></i>${srv.duration} minutos
@@ -1161,8 +1166,8 @@ class App {
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Precio ($) *</label>
-                <input type="number" id="srv-price" required min="0" step="1" placeholder="Ej. 250" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Precio (₡ CRC) *</label>
+                <input type="number" id="srv-price" required min="0" step="500" placeholder="Ej. 15000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Duración (min) *</label>
@@ -1246,25 +1251,25 @@ class App {
               </div>
 
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Ciudad *</label>
-                <input type="text" id="new-biz-city" required placeholder="Ej. Ciudad de México" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Ciudad / Cantón *</label>
+                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp *</label>
-                <input type="tel" id="new-biz-phone" required placeholder="+52 55 1234 5678" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Correo Electrónico</label>
-                <input type="email" id="new-biz-email" placeholder="contacto@negocio.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="email" id="new-biz-email" placeholder="contacto@negocio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 mb-1">Dirección Física</label>
-              <input type="text" id="new-biz-address" placeholder="Calle, Número, Colonia" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <input type="text" id="new-biz-address" placeholder="Ej. 100m Norte de la Iglesia, Local #3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
             </div>
 
             <div>
@@ -1317,7 +1322,7 @@ class App {
         image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
         coverImage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
         services: [
-          { id: `srv-${Date.now()}-1`, name: 'Servicio Inicial Estándar', duration: 30, price: 150, description: 'Servicio principal del establecimiento.' }
+          { id: `srv-${Date.now()}-1`, name: 'Servicio Inicial Estándar', duration: 30, price: 10000, description: 'Servicio principal del establecimiento.' }
         ]
       });
 
