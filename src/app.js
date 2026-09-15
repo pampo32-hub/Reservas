@@ -557,9 +557,20 @@ class App {
                 Buscar
               </button>
             </div>
+
+            <!-- Mini Banner de Acceso / Registro para Negocios en Hero -->
+            <div class="mt-6 inline-flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-slate-600 bg-white/90 backdrop-blur-md py-2 px-4 rounded-2xl border border-slate-200 shadow-xs">
+              <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                <i class="fas fa-store text-indigo-600"></i> ¿Tienes un negocio o prestas servicios?
+              </span>
+              <button id="hero-register-biz-btn" class="font-black text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-2 flex items-center gap-1 transition-colors">
+                ¡Publica tu catálogo y recibe citas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
+              </button>
+            </div>
           </div>
         </section>
 
+        <!-- Category Filter Pills -->
         <!-- 3. Filtro por Categorías -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div class="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
@@ -575,6 +586,7 @@ class App {
           </div>
         </div>
 
+        <!-- Business Cards Grid -->
         <!-- 4. Catálogo de Establecimientos -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
           <div class="flex items-center justify-between mb-6">
@@ -725,6 +737,7 @@ class App {
     });
 
     // Listeners para Registro / Login de Negocios
+    document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
   }
@@ -3294,7 +3307,6 @@ class App {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
                     <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
                     <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                       <option value="belleza">Belleza y Barbería</option>

@@ -125,7 +125,7 @@ export async function sendBookingConfirmationWhatsApp(appointment, business) {
 Hola *${clientName}*, tu reserva en *${businessName}* ha sido registrada con éxito:
 
 📋 *Detalles del Turno:*
-💈 *Servicio:* ${serviceName}
+✨ *Servicio:* ${serviceName}
 📅 *Fecha:* ${dateStr}
 ⏰ *Hora:* ${timeStr} (${durationStr})
 💰 *Total en Local:* ${priceStr}
