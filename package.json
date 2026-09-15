@@ -1,7 +1,7 @@
 {
-  "name": "turnoya-reservas",
+  "name": "reservas-cr",
   "version": "1.0.0",
-  "description": "Plataforma de Directorio de Negocios y Reservas Online conectada a Neon PostgreSQL",
+  "description": "Plataforma de Directorio de Negocios y Reservas Online en Costa Rica conectada a PostgreSQL",
   "main": "server.js",
   "type": "module",
   "scripts": {

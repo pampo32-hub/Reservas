@@ -879,7 +879,7 @@ app.get('/api/notifications-status', (req, res) => {
     email: {
       provider: 'Resend',
       status: hasResend ? 'configured' : 'missing_key',
-      from: process.env.RESEND_FROM_EMAIL || 'TurnoYa Reservas <onboarding@resend.dev>',
+      from: process.env.RESEND_FROM_EMAIL || 'Reservas CR <onboarding@resend.dev>',
       note: 'En modo prueba gratuito de Resend (resend.dev), los correos se entregan al correo registrado de la cuenta Resend. Para clientes externos, vincula un dominio en resend.com.'
     },
     whatsapp: {

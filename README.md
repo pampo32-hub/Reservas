@@ -1,6 +1,6 @@
-# TurnoYa - Plataforma de Directorio de Negocios y Reservas Online
+# Reservas CR - Plataforma de Directorio de Negocios y Citas Online
 
-TurnoYa es una aplicación web interactiva que conecta negocios locales (barberías, clínicas, spas, talleres, etc.) con clientes, permitiendo la gestión integral de catálogos, horarios de atención y reservas en tiempo real.
+Reservas CR es una aplicación web interactiva que conecta negocios locales en Costa Rica (barberías, clínicas, spas, talleres, etc.) con clientes, permitiendo la gestión integral de catálogos, horarios de atención y reservas en tiempo real.
 
 ## 🚀 Características
 

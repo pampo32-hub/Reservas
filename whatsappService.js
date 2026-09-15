@@ -138,7 +138,7 @@ ${appointment.notes ? `📝 *Notas:* "${appointment.notes}"\n` : ''}
 Puedes reprogramar o consultar tus citas ingresando a tu perfil en:
 ${APP_URL}/#/mis-citas
 
-_¡Gracias por reservar con TurnoYa Costa Rica!_ 🇨🇷`;
+_¡Gracias por reservar con Reservas CR!_ 🇨🇷`;
 
   try {
     console.log(`📲 Enviando WhatsApp de confirmación a: ${toWhatsApp}...`);

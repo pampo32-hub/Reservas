@@ -5,7 +5,7 @@ dotenv.config();
 
 const resendApiKey = process.env.RESEND_API_KEY || ['re_', 'GnYg1Aqq_', 'GPRjZqRkrqcXKNZeNT4CHY3i'].join('');
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'TurnoYa Reservas <onboarding@resend.dev>';
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Reservas CR <onboarding@resend.dev>';
 const APP_URL = process.env.APP_URL || 'https://reservas-1cic.onrender.com';
 
 /**

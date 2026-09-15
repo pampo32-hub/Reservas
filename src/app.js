@@ -1,5 +1,5 @@
-// Controlador principal de la aplicación (TurnoYa - Directorio & Reservas)
-import { storage } from './services/storage.js';
+// Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
+import storage from './services/storage.js';
 
 class App {
   constructor() {
@@ -237,13 +237,13 @@ class App {
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
-          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="TurnoYa Costa Rica (Triple clic: Acceso Developer)">
+          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <i class="fas fa-calendar-check text-xl"></i>
             </div>
             <div>
-              <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">TurnoYa</span>
-              <span class="text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Reservas Costa Rica 🇨🇷</span>
+              <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
+              <span class="text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Citas en Costa Rica 🇨🇷</span>
             </div>
           </div>
 
@@ -564,7 +564,7 @@ class App {
                 </h2>
                 
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg">
-                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>TurnoYa</strong> tienes tu página propia con catálogo, precios y turnos listos para compartir.
+                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>Reservas CR</strong> tienes tu página propia con catálogo, precios y turnos listos para compartir.
                 </p>
 
                 <!-- Beneficios Rápidos (2x2 Compacto) -->
@@ -634,7 +634,7 @@ class App {
                       </div>
                       <div>
                         <h4 class="text-xs font-extrabold text-white">Tu Negocio Aquí</h4>
-                        <p class="text-[10px] text-slate-400">turnoya.cr/#/negocio/tu-local</p>
+                        <p class="text-[10px] text-slate-400">reservas.cr/#/negocio/tu-local</p>
                       </div>
                     </div>
                     <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">Activo 24/7</span>
@@ -2428,7 +2428,7 @@ class App {
             <i class="fas fa-lock"></i>
           </div>
           <h2 class="text-xl font-bold text-slate-800 mb-2">Acceso Restringido</h2>
-          <p class="text-sm text-slate-500 mb-6">Esta sección es de uso exclusivo para el equipo de desarrollo y administración de TurnoYa.</p>
+          <p class="text-sm text-slate-500 mb-6">Esta sección es de uso exclusivo para el equipo de desarrollo y administración de Reservas CR.</p>
           <button id="dev-back-home-btn" class="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition-all">
             Ir al Inicio
           </button>
@@ -4341,7 +4341,7 @@ class App {
 function startApp() {
   const app = new App();
   app.init();
-  window.__turnoYaApp = app;
+  window.__reservasCRApp = app;
 }
 
 if (document.readyState === 'loading') {
