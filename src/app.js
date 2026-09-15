@@ -1,6 +1,9 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
+// FLAG TEMPORAL: Cambiar a true cuando se desee reactivar el registro de usuarios y negocios
+const REGISTRATION_ENABLED = false;
+
 class App {
   constructor() {
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
@@ -419,10 +422,12 @@ class App {
                 <span>Iniciar Sesión</span>
               </button>
 
+              ${REGISTRATION_ENABLED ? `
               <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all">
                 <i class="fas fa-user-plus"></i>
                 <span>Registrarse</span>
               </button>
+              ` : ''}
             ` : ''}
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
@@ -842,20 +847,21 @@ class App {
 
                 <!-- Botones de Acción -->
                 <div class="flex flex-wrap items-center gap-2.5 pt-1.5">
+                  ${REGISTRATION_ENABLED ? `
                   <button id="cta-register-biz-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
                     <i class="fas fa-plus-circle text-xs"></i>
                     <span>Registrar Mi Negocio</span>
                   </button>
+                  ` : ''}
 
-                  <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
-                    <i class="fas fa-tags text-amber-400 text-xs"></i>
-                    <span>Ver Planes ($8, $15, $25)</span>
-                    <span>Ver Planes</span>
+                  <button id="cta-login-biz-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
+                    <i class="fas fa-store text-xs"></i>
+                    <span>Acceso Comercios</span>
                   </button>
                   
-                  <button id="cta-login-biz-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
-                    <i class="fas fa-store text-xs"></i>
-                    <span>Ya tengo cuenta</span>
+                  <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
+                    <i class="fas fa-tags text-amber-400 text-xs"></i>
+                    <span>Ver Planes</span>
                   </button>
                 </div>
               </div>
@@ -938,6 +944,7 @@ class App {
               </button>
             </div>
 
+            ${REGISTRATION_ENABLED ? `
             <!-- Mini Banner de Acceso / Registro para Negocios en Hero -->
             <div class="mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 bg-white/90 backdrop-blur-md py-1.5 px-3.5 rounded-2xl border border-slate-200 shadow-2xs">
               <span class="font-bold text-slate-800 flex items-center gap-1.5">
@@ -947,6 +954,7 @@ class App {
                 ¡Publica tu catálogo y recibe reservas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
               </button>
             </div>
+            ` : ''}
           </div>
         </section>
 
@@ -4966,6 +4974,11 @@ class App {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
+    // Si el registro está deshabilitado temporalmente, forzar modo login
+    if (!REGISTRATION_ENABLED) {
+      mode = 'login';
+    }
+
     const currentClient = storage.getClientUser();
     const categories = storage.getCategories().filter(c => c.id !== 'all');
     const plans = storage.getSubscriptionPlans();
@@ -4997,6 +5010,7 @@ class App {
           <!-- Pestañas de Modo (Iniciar Sesión / Registrarse) y Selección de Rol (Cliente / Negocio) -->
           <div class="p-5 pb-0 shrink-0 space-y-3 bg-slate-50 border-b border-slate-200/80">
             <!-- Tabs Modo: Iniciar Sesión / Registrarse -->
+            ${REGISTRATION_ENABLED ? `
             <div class="flex p-1 bg-slate-200/80 rounded-2xl">
               <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
                 <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? 'text-blue-600' : ''}"></i> Iniciar Sesión
@@ -5005,6 +5019,12 @@ class App {
                 <i class="fas fa-user-plus text-xs ${mode === 'register' ? 'text-blue-600' : ''}"></i> Registrarse
               </button>
             </div>
+            ` : `
+            <!-- Registro temporalmente oculto: Solo Iniciar Sesión -->
+            <div class="py-2 px-3 bg-blue-50/80 rounded-xl border border-blue-100 text-center text-xs font-extrabold text-blue-800 flex items-center justify-center gap-2">
+              <i class="fas fa-lock text-blue-600"></i> Acceso a Cuentas Existentes
+            </div>
+            `}
 
             <!-- Tabs Rol: Cliente / Negocio -->
             <div class="flex gap-2 pb-3">
