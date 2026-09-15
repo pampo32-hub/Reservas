@@ -78,8 +78,13 @@ export async function initDatabase() {
         client_email VARCHAR(150),
         notes TEXT,
         status VARCHAR(50) DEFAULT 'confirmed',
+        whatsapp_opt_in BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN DEFAULT TRUE;
     `);
 
     // 4. Crear tabla de usuarios dueños de negocio
@@ -102,12 +107,14 @@ export async function initDatabase() {
         phone VARCHAR(50) NOT NULL,
         email VARCHAR(150),
         password VARCHAR(255),
+        whatsapp_opt_in BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
 
     await client.query(`
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS password VARCHAR(255);
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN DEFAULT TRUE;
     `);
 
     console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');
@@ -198,8 +205,8 @@ export async function initDatabase() {
         INSERT INTO reservas_appointments (
           id, business_id, service_id, service_name, service_price,
           service_duration, date, time, client_name, client_phone,
-          client_email, notes, status
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          client_email, notes, status, whatsapp_opt_in
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         ON CONFLICT (id) DO UPDATE SET
           business_id = EXCLUDED.business_id,
           service_id = EXCLUDED.service_id,
@@ -212,11 +219,12 @@ export async function initDatabase() {
           client_phone = EXCLUDED.client_phone,
           client_email = EXCLUDED.client_email,
           notes = EXCLUDED.notes,
-          status = EXCLUDED.status
+          status = EXCLUDED.status,
+          whatsapp_opt_in = EXCLUDED.whatsapp_opt_in
       `, [
         apt.id, apt.businessId, apt.serviceId, apt.serviceName, apt.servicePrice,
         apt.serviceDuration, apt.date, apt.time, apt.clientName, apt.clientPhone,
-        apt.clientEmail, apt.notes, apt.status
+        apt.clientEmail, apt.notes, apt.status, apt.whatsappOptIn !== false
       ]);
     }
 

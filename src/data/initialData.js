@@ -43,12 +43,12 @@ export const INITIAL_BUSINESSES = [
     isDemo: true,
     features: ['Sinpe Móvil', 'Parqueo Gratis', 'Aire Acondicionado', 'Café de Cortesía', 'WiFi Gratis'],
     schedule: {
-      days: [1, 2, 3, 4, 5, 6],
+      days: [1, 2, 3, 4, 5, 6], // 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
       openTime: '09:00',
       closeTime: '20:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 30
+      slotDuration: 30 // minutos
     },
     services: [
       { id: 'srv-101', name: 'Corte de Cabello Clásico', duration: 30, price: 7000, description: 'Corte personalizado, lavado y peinado con cera mate.' },
@@ -226,7 +226,6 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-7',
     name: 'Serenity Spa & Masajes Holísticos',
-    category: 'spa',
     category: 'spa',
     categoryLabel: 'Spa, Masajes y Estética',
     rating: 5.0,
@@ -423,7 +422,6 @@ export const INITIAL_BUSINESSES = [
     id: 'biz-13',
     name: 'AutoCheck Taller Mecánico Especializado',
     category: 'autos',
-    categoryLabel: 'Talleres y Autos',
     categoryLabel: 'Talleres y Automotriz',
     rating: 4.7,
     reviewsCount: 76,

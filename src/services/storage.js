@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   APPOINTMENTS: 'directorio_appointments_v1',
   ACTIVE_BUSINESS_ID: 'directorio_active_biz_id',
   BIZ_USER: 'directorio_biz_user_session',
+  CLIENT_USER: 'directorio_client_user_session'
   CLIENT_USER: 'directorio_client_user_session',
   DEV_USER: 'directorio_dev_user_session'
 };
@@ -265,6 +266,7 @@ class StorageService {
       const res = await fetch(`${this.apiBase}/auth/business/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
         body: JSON.stringify({ email: cleanEmail, password: cleanPass })
       });
       const data = await res.json();
@@ -287,9 +289,12 @@ class StorageService {
       return data;
     }
 
+    // Fallback local: aceptar demo
+    const user = { id: 'usr-demo', name: 'Dueño Negocio Demo', email, businessId: this.getActiveBusinessId() };
     // Fallback local
     const user = { id: 'usr-demo', name: 'Dueño Negocio Demo', email: cleanEmail, businessId: this.getActiveBusinessId() };
     this.setBusinessUser(user);
+    return { success: true, user };
     return { success: true, role: 'business', user };
   }
 
@@ -335,12 +340,12 @@ class StorageService {
     localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
   }
 
-  async registerClient(name, phone, email, password) {
+  async registerClient(name, phone, email, password, whatsappOptIn = true) {
     if (this.isOnlineApi) {
       const res = await fetch(`${this.apiBase}/auth/client/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email, password })
+        body: JSON.stringify({ name, phone, email, password, whatsappOptIn })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al registrar cliente.');
@@ -348,7 +353,7 @@ class StorageService {
       return data.client;
     }
 
-    const client = { id: `cli-${Date.now()}`, name, phone, email };
+    const client = { id: `cli-${Date.now()}`, name, phone, email, whatsappOptIn };
     this.setClientUser(client);
     return client;
   }
@@ -402,12 +407,12 @@ class StorageService {
     return { success: true, role: 'client', client };
   }
 
-  async loginOrRegisterClient(name, phone, email) {
+  async loginOrRegisterClient(name, phone, email, whatsappOptIn = true) {
     if (this.isOnlineApi) {
       const res = await fetch(`${this.apiBase}/auth/client/login-or-register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email })
+        body: JSON.stringify({ name, phone, email, whatsappOptIn })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error en acceso de cliente.');
@@ -415,7 +420,7 @@ class StorageService {
       return data.client;
     }
 
-    const client = { id: `cli-${Date.now()}`, name, phone, email };
+    const client = { id: `cli-${Date.now()}`, name, phone, email, whatsappOptIn };
     this.setClientUser(client);
     return client;
   }
@@ -738,6 +743,7 @@ class StorageService {
   }
 
   // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL ---
+  getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30) {
   getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null) {
     const business = this.getBusinessById(businessId);
     if (!business || !business.schedule) return [];
@@ -769,6 +775,7 @@ class StorageService {
     const serviceDur = parseInt(serviceDurationMinutes, 10) || 30;
 
     const existingAppointments = this.getAppointmentsByBusiness(businessId).filter(
+      appt => appt.date === dateString && appt.status !== 'cancelled'
       appt => appt.date === dateString && appt.status !== 'cancelled' && (!excludeAppointmentId || appt.id !== excludeAppointmentId)
     );
 

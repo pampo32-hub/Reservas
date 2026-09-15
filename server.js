@@ -34,7 +34,7 @@ app.post('/api/auth/developer/login', async (req, res) => {
     const cleanEmail = (rawEmail || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Master Developer Check (Fail-safe)
+    // 1. Master Developer Check (Fail-safe)
     const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanEmail);
     const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
     if (isMasterEmail && isMasterPass) {
@@ -116,7 +116,12 @@ app.post('/api/auth/business/login', async (req, res) => {
         return res.json({
           success: true,
           role: 'developer',
-          user: { id: dev.id, name: dev.name, email: dev.email, role: 'developer' }
+          user: {
+            id: dev.id,
+            name: dev.name,
+            email: dev.email,
+            role: 'developer'
+          }
         });
       }
     } catch (e) {
@@ -258,10 +263,10 @@ app.post('/api/auth/business/register', async (req, res) => {
   }
 });
 
-// 3. Registro de Cliente con Contraseña
+// 3. Registro de Cliente con Contraseña (con consentimiento WhatsApp)
 app.post('/api/auth/client/register', async (req, res) => {
   try {
-    const { name, phone, email, password } = req.body;
+    const { name, phone, email, password, whatsappOptIn = true } = req.body;
     if (!name || !phone || !password) {
       return res.status(400).json({ error: 'Nombre, Teléfono y Contraseña son obligatorios.' });
     }
@@ -282,15 +287,16 @@ app.post('/api/auth/client/register', async (req, res) => {
 
     const newClientId = `cli-${Date.now()}`;
     await pool.query(`
-      INSERT INTO reservas_clients (id, name, phone, email, password)
-      VALUES ($1, $2, $3, $4, $5)
-    `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), password.trim()]);
+      INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), password.trim(), Boolean(whatsappOptIn)]);
 
     const clientUser = {
       id: newClientId,
       name: name.trim(),
       phone: phone.trim(),
-      email: (email || '').trim()
+      email: (email || '').trim(),
+      whatsappOptIn: Boolean(whatsappOptIn)
     };
 
     res.json({ success: true, client: clientUser });
@@ -301,7 +307,6 @@ app.post('/api/auth/client/register', async (req, res) => {
 });
 
 // 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña)
-// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña) - Con Detección Inteligente de Developer
 // 4. Iniciar Sesión de Cliente (con Detección Inteligente de Negocios y Developer)
 app.post('/api/auth/client/login', async (req, res) => {
   try {
@@ -410,14 +415,14 @@ app.post('/api/auth/client/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error en login de cliente:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión de cliente.' });
+    res.status(500).json({ error: 'Error en el servidor al autenticar.' });
   }
 });
 
-// 5. Login / Identificación Rápida de Cliente (Al agendar)
+// 5. Login / Identificación Rápida de Cliente (Al agendar con consentimiento WhatsApp)
 app.post('/api/auth/client/login-or-register', async (req, res) => {
   try {
-    const { name, phone, email } = req.body;
+    const { name, phone, email, whatsappOptIn = true } = req.body;
     if (!name || !phone) {
       return res.status(400).json({ error: 'Nombre y Teléfono son requeridos.' });
     }
@@ -431,21 +436,23 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
     let clientUser;
     if (existing.rows.length > 0) {
       clientUser = existing.rows[0];
-      await pool.query('UPDATE reservas_clients SET name = $1, email = $2 WHERE id = $3', [name.trim(), (email || clientUser.email).trim(), clientUser.id]);
+      await pool.query('UPDATE reservas_clients SET name = $1, email = $2, whatsapp_opt_in = COALESCE($3, whatsapp_opt_in) WHERE id = $4', [name.trim(), (email || clientUser.email).trim(), Boolean(whatsappOptIn), clientUser.id]);
       clientUser.name = name.trim();
       clientUser.email = (email || clientUser.email).trim();
+      clientUser.whatsappOptIn = Boolean(whatsappOptIn);
     } else {
       const newClientId = `cli-${Date.now()}`;
       await pool.query(`
-        INSERT INTO reservas_clients (id, name, phone, email)
-        VALUES ($1, $2, $3, $4)
-      `, [newClientId, name.trim(), phone.trim(), (email || '').trim()]);
+        INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), Boolean(whatsappOptIn)]);
 
       clientUser = {
         id: newClientId,
         name: name.trim(),
         phone: phone.trim(),
-        email: (email || '').trim()
+        email: (email || '').trim(),
+        whatsappOptIn: Boolean(whatsappOptIn)
       };
     }
 
@@ -457,6 +464,7 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
 });
 
 // ==========================================
+// ENDPOINTS DE NEGOCIOS Y SERVICIOS
 // ==========================================
 // ENDPOINTS DE NEGOCIOS, CATEGORÍAS Y SERVICIOS
 // ==========================================
@@ -502,7 +510,8 @@ app.get('/api/appointments', async (req, res) => {
       clientPhone: a.client_phone,
       clientEmail: a.client_email,
       notes: a.notes,
-      status: a.status
+      status: a.status,
+      whatsappOptIn: a.whatsapp_opt_in !== false
     }));
     res.json(appointments);
   } catch (error) {
@@ -726,6 +735,7 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
       clientEmail: a.client_email,
       notes: a.notes,
       status: a.status,
+      whatsappOptIn: a.whatsapp_opt_in !== false,
       createdAt: a.created_at
     }));
 
@@ -767,6 +777,7 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       clientEmail: a.client_email,
       notes: a.notes,
       status: a.status,
+      whatsappOptIn: a.whatsapp_opt_in !== false,
       createdAt: a.created_at
     }));
 
@@ -782,29 +793,30 @@ app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
     const newId = `apt-${Date.now().toString().slice(-6)}`;
+    const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
     await pool.query(`
       INSERT INTO reservas_appointments (
         id, business_id, service_id, service_name, service_price,
         service_duration, date, time, client_name, client_phone,
-        client_email, notes, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        client_email, notes, status, whatsapp_opt_in
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     `, [
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
       a.serviceDuration, a.date, a.time, a.clientName, a.clientPhone,
-      a.clientEmail || '', a.notes || '', a.status || 'confirmed'
+      a.clientEmail || '', a.notes || '', a.status || 'confirmed', optIn
     ]);
 
     // Registrar o actualizar automáticamente el cliente
     if (a.clientName && a.clientPhone) {
       await pool.query(`
-        INSERT INTO reservas_clients (id, name, phone, email)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in)
+        VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (id) DO NOTHING
-      `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '']);
+      `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '', optIn]);
     }
 
-    res.status(201).json({ id: newId, ...a, status: a.status || 'confirmed' });
+    res.status(201).json({ id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' });
   } catch (error) {
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });

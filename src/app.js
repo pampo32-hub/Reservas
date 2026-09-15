@@ -3,6 +3,7 @@ import { storage } from './services/storage.js';
 
 class App {
   constructor() {
+    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings'
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
@@ -81,6 +82,8 @@ class App {
     }, 3500);
   }
 
+  // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
+  // --- HEADER / NAVBAR (BOTONES INICIAR SESIÓN Y REGISTRARSE) ---
   // --- HEADER / NAVBAR ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
@@ -94,6 +97,8 @@ class App {
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
+          <!-- Logo -->
+          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
           <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="TurnoYa Costa Rica (Triple clic: Acceso Developer)">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -114,6 +119,7 @@ class App {
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
             ${devUser ? `
+              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md">
               <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in">
                 <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
                   <i class="fas fa-shield-alt text-xs"></i>
@@ -126,6 +132,7 @@ class App {
             ` : ''}
 
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
+            ${clientUser ? `
             ${clientUser && !devUser ? `
               <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
@@ -140,6 +147,7 @@ class App {
             ` : ''}
 
             <!-- 2. SI EL NEGOCIO ESTÁ LOGUEADO -->
+            ${bizUser ? `
             ${bizUser && !devUser ? `
               <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl">
                 <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
@@ -153,6 +161,7 @@ class App {
             ` : ''}
 
             <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
+            ${!clientUser && !bizUser ? `
             ${!clientUser && !bizUser && !devUser ? `
               <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
                 <i class="fas fa-sign-in-alt text-blue-600"></i>
@@ -166,6 +175,7 @@ class App {
             ` : ''}
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
+            ${clientUser && !bizUser ? `
             ${clientUser && !bizUser && !devUser ? `
               <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all" title="Acceso al panel de negocio">
                 <i class="fas fa-store text-indigo-600"></i>
@@ -178,6 +188,7 @@ class App {
     `;
 
     // Eventos de Navegación y Auth
+    document.getElementById('nav-logo-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => {
       this.logoClickCount++;
       clearTimeout(this.logoClickTimer);
@@ -825,6 +836,22 @@ class App {
                 ></textarea>
               </div>
 
+              <!-- Consentimiento previo (Opt-in) Notificaciones WhatsApp -->
+              <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
+                <label class="flex items-start gap-3 cursor-pointer select-none">
+                  <input type="checkbox" id="client-whatsapp-optin" checked class="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300">
+                  <div class="text-xs text-slate-700 leading-snug">
+                    <div class="font-bold text-emerald-800 flex items-center gap-1.5 mb-0.5">
+                      <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
+                      <span>Confirmación de Reserva por WhatsApp</span>
+                    </div>
+                    <p class="text-slate-600 text-[11px]">
+                      Acepto recibir el mensaje de confirmación de esta reserva y recordatorios del turno por WhatsApp a mi número de teléfono.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
               <!-- Submit button -->
               <button 
                 type="submit" 
@@ -869,9 +896,10 @@ class App {
       const clientPhone = document.getElementById('client-phone').value;
       const clientEmail = document.getElementById('client-email').value;
       const clientNotes = document.getElementById('client-notes').value;
+      const whatsappOptIn = document.getElementById('client-whatsapp-optin')?.checked ?? true;
 
       // Guardar o actualizar sesión de cliente
-      await storage.loginOrRegisterClient(clientName, clientPhone, clientEmail);
+      await storage.loginOrRegisterClient(clientName, clientPhone, clientEmail, whatsappOptIn);
       this.renderHeader();
 
       const newAppointment = await storage.createAppointment({
@@ -886,6 +914,7 @@ class App {
         clientPhone,
         clientEmail,
         notes: clientNotes,
+        whatsappOptIn,
         status: 'confirmed'
       });
 
@@ -933,6 +962,18 @@ class App {
               <span class="font-black text-sm text-slate-900">${this.formatColones(appointment.servicePrice)}</span>
             </div>
           </div>
+
+          ${appointment.whatsappOptIn !== false ? `
+            <div class="mt-4 p-3 bg-emerald-50/90 rounded-2xl border border-emerald-200 flex items-center gap-3 text-xs text-emerald-800 font-medium text-left animate-fade-in">
+              <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 text-base shadow-sm">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <div>
+                <strong class="block text-emerald-950 font-bold text-[11px] uppercase tracking-wider">Confirmación WhatsApp enviada</strong>
+                <span class="text-[11px] text-emerald-700">Se enviará el comprobante y recordatorios a tu número <strong>${appointment.clientPhone}</strong>.</span>
+              </div>
+            </div>
+          ` : ''}
 
           <div class="mt-6 flex flex-col gap-2">
             <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
@@ -1208,11 +1249,13 @@ class App {
   async renderClientBookingsView(container) {
     const clientUser = storage.getClientUser();
     if (!clientUser) {
+      this.renderClientAuthModal();
       this.renderAuthModal({ mode: 'login', role: 'client' });
       this.navigateTo('directory');
       return;
     }
 
+    const appointments = await storage.getClientAppointmentsAsync(clientUser.phone);
     const allAppointments = await storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email);
     const filter = this.clientAppointmentFilter || 'all';
 
@@ -1231,12 +1274,17 @@ class App {
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
+            <span class="text-xs font-bold text-blue-600 uppercase">Portal de Cliente</span>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Portal de Cliente</span>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
+            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone}</p>
             <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
+          <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
+            <i class="fas fa-sign-out-alt mr-1"></i> Cerrar Sesión
           <div class="flex items-center gap-2">
             <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
               <i class="fas fa-plus mr-1"></i> Nueva Cita
@@ -1264,10 +1312,12 @@ class App {
         </div>
 
         ${appointments.length === 0 ? `
+          <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8">
           <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 shadow-xs">
             <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
               <i class="far fa-calendar-alt"></i>
             </div>
+            <h3 class="text-lg font-bold text-slate-800">No tienes reservas activas</h3>
             <h3 class="text-lg font-bold text-slate-800">No hay citas en esta categoría</h3>
             <p class="text-xs text-slate-500 mt-1">Explora los comercios disponibles y agenda tu primer turno.</p>
             <button id="go-explore-btn" class="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20">
@@ -1280,11 +1330,16 @@ class App {
               <div class="p-5 sm:p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col gap-4">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <div class="flex items-center gap-2 mb-1">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
                       <span class="font-black text-lg text-slate-900">${apt.businessName || 'Comercio'}</span>
                       <span class="badge-status badge-status-${apt.status}">
                         ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
                       </span>
+                      ${apt.whatsappOptIn !== false ? `
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          <i class="fab fa-whatsapp text-emerald-600"></i> WhatsApp
+                        </span>
+                      ` : ''}
                     </div>
                     <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
@@ -1521,14 +1576,17 @@ class App {
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 class="text-lg font-bold text-slate-900">Agenda y Reservas</h2>
+              <p class="text-xs text-slate-500">Gestiona las reservas de tus clientes y cambia sus estados en tiempo real.</p>
               <p class="text-xs text-slate-500">Gestiona, acepta, reprograma, cancela y actualiza reservas en tiempo real.</p>
             </div>
 
+            <button id="add-manual-appointment-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
             <button id="add-manual-appointment-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20">
               <i class="fas fa-plus-circle"></i> Nueva Reserva Manual
             </button>
           </div>
 
+          ${appointments.length === 0 ? `
           <!-- Filtros de Estado para el Dueño -->
           <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
             <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
@@ -1551,6 +1609,7 @@ class App {
           ${filteredAppointments.length === 0 ? `
             <div class="text-center py-12 text-slate-400">
               <i class="far fa-calendar-times text-4xl mb-2"></i>
+              <p class="text-sm font-semibold">Aún no hay reservas registradas para este negocio.</p>
               <p class="text-sm font-semibold">No hay reservas en esta categoría.</p>
             </div>
           ` : `
@@ -1563,10 +1622,12 @@ class App {
                     <th class="py-3 px-4">Servicio</th>
                     <th class="py-3 px-4">Monto</th>
                     <th class="py-3 px-4">Estado</th>
+                    <th class="py-3 px-4 text-right">Acciones</th>
                     <th class="py-3 px-4 text-right">Acciones de Gestión</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
+                  ${appointments.map(apt => `
                   ${filteredAppointments.map(apt => `
                     <tr class="hover:bg-slate-50/80 transition-colors">
                       <td class="py-3.5 px-4 font-bold text-slate-900">
@@ -1578,6 +1639,7 @@ class App {
                         <div class="text-slate-400 text-[11px]">${apt.clientPhone}</div>
                       </td>
                       <td class="py-3.5 px-4 font-medium text-slate-700">
+                        ${apt.serviceName}
                         <div class="font-semibold text-slate-800">${apt.serviceName}</div>
                         ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
                       </td>
@@ -1590,6 +1652,9 @@ class App {
                         </span>
                       </td>
                       <td class="py-3.5 px-4 text-right space-x-1">
+                        ${apt.status !== 'completed' ? `
+                          <button class="status-change-btn p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg" data-apt-id="${apt.id}" data-status="completed" title="Marcar como completada">
+                            <i class="fas fa-check"></i>
                         <!-- Aceptar / Confirmar -->
                         ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
                           <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
@@ -1611,10 +1676,13 @@ class App {
 
                         <!-- Cancelar -->
                         ${apt.status !== 'cancelled' ? `
+                          <button class="status-change-btn p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
+                            <i class="fas fa-ban"></i>
                           <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
                             <i class="fas fa-ban"></i> Cancelar
                           </button>
                         ` : ''}
+                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg" data-apt-id="${apt.id}" title="Eliminar registro">
 
                         <!-- Eliminar -->
                         <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center" data-apt-id="${apt.id}" title="Eliminar registro">
@@ -1875,6 +1943,7 @@ class App {
         const aptId = btn.getAttribute('data-apt-id');
         const newStatus = btn.getAttribute('data-status');
         await storage.updateAppointmentStatus(aptId, newStatus);
+        this.showToast(`Estado de cita actualizado a: ${newStatus}`, 'info');
         const statusMsgs = {
           confirmed: '¡Reserva aceptada y confirmada con éxito!',
           completed: '¡Reserva marcada como completada / atendida!',
@@ -1888,6 +1957,7 @@ class App {
     document.querySelectorAll('.delete-apt-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
+        if (confirm('¿Deseas eliminar este registro de reserva?')) {
         if (confirm('¿Deseas eliminar este registro de reserva permanentemente?')) {
           await storage.deleteAppointment(aptId);
           this.showToast('Reserva eliminada.', 'info');
@@ -2726,18 +2796,32 @@ class App {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Crear Contraseña *</label>
-                    <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   </div>
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
-                    <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   </div>
                 </div>
 
                 <!-- Mensaje Inline de Validación de Contraseñas (Aparece aquí mismo) -->
                 <div id="cli-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
+
+                <!-- Consentimiento previo (Opt-in) WhatsApp -->
+                <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
+                  <label class="flex items-start gap-3 cursor-pointer select-none">
+                    <input type="checkbox" id="cli-reg-whatsapp-optin" checked class="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300">
+                    <div class="text-xs text-slate-700 leading-relaxed">
+                      <div class="font-bold text-emerald-800 flex items-center gap-1.5 mb-0.5">
+                        <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
+                        <span>Notificaciones de Citas por WhatsApp (Opt-in)</span>
+                      </div>
+                      <p class="text-slate-600 text-[11px]">
+                        Acepto recibir mensajes de confirmación de mis reservas y recordatorios de turnos vía WhatsApp a mi número telefónico.
+                      </p>
+                    </div>
+                  </label>
+                </div>
 
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
                   <i class="fas fa-user-plus"></i>
@@ -3116,8 +3200,10 @@ class App {
         return;
       }
 
+      const whatsappOptIn = document.getElementById('cli-reg-whatsapp-optin')?.checked ?? true;
+
       try {
-        await storage.registerClient(name, phone, email, password);
+        await storage.registerClient(name, phone, email, password, whatsappOptIn);
         this.showToast('¡Cuenta de cliente creada exitosamente!', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
@@ -3224,7 +3310,16 @@ class App {
         return;
       }
 
+      const catLabels = {
+        belleza: 'Belleza y Barbería',
+        salud: 'Salud y Bienestar',
+        spa: 'Spa y Masajes',
+        fitness: 'Fitness y Deporte',
+        autos: 'Talleres y Autos',
+        fotografia: 'Fotografía y Eventos'
+      };
       // Procesar Categoría (Estándar o Personalizada)
+      let category = catSelectVal;
       let finalCategory = catSelectVal;
       let categoryLabel = '';
       let isCustomCategory = false;
@@ -3236,6 +3331,8 @@ class App {
           document.getElementById('new-biz-custom-cat')?.focus();
           return;
         }
+        category = customName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        if (!category) category = `cat-${Date.now()}`;
         finalCategory = customName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         if (!finalCategory) finalCategory = `cat-${Date.now()}`;
         categoryLabel = customName;
@@ -3243,11 +3340,14 @@ class App {
       } else {
         const catObj = storage.getCategories().find(c => c.id === catSelectVal);
         categoryLabel = catObj ? catObj.name : catSelectVal;
+        categoryLabel = catObj ? catObj.name : (catLabels[catSelectVal] || catSelectVal);
       }
 
       try {
         await storage.registerBusinessWithUser(ownerName, email, password, {
           name,
+          category,
+          categoryLabel: catLabels[category] || 'Servicios',
           category: finalCategory,
           categoryLabel,
           isCustomCategory,
