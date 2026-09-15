@@ -16,6 +16,26 @@ function formatColones(amount) {
 }
 
 /**
+ * Formatea horas en formato 12 horas AM / PM (ej. 3:00 PM)
+ */
+function formatTime12h(timeStr) {
+  if (!timeStr) return 'Hora por confirmar';
+  const clean = String(timeStr).trim();
+  if (clean.includes('AM') || clean.includes('PM') || clean.includes('am') || clean.includes('pm')) {
+    return clean;
+  }
+  const parts = clean.split(':');
+  if (parts.length < 2) return clean;
+  let hour = parseInt(parts[0], 10);
+  const minute = parts[1].padStart(2, '0');
+  if (isNaN(hour)) return clean;
+  const period = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  return `${hour}:${minute} ${period}`;
+}
+
+/**
  * Envía correo de confirmación de reserva al cliente
  */
 export async function sendBookingConfirmationEmail(appointment, business) {
@@ -33,7 +53,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
   const businessName = business?.name || appointment.businessName || 'Comercio Asociado';
   const serviceName = appointment.serviceName || 'Servicio';
   const dateStr = appointment.date || 'Fecha por confirmar';
-  const timeStr = appointment.time || 'Hora por confirmar';
+  const timeStr = formatTime12h(appointment.time);
   const durationStr = appointment.serviceDuration ? `${appointment.serviceDuration} min` : '30 min';
   const priceStr = formatColones(appointment.servicePrice);
   const appointmentCode = (appointment.id || 'APT-000').toUpperCase();

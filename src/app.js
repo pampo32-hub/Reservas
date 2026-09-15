@@ -44,6 +44,23 @@ class App {
     return '₡' + num.toLocaleString('es-CR', { maximumFractionDigits: 0 });
   }
 
+  formatTime12h(timeStr) {
+    if (!timeStr) return '';
+    const clean = String(timeStr).trim();
+    if (clean.includes('AM') || clean.includes('PM') || clean.includes('am') || clean.includes('pm')) {
+      return clean;
+    }
+    const parts = clean.split(':');
+    if (parts.length < 2) return clean;
+    let hour = parseInt(parts[0], 10);
+    const minute = parts[1].padStart(2, '0');
+    if (isNaN(hour)) return clean;
+    const period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour}:${minute} ${period}`;
+  }
+
   init() {
     this.renderHeader();
     this.renderCurrentView();
@@ -412,7 +429,7 @@ class App {
                       <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
                         <span class="flex items-center gap-1.5 font-medium">
                           <i class="far fa-clock text-blue-600"></i> 
-                          ${biz.schedule ? `${biz.schedule.openTime} - ${biz.schedule.closeTime}` : '08:00 - 18:00'}
+                          ${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}
                         </span>
                         <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
                           ${biz.services ? biz.services.length : 0} servicios
@@ -642,12 +659,12 @@ class App {
                 </div>
                 <div class="flex justify-between py-1.5 border-b border-slate-100">
                   <span class="font-medium">Horario de atención:</span>
-                  <span class="font-bold text-slate-800">${biz.schedule ? `${biz.schedule.openTime} - ${biz.schedule.closeTime}` : '08:00 - 18:00'}</span>
+                  <span class="font-bold text-slate-800">${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}</span>
                 </div>
                 ${biz.schedule && biz.schedule.breakStart ? `
                   <div class="flex justify-between py-1.5 text-amber-700 bg-amber-50 px-2 rounded-lg">
                     <span class="font-medium">Receso / Almuerzo:</span>
-                    <span class="font-bold">${biz.schedule.breakStart} - ${biz.schedule.breakEnd}</span>
+                    <span class="font-bold">${this.formatTime12h(biz.schedule.breakStart)} - ${this.formatTime12h(biz.schedule.breakEnd)}</span>
                   </div>
                 ` : ''}
               </div>
@@ -766,7 +783,7 @@ class App {
                       class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center ${this.bookingState.selectedTime === slot ? 'selected' : ''}"
                       data-slot="${slot}"
                     >
-                      <i class="far fa-clock mr-1 text-[10px]"></i>${slot}
+                      <i class="far fa-clock mr-1 text-[10px]"></i>${this.formatTime12h(slot)}
                     </button>
                   `).join('')}
                 </div>
@@ -941,7 +958,7 @@ class App {
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Fecha y Hora:</span>
-              <span class="font-bold text-blue-600">${appointment.date} a las ${appointment.time}</span>
+              <span class="font-bold text-blue-600">${appointment.date} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Cliente:</span>
@@ -1041,7 +1058,7 @@ class App {
                 <div>
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Horario Registrado</span>
                   <span class="font-bold text-slate-700"><i class="far fa-calendar mr-1 text-blue-600"></i>${appointment.date}</span>
-                  <span class="font-bold text-slate-700 ml-2"><i class="far fa-clock mr-1 text-blue-600"></i>${appointment.time}</span>
+                  <span class="font-bold text-slate-700 ml-2"><i class="far fa-clock mr-1 text-blue-600"></i>${this.formatTime12h(appointment.time)}</span>
                 </div>
                 <div class="text-right">
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Estado</span>
@@ -1088,7 +1105,7 @@ class App {
                   </label>
                   ${selectedTime ? `
                     <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
-                      Seleccionado: ${selectedTime}
+                      Seleccionado: ${this.formatTime12h(selectedTime)}
                     </span>
                   ` : ''}
                 </div>
@@ -1111,7 +1128,7 @@ class App {
                         class="reschedule-slot-btn py-2 px-2 text-xs font-bold rounded-xl border transition-all ${selectedTime === slot ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:bg-blue-50'}"
                         data-slot="${slot}"
                       >
-                        <i class="far fa-clock mr-1 text-[10px]"></i>${slot}
+                        <i class="far fa-clock mr-1 text-[10px]"></i>${this.formatTime12h(slot)}
                       </button>
                     `).join('')}
                   </div>
@@ -1325,7 +1342,7 @@ class App {
                     <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
                       <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${apt.date}</strong></span>
-                      <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${apt.time}</strong> (${apt.serviceDuration} min)</span>
+                      <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${this.formatTime12h(apt.time)}</strong> (${apt.serviceDuration} min)</span>
                       ${apt.notes ? `<span class="text-slate-400 italic">"${apt.notes}"</span>` : ''}
                     </div>
                   </div>
@@ -1607,7 +1624,7 @@ class App {
                     <tr class="hover:bg-slate-50/80 transition-colors">
                       <td class="py-3.5 px-4 font-bold text-slate-900">
                         <div>${apt.date}</div>
-                        <div class="text-blue-600 text-[11px] font-mono">${apt.time} (${apt.serviceDuration}m)</div>
+                        <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
                       </td>
                       <td class="py-3.5 px-4">
                         <div class="font-bold text-slate-800">${apt.clientName}</div>
@@ -2489,7 +2506,7 @@ class App {
                               </td>
                               <td class="p-3 whitespace-nowrap">
                                 <span class="font-bold text-slate-800 block">${a.date}</span>
-                                <span class="text-[10px] text-blue-600 font-bold">${a.time}</span>
+                                <span class="text-[10px] text-blue-600 font-bold">${this.formatTime12h(a.time)}</span>
                               </td>
                               <td class="p-3 font-bold text-slate-900">
                                 ${this.formatColones(price)}
