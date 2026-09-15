@@ -72,12 +72,29 @@
     </div>
     <h1 class="text-xl sm:text-2xl font-black text-white">Secuencia Publicitaria Oficial (4 Historias Animadas)</h1>
     
-    <!-- Botón Principal de Descarga de Video -->
-    <div class="pt-1 pb-2 flex justify-center">
-      <button id="btn-record-video" onclick="startVideoRecording()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white font-black shadow-xl shadow-emerald-500/30 flex items-center gap-3 transition-transform transform hover:scale-105 cursor-pointer text-sm">
-        <i class="fas fa-video text-lg"></i>
-        <span id="record-btn-text">🎬 Grabar y Descargar Video (MP4 / WebM)</span>
-      </button>
+    <!-- Opciones de Descarga y Acceso Móvil -->
+    <div class="space-y-2 pt-1 pb-2">
+      <!-- Botones de Descarga en Imágenes HD -->
+      <div class="flex flex-wrap items-center justify-center gap-3">
+        <button onclick="downloadCurrentSlidePNG()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-transform transform hover:scale-105 cursor-pointer text-xs">
+          <i class="fas fa-file-image text-sm"></i>
+          <span>Descargar Historia Actual en PNG HD</span>
+        </button>
+
+        <button onclick="downloadAllSlidesPNG()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition-transform transform hover:scale-105 cursor-pointer text-xs">
+          <i class="fas fa-images text-sm"></i>
+          <span>Descargar las 4 Historias (Pack PNG)</span>
+        </button>
+      </div>
+
+      <!-- Cuadro para abrir directamente en el Celular (Misma red WiFi) -->
+      <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-slate-300 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 max-w-lg mx-auto">
+        <div class="flex items-center gap-2 text-left">
+          <i class="fas fa-mobile-alt text-emerald-400 text-base"></i>
+          <span><strong>Abrir en tu Celular (Mismo WiFi):</strong></span>
+        </div>
+        <code class="px-3 py-1 bg-black rounded-lg text-emerald-400 font-mono text-xs select-all">http://192.168.0.11:3000/src/assets/publicidad/anuncio_story_animado.html</code>
+      </div>
     </div>
 
     <!-- Selector Manual de Historias -->
@@ -573,6 +590,43 @@
           mediaRecorder.stop();
         }
       }, 1000);
+    }
+
+    // ==========================================
+    // DESCARGA DE HISTORIAS EN PNG HD (1080x1920)
+    // ==========================================
+    async function downloadCurrentSlidePNG() {
+      const frameContainer = document.getElementById('story-frame-container');
+      const cvs = await html2canvas(frameContainer, {
+        scale: 2.7, // 400px * 2.7 = 1080px exactos
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#030712'
+      });
+      const link = document.createElement('a');
+      link.download = `historia_${currentSlide + 1}_reservas_cr.png`;
+      link.href = cvs.toDataURL('image/png', 1.0);
+      link.click();
+    }
+
+    async function downloadAllSlidesPNG() {
+      toggleAutoPlay(); // pausar si está corriendo
+      for (let i = 0; i < totalSlides; i++) {
+        showSlide(i);
+        await new Promise(r => setTimeout(r, 600)); // esperar renderizado
+        const frameContainer = document.getElementById('story-frame-container');
+        const cvs = await html2canvas(frameContainer, {
+          scale: 2.7,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#030712'
+        });
+        const link = document.createElement('a');
+        link.download = `historia_${i + 1}_reservas_cr.png`;
+        link.href = cvs.toDataURL('image/png', 1.0);
+        link.click();
+        await new Promise(r => setTimeout(r, 400));
+      }
     }
 
     // Iniciar
