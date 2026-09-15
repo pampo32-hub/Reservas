@@ -22,12 +22,66 @@ app.use(express.static(__dirname));
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
 
-// 1. Login de Dueño de Negocio (Email y Contraseña)
+// 0. Login de Developer / SuperAdmin
+app.post('/api/auth/developer/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Debes ingresar correo y contraseña.' });
+    }
+
+    const devRes = await pool.query(
+      'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
+      [email.trim(), password.trim()]
+    );
+
+    if (devRes.rows.length === 0) {
+      return res.status(401).json({ error: 'Credenciales de desarrollador inválidas.' });
+    }
+
+    const dev = devRes.rows[0];
+    res.json({
+      success: true,
+      role: 'developer',
+      user: {
+        id: dev.id,
+        name: dev.name,
+        email: dev.email,
+        role: 'developer'
+      }
+    });
+  } catch (error) {
+    console.error('Error en login developer:', error);
+    res.status(500).json({ error: 'Error en el servidor al autenticar desarrollador.' });
+  }
+});
+
+// 1. Login de Dueño de Negocio (Email y Contraseña) - Con Detección Inteligente de Developer
 app.post('/api/auth/business/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: 'Debes ingresar correo y contraseña.' });
+    }
+
+    // Comprobar primero si es Developer
+    const devRes = await pool.query(
+      'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
+      [email.trim(), password.trim()]
+    );
+
+    if (devRes.rows.length > 0) {
+      const dev = devRes.rows[0];
+      return res.json({
+        success: true,
+        role: 'developer',
+        user: {
+          id: dev.id,
+          name: dev.name,
+          email: dev.email,
+          role: 'developer'
+        }
+      });
     }
 
     const userRes = await pool.query(
@@ -45,6 +99,7 @@ app.post('/api/auth/business/login', async (req, res) => {
 
     res.json({
       success: true,
+      role: 'business',
       user: {
         id: user.id,
         name: user.name,
@@ -59,7 +114,7 @@ app.post('/api/auth/business/login', async (req, res) => {
   }
 });
 
-// 2. Registro de Negocio con Usuario y Contraseña
+// 2. Registro de Negocio con Usuario y Contraseña (con Alerta para Developer si es categoría personalizada)
 app.post('/api/auth/business/register', async (req, res) => {
   try {
     const { ownerName, email, password, business } = req.body;
@@ -100,6 +155,15 @@ app.post('/api/auth/business/register', async (req, res) => {
       JSON.stringify(schedule), JSON.stringify(features), false
     ]);
 
+    // Si es una categoría personalizada, registrar alerta para el Developer
+    if (business.isCustomCategory || business.is_custom || business.category === 'otra') {
+      const alertId = `alert-${Date.now()}`;
+      await pool.query(`
+        INSERT INTO reservas_custom_category_alerts (id, business_id, business_name, category_id, category_name, status)
+        VALUES ($1, $2, $3, $4, $5, 'unread')
+      `, [alertId, newBizId, business.name, business.category, business.categoryLabel || business.category]);
+    }
+
     // Insertar usuario del negocio
     await pool.query(`
       INSERT INTO reservas_business_users (id, business_id, name, email, password)
@@ -118,6 +182,7 @@ app.post('/api/auth/business/register', async (req, res) => {
 
     res.status(201).json({
       success: true,
+      role: 'business',
       user: {
         id: newUserId,
         name: ownerName || business.name,
@@ -174,7 +239,7 @@ app.post('/api/auth/client/register', async (req, res) => {
   }
 });
 
-// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña)
+// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña) - Con Detección Inteligente de Developer
 app.post('/api/auth/client/login', async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -183,6 +248,27 @@ app.post('/api/auth/client/login', async (req, res) => {
     }
 
     const cleanIdent = identifier.trim();
+
+    // Comprobar primero si es Developer
+    const devRes = await pool.query(
+      'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
+      [cleanIdent, password.trim()]
+    );
+
+    if (devRes.rows.length > 0) {
+      const dev = devRes.rows[0];
+      return res.json({
+        success: true,
+        role: 'developer',
+        user: {
+          id: dev.id,
+          name: dev.name,
+          email: dev.email,
+          role: 'developer'
+        }
+      });
+    }
+
     const result = await pool.query(
       'SELECT * FROM reservas_clients WHERE LOWER(email) = LOWER($1) OR phone = $1',
       [cleanIdent]
@@ -576,6 +662,168 @@ app.delete('/api/appointments/:id', async (req, res) => {
   } catch (error) {
     console.error('Error eliminando cita:', error);
     res.status(500).json({ error: 'Error al eliminar cita' });
+  }
+});
+
+// ==========================================
+// ENDPOINTS DE DEVELOPER / SUPERADMIN
+// ==========================================
+
+// 1. Estadísticas Globales del Sistema
+app.get('/api/developer/stats', async (req, res) => {
+  try {
+    const totalBiz = await pool.query('SELECT COUNT(*) FROM reservas_businesses');
+    const totalClients = await pool.query('SELECT COUNT(*) FROM reservas_clients');
+    const totalApts = await pool.query('SELECT COUNT(*) FROM reservas_appointments');
+    const unreadAlerts = await pool.query("SELECT COUNT(*) FROM reservas_custom_category_alerts WHERE status = 'unread'");
+
+    res.json({
+      totalBusinesses: parseInt(totalBiz.rows[0].count, 10),
+      totalClients: parseInt(totalClients.rows[0].count, 10),
+      totalAppointments: parseInt(totalApts.rows[0].count, 10),
+      unreadAlerts: parseInt(unreadAlerts.rows[0].count, 10)
+    });
+  } catch (error) {
+    console.error('Error obteniendo stats de developer:', error);
+    res.status(500).json({ error: 'Error al obtener métricas globales.' });
+  }
+});
+
+// 2. Lista Completa de Negocios para Developer
+app.get('/api/developer/businesses', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT b.*,
+             u.name as owner_name, u.email as owner_email,
+             (SELECT COUNT(*) FROM reservas_services WHERE business_id = b.id) as services_count,
+             (SELECT COUNT(*) FROM reservas_appointments WHERE business_id = b.id) as appointments_count
+      FROM reservas_businesses b
+      LEFT JOIN reservas_business_users u ON u.business_id = b.id
+      ORDER BY b.created_at DESC
+    `);
+
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      categoryLabel: row.category_label,
+      rating: parseFloat(row.rating) || 5.0,
+      reviewsCount: row.reviews_count || 0,
+      city: row.city,
+      phone: row.phone,
+      email: row.email,
+      ownerName: row.owner_name,
+      ownerEmail: row.owner_email,
+      servicesCount: parseInt(row.services_count, 10) || 0,
+      appointmentsCount: parseInt(row.appointments_count, 10) || 0,
+      isDemo: row.is_demo,
+      createdAt: row.created_at
+    })));
+  } catch (error) {
+    console.error('Error obteniendo negocios para developer:', error);
+    res.status(500).json({ error: 'Error al obtener negocios.' });
+  }
+});
+
+// 3. Lista Completa de Clientes / Usuarios para Developer
+app.get('/api/developer/clients', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT c.id, c.name, c.phone, c.email, c.created_at,
+             (SELECT COUNT(*) FROM reservas_appointments WHERE client_phone = c.phone OR (client_email = c.email AND client_email != '')) as appointments_count
+      FROM reservas_clients c
+      ORDER BY c.created_at DESC
+    `);
+
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      email: row.email || '',
+      createdAt: row.created_at,
+      appointmentsCount: parseInt(row.appointments_count, 10) || 0
+    })));
+  } catch (error) {
+    console.error('Error obteniendo clientes para developer:', error);
+    res.status(500).json({ error: 'Error al obtener clientes.' });
+  }
+});
+
+// 4. Reservas Globales en Tiempo Real
+app.get('/api/developer/appointments', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT a.*, b.name as business_name, b.category_label as business_category
+      FROM reservas_appointments a
+      LEFT JOIN reservas_businesses b ON b.id = a.business_id
+      ORDER BY a.date DESC, a.time DESC
+      LIMIT 200
+    `);
+
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      businessId: row.business_id,
+      businessName: row.business_name || 'Negocio',
+      businessCategory: row.business_category || 'Servicios',
+      serviceId: row.service_id,
+      serviceName: row.service_name,
+      servicePrice: parseFloat(row.service_price) || 0,
+      serviceDuration: row.service_duration,
+      date: row.date,
+      time: row.time,
+      clientName: row.client_name,
+      clientPhone: row.client_phone,
+      clientEmail: row.client_email,
+      notes: row.notes,
+      status: row.status,
+      createdAt: row.created_at
+    })));
+  } catch (error) {
+    console.error('Error obteniendo citas globales:', error);
+    res.status(500).json({ error: 'Error al obtener reservas globales.' });
+  }
+});
+
+// 5. Alertas de Categorías Nuevas
+app.get('/api/developer/category-alerts', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reservas_custom_category_alerts ORDER BY created_at DESC');
+    res.json(result.rows.map(row => ({
+      id: row.id,
+      businessId: row.business_id,
+      businessName: row.business_name,
+      categoryId: row.category_id,
+      categoryName: row.category_name,
+      status: row.status,
+      createdAt: row.created_at
+    })));
+  } catch (error) {
+    console.error('Error obteniendo alertas de categorías:', error);
+    res.status(500).json({ error: 'Error al obtener alertas.' });
+  }
+});
+
+// 6. Marcar Alerta como Leída / Descartada
+app.post('/api/developer/category-alerts/:id/dismiss', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('UPDATE reservas_custom_category_alerts SET status = \'read\' WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error descartando alerta:', error);
+    res.status(500).json({ error: 'Error al actualizar alerta.' });
+  }
+});
+
+// 7. Eliminar Negocio por Developer
+app.delete('/api/developer/businesses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM reservas_businesses WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Negocio eliminado correctamente' });
+  } catch (error) {
+    console.error('Error eliminando negocio desde developer:', error);
+    res.status(500).json({ error: 'Error al eliminar negocio.' });
   }
 });
 

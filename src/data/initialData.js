@@ -3,11 +3,21 @@
 export const INITIAL_CATEGORIES = [
   { id: 'all', name: 'Todas las Categorías', icon: 'fa-store' },
   { id: 'belleza', name: 'Belleza y Barbería', icon: 'fa-scissors' },
-  { id: 'salud', name: 'Salud y Bienestar', icon: 'fa-stethoscope' },
-  { id: 'spa', name: 'Spa y Masajes', icon: 'fa-spa' },
+  { id: 'salud', name: 'Salud y Medicina', icon: 'fa-user-md' },
+  { id: 'dental', name: 'Odontología y Dental', icon: 'fa-tooth' },
+  { id: 'spa', name: 'Spa, Masajes y Estética', icon: 'fa-spa' },
   { id: 'fitness', name: 'Fitness y Deporte', icon: 'fa-dumbbell' },
-  { id: 'autos', name: 'Talleres y Autos', icon: 'fa-car' },
-  { id: 'fotografia', name: 'Fotografía y Eventos', icon: 'fa-camera' }
+  { id: 'mascotas', name: 'Veterinaria y Mascotas', icon: 'fa-paw' },
+  { id: 'autos', name: 'Talleres y Automotriz', icon: 'fa-car' },
+  { id: 'gastronomia', name: 'Restaurantes y Gastronomía', icon: 'fa-utensils' },
+  { id: 'fotografia', name: 'Fotografía y Eventos', icon: 'fa-camera' },
+  { id: 'educacion', name: 'Educación, Cursos y Tutorías', icon: 'fa-graduation-cap' },
+  { id: 'profesionales', name: 'Servicios Legales y Contabilidad', icon: 'fa-balance-scale' },
+  { id: 'hogar', name: 'Hogar, Reparaciones y Limpieza', icon: 'fa-tools' },
+  { id: 'psicologia', name: 'Psicología y Terapia', icon: 'fa-brain' },
+  { id: 'tatuajes', name: 'Tatuajes y Piercing', icon: 'fa-palette' },
+  { id: 'tecnologia', name: 'Tecnología y Soporte', icon: 'fa-laptop-code' },
+  { id: 'otros', name: 'Otros Servicios', icon: 'fa-concierge-bell' }
 ];
 
 export const INITIAL_BUSINESSES = [

@@ -3,7 +3,7 @@ import { storage } from './services/storage.js';
 
 class App {
   constructor() {
-    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings'
+    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
     this.searchQuery = '';
@@ -19,6 +19,10 @@ class App {
 
     // Estado del panel de dueño
     this.activeDashboardTab = 'appointments'; // 'appointments' | 'services' | 'profile' | 'schedule'
+
+    // Estado del panel de developer
+    this.activeDevTab = 'alerts'; // 'alerts' | 'businesses' | 'clients' | 'appointments'
+    this.devSearchQuery = '';
   }
 
   getTodayDateString() {
@@ -77,6 +81,7 @@ class App {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
 
+    const devUser = storage.getDeveloperUser();
     const bizUser = storage.getBusinessUser();
     const clientUser = storage.getClientUser();
     const activeBiz = bizUser ? storage.getBusinessById(bizUser.businessId) : null;
@@ -101,6 +106,19 @@ class App {
             <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
             </button>
+
+            <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
+            ${devUser ? `
+              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md">
+                <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
+                  <i class="fas fa-shield-alt text-xs"></i>
+                  <span>DEVELOPER</span>
+                </button>
+                <button id="nav-dev-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg transition-colors" title="Cerrar sesión de Developer">
+                  <i class="fas fa-sign-out-alt text-xs"></i>
+                </button>
+              </div>
+            ` : ''}
 
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
             ${clientUser ? `
@@ -130,7 +148,7 @@ class App {
             ` : ''}
 
             <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
-            ${!clientUser && !bizUser ? `
+            ${!clientUser && !bizUser && !devUser ? `
               <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
                 <i class="fas fa-sign-in-alt text-blue-600"></i>
                 <span>Iniciar Sesión</span>
@@ -143,7 +161,7 @@ class App {
             ` : ''}
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
-            ${clientUser && !bizUser ? `
+            ${clientUser && !bizUser && !devUser ? `
               <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all" title="Acceso al panel de negocio">
                 <i class="fas fa-store text-indigo-600"></i>
                 <span>Soy Negocio</span>
@@ -157,6 +175,15 @@ class App {
     // Eventos de Navegación y Auth
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+
+    // Developer logueado
+    document.getElementById('nav-dev-dashboard-btn')?.addEventListener('click', () => this.navigateTo('developer-dashboard'));
+    document.getElementById('nav-dev-logout-btn')?.addEventListener('click', () => {
+      storage.logoutDeveloper();
+      this.showToast('Sesión de Developer cerrada.', 'info');
+      this.renderHeader();
+      if (this.currentView === 'developer-dashboard') this.navigateTo('directory');
+    });
 
     // Botones Iniciar Sesión y Registrarse
     document.getElementById('nav-login-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'client' }));
@@ -199,6 +226,9 @@ class App {
         break;
       case 'my-client-bookings':
         this.renderClientBookingsView(main);
+        break;
+      case 'developer-dashboard':
+        this.renderDeveloperDashboardView(main);
         break;
       default:
         this.renderDirectoryView(main);
@@ -1530,6 +1560,588 @@ class App {
   }
 
   // ==========================================
+  // VISTA 5: PANEL SUPERADMIN DEVELOPER
+  // ==========================================
+  async renderDeveloperDashboardView(container) {
+    const devUser = storage.getDeveloperUser();
+    if (!devUser) {
+      container.innerHTML = `
+        <div class="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center shadow-lg">
+          <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fas fa-lock"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-800 mb-2">Acceso Restringido</h2>
+          <p class="text-sm text-slate-500 mb-6">Esta sección es de uso exclusivo para el equipo de desarrollo y administración de TurnoYa.</p>
+          <button id="dev-back-home-btn" class="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition-all">
+            Ir al Inicio
+          </button>
+        </div>
+      `;
+      document.getElementById('dev-back-home-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+      return;
+    }
+
+    // Mostrar loader mientras cargan los datos
+    container.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="flex items-center justify-center py-20 text-slate-400 gap-3">
+          <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
+          <span class="font-medium text-slate-600">Cargando panel de Developer...</span>
+        </div>
+      </div>
+    `;
+
+    try {
+      const [stats, businesses, clients, appointments, alerts] = await Promise.all([
+        storage.getDeveloperStats(),
+        storage.getDeveloperBusinesses(),
+        storage.getDeveloperClients(),
+        storage.getDeveloperAppointments(),
+        storage.getDeveloperCategoryAlerts()
+      ]);
+
+      const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
+      const q = (this.devSearchQuery || '').toLowerCase().trim();
+
+      // Filtrado por buscador
+      const filteredBusinesses = businesses.filter(b => 
+        !q || (b.name && b.name.toLowerCase().includes(q)) || 
+        (b.categoryLabel && b.categoryLabel.toLowerCase().includes(q)) || 
+        (b.email && b.email.toLowerCase().includes(q)) || 
+        (b.city && b.city.toLowerCase().includes(q))
+      );
+
+      const filteredClients = clients.filter(c => 
+        !q || (c.name && c.name.toLowerCase().includes(q)) || 
+        (c.phone && c.phone.toLowerCase().includes(q)) || 
+        (c.email && c.email.toLowerCase().includes(q))
+      );
+
+      const filteredAppointments = appointments.filter(a => 
+        !q || ((a.clientName || a.client_name) && (a.clientName || a.client_name).toLowerCase().includes(q)) || 
+        ((a.businessName || a.business_name) && (a.businessName || a.business_name).toLowerCase().includes(q)) || 
+        ((a.serviceName || a.service_name) && (a.serviceName || a.service_name).toLowerCase().includes(q))
+      );
+
+      const filteredAlerts = alerts.filter(a => 
+        !q || ((a.businessName || a.business_name) && (a.businessName || a.business_name).toLowerCase().includes(q)) || 
+        ((a.categoryName || a.category_name) && (a.categoryName || a.category_name).toLowerCase().includes(q))
+      );
+
+      container.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-6">
+          
+          <!-- Header del Panel Developer -->
+          <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 bg-amber-500 text-slate-950 text-xs font-black tracking-wider rounded-lg uppercase">
+                  SuperAdmin Dev Mode
+                </span>
+                <span class="text-xs text-slate-400 font-mono">v1.2.0 • Costa Rica</span>
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Panel de Control Developer</h1>
+              <p class="text-sm text-slate-300">Monitoreo global de datos, comercios registrados, clientes y categorías personalizadas.</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="text-right hidden sm:block">
+                <span class="text-xs text-slate-400 block font-medium">Sesión activa como</span>
+                <span class="text-sm font-bold text-amber-400">${devUser.name || 'Developer Master'}</span>
+              </div>
+              <button id="dev-logout-view-btn" class="px-4 py-2 bg-white/10 hover:bg-rose-600/80 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Salir del Panel</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Métricas Globales -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Comercios -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl flex-shrink-0">
+                <i class="fas fa-store"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Comercios</span>
+                <span class="text-2xl font-extrabold text-slate-900">${stats.totalBusinesses || businesses.length}</span>
+              </div>
+            </div>
+
+            <!-- Clientes -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
+                <i class="fas fa-users"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Clientes Registrados</span>
+                <span class="text-2xl font-extrabold text-slate-900">${stats.totalClients || clients.length}</span>
+              </div>
+            </div>
+
+            <!-- Citas Globales -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Reservas</span>
+                <span class="text-2xl font-extrabold text-slate-900">${stats.totalAppointments || appointments.length}</span>
+              </div>
+            </div>
+
+            <!-- Alertas de Categorías Nuevas -->
+            <div class="bg-white p-5 rounded-2xl border ${pendingAlerts.length > 0 ? 'border-amber-400 bg-amber-50/30' : 'border-slate-200'} shadow-xs flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl ${pendingAlerts.length > 0 ? 'bg-amber-100 text-amber-700 animate-pulse' : 'bg-slate-100 text-slate-600'} flex items-center justify-center text-xl flex-shrink-0">
+                <i class="fas fa-bell"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Nuevas Categorías</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl font-extrabold ${pendingAlerts.length > 0 ? 'text-amber-700' : 'text-slate-900'}">${pendingAlerts.length}</span>
+                  ${pendingAlerts.length > 0 ? `<span class="text-[10px] font-extrabold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full">Pendientes</span>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navegación por Pestañas + Buscador -->
+          <div class="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+            
+            <div class="p-4 sm:p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <!-- Tabs -->
+              <div class="flex flex-wrap gap-2">
+                <button id="dev-tab-alerts" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'alerts' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-bell"></i>
+                  <span>Nuevas Categorías</span>
+                  ${pendingAlerts.length > 0 ? `<span class="px-2 py-0.5 bg-slate-950 text-amber-400 text-[10px] rounded-full font-black">${pendingAlerts.length}</span>` : ''}
+                </button>
+
+                <button id="dev-tab-businesses" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'businesses' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-store"></i>
+                  <span>Directorio de Negocios (${businesses.length})</span>
+                </button>
+
+                <button id="dev-tab-clients" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'clients' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-users"></i>
+                  <span>Usuarios / Clientes (${clients.length})</span>
+                </button>
+
+                <button id="dev-tab-appointments" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'appointments' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>Citas Globales (${appointments.length})</span>
+                </button>
+              </div>
+
+              <!-- Buscador Rápido -->
+              <div class="relative w-full md:w-72">
+                <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="dev-search-input" value="${this.devSearchQuery || ''}" placeholder="Buscar en esta tabla..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- CONTENIDO DE LA PESTAÑA ACTIVA -->
+            <div class="p-4 sm:p-6">
+              
+              <!-- PESTAÑA 1: ALERTAS & NUEVAS CATEGORÍAS -->
+              ${this.activeDevTab === 'alerts' ? `
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-base font-bold text-slate-800">Alertas de Categorías Creadas por Comercios</h3>
+                      <p class="text-xs text-slate-500">Notificaciones en tiempo real cuando un comercio escribe una categoría personalizada que no estaba en el catálogo original.</p>
+                    </div>
+                  </div>
+
+                  ${filteredAlerts.length === 0 ? `
+                    <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100">
+                      <i class="fas fa-check-double text-3xl text-emerald-500 mb-2"></i>
+                      <p class="text-sm font-bold text-slate-700">No hay alertas registradas</p>
+                      <p class="text-xs text-slate-400">Cuando un comercio use "Otra Categoría (Personalizada)", aparecerá aquí de inmediato.</p>
+                    </div>
+                  ` : `
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3">Categoría Creada</th>
+                            <th class="p-3">Comercio que la Ingresó</th>
+                            <th class="p-3">Fecha y Hora</th>
+                            <th class="p-3 text-right">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                          ${filteredAlerts.map(a => {
+                            const isPending = a.status === 'unread' || a.status === 'pending';
+                            const catName = a.categoryName || a.category_name || 'Personalizada';
+                            const catId = a.categoryId || a.category_id || '';
+                            const bizName = a.businessName || a.business_name || 'Comercio';
+                            const bizId = a.businessId || a.business_id || '';
+                            const alertDate = a.createdAt || a.created_at;
+
+                            return `
+                            <tr class="hover:bg-slate-50/80 transition-colors ${isPending ? 'bg-amber-50/30' : ''}">
+                              <td class="p-3">
+                                ${isPending ? `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                                    <i class="fas fa-clock"></i> Pendiente
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                    <i class="fas fa-check"></i> Revisada
+                                  </span>
+                                `}
+                              </td>
+                              <td class="p-3">
+                                <span class="font-bold text-slate-900 text-sm block">${catName}</span>
+                                <span class="text-[10px] text-slate-400 font-mono">ID: ${catId}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="font-bold text-slate-800 block">${bizName}</span>
+                                <span class="text-[10px] text-slate-400">Biz ID: ${bizId}</span>
+                              </td>
+                              <td class="p-3 text-slate-500 whitespace-nowrap">
+                                ${alertDate ? new Date(alertDate).toLocaleString('es-CR') : 'Reciente'}
+                              </td>
+                              <td class="p-3 text-right">
+                                ${isPending ? `
+                                  <button class="dismiss-alert-btn px-3 py-1.5 bg-slate-900 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-all shadow-xs" data-id="${a.id}">
+                                    <i class="fas fa-check mr-1"></i> Marcar Revisada
+                                  </button>
+                                ` : `
+                                  <span class="text-xs text-slate-400 font-medium">Aprobada</span>
+                                `}
+                              </td>
+                            </tr>
+                          `}).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  `}
+                </div>
+              ` : ''}
+
+              <!-- PESTAÑA 2: DIRECTORIO DE NEGOCIOS -->
+              ${this.activeDevTab === 'businesses' ? `
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-base font-bold text-slate-800">Directorio General de Comercios</h3>
+                      <p class="text-xs text-slate-500">Listado completo de comercios de muestra y registrados con contacto de dueños.</p>
+                    </div>
+                  </div>
+
+                  ${filteredBusinesses.length === 0 ? `
+                    <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
+                      <i class="fas fa-store-slash text-3xl mb-2"></i>
+                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios con esa búsqueda</p>
+                    </div>
+                  ` : `
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th class="p-3">Comercio</th>
+                            <th class="p-3">Categoría</th>
+                            <th class="p-3">Ubicación / Contacto</th>
+                            <th class="p-3">Dueño / Correo</th>
+                            <th class="p-3">Servicios</th>
+                            <th class="p-3">Tipo</th>
+                            <th class="p-3 text-right">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                          ${filteredBusinesses.map(b => `
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                              <td class="p-3">
+                                <div class="flex items-center gap-3">
+                                  <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${b.name}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
+                                  <div>
+                                    <span class="font-bold text-slate-900 block">${b.name}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">ID: ${b.id}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td class="p-3">
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">${b.categoryLabel || b.category}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="block text-slate-800">${b.city || 'Costa Rica'}</span>
+                                <span class="text-[10px] text-slate-400">${b.phone || 'Sin teléfono'}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="block text-slate-800">${b.ownerName || (b.isDemo ? 'Demo Admin' : 'Registrado')}</span>
+                                <span class="text-[10px] text-slate-400">${b.ownerEmail || b.email || 'N/A'}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="font-bold text-slate-800">${b.servicesCount !== undefined ? b.servicesCount : (b.services ? b.services.length : 0)} servicios</span>
+                              </td>
+                              <td class="p-3">
+                                ${b.isDemo ? `
+                                  <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded">Muestra</span>
+                                ` : `
+                                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">Real</span>
+                                `}
+                              </td>
+                              <td class="p-3 text-right">
+                                <div class="flex items-center justify-end gap-1.5">
+                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-colors" data-id="${b.id}" title="Ver en Directorio">
+                                    <i class="fas fa-eye text-xs"></i>
+                                  </button>
+                                  ${!b.isDemo ? `
+                                    <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-lg transition-colors" data-id="${b.id}" data-name="${b.name}" title="Eliminar Comercio">
+                                      <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+                                  ` : ''}
+                                </div>
+                              </td>
+                            </tr>
+                          `).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  `}
+                </div>
+              ` : ''}
+
+              <!-- PESTAÑA 3: USUARIOS / CLIENTES -->
+              ${this.activeDevTab === 'clients' ? `
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-base font-bold text-slate-800">Clientes Registrados en la Plataforma</h3>
+                      <p class="text-xs text-slate-500">Usuarios finales registrados para reservar citas.</p>
+                    </div>
+                  </div>
+
+                  ${filteredClients.length === 0 ? `
+                    <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
+                      <i class="fas fa-user-slash text-3xl mb-2"></i>
+                      <p class="text-sm font-bold text-slate-700">No hay clientes registrados aún</p>
+                    </div>
+                  ` : `
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th class="p-3">Nombre</th>
+                            <th class="p-3">Teléfono / WhatsApp</th>
+                            <th class="p-3">Correo Electrónico</th>
+                            <th class="p-3">Fecha de Registro</th>
+                            <th class="p-3">Total Citas</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                          ${filteredClients.map(c => {
+                            const regDate = c.createdAt || c.created_at;
+                            const count = c.appointmentsCount !== undefined ? c.appointmentsCount : (c.booking_count || 0);
+
+                            return `
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                              <td class="p-3">
+                                <div class="flex items-center gap-2">
+                                  <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
+                                    ${c.name ? c.name.charAt(0).toUpperCase() : 'U'}
+                                  </div>
+                                  <div>
+                                    <span class="font-bold text-slate-900 block">${c.name}</span>
+                                    <span class="text-[10px] text-slate-400 font-mono">ID: ${c.id}</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td class="p-3">
+                                <span class="font-semibold text-slate-800">${c.phone || 'N/A'}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="text-slate-600">${c.email || 'Sin correo'}</span>
+                              </td>
+                              <td class="p-3 text-slate-500 whitespace-nowrap">
+                                ${regDate ? new Date(regDate).toLocaleDateString('es-CR') : 'N/A'}
+                              </td>
+                              <td class="p-3">
+                                <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-bold text-xs">${count}</span>
+                              </td>
+                            </tr>
+                          `}).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  `}
+                </div>
+              ` : ''}
+
+              <!-- PESTAÑA 4: CITAS / RESERVAS GLOBALES -->
+              ${this.activeDevTab === 'appointments' ? `
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-base font-bold text-slate-800">Reservas Globales Agendadas</h3>
+                      <p class="text-xs text-slate-500">Historial en vivo de todas las citas agendadas entre clientes y comercios.</p>
+                    </div>
+                  </div>
+
+                  ${filteredAppointments.length === 0 ? `
+                    <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
+                      <i class="fas fa-calendar-times text-3xl mb-2"></i>
+                      <p class="text-sm font-bold text-slate-700">No hay reservas registradas en el sistema</p>
+                    </div>
+                  ` : `
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th class="p-3">Cliente</th>
+                            <th class="p-3">Comercio</th>
+                            <th class="p-3">Servicio</th>
+                            <th class="p-3">Fecha & Hora</th>
+                            <th class="p-3">Monto</th>
+                            <th class="p-3">Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                          ${filteredAppointments.map(a => {
+                            const cliName = a.clientName || a.client_name || 'Cliente';
+                            const cliPhone = a.clientPhone || a.client_phone || '';
+                            const bizName = a.businessName || a.business_name || 'Comercio';
+                            const srvName = a.serviceName || a.service_name || 'Servicio';
+                            const price = a.servicePrice !== undefined ? a.servicePrice : (a.price || a.service_price || 0);
+
+                            return `
+                            <tr class="hover:bg-slate-50/80 transition-colors">
+                              <td class="p-3">
+                                <span class="font-bold text-slate-900 block">${cliName}</span>
+                                <span class="text-[10px] text-slate-400">${cliPhone}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="font-bold text-slate-800 block">${bizName}</span>
+                              </td>
+                              <td class="p-3">
+                                <span class="text-slate-800 font-medium block">${srvName}</span>
+                              </td>
+                              <td class="p-3 whitespace-nowrap">
+                                <span class="font-bold text-slate-800 block">${a.date}</span>
+                                <span class="text-[10px] text-blue-600 font-bold">${a.time}</span>
+                              </td>
+                              <td class="p-3 font-bold text-slate-900">
+                                ${this.formatColones(price)}
+                              </td>
+                              <td class="p-3">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  a.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' :
+                                  a.status === 'cancelled' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                                }">
+                                  ${a.status === 'confirmed' ? 'Confirmada' : a.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+                                </span>
+                              </td>
+                            </tr>
+                          `}).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  `}
+                </div>
+              ` : ''}
+
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Event Listeners del Panel Developer
+      document.getElementById('dev-logout-view-btn')?.addEventListener('click', () => {
+        storage.logoutDeveloper();
+        this.showToast('Sesión de Developer cerrada.', 'info');
+        this.renderHeader();
+        this.navigateTo('directory');
+      });
+
+      // Tabs Switch
+      document.getElementById('dev-tab-alerts')?.addEventListener('click', () => {
+        this.activeDevTab = 'alerts';
+        this.renderDeveloperDashboardView(container);
+      });
+      document.getElementById('dev-tab-businesses')?.addEventListener('click', () => {
+        this.activeDevTab = 'businesses';
+        this.renderDeveloperDashboardView(container);
+      });
+      document.getElementById('dev-tab-clients')?.addEventListener('click', () => {
+        this.activeDevTab = 'clients';
+        this.renderDeveloperDashboardView(container);
+      });
+      document.getElementById('dev-tab-appointments')?.addEventListener('click', () => {
+        this.activeDevTab = 'appointments';
+        this.renderDeveloperDashboardView(container);
+      });
+
+      // Buscador
+      const searchInput = document.getElementById('dev-search-input');
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          this.devSearchQuery = e.target.value;
+          this.renderDeveloperDashboardView(container);
+        });
+        if (this.devSearchQuery) {
+          searchInput.focus();
+          searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+        }
+      }
+
+      // Descartar/Revisar alerta
+      document.querySelectorAll('.dismiss-alert-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const alertId = e.currentTarget.getAttribute('data-id');
+          if (alertId) {
+            await storage.dismissCategoryAlert(alertId);
+            this.showToast('Alerta marcada como revisada.', 'success');
+            this.renderDeveloperDashboardView(container);
+          }
+        });
+      });
+
+      // Ver negocio en directorio
+      document.querySelectorAll('.dev-view-biz-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const bizId = e.currentTarget.getAttribute('data-id');
+          if (bizId) {
+            this.navigateTo('business-detail', { businessId: bizId });
+          }
+        });
+      });
+
+      // Eliminar negocio
+      document.querySelectorAll('.dev-delete-biz-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const bizId = e.currentTarget.getAttribute('data-id');
+          const bizName = e.currentTarget.getAttribute('data-name');
+          if (confirm(`¿Estás seguro de que deseas eliminar permanentemente el negocio "${bizName}"? Esta acción no se puede deshacer.`)) {
+            try {
+              await storage.deleteBusinessByDeveloper(bizId);
+              this.showToast(`Negocio "${bizName}" eliminado correctamente.`, 'success');
+              this.renderDeveloperDashboardView(container);
+            } catch (err) {
+              this.showToast(err.message || 'Error al eliminar.', 'error');
+            }
+          }
+        });
+      });
+
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = `
+        <div class="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-rose-200 text-center shadow-lg">
+          <i class="fas fa-exclamation-triangle text-3xl text-rose-500 mb-3"></i>
+          <h2 class="text-lg font-bold text-slate-800 mb-1">Error al cargar datos</h2>
+          <p class="text-xs text-slate-500 mb-4">${err.message || 'No se pudo conectar con el servidor.'}</p>
+          <button id="dev-retry-btn" class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-md">Reintentar</button>
+        </div>
+      `;
+      document.getElementById('dev-retry-btn')?.addEventListener('click', () => this.renderDeveloperDashboardView(container));
+    }
+  }
+
+  // ==========================================
   // MODAL INTEGRADO DE AUTENTICACIÓN (LOGIN & REGISTRO)
   // ==========================================
   renderAuthModal({ mode = 'login', role = 'client' } = {}) {
@@ -1537,6 +2149,7 @@ class App {
     if (!modalContainer) return;
 
     const currentClient = storage.getClientUser();
+    const categories = storage.getCategories().filter(c => c.id !== 'all');
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -1743,14 +2356,10 @@ class App {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
+                    <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
                     <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                      <option value="belleza">Belleza y Barbería</option>
-                      <option value="salud">Salud y Bienestar</option>
-                      <option value="spa">Spa y Masajes</option>
-                      <option value="fitness">Fitness y Deporte</option>
-                      <option value="autos">Talleres y Autos</option>
-                      <option value="fotografia">Fotografía y Eventos</option>
+                      ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                      <option value="otra" class="font-bold text-blue-600">➕ Otra Categoría (Personalizada)</option>
                     </select>
                   </div>
 
@@ -1758,6 +2367,15 @@ class App {
                     <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
                     <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   </div>
+                </div>
+
+                <!-- Caja para Categoría Personalizada (Aparece al seleccionar 'Otra Categoría') -->
+                <div id="new-biz-custom-cat-box" class="hidden p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl animate-fade-in space-y-1">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-blue-900">Escribe el Nombre de tu Nueva Categoría *</label>
+                    <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Notificará al Developer</span>
+                  </div>
+                  <input type="text" id="new-biz-custom-cat" placeholder="Ej. Jardinería, Clases de Música, Lavado de Muebles..." class="w-full px-3.5 py-2 bg-white border border-blue-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1845,6 +2463,18 @@ class App {
     });
     document.getElementById('tab-role-business')?.addEventListener('click', () => {
       this.renderAuthModal({ mode, role: 'business' });
+    });
+
+    // Toggle de Categoría Personalizada en Registro de Negocio
+    const bizCatSelect = document.getElementById('new-biz-cat');
+    const customCatBox = document.getElementById('new-biz-custom-cat-box');
+    bizCatSelect?.addEventListener('change', () => {
+      if (bizCatSelect.value === 'otra') {
+        customCatBox?.classList.remove('hidden');
+        document.getElementById('new-biz-custom-cat')?.focus();
+      } else {
+        customCatBox?.classList.add('hidden');
+      }
     });
 
     // Demo Buttons (en login de negocio)
@@ -1952,7 +2582,7 @@ class App {
     bizRegPass?.addEventListener('input', checkBizPasswordsMatch);
     bizRegPassConf?.addEventListener('input', checkBizPasswordsMatch);
 
-    // Evento Submit: Login Cliente
+    // Evento Submit: Login Cliente (detecta Developer)
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const identifier = document.getElementById('cli-log-identifier').value.trim();
@@ -1961,7 +2591,16 @@ class App {
 
       try {
         if (errBox) errBox.className = 'hidden';
-        await storage.loginClient(identifier, password);
+        const res = await storage.loginClient(identifier, password);
+        
+        if (res && res.role === 'developer') {
+          this.showToast('¡Modo SuperAdmin Developer activado!', 'success');
+          modalContainer.innerHTML = '';
+          this.renderHeader();
+          this.navigateTo('developer-dashboard');
+          return;
+        }
+
         this.showToast('¡Bienvenido(a)! Sesión iniciada como cliente.', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
@@ -1987,6 +2626,7 @@ class App {
       const errBox = document.getElementById('cli-reg-inline-error');
 
       if (password.length < 6) {
+        this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
@@ -1996,6 +2636,8 @@ class App {
       }
 
       if (password !== passwordConfirm) {
+        this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
+        document.getElementById('cli-reg-password-confirm').focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
@@ -2022,7 +2664,7 @@ class App {
       }
     });
 
-    // Evento Submit: Login Negocio
+    // Evento Submit: Login Negocio (detecta Developer)
     document.getElementById('auth-biz-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('biz-log-email').value;
@@ -2031,7 +2673,16 @@ class App {
 
       try {
         if (errBox) errBox.className = 'hidden';
-        await storage.loginBusiness(email, password);
+        const res = await storage.loginBusiness(email, password);
+
+        if (res && res.role === 'developer') {
+          this.showToast('¡Modo SuperAdmin Developer activado!', 'success');
+          modalContainer.innerHTML = '';
+          this.renderHeader();
+          this.navigateTo('developer-dashboard');
+          return;
+        }
+
         this.showToast('¡Bienvenido a tu panel de administración!', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
@@ -2046,7 +2697,7 @@ class App {
       }
     });
 
-    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes inline)
+    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes y categoría personalizada)
     document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const ownerName = document.getElementById('reg-owner-name').value;
@@ -2054,7 +2705,7 @@ class App {
       const password = document.getElementById('reg-biz-password').value;
       const passwordConfirm = document.getElementById('reg-biz-password-confirm').value;
       const name = document.getElementById('new-biz-name').value;
-      const category = document.getElementById('new-biz-cat').value;
+      const catSelectVal = document.getElementById('new-biz-cat').value;
       const city = document.getElementById('new-biz-city').value;
       const phone = document.getElementById('new-biz-phone').value;
       const address = document.getElementById('new-biz-address').value;
@@ -2066,6 +2717,7 @@ class App {
       const errBox = document.getElementById('biz-reg-inline-error');
 
       if (password.length < 6) {
+        this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
@@ -2075,6 +2727,8 @@ class App {
       }
 
       if (password !== passwordConfirm) {
+        this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
+        document.getElementById('reg-biz-password-confirm').focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
@@ -2085,20 +2739,33 @@ class App {
         return;
       }
 
-      const catLabels = {
-        belleza: 'Belleza y Barbería',
-        salud: 'Salud y Bienestar',
-        spa: 'Spa y Masajes',
-        fitness: 'Fitness y Deporte',
-        autos: 'Talleres y Autos',
-        fotografia: 'Fotografía y Eventos'
-      };
+      // Procesar Categoría (Estándar o Personalizada)
+      let category = catSelectVal;
+      let categoryLabel = '';
+      let isCustomCategory = false;
+
+      if (catSelectVal === 'otra') {
+        const customName = document.getElementById('new-biz-custom-cat')?.value.trim();
+        if (!customName) {
+          this.showToast('Por favor escribe el nombre de tu categoría personalizada.', 'error');
+          document.getElementById('new-biz-custom-cat')?.focus();
+          return;
+        }
+        category = customName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        if (!category) category = `cat-${Date.now()}`;
+        categoryLabel = customName;
+        isCustomCategory = true;
+      } else {
+        const catObj = storage.getCategories().find(c => c.id === catSelectVal);
+        categoryLabel = catObj ? catObj.name : catSelectVal;
+      }
 
       try {
         await storage.registerBusinessWithUser(ownerName, email, password, {
           name,
           category,
-          categoryLabel: catLabels[category] || 'Servicios',
+          categoryLabel,
+          isCustomCategory,
           city,
           phone,
           email,

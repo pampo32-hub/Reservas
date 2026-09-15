@@ -6,7 +6,8 @@ const STORAGE_KEYS = {
   APPOINTMENTS: 'directorio_appointments_v1',
   ACTIVE_BUSINESS_ID: 'directorio_active_biz_id',
   BIZ_USER: 'directorio_biz_user_session',
-  CLIENT_USER: 'directorio_client_user_session'
+  CLIENT_USER: 'directorio_client_user_session',
+  DEV_USER: 'directorio_dev_user_session'
 };
 
 class StorageService {
@@ -47,6 +48,81 @@ class StorageService {
   }
 
   // ==========================================
+  // AUTENTICACIÓN: DEVELOPER / SUPERADMIN
+  // ==========================================
+  getDeveloperUser() {
+    const data = localStorage.getItem(STORAGE_KEYS.DEV_USER);
+    return data ? JSON.parse(data) : null;
+  }
+
+  setDeveloperUser(user) {
+    if (user) {
+      localStorage.setItem(STORAGE_KEYS.DEV_USER, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.DEV_USER);
+    }
+  }
+
+  logoutDeveloper() {
+    localStorage.removeItem(STORAGE_KEYS.DEV_USER);
+  }
+
+  async loginDeveloper(email, password) {
+    const res = await fetch(`${this.apiBase}/auth/developer/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al autenticar desarrollador.');
+    this.setDeveloperUser(data.user);
+    return data;
+  }
+
+  // Métodos de consulta SuperAdmin / Developer
+  async getDeveloperStats() {
+    const res = await fetch(`${this.apiBase}/developer/stats`);
+    if (!res.ok) throw new Error('Error al obtener estadísticas de developer.');
+    return await res.json();
+  }
+
+  async getDeveloperBusinesses() {
+    const res = await fetch(`${this.apiBase}/developer/businesses`);
+    if (!res.ok) throw new Error('Error al obtener negocios.');
+    return await res.json();
+  }
+
+  async getDeveloperClients() {
+    const res = await fetch(`${this.apiBase}/developer/clients`);
+    if (!res.ok) throw new Error('Error al obtener clientes.');
+    return await res.json();
+  }
+
+  async getDeveloperAppointments() {
+    const res = await fetch(`${this.apiBase}/developer/appointments`);
+    if (!res.ok) throw new Error('Error al obtener citas globales.');
+    return await res.json();
+  }
+
+  async getDeveloperCategoryAlerts() {
+    const res = await fetch(`${this.apiBase}/developer/category-alerts`);
+    if (!res.ok) throw new Error('Error al obtener alertas.');
+    return await res.json();
+  }
+
+  async dismissCategoryAlert(alertId) {
+    const res = await fetch(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
+    return res.ok;
+  }
+
+  async deleteBusinessByDeveloper(businessId) {
+    const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Error al eliminar negocio.');
+    await this.loadFromApi();
+    return true;
+  }
+
+  // ==========================================
   // AUTENTICACIÓN: NEGOCIO (DUEÑO)
   // ==========================================
   getBusinessUser() {
@@ -78,6 +154,13 @@ class StorageService {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+
+      // Si es Developer
+      if (data.role === 'developer') {
+        this.setDeveloperUser(data.user);
+        return data;
+      }
+
       this.setBusinessUser(data.user);
       await this.loadFromApi();
       return data;
@@ -158,6 +241,13 @@ class StorageService {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+
+      // Si es Developer
+      if (data.role === 'developer') {
+        this.setDeveloperUser(data.user);
+        return data;
+      }
+
       this.setClientUser(data.client);
       return data.client;
     }
@@ -185,9 +275,23 @@ class StorageService {
     return client;
   }
 
-  // --- CATEGORÍAS ---
+  // --- CATEGORÍAS (INCLUYE CATEGORÍAS PERSONALIZADAS DINÁMICAS) ---
   getCategories() {
-    return INITIAL_CATEGORIES;
+    const list = [...INITIAL_CATEGORIES];
+    const businesses = this.getBusinesses();
+    
+    // Incorporar cualquier categoría personalizada presente en los negocios
+    businesses.forEach(b => {
+      if (b.category && !list.some(c => c.id === b.category)) {
+        list.push({
+          id: b.category,
+          name: b.categoryLabel || b.category,
+          icon: 'fa-tag'
+        });
+      }
+    });
+
+    return list;
   }
 
   // --- NEGOCIOS ---

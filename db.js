@@ -110,7 +110,41 @@ export async function initDatabase() {
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS password VARCHAR(255);
     `);
 
-    console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');
+    // 6. Crear tabla de SuperAdmin / Developer
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_developer_users (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(150) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) DEFAULT 'developer',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // 7. Crear tabla de alertas de categorías personalizadas creadas por comercios
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_custom_category_alerts (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50),
+        business_name VARCHAR(255) NOT NULL,
+        category_id VARCHAR(100) NOT NULL,
+        category_name VARCHAR(255) NOT NULL,
+        status VARCHAR(50) DEFAULT 'unread',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Sembrar cuenta Master Developer si no existe
+    const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
+    const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';
+    await client.query(`
+      INSERT INTO reservas_developer_users (id, name, email, password, role)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password
+    `, ['dev-master', 'Master Developer', devEmail, devPassword, 'developer']);
+
+    console.log('✅ Tablas y cuenta Developer verificadas/creadas en Neon PostgreSQL.');
 
     // Verificar si hay que sembrar datos iniciales
     const bizCheck = await client.query('SELECT COUNT(*) FROM reservas_businesses');
