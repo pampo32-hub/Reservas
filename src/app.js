@@ -1852,13 +1852,11 @@ class App {
         clientEmail,
         notes: clientNotes,
         whatsappOptIn,
-        status: 'confirmed'
         status: initialStatus
       });
 
       this.closeBookingModal();
       this.renderSuccessBookingModal(newAppointment, biz);
-      this.showToast('¡Reserva confirmada con éxito!', 'success');
       if (newAppointment.status === 'pending') {
         this.showToast('¡Solicitud enviada! En unos minutos recibirás la confirmación del negocio.', 'info');
       } else {
@@ -1867,7 +1865,6 @@ class App {
     });
   }
 
-  // --- MODAL DE ÉXITO DE RESERVA ---
   // --- MODAL DE ÉXITO DE RESERVA (CONFIRMADA O PENDIENTE) ---
   renderSuccessBookingModal(appointment, business) {
     const modalContainer = document.getElementById('modal-container');
@@ -1878,14 +1875,10 @@ class App {
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
-          <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
-            <i class="fas fa-check"></i>
           <div class="w-16 h-16 ${isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center text-3xl mx-auto mb-4 ${isPending ? 'animate-pulse' : 'animate-bounce'}">
             <i class="fas ${isPending ? 'fa-hourglass-half' : 'fa-check'}"></i>
           </div>
 
-          <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">¡Turno Agendado!</span>
-          <h3 class="text-2xl font-black text-slate-900 mt-1">Cita Confirmada</h3>
           <span class="text-xs uppercase font-extrabold ${isPending ? 'text-amber-600' : 'text-emerald-600'} tracking-wider">
             ${isPending ? '¡Solicitud de Reserva Recibida!' : '¡Turno Agendado!'}
           </span>
@@ -1894,7 +1887,6 @@ class App {
           </h3>
           <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
 
-          <div class="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
           ${isPending ? `
             <!-- Aviso Informativo para Cita Pendiente -->
             <div class="mt-4 p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-left text-xs text-amber-900 space-y-1.5 animate-fade-in">
@@ -1919,7 +1911,6 @@ class App {
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Fecha y Hora:</span>
-              <span class="font-bold text-blue-600">${appointment.date} a las ${this.formatTime12h(appointment.time)}</span>
               <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
@@ -1939,7 +1930,6 @@ class App {
             </div>
           </div>
 
-          ${appointment.whatsappOptIn !== false ? `
           ${!isPending && appointment.whatsappOptIn !== false ? `
             <div class="mt-4 p-3 bg-emerald-50/90 rounded-2xl border border-emerald-200 flex items-center gap-3 text-xs text-emerald-800 font-medium text-left animate-fade-in">
               <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 text-base shadow-sm">
@@ -1953,11 +1943,9 @@ class App {
           ` : ''}
 
           <div class="mt-6 flex flex-col gap-2">
-            <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
             <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer">
               Ver Mis Reservas
             </button>
-            <button id="success-done-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
             <button id="success-done-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
               Seguir Explorando
             </button>
@@ -3036,6 +3024,28 @@ class App {
                   <input type="time" id="break-end" value="${sch.breakEnd || ''}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl">
                 </div>
               </div>
+            <!-- Autoconfirmación de Citas en Horarios -->
+            <div class="p-5 rounded-2xl border transition-all ${currentBiz.autoConfirmAppointments !== false ? 'bg-emerald-50/70 border-emerald-200/80 shadow-xs' : 'bg-amber-50/80 border-amber-200/90 shadow-xs'} space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <i class="fas ${currentBiz.autoConfirmAppointments !== false ? 'fa-magic text-emerald-600' : 'fa-hand-paper text-amber-600'} text-base"></i>
+                    <span class="font-bold text-slate-900 text-sm">Autoconfirmación de Citas</span>
+                    <span class="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${currentBiz.autoConfirmAppointments !== false ? 'bg-emerald-200/70 text-emerald-900' : 'bg-amber-200/80 text-amber-950'}">
+                      ${currentBiz.autoConfirmAppointments !== false ? '⚡ Automático' : '✋ Manual'}
+                    </span>
+                  </div>
+                  <p class="text-xs text-slate-600 leading-relaxed">
+                    ${currentBiz.autoConfirmAppointments !== false
+                      ? 'Las citas se confirman inmediatamente y se envía WhatsApp y correo al cliente al agendar.'
+                      : 'Las citas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo.'}
+                  </p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 self-start sm:self-center">
+                  <input type="checkbox" class="toggle-auto-confirm-input sr-only peer" ${currentBiz.autoConfirmAppointments !== false ? 'checked' : ''}>
+                  <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+              </div>
             </div>
 
             <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/25 transition-all">
@@ -3049,9 +3059,8 @@ class App {
 
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
   setupDashboardTabEvents(currentBiz) {
-    // Switch de Autoconfirmación de Citas
-    document.getElementById('toggle-auto-confirm-switch')?.addEventListener('change', async (e) => {
-      const isChecked = e.target.checked;
+    // Switch de Autoconfirmación de Citas (en Agenda y en Horarios)
+    const handleAutoConfirmToggle = async (isChecked) => {
       await storage.updateBusinessAutoConfirm(currentBiz.id, isChecked);
       currentBiz.autoConfirmAppointments = isChecked;
       this.showToast(
@@ -3061,6 +3070,16 @@ class App {
         'success'
       );
       this.renderCurrentView();
+    };
+
+    document.getElementById('toggle-auto-confirm-switch')?.addEventListener('change', async (e) => {
+      await handleAutoConfirmToggle(e.target.checked);
+    });
+
+    document.querySelectorAll('.toggle-auto-confirm-input').forEach(input => {
+      input.addEventListener('change', async (e) => {
+        await handleAutoConfirmToggle(e.target.checked);
+      });
     });
 
     document.querySelectorAll('.owner-filter-btn').forEach(btn => {
@@ -3087,9 +3106,6 @@ class App {
         const newStatus = btn.getAttribute('data-status');
         await storage.updateAppointmentStatus(aptId, newStatus);
         const statusMsgs = {
-          confirmed: '¡Reserva aceptada y confirmada con éxito!',
-          completed: '¡Reserva marcada como completada / atendida!',
-          cancelled: 'Reserva cancelada.'
           confirmed: '✅ ¡Cita confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           completed: '🎉 ¡Reserva marcada como completada / atendida!',
           cancelled: '❌ Reserva cancelada.'

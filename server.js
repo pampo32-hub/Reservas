@@ -226,8 +226,6 @@ app.post('/api/auth/business/register', async (req, res) => {
         id, name, category, category_label, rating, reviews_count,
         price_range, address, city, phone, email, description,
         image, cover_image, schedule, features, is_demo,
-        plan, plan_price_usd, monthly_booking_limit, social_links
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
         plan, plan_price_usd, monthly_booking_limit, social_links,
         auto_confirm_appointments
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
@@ -237,7 +235,6 @@ app.post('/api/auth/business/register', async (req, res) => {
       business.address || '', business.city || '', business.phone || '', email.trim(),
       business.description || '', business.image || '', business.coverImage || '',
       JSON.stringify(schedule), JSON.stringify(features), false,
-      planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks)
       planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks),
       autoConfirm
     ]);
@@ -704,8 +701,6 @@ app.put('/api/businesses/:id', async (req, res) => {
         price_range = COALESCE($11, price_range),
         features = COALESCE($12, features),
         schedule = COALESCE($13, schedule),
-        social_links = COALESCE($14, social_links)
-      WHERE id = $15
         social_links = COALESCE($14, social_links),
         auto_confirm_appointments = COALESCE($15, auto_confirm_appointments)
       WHERE id = $16
@@ -984,8 +979,6 @@ app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
 
-    // 1. Verificar si el negocio está bloqueado
-    const bizCheck = await pool.query('SELECT name, is_blocked, block_reason, plan, monthly_booking_limit FROM reservas_businesses WHERE id = $1', [a.businessId]);
     // 1. Validar que el comercio no esté bloqueado/suspendido
     const bizCheck = await pool.query('SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments FROM reservas_businesses WHERE id = $1', [a.businessId]);
     if (bizCheck.rows.length === 0) {
@@ -1041,7 +1034,6 @@ app.post('/api/appointments', async (req, res) => {
     `, [
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
       a.serviceDuration, a.date, a.time, a.clientName, a.clientPhone,
-      a.clientEmail || '', a.notes || '', a.status || 'confirmed', optIn
       a.clientEmail || '', a.notes || '', initialStatus, optIn
     ]);
 
@@ -1054,7 +1046,6 @@ app.post('/api/appointments', async (req, res) => {
       `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '', optIn]);
     }
 
-    const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
     const createdAppointment = { 
       id: newId, 
       ...a, 
@@ -1063,22 +1054,12 @@ app.post('/api/appointments', async (req, res) => {
       autoConfirmed: isAutoConfirm
     };
 
-    // Enviar notificaciones de confirmación de forma asíncrona en segundo plano
-    pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
-      .then(bizRes => {
-        const business = bizRes.rows[0] || null;
     // Si está autoconfirmada y confirmada, enviar notificaciones inmediatamente
     if (isAutoConfirm && initialStatus === 'confirmed') {
       pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
         .then(bizRes => {
           const business = bizRes.rows[0] || null;
 
-        // 1. Enviar correo de confirmación (si proporcionó email)
-        if (a.clientEmail && a.clientEmail.includes('@')) {
-          sendBookingConfirmationEmail(createdAppointment, business).catch(emailErr => {
-            console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
-          });
-        }
           // 1. Enviar correo de confirmación (si proporcionó email)
           if (a.clientEmail && a.clientEmail.includes('@')) {
             sendBookingConfirmationEmail(createdAppointment, business).catch(emailErr => {
@@ -1086,16 +1067,6 @@ app.post('/api/appointments', async (req, res) => {
             });
           }
 
-        // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
-        if (optIn && a.clientPhone) {
-          sendBookingConfirmationWhatsApp(createdAppointment, business, pool).catch(waErr => {
-            console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
-          });
-        }
-      })
-      .catch(err => {
-        console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
-      });
           // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
           if (optIn && a.clientPhone) {
             sendBookingConfirmationWhatsApp(createdAppointment, business, pool).catch(waErr => {
@@ -1358,7 +1329,6 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
     const prevApt = prevAptRes.rows[0];
 
     await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, id]);
-    res.json({ success: true, message: 'Estado actualizado' });
 
     // Si pasó a confirmed desde pending/otro estado, disparar notificaciones automáticamente
     let notificationsSent = false;
