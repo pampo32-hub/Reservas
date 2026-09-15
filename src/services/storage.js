@@ -893,9 +893,14 @@ class StorageService {
         if (res.ok) {
           const data = await res.json();
           if (data.action === 'unblocked') {
-            this.blockedSlotsCache = this.blockedSlotsCache.filter(
-              s => !(s.businessId === businessId && s.date === dateString && parseM(s.time) === targetMin)
-            );
+            if (Array.isArray(data.removedIds) && data.removedIds.length > 0) {
+              const removedSet = new Set(data.removedIds);
+              this.blockedSlotsCache = this.blockedSlotsCache.filter(s => !removedSet.has(s.id));
+            } else {
+              this.blockedSlotsCache = this.blockedSlotsCache.filter(
+                s => !(s.businessId === businessId && s.date === dateString && parseM(s.time) === targetMin)
+              );
+            }
           } else if (data.action === 'blocked') {
             this.blockedSlotsCache = this.blockedSlotsCache.filter(
               s => !(s.businessId === businessId && s.date === dateString && parseM(s.time) === targetMin)
@@ -1049,7 +1054,9 @@ class StorageService {
     const blockedSlots = this.getBlockedSlots(businessId, dateString);
     const blockedRanges = blockedSlots.map(b => {
       const start = timeToMinutes(b.time);
-      return { start, end: start + slotStep };
+      const is15MinSlot = (start % 30 !== 0);
+      const bDuration = is15MinSlot ? 15 : (slotStep === 15 ? 15 : 30);
+      return { start, end: start + bDuration };
     });
 
     const availableSlots = [];

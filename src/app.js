@@ -3248,7 +3248,12 @@ class App {
       const timeStr = minutesToTime(current);
 
       const bookedOverlap = bookedRanges.find(b => current < b.end && slotEnd > b.start);
-      const isManualBlocked = blockedTimesSet.has(timeStr) || blockedSlots.some(b => timeToMinutes(b.time) === current);
+      const isManualBlocked = blockedSlots.some(b => {
+        const bStart = timeToMinutes(b.time);
+        const is15 = (bStart % 30 !== 0);
+        const bDur = is15 ? 15 : (slotStep === 15 ? 15 : 30);
+        return current < (bStart + bDur) && slotEnd > bStart;
+      });
       const isBreak = (breakStartMin !== -1 && breakEndMin !== -1 && current < breakEndMin && slotEnd > breakStartMin);
 
       let status = 'available'; // 'available' | 'blocked' | 'booked' | 'break'

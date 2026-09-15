@@ -827,15 +827,48 @@ app.post('/api/businesses/:id/blocked-slots/toggle', async (req, res) => {
       return res.status(400).json({ error: 'Faltan parámetros date y time' });
     }
 
-    const existing = await pool.query(
-      'SELECT * FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2 AND time = $3',
-      [id, date, time]
+    const timeToMinutes = (timeStr) => {
+      if (!timeStr) return 0;
+      let str = String(timeStr).trim().toUpperCase();
+      const isPM = str.includes('PM');
+      const isAM = str.includes('AM');
+      str = str.replace(/[APM\s]/g, '');
+      const [hStr, mStr] = str.split(':');
+      let h = parseInt(hStr, 10) || 0;
+      const m = parseInt(mStr, 10) || 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      return h * 60 + m;
+    };
+
+    const targetMin = timeToMinutes(time);
+
+    // Consultar todos los bloqueos del negocio en esa fecha
+    const allBlockedRes = await pool.query(
+      'SELECT * FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2',
+      [id, date]
     );
 
-    if (existing.rows.length > 0) {
-      await pool.query('DELETE FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2 AND time = $3', [id, date, time]);
-      return res.json({ success: true, action: 'unblocked', date, time });
+    // Obtener configuración de duración de turnos del comercio
+    const bizRes = await pool.query('SELECT schedule FROM reservas_businesses WHERE id = $1', [id]);
+    const slotDuration = bizRes.rows[0]?.schedule?.slotDuration || 30;
+    const slotEndMin = targetMin + slotDuration;
+
+    // Buscar si hay bloqueos existentes que colisionen con este intervalo
+    const matching = allBlockedRes.rows.filter(r => {
+      const bm = timeToMinutes(r.time);
+      const is15 = (bm % 30 !== 0);
+      const bDur = is15 ? 15 : (slotDuration === 15 ? 15 : 30);
+      return targetMin < (bm + bDur) && slotEndMin > bm;
+    });
+
+    if (matching.length > 0) {
+      // Si ya hay bloqueos en este intervalo, liberarlos todos
+      const idsToDelete = matching.map(m => m.id);
+      await pool.query('DELETE FROM reservas_blocked_slots WHERE id = ANY($1::text[])', [idsToDelete]);
+      return res.json({ success: true, action: 'unblocked', date, time, removedIds: idsToDelete });
     } else {
+      // Si no estaba bloqueado, insertar el bloqueo
       const slotId = `blk-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
       await pool.query(
         'INSERT INTO reservas_blocked_slots (id, business_id, date, time) VALUES ($1, $2, $3, $4)',
