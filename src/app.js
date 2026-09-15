@@ -3062,7 +3062,7 @@ class App {
     }
 
     if (this.activeDashboardTab === 'schedule') {
-      const sch = currentBiz.schedule || { days: [1,2,3,4,5,6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+      const sch = currentBiz.schedule || { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
       const currentSlotDuration = sch.slotDuration === 15 ? 15 : 30;
       const days = [
         { id: 1, name: 'Lunes' },

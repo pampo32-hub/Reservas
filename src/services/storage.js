@@ -864,6 +864,21 @@ class StorageService {
   }
 
   async toggleBlockedSlot(businessId, dateString, timeStr) {
+    const parseM = (t) => {
+      if (!t) return -1;
+      let s = String(t).trim().toUpperCase();
+      const isPM = s.includes('PM');
+      const isAM = s.includes('AM');
+      s = s.replace(/[APM\s]/g, '');
+      const [hStr, mStr] = s.split(':');
+      let h = parseInt(hStr, 10) || 0;
+      const m = parseInt(mStr, 10) || 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      return h * 60 + m;
+    };
+    const targetMin = parseM(timeStr);
+
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/businesses/${businessId}/blocked-slots/toggle`, {
@@ -875,9 +890,12 @@ class StorageService {
           const data = await res.json();
           if (data.action === 'unblocked') {
             this.blockedSlotsCache = this.blockedSlotsCache.filter(
-              s => !(s.businessId === businessId && s.date === dateString && s.time === timeStr)
+              s => !(s.businessId === businessId && s.date === dateString && parseM(s.time) === targetMin)
             );
           } else if (data.action === 'blocked') {
+            this.blockedSlotsCache = this.blockedSlotsCache.filter(
+              s => !(s.businessId === businessId && s.date === dateString && parseM(s.time) === targetMin)
+            );
             this.blockedSlotsCache.push({
               id: data.id || `blk-${Date.now()}`,
               businessId,
@@ -895,7 +913,7 @@ class StorageService {
 
     // Modo local / Fallback
     const existingIdx = this.blockedSlotsCache.findIndex(
-      s => s.businessId === businessId && s.date === dateString && s.time === timeStr
+      s => s.businessId === businessId && s.date === dateString && parseM(s.time) === targetMin
     );
     let action = 'blocked';
     if (existingIdx >= 0) {
@@ -1045,9 +1063,6 @@ class StorageService {
       });
       if (hasConflict) continue;
 
-      if (!hasConflict) {
-        availableSlots.push(minutesToTime(current));
-      }
       const hasBlockedConflict = blockedRanges.some(blocked => {
         return (current < blocked.end && slotEnd > blocked.start);
       });

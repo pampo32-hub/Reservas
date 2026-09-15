@@ -833,7 +833,7 @@ app.post('/api/businesses/:id/blocked-slots/toggle', async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
-      await pool.query('DELETE FROM reservas_blocked_slots WHERE id = $1', [existing.rows[0].id]);
+      await pool.query('DELETE FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2 AND time = $3', [id, date, time]);
       return res.json({ success: true, action: 'unblocked', date, time });
     } else {
       const slotId = `blk-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
