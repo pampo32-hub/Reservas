@@ -6,20 +6,3 @@ services:
     region: ohio
     buildCommand: npm install
     startCommand: node server.js
-    envVars:
-      - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_DGXRwl4kBtC7@ep-shy-firefly-b5sbjmrd-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-      - key: NODE_ENV
-        value: production
-      - key: RESEND_API_KEY
-        sync: false
-      - key: RESEND_FROM_EMAIL
-        value: "Reservas Costa Rica <onboarding@resend.dev>"
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_WHATSAPP_NUMBER
-        value: "whatsapp:+14155238886"
-
-
