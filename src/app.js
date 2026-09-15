@@ -74,6 +74,20 @@ class App {
     return clean;
   }
 
+  formatDateFullSpanish(dateStr) {
+    if (!dateStr) return '';
+    const clean = String(dateStr).trim();
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts.map(Number);
+      const date = new Date(y, m - 1, d);
+      const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      return `${days[date.getDay()]}, ${d} de ${months[m - 1]} de ${y}`;
+    }
+    return clean;
+  }
+
   normalizeText(str) {
     if (!str) return '';
     return String(str)
@@ -2590,6 +2604,9 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
             <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
           </button>
+          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
+            <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
+          </button>
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
             <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
           </button>
@@ -2720,6 +2737,28 @@ class App {
           <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
             <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
               Todas (${appointments.length})
+          <!-- Filtros de Estado y Botón de Bloqueo Rápido -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div class="flex items-center gap-2 overflow-x-auto pb-1">
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
+                Todas (${appointments.length})
+              </button>
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
+                ⏳ Pendientes (${pendingCount})
+              </button>
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
+                ✅ Confirmadas (${confirmedCount})
+              </button>
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
+                🎉 Completadas (${completedCount})
+              </button>
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
+                ❌ Canceladas (${cancelledCount})
+              </button>
+            </div>
+
+            <button id="quick-manage-slots-btn" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
+              <i class="fas fa-calendar-times"></i> Bloquear / Liberar Horas
             </button>
             <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
               ⏳ Pendientes (${pendingCount})
@@ -2818,6 +2857,10 @@ class App {
       `;
     }
 
+    if (this.activeDashboardTab === 'blocked-slots') {
+      return this.renderBlockedSlotsTabContent(currentBiz, appointments);
+    }
+
     if (this.activeDashboardTab === 'services') {
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
@@ -2830,6 +2873,14 @@ class App {
             <button id="add-new-service-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
               <i class="fas fa-plus"></i> Agregar Servicio
             </button>
+            <div class="flex items-center gap-2">
+              <button id="quick-manage-slots-from-services-btn" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
+                <i class="fas fa-calendar-times"></i> Gestionar Horas
+              </button>
+              <button id="add-new-service-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer">
+                <i class="fas fa-plus"></i> Agregar Servicio
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3099,6 +3150,393 @@ class App {
     }
   }
 
+  // --- SUB-CONTENIDO: BLOQUEOS Y GESTIÓN VISUAL DE HORARIOS ---
+  renderBlockedSlotsTabContent(currentBiz, appointments) {
+    const selectedDate = this.selectedBlockedSlotsDate || this.getTodayDateString();
+    const sch = currentBiz.schedule || { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+    
+    // Calcular día de la semana para saber si labora normalmente
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const dayOfWeek = dateObj.getDay();
+    const isWorkingDay = sch.days && sch.days.includes(dayOfWeek);
+
+    const timeToMinutes = (timeStr) => {
+      if (!timeStr) return 0;
+      let str = String(timeStr).trim().toUpperCase();
+      const isPM = str.includes('PM');
+      const isAM = str.includes('AM');
+      str = str.replace(/[APM\s]/g, '');
+      const [hStr, mStr] = str.split(':');
+      let h = parseInt(hStr, 10) || 0;
+      const min = parseInt(mStr, 10) || 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      return h * 60 + min;
+    };
+
+    const minutesToTime = (totalMinutes) => {
+      const totalH = Math.floor(totalMinutes / 60);
+      const min = (totalMinutes % 60).toString().padStart(2, '0');
+      const period = totalH >= 12 ? 'PM' : 'AM';
+      let hour12 = totalH % 12;
+      if (hour12 === 0) hour12 = 12;
+      return `${hour12}:${min} ${period}`;
+    };
+
+    const openMin = timeToMinutes(sch.openTime || '08:00');
+    const closeMin = timeToMinutes(sch.closeTime || '18:00');
+    const breakStartMin = sch.breakStart ? timeToMinutes(sch.breakStart) : -1;
+    const breakEndMin = sch.breakEnd ? timeToMinutes(sch.breakEnd) : -1;
+    const slotStep = sch.slotDuration || 30;
+
+    // Citas existentes del día
+    const dayAppointments = appointments.filter(a => a.date === selectedDate && a.status !== 'cancelled');
+    const bookedRanges = dayAppointments.map(appt => {
+      const start = timeToMinutes(appt.time);
+      const duration = appt.serviceDuration || 30;
+      return { start, end: start + duration, appointment: appt };
+    });
+
+    // Franjas bloqueadas por el comercio
+    const blockedSlots = storage.getBlockedSlots(currentBiz.id, selectedDate);
+    const blockedTimesSet = new Set(blockedSlots.map(b => b.time));
+
+    // Generar todas las franjas
+    const slots = [];
+    for (let current = openMin; current + slotStep <= closeMin; current += slotStep) {
+      const slotEnd = current + slotStep;
+      const timeStr = minutesToTime(current);
+
+      const bookedOverlap = bookedRanges.find(b => current < b.end && slotEnd > b.start);
+      const isManualBlocked = blockedTimesSet.has(timeStr) || blockedSlots.some(b => timeToMinutes(b.time) === current);
+      const isBreak = (breakStartMin !== -1 && breakEndMin !== -1 && current < breakEndMin && slotEnd > breakStartMin);
+
+      let status = 'available'; // 'available' | 'blocked' | 'booked' | 'break'
+      let aptInfo = null;
+
+      if (bookedOverlap) {
+        status = 'booked';
+        aptInfo = bookedOverlap.appointment;
+      } else if (isManualBlocked) {
+        status = 'blocked';
+      } else if (isBreak) {
+        status = 'break';
+      }
+
+      slots.push({
+        timeStr,
+        currentMin: current,
+        status,
+        appointment: aptInfo
+      });
+    }
+
+    const availableCount = slots.filter(s => s.status === 'available').length;
+    const blockedCount = slots.filter(s => s.status === 'blocked').length;
+    const bookedCount = slots.filter(s => s.status === 'booked').length;
+    const breakCount = slots.filter(s => s.status === 'break').length;
+
+    const todayStr = this.getTodayDateString();
+    const tomorrowObj = new Date();
+    tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+    const tomorrowStr = tomorrowObj.toISOString().slice(0, 10);
+    const dayAfterObj = new Date();
+    dayAfterObj.setDate(dayAfterObj.getDate() + 2);
+    const dayAfterStr = dayAfterObj.toISOString().slice(0, 10);
+
+    return `
+      <div class="space-y-6 animate-fade-in">
+        <!-- Banner Explicativo -->
+        <div class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 text-white shadow-lg border border-blue-800/40 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="space-y-2">
+            <div class="inline-flex items-center gap-2 bg-blue-500/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-blue-300 border border-blue-400/30">
+              <i class="fas fa-magic"></i> Control Total de Disponibilidad
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black">Bloqueo y Liberación de Horarios</h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Toca cualquier franja horaria para <strong>bloquearla</strong> (rojo) o <strong>liberarla</strong> (verde) al instante. Los horarios bloqueados no estarán disponibles para que los clientes reserven en la página.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 flex-shrink-0">
+            <button id="btn-block-all-day" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+              <i class="fas fa-lock"></i> Bloquear Todo el Día
+            </button>
+            <button id="btn-unblock-all-day" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+              <i class="fas fa-unlock"></i> Liberar Todo el Día
+            </button>
+          </div>
+        </div>
+
+        <!-- Selector de Fecha y Barra de Estado -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <!-- Navegación de Fecha -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <button id="btn-prev-day" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors text-xs font-bold cursor-pointer" title="Día Anterior">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+
+              <div class="relative">
+                <input type="date" id="blocked-slots-date-picker" value="${selectedDate}" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
+              </div>
+
+              <button id="btn-next-day" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors text-xs font-bold cursor-pointer" title="Día Siguiente">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+
+              <!-- Atajos Rápidos de Fecha -->
+              <div class="flex items-center gap-1.5 ml-1">
+                <button class="quick-date-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" data-date="${todayStr}">
+                  Hoy
+                </button>
+                <button class="quick-date-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${selectedDate === tomorrowStr ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" data-date="${tomorrowStr}">
+                  Mañana
+                </button>
+                <button class="quick-date-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${selectedDate === dayAfterStr ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}" data-date="${dayAfterStr}">
+                  Pasado Mañana
+                </button>
+              </div>
+            </div>
+
+            <!-- Título de Fecha Seleccionada -->
+            <div class="text-left lg:text-right">
+              <h3 class="text-base sm:text-lg font-black text-slate-900 capitalize">
+                ${this.formatDateFullSpanish(selectedDate)}
+              </h3>
+              <div class="flex items-center lg:justify-end gap-2 text-xs text-slate-500 mt-0.5 flex-wrap">
+                <span class="inline-flex items-center gap-1">
+                  <i class="far fa-clock text-blue-600"></i> Horario: <strong>${this.formatTime12h(sch.openTime || '08:00')} - ${this.formatTime12h(sch.closeTime || '18:00')}</strong> (cada ${slotStep}m)
+                </span>
+                ${!isWorkingDay ? `
+                  <span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md font-bold text-[10px]">
+                    ⚠️ Día No Laboral según Horarios
+                  </span>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+
+          <!-- Leyenda de Estados y Contadores -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-emerald-900 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-200 flex-shrink-0"></span>
+                <div>
+                  <span class="text-xs font-black block">Disponibles</span>
+                  <span class="text-[10px] text-emerald-700">Libres para reservar</span>
+                </div>
+              </div>
+              <span class="text-lg font-black text-emerald-800">${availableCount}</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-200 text-rose-900 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-200 flex-shrink-0"></span>
+                <div>
+                  <span class="text-xs font-black block">Bloqueados</span>
+                  <span class="text-[10px] text-rose-700">Pausados por ti</span>
+                </div>
+              </div>
+              <span class="text-lg font-black text-rose-800">${blockedCount}</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-900 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-blue-600 ring-4 ring-blue-200 flex-shrink-0"></span>
+                <div>
+                  <span class="text-xs font-black block">Citas Clientes</span>
+                  <span class="text-[10px] text-blue-700">Ya agendadas</span>
+                </div>
+              </div>
+              <span class="text-lg font-black text-blue-800">${bookedCount}</span>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-700 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3.5 h-3.5 rounded-full bg-slate-400 ring-4 ring-slate-200 flex-shrink-0"></span>
+                <div>
+                  <span class="text-xs font-black block">Receso / Almuerzo</span>
+                  <span class="text-[10px] text-slate-500">Horario de descanso</span>
+                </div>
+              </div>
+              <span class="text-lg font-black text-slate-700">${breakCount}</span>
+            </div>
+          </div>
+
+          <!-- Cuadrícula Interactiva de Franjas Horarias -->
+          <div class="pt-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              ${slots.map(slot => {
+                if (slot.status === 'booked') {
+                  const apt = slot.appointment;
+                  return `
+                    <button class="slot-booked-btn group relative p-3.5 rounded-2xl border-2 border-blue-300 bg-blue-50/90 text-blue-950 text-left transition-all hover:shadow-md hover:border-blue-500 cursor-pointer flex flex-col justify-between" data-apt-id="${apt.id}">
+                      <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-blue-950 font-mono">${this.formatTime12h(slot.timeStr)}</span>
+                        <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                      </div>
+                      <div class="mt-2 text-[11px] font-bold truncate text-blue-900" title="${this.escapeHtml(apt.clientName)}">
+                        <i class="far fa-user text-blue-600 mr-1"></i>${apt.clientName}
+                      </div>
+                      <div class="text-[10px] text-blue-700 truncate mt-0.5">
+                        ${apt.serviceName}
+                      </div>
+                      <span class="mt-2 text-[9px] font-black uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md inline-block text-center">
+                        Cita #${apt.id.toUpperCase().slice(-4)}
+                      </span>
+                    </button>
+                  `;
+                }
+
+                if (slot.status === 'blocked') {
+                  return `
+                    <button class="interactive-slot-btn p-3.5 rounded-2xl border-2 border-rose-300 bg-rose-50 text-rose-950 text-left transition-all hover:bg-rose-100 hover:border-rose-400 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex flex-col justify-between shadow-2xs" data-time="${slot.timeStr}" data-status="blocked" title="Toca para desbloquear y poner disponible">
+                      <div class="flex items-center justify-between">
+                        <span class="font-black text-sm text-rose-950 font-mono">${this.formatTime12h(slot.timeStr)}</span>
+                        <i class="fas fa-lock text-rose-600 text-xs"></i>
+                      </div>
+                      <div class="mt-3 flex items-center justify-between">
+                        <span class="text-[10px] font-black uppercase tracking-wider text-rose-700 bg-rose-200/80 px-2 py-0.5 rounded-md">
+                          Bloqueado
+                        </span>
+                        <span class="text-[10px] text-rose-600 font-bold">
+                          Liberar <i class="fas fa-arrow-right text-[9px]"></i>
+                        </span>
+                      </div>
+                    </button>
+                  `;
+                }
+
+                if (slot.status === 'break') {
+                  return `
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-100 text-slate-500 text-left flex flex-col justify-between opacity-80 cursor-not-allowed">
+                      <div class="flex items-center justify-between">
+                        <span class="font-bold text-sm text-slate-600 font-mono">${this.formatTime12h(slot.timeStr)}</span>
+                        <i class="fas fa-coffee text-slate-400 text-xs"></i>
+                      </div>
+                      <div class="mt-3">
+                        <span class="text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded-md">
+                          Almuerzo / Receso
+                        </span>
+                      </div>
+                    </div>
+                  `;
+                }
+
+                // Default: available
+                return `
+                  <button class="interactive-slot-btn p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 text-emerald-950 text-left transition-all hover:bg-emerald-100/80 hover:border-emerald-500 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex flex-col justify-between shadow-2xs" data-time="${slot.timeStr}" data-status="available" title="Toca para bloquear esta hora">
+                    <div class="flex items-center justify-between">
+                      <span class="font-black text-sm text-emerald-950 font-mono">${this.formatTime12h(slot.timeStr)}</span>
+                      <i class="fas fa-check-circle text-emerald-600 text-xs"></i>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                      <span class="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-2 py-0.5 rounded-md">
+                        Disponible
+                      </span>
+                      <span class="text-[10px] text-emerald-700 font-bold">
+                        Bloquear <i class="fas fa-ban text-[9px]"></i>
+                      </span>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderBookedSlotAppointmentModal(apt) {
+    const modalContainer = document.getElementById('modal-container') || document.createElement('div');
+    modalContainer.id = 'modal-container';
+    if (!document.getElementById('modal-container')) {
+      document.body.appendChild(modalContainer);
+    }
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100">
+          <div class="p-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-lg">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-bold tracking-widest text-blue-200 block">Detalle de Reserva</span>
+                <h3 class="text-base font-black">Cita #${apt.id.toUpperCase()}</h3>
+              </div>
+            </div>
+            <button id="close-booked-slot-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-4 text-xs">
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Cliente:</span>
+                <span class="font-extrabold text-slate-900">${apt.clientName}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Teléfono:</span>
+                <span class="font-bold text-slate-800">${apt.clientPhone}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Email:</span>
+                <span class="font-medium text-slate-700">${apt.clientEmail || 'No especificado'}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Servicio:</span>
+                <span class="font-bold text-blue-600">${apt.serviceName} (${apt.serviceDuration} min)</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Fecha y Hora:</span>
+                <span class="font-extrabold text-slate-900">${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Monto:</span>
+                <span class="font-black text-slate-900">${this.formatColones(apt.servicePrice)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Estado:</span>
+                <span class="badge-status badge-status-${apt.status}">
+                  ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
+                </span>
+              </div>
+              ${apt.notes ? `
+                <div class="pt-2 border-t border-slate-200">
+                  <span class="text-slate-500 block mb-1">Notas del cliente:</span>
+                  <div class="italic text-slate-700 bg-white p-2.5 rounded-xl border border-slate-100">${this.escapeHtml(apt.notes)}</div>
+                </div>
+              ` : ''}
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+              <button id="modal-manage-reschedule-btn" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fas fa-edit"></i> Modificar / Reagendar
+              </button>
+              <button id="close-booked-slot-modal-btn2" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors cursor-pointer">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('close-booked-slot-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('close-booked-slot-modal-btn2')?.addEventListener('click', closeModal);
+    document.getElementById('modal-manage-reschedule-btn')?.addEventListener('click', () => {
+      closeModal();
+      this.renderRescheduleModal(apt, true);
+    });
+  }
+
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
   setupDashboardTabEvents(currentBiz) {
     // Switch de Autoconfirmación de Citas (en Agenda y en Horarios)
@@ -3301,6 +3739,141 @@ class App {
       await storage.saveBusiness(currentBiz);
       this.showToast('Horarios actualizados exitosamente.', 'success');
       this.renderCurrentView();
+    });
+
+    // Accesos Rápidos a Bloqueos desde otras pestañas
+    document.getElementById('quick-manage-slots-btn')?.addEventListener('click', () => {
+      this.activeDashboardTab = 'blocked-slots';
+      this.renderCurrentView();
+    });
+
+    document.getElementById('quick-manage-slots-from-services-btn')?.addEventListener('click', () => {
+      this.activeDashboardTab = 'blocked-slots';
+      this.renderCurrentView();
+    });
+
+    // --- LISTENERS DE LA PESTAÑA BLOQUEOS Y HORAS ---
+    const datePicker = document.getElementById('blocked-slots-date-picker');
+    datePicker?.addEventListener('change', (e) => {
+      if (e.target.value) {
+        this.selectedBlockedSlotsDate = e.target.value;
+        this.renderCurrentView();
+      }
+    });
+
+    document.getElementById('btn-prev-day')?.addEventListener('click', () => {
+      const cur = this.selectedBlockedSlotsDate || this.getTodayDateString();
+      const [y, m, d] = cur.split('-').map(Number);
+      const prevDate = new Date(y, m - 1, d - 1);
+      const prevY = prevDate.getFullYear();
+      const prevM = String(prevDate.getMonth() + 1).padStart(2, '0');
+      const prevD = String(prevDate.getDate()).padStart(2, '0');
+      this.selectedBlockedSlotsDate = `${prevY}-${prevM}-${prevD}`;
+      this.renderCurrentView();
+    });
+
+    document.getElementById('btn-next-day')?.addEventListener('click', () => {
+      const cur = this.selectedBlockedSlotsDate || this.getTodayDateString();
+      const [y, m, d] = cur.split('-').map(Number);
+      const nextDate = new Date(y, m - 1, d + 1);
+      const nextY = nextDate.getFullYear();
+      const nextM = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const nextD = String(nextDate.getDate()).padStart(2, '0');
+      this.selectedBlockedSlotsDate = `${nextY}-${nextM}-${nextD}`;
+      this.renderCurrentView();
+    });
+
+    document.querySelectorAll('.quick-date-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.selectedBlockedSlotsDate = btn.getAttribute('data-date');
+        this.renderCurrentView();
+      });
+    });
+
+    // Clic en Franja Horaria (Disponible o Bloqueada)
+    document.querySelectorAll('.interactive-slot-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const timeStr = btn.getAttribute('data-time');
+        const selectedDate = this.selectedBlockedSlotsDate || this.getTodayDateString();
+        btn.classList.add('opacity-50', 'pointer-events-none');
+        try {
+          const res = await storage.toggleBlockedSlot(currentBiz.id, selectedDate, timeStr);
+          if (res && res.action === 'blocked') {
+            this.showToast(`🔒 Franja ${this.formatTime12h(timeStr)} bloqueada exitosamente.`, 'info');
+          } else {
+            this.showToast(`🔓 Franja ${this.formatTime12h(timeStr)} liberada y disponible para reservas.`, 'success');
+          }
+        } catch (err) {
+          this.showToast('Error al actualizar disponibilidad de horario.', 'error');
+        }
+        this.renderCurrentView();
+      });
+    });
+
+    // Clic en Cita Agendada (ver detalle)
+    document.querySelectorAll('.slot-booked-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+        const apt = appointments.find(a => a.id === aptId);
+        if (apt) {
+          this.renderBookedSlotAppointmentModal(apt);
+        }
+      });
+    });
+
+    // Bloquear Todo el Día
+    document.getElementById('btn-block-all-day')?.addEventListener('click', async () => {
+      const selectedDate = this.selectedBlockedSlotsDate || this.getTodayDateString();
+      const sch = currentBiz.schedule || { openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+      
+      const timeToMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        let str = String(timeStr).trim().toUpperCase();
+        const isPM = str.includes('PM');
+        const isAM = str.includes('AM');
+        str = str.replace(/[APM\s]/g, '');
+        const [hStr, mStr] = str.split(':');
+        let h = parseInt(hStr, 10) || 0;
+        const min = parseInt(mStr, 10) || 0;
+        if (isPM && h < 12) h += 12;
+        if (isAM && h === 12) h = 0;
+        return h * 60 + min;
+      };
+
+      const minutesToTime = (totalMinutes) => {
+        const totalH = Math.floor(totalMinutes / 60);
+        const min = (totalMinutes % 60).toString().padStart(2, '0');
+        const period = totalH >= 12 ? 'PM' : 'AM';
+        let hour12 = totalH % 12;
+        if (hour12 === 0) hour12 = 12;
+        return `${hour12}:${min} ${period}`;
+      };
+
+      const openMin = timeToMinutes(sch.openTime || '08:00');
+      const closeMin = timeToMinutes(sch.closeTime || '18:00');
+      const slotStep = sch.slotDuration || 30;
+
+      const allTimes = [];
+      for (let cur = openMin; cur + slotStep <= closeMin; cur += slotStep) {
+        allTimes.push(minutesToTime(cur));
+      }
+
+      if (confirm(`¿Deseas bloquear todas las franjas horarias (${allTimes.length} turnos) del día ${this.formatDateDMY(selectedDate)} para que nadie pueda agendar?`)) {
+        await storage.setDayBlockedSlots(currentBiz.id, selectedDate, allTimes, 'block_all');
+        this.showToast(`🔒 Todas las horas del ${this.formatDateDMY(selectedDate)} han sido bloqueadas.`, 'info');
+        this.renderCurrentView();
+      }
+    });
+
+    // Liberar Todo el Día
+    document.getElementById('btn-unblock-all-day')?.addEventListener('click', async () => {
+      const selectedDate = this.selectedBlockedSlotsDate || this.getTodayDateString();
+      if (confirm(`¿Deseas eliminar todos los bloqueos manuales y restablecer la disponibilidad normal para el día ${this.formatDateDMY(selectedDate)}?`)) {
+        await storage.setDayBlockedSlots(currentBiz.id, selectedDate, [], 'unblock_all');
+        this.showToast(`🔓 Todos los bloqueos del ${this.formatDateDMY(selectedDate)} han sido eliminados.`, 'success');
+        this.renderCurrentView();
+      }
     });
   }
 

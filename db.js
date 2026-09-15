@@ -181,6 +181,18 @@ export async function initDatabase() {
       );
     `);
 
+    // 9. Crear tabla de franjas horarias bloqueadas por comercios
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_blocked_slots (
+        id VARCHAR(64) PRIMARY KEY,
+        business_id VARCHAR(50) REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        date VARCHAR(20) NOT NULL,
+        time VARCHAR(20) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(business_id, date, time)
+      );
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';

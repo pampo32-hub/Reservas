@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
   BIZ_USER: 'directorio_biz_user_session',
   CLIENT_USER: 'directorio_client_user_session',
   DEV_USER: 'directorio_dev_user_session'
+  DEV_USER: 'directorio_dev_user_session',
+  BLOCKED_SLOTS: 'directorio_blocked_slots_v1'
 };
 
 class StorageService {
@@ -15,6 +17,7 @@ class StorageService {
     this.apiBase = '/api';
     this.businessesCache = [];
     this.appointmentsCache = [];
+    this.blockedSlotsCache = [];
     this.isOnlineApi = true;
     this.init();
   }
@@ -31,6 +34,9 @@ class StorageService {
       if (!localStorage.getItem(STORAGE_KEYS.APPOINTMENTS)) {
         localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(INITIAL_APPOINTMENTS));
       }
+      if (!localStorage.getItem(STORAGE_KEYS.BLOCKED_SLOTS)) {
+        localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify([]));
+      }
     }
   }
 
@@ -44,6 +50,17 @@ class StorageService {
       this.isOnlineApi = false;
       const local = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
       this.businessesCache = local ? JSON.parse(local) : INITIAL_BUSINESSES;
+    }
+
+    try {
+      const resSlots = await fetch(`${this.apiBase}/blocked-slots`);
+      if (resSlots.ok) {
+        this.blockedSlotsCache = await resSlots.json();
+        localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify(this.blockedSlotsCache));
+      }
+    } catch (e) {
+      const localSlots = localStorage.getItem(STORAGE_KEYS.BLOCKED_SLOTS);
+      this.blockedSlotsCache = localSlots ? JSON.parse(localSlots) : [];
     }
   }
 
@@ -809,6 +826,151 @@ class StorageService {
     return true;
   }
 
+  // ==========================================
+  // GESTIÓN DE HORARIOS BLOQUEADOS POR EL COMERCIO
+  // ==========================================
+  getBlockedSlots(businessId = null, dateString = null) {
+    let slots = this.blockedSlotsCache;
+    if (!slots || slots.length === 0) {
+      const local = localStorage.getItem(STORAGE_KEYS.BLOCKED_SLOTS);
+      slots = local ? JSON.parse(local) : [];
+      this.blockedSlotsCache = slots;
+    }
+    if (businessId) {
+      slots = slots.filter(s => s.businessId === businessId);
+    }
+    if (dateString) {
+      slots = slots.filter(s => s.date === dateString);
+    }
+    return slots;
+  }
+
+  isSlotBlocked(businessId, dateString, timeStr) {
+    const slots = this.getBlockedSlots(businessId, dateString);
+    const parseM = (t) => {
+      if (!t) return -1;
+      let s = String(t).trim().toUpperCase();
+      const isPM = s.includes('PM');
+      const isAM = s.includes('AM');
+      s = s.replace(/[APM\s]/g, '');
+      const [hStr, mStr] = s.split(':');
+      let h = parseInt(hStr, 10) || 0;
+      const m = parseInt(mStr, 10) || 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
+      return h * 60 + m;
+    };
+    const targetMin = parseM(timeStr);
+    return slots.some(s => parseM(s.time) === targetMin);
+  }
+
+  async toggleBlockedSlot(businessId, dateString, timeStr) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/blocked-slots/toggle`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateString, time: timeStr })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.action === 'unblocked') {
+            this.blockedSlotsCache = this.blockedSlotsCache.filter(
+              s => !(s.businessId === businessId && s.date === dateString && s.time === timeStr)
+            );
+          } else if (data.action === 'blocked') {
+            this.blockedSlotsCache.push({
+              id: data.id || `blk-${Date.now()}`,
+              businessId,
+              date: dateString,
+              time: timeStr
+            });
+          }
+          localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify(this.blockedSlotsCache));
+          return data;
+        }
+      } catch (e) {
+        console.warn('Error alternando bloqueo en API:', e);
+      }
+    }
+
+    // Modo local / Fallback
+    const existingIdx = this.blockedSlotsCache.findIndex(
+      s => s.businessId === businessId && s.date === dateString && s.time === timeStr
+    );
+    let action = 'blocked';
+    if (existingIdx >= 0) {
+      this.blockedSlotsCache.splice(existingIdx, 1);
+      action = 'unblocked';
+    } else {
+      this.blockedSlotsCache.push({
+        id: `blk-${Date.now()}`,
+        businessId,
+        date: dateString,
+        time: timeStr
+      });
+      action = 'blocked';
+    }
+    localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify(this.blockedSlotsCache));
+    return { success: true, action, date: dateString, time: timeStr };
+  }
+
+  async setDayBlockedSlots(businessId, dateString, times, action) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/blocked-slots/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: dateString, times, action })
+        });
+        if (res.ok) {
+          if (action === 'unblock_all') {
+            this.blockedSlotsCache = this.blockedSlotsCache.filter(
+              s => !(s.businessId === businessId && s.date === dateString)
+            );
+          } else if (action === 'block_all') {
+            this.blockedSlotsCache = this.blockedSlotsCache.filter(
+              s => !(s.businessId === businessId && s.date === dateString)
+            );
+            times.forEach(t => {
+              this.blockedSlotsCache.push({
+                id: `blk-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+                businessId,
+                date: dateString,
+                time: t
+              });
+            });
+          }
+          localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify(this.blockedSlotsCache));
+          return await res.json();
+        }
+      } catch (e) {
+        console.warn('Error en bulk slots API:', e);
+      }
+    }
+
+    // Modo local
+    if (action === 'unblock_all') {
+      this.blockedSlotsCache = this.blockedSlotsCache.filter(
+        s => !(s.businessId === businessId && s.date === dateString)
+      );
+    } else if (action === 'block_all' && Array.isArray(times)) {
+      this.blockedSlotsCache = this.blockedSlotsCache.filter(
+        s => !(s.businessId === businessId && s.date === dateString)
+      );
+      times.forEach(t => {
+        this.blockedSlotsCache.push({
+          id: `blk-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          businessId,
+          date: dateString,
+          time: t
+        });
+      });
+    }
+    localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify(this.blockedSlotsCache));
+    return { success: true, action, date: dateString };
+  }
+
   // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL ---
   getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null) {
     const business = this.getBusinessById(businessId);
@@ -862,6 +1024,13 @@ class StorageService {
       return { start, end: start + duration };
     });
 
+    // Franjas horarias bloqueadas manualmente por el negocio
+    const blockedSlots = this.getBlockedSlots(businessId, dateString);
+    const blockedRanges = blockedSlots.map(b => {
+      const start = timeToMinutes(b.time);
+      return { start, end: start + slotStep };
+    });
+
     const availableSlots = [];
 
     for (let current = openMin; current + serviceDur <= closeMin; current += slotStep) {
@@ -875,10 +1044,17 @@ class StorageService {
       const hasConflict = bookedRanges.some(booked => {
         return (current < booked.end && slotEnd > booked.start);
       });
+      if (hasConflict) continue;
 
       if (!hasConflict) {
         availableSlots.push(minutesToTime(current));
       }
+      const hasBlockedConflict = blockedRanges.some(blocked => {
+        return (current < blocked.end && slotEnd > blocked.start);
+      });
+      if (hasBlockedConflict) continue;
+
+      availableSlots.push(minutesToTime(current));
     }
 
     return {

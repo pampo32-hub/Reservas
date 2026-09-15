@@ -750,6 +750,138 @@ app.put('/api/businesses/:id/schedule', async (req, res) => {
   }
 });
 
+// ==========================================
+// RUTAS DE GESTIÓN DE HORARIOS BLOQUEADOS
+// ==========================================
+
+// Obtener todos los bloqueos de horarios (o filtrar por businessId y date)
+app.get('/api/blocked-slots', async (req, res) => {
+  try {
+    const { businessId, date } = req.query;
+    let query = 'SELECT * FROM reservas_blocked_slots';
+    const params = [];
+    const conditions = [];
+
+    if (businessId) {
+      params.push(businessId);
+      conditions.push(`business_id = $${params.length}`);
+    }
+    if (date) {
+      params.push(date);
+      conditions.push(`date = $${params.length}`);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY date ASC, time ASC';
+
+    const result = await pool.query(query, params);
+    const slots = result.rows.map(r => ({
+      id: r.id,
+      businessId: r.business_id,
+      date: r.date,
+      time: r.time,
+      createdAt: r.created_at
+    }));
+    res.json(slots);
+  } catch (error) {
+    console.error('Error en GET /api/blocked-slots:', error);
+    res.status(500).json({ error: 'Error al obtener horarios bloqueados' });
+  }
+});
+
+// Obtener bloqueos de un negocio específico
+app.get('/api/businesses/:id/blocked-slots', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date } = req.query;
+    let query = 'SELECT * FROM reservas_blocked_slots WHERE business_id = $1';
+    const params = [id];
+    if (date) {
+      params.push(date);
+      query += ' AND date = $2';
+    }
+    query += ' ORDER BY date ASC, time ASC';
+    const result = await pool.query(query, params);
+    const slots = result.rows.map(r => ({
+      id: r.id,
+      businessId: r.business_id,
+      date: r.date,
+      time: r.time,
+      createdAt: r.created_at
+    }));
+    res.json(slots);
+  } catch (error) {
+    console.error('Error en GET /api/businesses/:id/blocked-slots:', error);
+    res.status(500).json({ error: 'Error al obtener horarios bloqueados' });
+  }
+});
+
+// Alternar (Toggle) bloqueo de una hora específica (bloquear / liberar)
+app.post('/api/businesses/:id/blocked-slots/toggle', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, time } = req.body;
+    if (!date || !time) {
+      return res.status(400).json({ error: 'Faltan parámetros date y time' });
+    }
+
+    const existing = await pool.query(
+      'SELECT * FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2 AND time = $3',
+      [id, date, time]
+    );
+
+    if (existing.rows.length > 0) {
+      await pool.query('DELETE FROM reservas_blocked_slots WHERE id = $1', [existing.rows[0].id]);
+      return res.json({ success: true, action: 'unblocked', date, time });
+    } else {
+      const slotId = `blk-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      await pool.query(
+        'INSERT INTO reservas_blocked_slots (id, business_id, date, time) VALUES ($1, $2, $3, $4)',
+        [slotId, id, date, time]
+      );
+      return res.json({ success: true, action: 'blocked', id: slotId, businessId: id, date, time });
+    }
+  } catch (error) {
+    console.error('Error en POST /api/businesses/:id/blocked-slots/toggle:', error);
+    res.status(500).json({ error: 'Error al alternar bloqueo de horario' });
+  }
+});
+
+// Operaciones masivas: bloquear o liberar un conjunto de horas o todo el día
+app.post('/api/businesses/:id/blocked-slots/bulk', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { date, times, action } = req.body; // action: 'block_all' | 'unblock_all'
+    if (!date) {
+      return res.status(400).json({ error: 'Falta parámetro date' });
+    }
+
+    if (action === 'unblock_all') {
+      await pool.query('DELETE FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2', [id, date]);
+      return res.json({ success: true, action: 'unblock_all', date });
+    }
+
+    if (action === 'block_all' && Array.isArray(times) && times.length > 0) {
+      await pool.query('DELETE FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2', [id, date]);
+      for (const time of times) {
+        const slotId = `blk-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        await pool.query(
+          'INSERT INTO reservas_blocked_slots (id, business_id, date, time) VALUES ($1, $2, $3, $4) ON CONFLICT (business_id, date, time) DO NOTHING',
+          [slotId, id, date, time]
+        );
+      }
+      return res.json({ success: true, action: 'block_all', date, count: times.length });
+    }
+
+    res.status(400).json({ error: 'Acción no válida o lista de horarios vacía' });
+  } catch (error) {
+    console.error('Error en POST /api/businesses/:id/blocked-slots/bulk:', error);
+    res.status(500).json({ error: 'Error en operación masiva de horarios' });
+  }
+});
+
 // Actualizar Plan de Suscripción de un Negocio (Dueño o Developer)
 app.put('/api/businesses/:id/plan', async (req, res) => {
   try {
