@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pack 5 Historias de Instagram (1080x1920 HD) - Reservas CR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #030712;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4 sm:p-8 text-white">
+
+  <!-- Header del Pack -->
+  <div class="max-w-3xl w-full text-center space-y-3 mb-8">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-wider">
+      <i class="fas fa-calendar-alt"></i> Contenido para Publicar en Días Diferentes
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-black text-white">Pack de 5 Historias Oficiales (1080 x 1920 px)</h1>
+    <p class="text-slate-400 text-sm max-w-xl mx-auto">
+      5 diseños directos y al grano, cada uno con un enfoque diferente para alternar durante la semana en tus historias de Instagram.
+    </p>
+
+    <!-- Botón Descargar Todo -->
+    <div class="pt-2 flex justify-center">
+      <button onclick="downloadAllStories()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 hover:from-emerald-400 hover:to-blue-500 text-white font-black shadow-xl shadow-emerald-500/25 flex items-center gap-3 transition-transform transform hover:scale-105 cursor-pointer text-sm">
+        <i class="fas fa-cloud-download-alt text-lg"></i>
+        <span>Descargar las 5 Historias (Pack Completo PNG HD)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GRILLA DE LAS 5 HISTORIAS -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-[1500px] w-full pb-12">
+    
+    <!-- TARJETA HISTORIA 1 -->
+    <div class="bg-slate-900/90 rounded-3xl p-4 border border-slate-800 flex flex-col justify-between shadow-2xl hover:border-slate-700 transition-all">
+      <div class="space-y-2 mb-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-red-500/20 text-red-400 border border-red-500/30">DÍA 1 • DOLOR</span>
+          <span class="text-[11px] text-slate-400 font-bold">1080x1920</span>
+        </div>
+        <h3 class="font-extrabold text-sm text-white leading-tight">El fin del desorden en WhatsApp</h3>
+        <p class="text-[11px] text-slate-400">Atrae comercios cansados de perder clientes por responder tarde.</p>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden border border-slate-700/60 bg-black mb-4">
+        <img id="img-story-1" src="./story_dia_1.svg" alt="Historia 1" class="w-full h-auto block">
+      </div>
+
+      <button onclick="downloadSingleStory('story_dia_1.svg', 'historia_dia_1_whatsapp.png')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar PNG
+      </button>
+    </div>
+
+    <!-- TARJETA HISTORIA 2 -->
+    <div class="bg-slate-900/90 rounded-3xl p-4 border border-slate-800 flex flex-col justify-between shadow-2xl hover:border-slate-700 transition-all">
+      <div class="space-y-2 mb-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/30">DÍA 2 • CLIENTES</span>
+          <span class="text-[11px] text-slate-400 font-bold">1080x1920</span>
+        </div>
+        <h3 class="font-extrabold text-sm text-white leading-tight">El Directorio de Costa Rica</h3>
+        <p class="text-[11px] text-slate-400">Atrae usuarios finales para buscar barberías, spas y salud.</p>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden border border-slate-700/60 bg-black mb-4">
+        <img id="img-story-2" src="./story_dia_2.svg" alt="Historia 2" class="w-full h-auto block">
+      </div>
+
+      <button onclick="downloadSingleStory('story_dia_2.svg', 'historia_dia_2_directorio.png')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar PNG
+      </button>
+    </div>
+
+    <!-- TARJETA HISTORIA 3 -->
+    <div class="bg-slate-900/90 rounded-3xl p-4 border border-slate-800 flex flex-col justify-between shadow-2xl hover:border-slate-700 transition-all">
+      <div class="space-y-2 mb-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">DÍA 3 • BOT WA</span>
+          <span class="text-[11px] text-slate-400 font-bold">1080x1920</span>
+        </div>
+        <h3 class="font-extrabold text-sm text-white leading-tight">Recordatorios por WhatsApp</h3>
+        <p class="text-[11px] text-slate-400">Reduce inasistencias y cancelaciones hasta en un 80%.</p>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden border border-slate-700/60 bg-black mb-4">
+        <img id="img-story-3" src="./story_dia_3.svg" alt="Historia 3" class="w-full h-auto block">
+      </div>
+
+      <button onclick="downloadSingleStory('story_dia_3.svg', 'historia_dia_3_recordatorios.png')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar PNG
+      </button>
+    </div>
+
+    <!-- TARJETA HISTORIA 4 -->
+    <div class="bg-slate-900/90 rounded-3xl p-4 border border-slate-800 flex flex-col justify-between shadow-2xl hover:border-slate-700 transition-all">
+      <div class="space-y-2 mb-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">DÍA 4 • SUSCRIPCIÓN</span>
+          <span class="text-[11px] text-slate-400 font-bold">1080x1920</span>
+        </div>
+        <h3 class="font-extrabold text-sm text-white leading-tight">Tarifa Fija sin Comisiones</h3>
+        <p class="text-[11px] text-slate-400">Catálogo digital y enlace propio por un pago mensual fijo.</p>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden border border-slate-700/60 bg-black mb-4">
+        <img id="img-story-4" src="./story_dia_4.svg" alt="Historia 4" class="w-full h-auto block">
+      </div>
+
+      <button onclick="downloadSingleStory('story_dia_4.svg', 'historia_dia_4_tarifa_fija.png')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar PNG
+      </button>
+    </div>
+
+    <!-- TARJETA HISTORIA 5 -->
+    <div class="bg-slate-900/90 rounded-3xl p-4 border border-slate-800 flex flex-col justify-between shadow-2xl hover:border-slate-700 transition-all">
+      <div class="space-y-2 mb-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30">DÍA 5 • CONFIANZA</span>
+          <span class="text-[11px] text-slate-400 font-bold">1080x1920</span>
+        </div>
+        <h3 class="font-extrabold text-sm text-white leading-tight">Reseñas 100% Reales</h3>
+        <p class="text-[11px] text-slate-400">Calificaciones verificadas tras cada servicio completado.</p>
+      </div>
+
+      <div class="relative rounded-2xl overflow-hidden border border-slate-700/60 bg-black mb-4">
+        <img id="img-story-5" src="./story_dia_5.svg" alt="Historia 5" class="w-full h-auto block">
+      </div>
+
+      <button onclick="downloadSingleStory('story_dia_5.svg', 'historia_dia_5_resenas.png')" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar PNG
+      </button>
+    </div>
+
+  </div>
+
+  <canvas id="exportCanvas" width="1080" height="1920" style="display:none;"></canvas>
+
+  <script>
+    function downloadSingleStory(svgFilename, downloadName) {
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        ctx.clearRect(0, 0, 1080, 1920);
+        ctx.drawImage(img, 0, 0, 1080, 1920);
+        const link = document.createElement('a');
+        link.download = downloadName;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      };
+      img.src = './' + svgFilename + '?t=' + new Date().getTime();
+    }
+
+    async function downloadAllStories() {
+      const stories = [
+        { file: 'story_dia_1.svg', name: 'historia_dia_1_whatsapp.png' },
+        { file: 'story_dia_2.svg', name: 'historia_dia_2_directorio.png' },
+        { file: 'story_dia_3.svg', name: 'historia_dia_3_recordatorios.png' },
+        { file: 'story_dia_4.svg', name: 'historia_dia_4_tarifa_fija.png' },
+        { file: 'story_dia_5.svg', name: 'historia_dia_5_resenas.png' }
+      ];
+
+      for (let i = 0; i < stories.length; i++) {
+        downloadSingleStory(stories[i].file, stories[i].name);
+        await new Promise(r => setTimeout(r, 700));
+      }
+    }
+  </script>
+</body>
+</html>
