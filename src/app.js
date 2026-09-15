@@ -1,9 +1,10 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
-// FLAGS TEMPORALES: Cambiar a true cuando se desee reactivar el registro o accesos rápidos de comercios
+// FLAGS TEMPORALES: Cambiar a true cuando se desee reactivar el registro, login o accesos rápidos de comercios
 const REGISTRATION_ENABLED = false;
 const SHOW_BIZ_SHORTCUTS = false;
+const SHOW_LOGIN_BUTTON = false;
 
 class App {
   constructor() {
@@ -254,6 +255,12 @@ class App {
       return { view: 'developer-dashboard', params: {} };
     }
 
+    // 9. Acceso directo por URL (login/acceso)
+    if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
+      setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+      return { view: 'directory', params: {} };
+    }
+
     return { view: 'directory', params: {} };
   }
 
@@ -361,7 +368,7 @@ class App {
               </button>
             ` : ''}
 
-            ${!clientUser && !bizUser && !devUser ? `
+            ${!clientUser && !bizUser && !devUser && SHOW_LOGIN_BUTTON ? `
               <button id="mobile-top-login-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn">
                 <i class="fas fa-sign-in-alt text-xs"></i>
                 <span>Entrar</span>
@@ -418,10 +425,12 @@ class App {
 
             <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
             ${!clientUser && !bizUser && !devUser ? `
+              ${SHOW_LOGIN_BUTTON ? `
               <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
                 <i class="fas fa-sign-in-alt text-blue-600"></i>
                 <span>Iniciar Sesión</span>
               </button>
+              ` : ''}
 
               ${REGISTRATION_ENABLED ? `
               <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all">
@@ -517,7 +526,9 @@ class App {
     const isOwner = this.currentView === 'owner-dashboard';
     const isDev = this.currentView === 'developer-dashboard';
     const showBizTab = !!bizUser || SHOW_BIZ_SHORTCUTS;
-    const gridColsClass = showBizTab ? 'grid-cols-4' : 'grid-cols-3';
+    const showAccountTab = !!clientUser || !!bizUser || !!devUser || SHOW_LOGIN_BUTTON;
+    const colCount = 2 + (showBizTab ? 1 : 0) + (showAccountTab ? 1 : 0);
+    const gridColsClass = colCount === 4 ? 'grid-cols-4' : (colCount === 3 ? 'grid-cols-3' : 'grid-cols-2');
 
     navContainer.innerHTML = `
       <div class="fixed bottom-0 inset-x-0 z-40 bottom-nav-blur border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1 pb-safe md:hidden">
@@ -549,22 +560,24 @@ class App {
           </button>
           ` : ''}
 
-          <!-- 4. Cuenta / Dev -->
-          ${devUser ? `
-            <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-500 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-              <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDev ? 'bg-amber-100 text-amber-600' : ''}">
-                <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
-              </div>
-              <span class="text-[10px] mt-0.5 tracking-tight">Developer</span>
-            </button>
-          ` : `
-            <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-              <div class="w-8 h-8 flex items-center justify-center rounded-xl ${clientUser || bizUser ? 'bg-blue-50 text-blue-600' : ''}">
-                <i class="fas fa-user-circle text-base"></i>
-              </div>
-              <span class="text-[10px] mt-0.5 tracking-tight">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
-            </button>
-          `}
+          <!-- 4. Cuenta / Dev (solo si hay sesión iniciada o si SHOW_LOGIN_BUTTON está activo) -->
+          ${showAccountTab ? `
+            ${devUser ? `
+              <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-500 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+                <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDev ? 'bg-amber-100 text-amber-600' : ''}">
+                  <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
+                </div>
+                <span class="text-[10px] mt-0.5 tracking-tight">Developer</span>
+              </button>
+            ` : `
+              <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+                <div class="w-8 h-8 flex items-center justify-center rounded-xl ${clientUser || bizUser ? 'bg-blue-50 text-blue-600' : ''}">
+                  <i class="fas fa-user-circle text-base"></i>
+                </div>
+                <span class="text-[10px] mt-0.5 tracking-tight">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
+              </button>
+            `}
+          ` : ''}
 
         </div>
       </div>
