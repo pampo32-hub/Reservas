@@ -237,7 +237,6 @@ class App {
               Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu cita al instante</span>
             </h1>
             <p class="mt-4 text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-              Barberías, spas, dentistas, talleres mecánicos y más en colones (₡ CRC). Selecciona tu horario ideal sin llamadas.
               Barberías, spas, dentistas, talleres mecánicos y más. Selecciona tu horario ideal sin llamadas.
             </p>
 
@@ -489,7 +488,6 @@ class App {
             <!-- Servicios -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
               <h2 class="text-xl font-bold text-slate-900 mb-2">Servicios Disponibles</h2>
-              <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas en colones (₡) para ver turnos disponibles y agendar.</p>
               <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas para ver turnos disponibles y agendar.</p>
 
               <div class="space-y-4">
@@ -1590,28 +1588,23 @@ class App {
           <!-- Cuerpo con Formularios Dinámicos -->
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
             ${mode === 'login' && role === 'client' ? `
-              <!-- FORM 1: LOGIN CLIENTE -->
-              <p class="text-xs text-slate-500">Ingresa tus datos para identificarte y consultar todas tus reservas activas e historial.</p>
+              <!-- FORM 1: LOGIN CLIENTE (TELÉFONO/CORREO Y CONTRASEÑA) -->
+              <p class="text-xs text-slate-500">Ingresa con tu teléfono o correo y tu contraseña para gestionar tus citas.</p>
               
               <form id="auth-client-login-form" class="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label class="block font-bold text-slate-700 mb-1">Nombre Completo *</label>
-                  <input type="text" id="cli-log-name" value="${currentClient ? currentClient.name : ''}" required placeholder="Ej. Juan Pérez" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <label class="block font-bold text-slate-700 mb-1">Teléfono o Correo Electrónico *</label>
+                  <input type="text" id="cli-log-identifier" required placeholder="Ej. +506 8888 7777 o juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <div>
-                  <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                  <input type="tel" id="cli-log-phone" value="${currentClient ? currentClient.phone : ''}" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
-                  <input type="email" id="cli-log-email" value="${currentClient ? currentClient.email || '' : ''}" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <label class="block font-bold text-slate-700 mb-1">Contraseña *</label>
+                  <input type="password" id="cli-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
                   <i class="fas fa-sign-in-alt"></i>
-                  <span>Ingresar como Cliente</span>
+                  <span>Iniciar Sesión como Cliente</span>
                 </button>
               </form>
             ` : ''}
@@ -1662,8 +1655,8 @@ class App {
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
-              <!-- FORM 3: REGISTRO CLIENTE -->
-              <p class="text-xs text-slate-500">Crea tu cuenta de cliente en segundos solo con tus datos de contacto básicos.</p>
+              <!-- FORM 3: REGISTRO CLIENTE (CON CONTRASEÑA Y CONFIRMACIÓN) -->
+              <p class="text-xs text-slate-500">Crea tu cuenta de cliente con contraseña segura para gestionar tus reservas en Costa Rica.</p>
               
               <form id="auth-client-reg-form" class="space-y-4 text-xs sm:text-sm">
                 <div>
@@ -1671,14 +1664,26 @@ class App {
                   <input type="text" id="cli-reg-name" required placeholder="Ej. Juan Pérez" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                  <input type="tel" id="cli-reg-phone" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                    <input type="tel" id="cli-reg-phone" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
+                    <input type="email" id="cli-reg-email" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
                 </div>
 
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
-                  <input type="email" id="cli-reg-email" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Crear Contraseña *</label>
+                    <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
+                  <div>
+                    <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
+                    <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
@@ -1848,12 +1853,11 @@ class App {
     // Evento Submit: Login Cliente
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('cli-log-name').value;
-      const phone = document.getElementById('cli-log-phone').value;
-      const email = document.getElementById('cli-log-email').value;
+      const identifier = document.getElementById('cli-log-identifier').value.trim();
+      const password = document.getElementById('cli-log-password').value;
 
       try {
-        await storage.loginOrRegisterClient(name, phone, email);
+        await storage.loginClient(identifier, password);
         this.showToast('¡Bienvenido(a)! Sesión iniciada como cliente.', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
@@ -1863,15 +1867,28 @@ class App {
       }
     });
 
-    // Evento Submit: Registro Cliente
+    // Evento Submit: Registro Cliente (con validación de contraseña y confirmación)
     document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('cli-reg-name').value;
-      const phone = document.getElementById('cli-reg-phone').value;
-      const email = document.getElementById('cli-reg-email').value;
+      const name = document.getElementById('cli-reg-name').value.trim();
+      const phone = document.getElementById('cli-reg-phone').value.trim();
+      const email = document.getElementById('cli-reg-email').value.trim();
+      const password = document.getElementById('cli-reg-password').value;
+      const passwordConfirm = document.getElementById('cli-reg-password-confirm').value;
+
+      if (password.length < 6) {
+        this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
+        return;
+      }
+
+      if (password !== passwordConfirm) {
+        this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
+        document.getElementById('cli-reg-password-confirm').focus();
+        return;
+      }
 
       try {
-        await storage.loginOrRegisterClient(name, phone, email);
+        await storage.registerClient(name, phone, email, password);
         this.showToast('¡Cuenta de cliente creada exitosamente!', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();

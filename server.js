@@ -132,7 +132,92 @@ app.post('/api/auth/business/register', async (req, res) => {
   }
 });
 
-// 3. Login / Registro Rápido de Cliente (Solo Nombre, Teléfono, Correo)
+// 3. Registro de Cliente con Contraseña
+app.post('/api/auth/client/register', async (req, res) => {
+  try {
+    const { name, phone, email, password } = req.body;
+    if (!name || !phone || !password) {
+      return res.status(400).json({ error: 'Nombre, Teléfono y Contraseña son obligatorios.' });
+    }
+
+    if (password.trim().length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+
+    // Verificar si ya existe el teléfono o correo
+    const existing = await pool.query(
+      'SELECT id FROM reservas_clients WHERE phone = $1 OR (email = $2 AND email != \'\')',
+      [phone.trim(), (email || '').trim()]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Ya existe una cuenta con este número de teléfono o correo.' });
+    }
+
+    const newClientId = `cli-${Date.now()}`;
+    await pool.query(`
+      INSERT INTO reservas_clients (id, name, phone, email, password)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), password.trim()]);
+
+    const clientUser = {
+      id: newClientId,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim()
+    };
+
+    res.json({ success: true, client: clientUser });
+  } catch (error) {
+    console.error('Error en registro de cliente:', error);
+    res.status(500).json({ error: 'Error al registrar cliente.' });
+  }
+});
+
+// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña)
+app.post('/api/auth/client/login', async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Ingresa tu teléfono/correo y contraseña.' });
+    }
+
+    const cleanIdent = identifier.trim();
+    const result = await pool.query(
+      'SELECT * FROM reservas_clients WHERE LOWER(email) = LOWER($1) OR phone = $1',
+      [cleanIdent]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'No se encontró cuenta con esos datos.' });
+    }
+
+    const clientRow = result.rows[0];
+    if (clientRow.password && clientRow.password !== password.trim()) {
+      return res.status(401).json({ error: 'Contraseña incorrecta.' });
+    }
+
+    // Si no tenía contraseña guardada previamente, se le asigna esta
+    if (!clientRow.password) {
+      await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [password.trim(), clientRow.id]);
+    }
+
+    res.json({
+      success: true,
+      client: {
+        id: clientRow.id,
+        name: clientRow.name,
+        phone: clientRow.phone,
+        email: clientRow.email || ''
+      }
+    });
+  } catch (error) {
+    console.error('Error en login de cliente:', error);
+    res.status(500).json({ error: 'Error al iniciar sesión de cliente.' });
+  }
+});
+
+// 5. Login / Identificación Rápida de Cliente (Al agendar)
 app.post('/api/auth/client/login-or-register', async (req, res) => {
   try {
     const { name, phone, email } = req.body;
@@ -149,7 +234,6 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
     let clientUser;
     if (existing.rows.length > 0) {
       clientUser = existing.rows[0];
-      // Actualizar nombre si cambió
       await pool.query('UPDATE reservas_clients SET name = $1, email = $2 WHERE id = $3', [name.trim(), (email || clientUser.email).trim(), clientUser.id]);
       clientUser.name = name.trim();
       clientUser.email = (email || clientUser.email).trim();

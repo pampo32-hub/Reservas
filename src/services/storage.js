@@ -131,6 +131,42 @@ class StorageService {
     localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
   }
 
+  async registerClient(name, phone, email, password) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/client/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al registrar cliente.');
+      this.setClientUser(data.client);
+      return data.client;
+    }
+
+    const client = { id: `cli-${Date.now()}`, name, phone, email };
+    this.setClientUser(client);
+    return client;
+  }
+
+  async loginClient(identifier, password) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/client/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+      this.setClientUser(data.client);
+      return data.client;
+    }
+
+    const client = { id: `cli-${Date.now()}`, name: identifier, phone: identifier, email: identifier };
+    this.setClientUser(client);
+    return client;
+  }
+
   async loginOrRegisterClient(name, phone, email) {
     if (this.isOnlineApi) {
       const res = await fetch(`${this.apiBase}/auth/client/login-or-register`, {

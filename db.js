@@ -100,9 +100,14 @@ export async function initDatabase() {
         id VARCHAR(50) PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         phone VARCHAR(50) NOT NULL,
-        email VARCHAR(150) NOT NULL,
+        email VARCHAR(150),
+        password VARCHAR(255),
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS password VARCHAR(255);
     `);
 
     console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');
