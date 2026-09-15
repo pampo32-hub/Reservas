@@ -820,6 +820,17 @@ app.post('/api/appointments', async (req, res) => {
 
     const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
 
+    // Enviar correo de confirmación de forma asíncrona en segundo plano
+    if (a.clientEmail && a.clientEmail.includes('@')) {
+      pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
+        .then(bizRes => {
+          const business = bizRes.rows[0] || null;
+          return sendBookingConfirmationEmail(createdAppointment, business);
+        })
+        .catch(emailErr => {
+          console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+        });
+    }
     // Enviar notificaciones de confirmación de forma asíncrona en segundo plano
     pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
       .then(bizRes => {
@@ -904,7 +915,7 @@ app.post('/api/test-email', async (req, res) => {
       serviceDuration: 45,
       servicePrice: 10000,
       date: '2026-09-20',
-      time: '3:30 PM',
+      time: '15:30',
       notes: 'Cita de prueba del sistema de correos',
       whatsappOptIn: true
     };

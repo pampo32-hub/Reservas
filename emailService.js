@@ -36,6 +36,21 @@ function formatTime12h(timeStr) {
 }
 
 /**
+ * Formatea fechas en formato DD/MM/YYYY (ej. 15/09/2026)
+ */
+function formatDateDMY(dateStr) {
+  if (!dateStr) return 'Fecha por confirmar';
+  const clean = String(dateStr).trim();
+  if (clean.includes('/')) return clean;
+  const parts = clean.split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+  }
+  return clean;
+}
+
+/**
  * Envía correo de confirmación de reserva al cliente
  */
 export async function sendBookingConfirmationEmail(appointment, business) {
@@ -52,7 +67,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
   const clientName = appointment.clientName || 'Estimado(a) Cliente';
   const businessName = business?.name || appointment.businessName || 'Comercio Asociado';
   const serviceName = appointment.serviceName || 'Servicio';
-  const dateStr = appointment.date || 'Fecha por confirmar';
+  const dateStr = formatDateDMY(appointment.date);
   const timeStr = formatTime12h(appointment.time);
   const durationStr = appointment.serviceDuration ? `${appointment.serviceDuration} min` : '30 min';
   const priceStr = formatColones(appointment.servicePrice);

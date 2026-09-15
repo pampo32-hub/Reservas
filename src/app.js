@@ -61,6 +61,18 @@ class App {
     return `${hour}:${minute} ${period}`;
   }
 
+  formatDateDMY(dateStr) {
+    if (!dateStr) return '';
+    const clean = String(dateStr).trim();
+    if (clean.includes('/')) return clean;
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+    }
+    return clean;
+  }
+
   init() {
     this.renderHeader();
     this.renderCurrentView();
@@ -958,7 +970,7 @@ class App {
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Fecha y Hora:</span>
-              <span class="font-bold text-blue-600">${appointment.date} a las ${this.formatTime12h(appointment.time)}</span>
+              <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Cliente:</span>
@@ -1057,7 +1069,7 @@ class App {
               <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs">
                 <div>
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Horario Registrado</span>
-                  <span class="font-bold text-slate-700"><i class="far fa-calendar mr-1 text-blue-600"></i>${appointment.date}</span>
+                  <span class="font-bold text-slate-700"><i class="far fa-calendar mr-1 text-blue-600"></i>${this.formatDateDMY(appointment.date)}</span>
                   <span class="font-bold text-slate-700 ml-2"><i class="far fa-clock mr-1 text-blue-600"></i>${this.formatTime12h(appointment.time)}</span>
                 </div>
                 <div class="text-right">
@@ -1341,7 +1353,7 @@ class App {
                     </div>
                     <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
-                      <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${apt.date}</strong></span>
+                      <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${this.formatDateDMY(apt.date)}</strong></span>
                       <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${this.formatTime12h(apt.time)}</strong> (${apt.serviceDuration} min)</span>
                       ${apt.notes ? `<span class="text-slate-400 italic">"${apt.notes}"</span>` : ''}
                     </div>
@@ -1623,7 +1635,7 @@ class App {
                   ${filteredAppointments.map(apt => `
                     <tr class="hover:bg-slate-50/80 transition-colors">
                       <td class="py-3.5 px-4 font-bold text-slate-900">
-                        <div>${apt.date}</div>
+                        <div>${this.formatDateDMY(apt.date)}</div>
                         <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
                       </td>
                       <td class="py-3.5 px-4">
@@ -2505,7 +2517,7 @@ class App {
                                 <span class="text-slate-800 font-medium block">${srvName}</span>
                               </td>
                               <td class="p-3 whitespace-nowrap">
-                                <span class="font-bold text-slate-800 block">${a.date}</span>
+                                <span class="font-bold text-slate-800 block">${this.formatDateDMY(a.date)}</span>
                                 <span class="text-[10px] text-blue-600 font-bold">${this.formatTime12h(a.time)}</span>
                               </td>
                               <td class="p-3 font-bold text-slate-900">
