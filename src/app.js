@@ -1424,7 +1424,7 @@ class App {
   // ==========================================
   // VISTA: PANTALLA DE CALIFICACIÓN Y RESEÑA VERIFICADA (#/calificar/:id)
   // ==========================================
-  async renderReviewBookingView(container, appointmentId, preselectedRating = null) {
+  async renderReviewBookingView(container, appointmentId, preselectedRating = null, allowEdit = false) {
     if (!appointmentId) {
       this.navigateTo('directory');
       return;
@@ -1468,7 +1468,7 @@ class App {
       5: '¡Excelente! 🤩'
     };
 
-    if (alreadyReviewed && review) {
+    if (alreadyReviewed && review && !allowEdit) {
       container.innerHTML = `
         <div class="max-w-lg mx-auto px-4 py-10 animate-fade-in">
           <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl text-center space-y-6">
@@ -1504,6 +1504,9 @@ class App {
             </div>
 
             <div class="flex flex-col sm:flex-row items-center gap-3 justify-center pt-2">
+              <button id="edit-review-btn" class="w-full sm:w-auto px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                <i class="fas fa-edit"></i> Modificar mi Calificación
+              </button>
               <button id="view-biz-page-btn" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
                 Ver Ficha de ${apt.businessName}
               </button>
@@ -1515,6 +1518,9 @@ class App {
         </div>
       `;
 
+      document.getElementById('edit-review-btn')?.addEventListener('click', () => {
+        this.renderReviewBookingView(container, appointmentId, review?.rating, true);
+      });
       document.getElementById('view-biz-page-btn')?.addEventListener('click', () => {
         this.navigateTo('business-detail', { businessId: apt.businessId });
       });
@@ -1585,7 +1591,7 @@ class App {
                 rows="4" 
                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-xs text-slate-800 transition-all resize-none"
                 placeholder="Cuéntanos qué tal la puntualidad, el trato del personal, las instalaciones y si recomendarías el lugar..."
-              ></textarea>
+              >${allowEdit && review?.comment ? this.escapeHtml(review.comment) : ''}</textarea>
             </div>
 
             <!-- Botón de Envío -->

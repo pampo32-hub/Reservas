@@ -1977,23 +1977,33 @@ app.post('/api/reviews', async (req, res) => {
 
     const apt = aptRes.rows[0];
 
-    // Verificar si ya fue calificada
+    // Verificar si ya fue calificada previamente
     const existing = await pool.query('SELECT id FROM reservas_reviews WHERE LOWER(appointment_id) = LOWER($1)', [apt.id]);
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: 'Esta cita ya ha sido calificada anteriormente.' });
-    }
+    let targetReviewId = `rev-${Date.now().toString().slice(-6)}`;
+    let isUpdate = false;
 
-    const newReviewId = `rev-${Date.now().toString().slice(-6)}`;
-    await pool.query(`
-      INSERT INTO reservas_reviews (
-        id, business_id, appointment_id, client_name, client_phone,
-        client_email, service_name, rating, comment, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-    `, [
-      newReviewId, apt.business_id, apt.id, apt.client_name,
-      apt.client_phone, apt.client_email || '', apt.service_name || '',
-      ratingNum, (comment || '').trim()
-    ]);
+    if (existing.rows.length > 0) {
+      targetReviewId = existing.rows[0].id;
+      isUpdate = true;
+      await pool.query(`
+        UPDATE reservas_reviews SET
+          rating = $1,
+          comment = $2,
+          created_at = NOW()
+        WHERE id = $3
+      `, [ratingNum, (comment || '').trim(), targetReviewId]);
+    } else {
+      await pool.query(`
+        INSERT INTO reservas_reviews (
+          id, business_id, appointment_id, client_name, client_phone,
+          client_email, service_name, rating, comment, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+      `, [
+        targetReviewId, apt.business_id, apt.id, apt.client_name,
+        apt.client_phone, apt.client_email || '', apt.service_name || '',
+        ratingNum, (comment || '').trim()
+      ]);
+    }
 
     // Marcar cita como completada si aún no lo estaba
     await pool.query("UPDATE reservas_appointments SET status = 'completed' WHERE id = $1 AND status != 'cancelled'", [appointmentId]);
