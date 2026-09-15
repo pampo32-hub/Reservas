@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anuncio Animado Story / Reel Oficial - Reservas CR</title>
+  <title>Campaña 4 Historias Animadas - Reservas CR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
@@ -15,106 +15,116 @@
 
     /* Marco del teléfono 9:16 vertical */
     .story-frame {
-      width: 380px;
-      height: 740px;
+      width: 400px;
+      height: 780px;
       max-width: 100vw;
       border-radius: 48px;
-      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.8), 0 0 50px rgba(14, 165, 233, 0.25);
+      box-shadow: 0 35px 100px rgba(0, 0, 0, 0.85), 0 0 60px rgba(14, 165, 233, 0.3);
     }
 
-    /* Animaciones Clave */
-    @keyframes tapPulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(0.92); }
-      100% { transform: scale(1); }
+    /* Animaciones */
+    @keyframes phoneShake {
+      0%, 100% { transform: rotate(0deg); }
+      20% { transform: rotate(-2deg) translate(-2px, 2px); }
+      40% { transform: rotate(2deg) translate(2px, -2px); }
+      60% { transform: rotate(-1.5deg) translate(-1px, 1px); }
+      80% { transform: rotate(1.5deg) translate(1px, -1px); }
     }
 
-    @keyframes popBounce {
-      0% { opacity: 0; transform: scale(0.6) translateY(30px) rotate(-3deg); }
-      60% { opacity: 1; transform: scale(1.05) translateY(-6px) rotate(1deg); }
-      80% { transform: scale(0.98) translateY(2px) rotate(0deg); }
-      100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.6) translateY(25px); }
+      70% { opacity: 1; transform: scale(1.05) translateY(-4px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    @keyframes pulseRing {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-      50% { transform: scale(1.04); box-shadow: 0 0 25px 6px rgba(16, 185, 129, 0.4); }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+      50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(16, 185, 129, 0.8); }
     }
 
-    @keyframes floatArrow {
+    @keyframes floatUpDown {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-8px); }
     }
 
-    .animate-pop-in {
-      animation: popBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
+    .animate-shake { animation: phoneShake 0.7s infinite ease-in-out; }
+    .animate-pop-1 { animation: popIn 0.4s 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+    .animate-pop-2 { animation: popIn 0.4s 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+    .animate-pop-3 { animation: popIn 0.4s 1.0s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+    .animate-pop-4 { animation: popIn 0.4s 1.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+    .animate-float { animation: floatUpDown 1.4s infinite ease-in-out; }
+    .animate-pulse-glow { animation: pulseGlow 1.8s infinite ease-in-out; }
 
-    .animate-pulse-ring {
-      animation: pulseRing 1.8s infinite ease-in-out;
-    }
-
-    .animate-float-arrow {
-      animation: floatArrow 1.2s infinite ease-in-out;
-    }
-
-    /* Slot Glow */
     .selected-slot {
       background: #ffffff !important;
       border-color: #10b981 !important;
-      box-shadow: 0 0 25px rgba(16, 185, 129, 0.5), 0 0 8px rgba(16, 185, 129, 0.3) !important;
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.5) !important;
       transform: scale(1.02);
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 text-white select-none">
 
-  <!-- Header Superior con Controles de Reproducción -->
-  <div class="max-w-md w-full text-center space-y-2 mb-4">
-    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-      <i class="fas fa-play-circle animate-pulse"></i> Anuncio Animado en Bucle (Story / Reel 9:16)
+  <!-- Panel de Control y Selector de Historias -->
+  <div class="max-w-xl w-full text-center space-y-3 mb-4">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+      <i class="fas fa-layer-group"></i> Campaña Completa de 4 Historias Animadas (Stories / Reels 9:16)
     </div>
-    <h1 class="text-xl sm:text-2xl font-black text-white">Publicidad Animada Oficial</h1>
+    <h1 class="text-xl sm:text-2xl font-black text-white">Secuencia Publicitaria Oficial (4 GIFs / Slides)</h1>
     
-    <!-- Barra de Controles -->
-    <div class="flex items-center justify-center gap-2 pt-1">
-      <button id="btn-restart" onclick="restartAnimation()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-all">
-        <i class="fas fa-redo"></i>
-        <span>Reiniciar</span>
+    <!-- Selector Manual de Historias -->
+    <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+      <button onclick="goToSlide(0)" id="btn-slide-0" class="px-3.5 py-1.5 rounded-xl text-xs font-black transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
+        1. El Caos 😫
       </button>
-      <button id="btn-toggle-play" onclick="togglePlay()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white text-xs font-black shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all">
-        <i id="play-icon" class="fas fa-pause"></i>
-        <span id="play-text">Pausar</span>
+      <button onclick="goToSlide(1)" id="btn-slide-1" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 hover:bg-slate-700 text-slate-300">
+        2. La Solución ⚡
+      </button>
+      <button onclick="goToSlide(2)" id="btn-slide-2" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 hover:bg-slate-700 text-slate-300">
+        3. WhatsApp 📲
+      </button>
+      <button onclick="goToSlide(3)" id="btn-slide-3" class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 hover:bg-slate-700 text-slate-300">
+        4. Lanzamiento 🚀
+      </button>
+
+      <button id="btn-auto-play" onclick="toggleAutoPlay()" class="ml-2 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md">
+        <i id="play-icon" class="fas fa-pause text-[10px]"></i>
+        <span id="play-text">Auto Bucle</span>
       </button>
     </div>
   </div>
 
-  <!-- FRAME PRINCIPAL DEL ANUNCIO (ESTILO SMARTPHONE STORY) -->
-  <div class="story-frame relative bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200 p-4 border-[6px] border-slate-800 flex flex-col justify-between overflow-hidden">
+  <!-- FRAME DEL SMARTPHONE 9:16 -->
+  <div class="story-frame relative bg-gradient-to-b from-slate-900 via-slate-950 to-black p-4 border-[6px] border-slate-800 flex flex-col justify-between overflow-hidden">
     
-    <!-- Resplandores ambientales de fondo -->
-    <div class="absolute -top-20 -left-20 w-64 h-64 bg-blue-400/15 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
+    <!-- Resplandores de fondo -->
+    <div class="absolute -top-24 -left-24 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- 1. HEADER STORY DE INSTAGRAM (BARRAS DE PROGRESO + PERFIL) -->
+    <!-- ============================================== -->
+    <!-- HEADER STORY: BARRAS DE PROGRESO DE 4 SEGMENTOS -->
+    <!-- ============================================== -->
     <div class="relative z-30 flex flex-col gap-2 pt-1">
-      <!-- Barras de Progreso (3 Segmentos) -->
+      <!-- 4 Barras de Progreso -->
       <div class="flex items-center gap-1.5">
-        <div class="h-1 flex-1 bg-slate-900/20 rounded-full overflow-hidden">
-          <div id="bar-1" class="h-full bg-slate-900 w-0 transition-all duration-[2500ms] ease-linear"></div>
+        <div class="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+          <div id="pbar-0" class="h-full bg-white w-0 transition-all ease-linear"></div>
         </div>
-        <div class="h-1 flex-1 bg-slate-900/20 rounded-full overflow-hidden">
-          <div id="bar-2" class="h-full bg-slate-900 w-0 transition-all duration-[2500ms] ease-linear"></div>
+        <div class="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+          <div id="pbar-1" class="h-full bg-white w-0 transition-all ease-linear"></div>
         </div>
-        <div class="h-1 flex-1 bg-slate-900/20 rounded-full overflow-hidden">
-          <div id="bar-3" class="h-full bg-slate-900 w-0 transition-all duration-[2500ms] ease-linear"></div>
+        <div class="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+          <div id="pbar-2" class="h-full bg-white w-0 transition-all ease-linear"></div>
+        </div>
+        <div class="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+          <div id="pbar-3" class="h-full bg-white w-0 transition-all ease-linear"></div>
         </div>
       </div>
 
       <!-- Barra de Perfil Oficial de Instagram -->
       <div class="flex items-center justify-between pt-1">
         <div class="flex items-center gap-2.5">
-          <!-- Avatar con Anillo de Story -->
+          <!-- Avatar con Anillo de Historia Activa -->
           <div class="w-10 h-10 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 shadow-sm flex items-center justify-center">
             <div class="w-full h-full bg-white rounded-full overflow-hidden p-0.5 flex items-center justify-center">
               <img src="./reservas_cr_oficial_logo.png" alt="Reservas CR" class="w-full h-full object-cover rounded-full">
@@ -122,237 +132,348 @@
           </div>
           <div>
             <div class="flex items-center gap-1">
-              <span class="font-black text-slate-900 text-sm tracking-tight">reservascr.app</span>
-              <i class="fas fa-check-circle text-blue-500 text-[11px]"></i>
+              <span class="font-black text-white text-sm tracking-tight">reservascr.app</span>
+              <i class="fas fa-check-circle text-blue-400 text-[11px]"></i>
             </div>
-            <span class="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider block">Publicidad Oficial</span>
+            <span class="text-[10px] font-extrabold text-blue-400 uppercase tracking-wider block">Publicidad Oficial</span>
           </div>
         </div>
 
-        <div class="flex items-center gap-1.5 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-200 shadow-xs">
+        <div class="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15 shadow-xs">
           <img src="./reservas_cr_oficial_logo.png" alt="Logo" class="w-4 h-4 object-cover rounded-sm">
-          <span class="font-black text-slate-900 text-[10px]">Reservas <span class="text-blue-600">CR</span></span>
+          <span class="font-black text-white text-[10px]">Reservas <span class="text-blue-400">CR</span></span>
         </div>
       </div>
     </div>
 
-    <!-- 2. TITULAR SUPERIOR DE ALTO IMPACTO -->
-    <div class="relative z-20 text-center py-2 px-1">
-      <h2 id="main-headline" class="text-xl font-black text-slate-900 leading-snug tracking-tight">
-        Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-600 via-sky-500 to-teal-500 bg-clip-text text-transparent">24/7</span> con confirmación inmediata
-      </h2>
-    </div>
-
-    <!-- 3. CONTENIDO CENTRAL DINÁMICO CON ANIMACIÓN -->
-    <div class="relative z-20 my-auto flex flex-col justify-center">
+    <!-- ============================================== -->
+    <!-- SLIDE 1: EL CAOS DE WHATSAPP                   -->
+    <!-- ============================================== -->
+    <div id="slide-0" class="relative z-20 flex-1 flex flex-col justify-between py-4 transition-all duration-500">
       
-      <!-- Teléfono Mockup Compacto -->
-      <div class="relative bg-slate-900 rounded-[32px] p-2.5 shadow-2xl border-[4px] border-slate-800">
+      <div class="text-center px-2">
+        <span class="px-3 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] font-black uppercase tracking-wider inline-block mb-2">
+          ❌ El problema de los negocios
+        </span>
+        <h2 class="text-2xl font-black text-white leading-tight">
+          ¿Cansado de perder clientes por mensajes sin responder?
+        </h2>
+      </div>
+
+      <!-- Teléfono Vibrando con Notificaciones -->
+      <div class="my-auto space-y-2.5 px-2">
         
-        <!-- Pantalla Interior -->
-        <div class="bg-white rounded-[24px] overflow-hidden flex flex-col pb-3 border border-slate-200">
-          
-          <!-- Header de la App con Logo Oficial -->
-          <div class="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-arrow-left text-slate-400 text-[10px]"></i>
-              <div class="w-5 h-5 rounded-md overflow-hidden bg-white shadow-xs border border-slate-200 flex items-center justify-center p-0.5">
-                <img src="./reservas_cr_oficial_logo.png" alt="Logo" class="w-full h-full object-cover rounded">
-              </div>
-              <span class="font-black text-slate-900 text-xs tracking-tight">Reservas <span class="text-blue-600">CR</span></span>
-            </div>
-            <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200">Abierto</span>
-          </div>
-
-          <!-- Banner del Comercio -->
-          <div class="relative h-24 bg-slate-800 overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80" alt="Salon" class="w-full h-full object-cover opacity-85">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-            <div class="absolute bottom-1.5 left-3 right-3 text-white">
-              <span class="text-[9px] font-bold uppercase tracking-wider text-blue-300">Barbería & Spa</span>
-              <h4 class="text-xs font-black leading-tight">Studio Barber Elite</h4>
-            </div>
-          </div>
-
-          <!-- Selector de Horarios Interactivos -->
-          <div class="p-3 space-y-2">
-            <div class="flex items-center justify-between text-[10px]">
-              <span class="font-black text-slate-400 uppercase tracking-wider">Horarios Disponibles</span>
-              <span class="font-bold text-blue-600">Hoy, 15 de Septiembre</span>
-            </div>
-
-            <!-- Botones de Horarios -->
-            <div class="grid grid-cols-2 gap-1.5 text-xs">
-              <div class="py-1.5 px-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
-                09:30 AM
-              </div>
-              <div class="py-1.5 px-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
-                10:00 AM
-              </div>
-            </div>
-
-            <!-- SLOT QUE SE SELECCIONA ANIMADAMENTE -->
-            <div id="slot-1030" class="py-2 px-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-slate-800 font-extrabold text-xs transition-all duration-300">
-              <div class="flex items-center gap-1.5">
-                <i class="far fa-clock text-blue-600"></i>
-                <span>10:30 AM</span>
-              </div>
-              <div id="slot-check" class="w-4 h-4 rounded-full bg-slate-200 text-white flex items-center justify-center text-[9px] transition-all">
-                <i class="fas fa-check"></i>
-              </div>
-            </div>
-
-            <!-- Otros Horarios -->
-            <div class="grid grid-cols-2 gap-1.5 text-xs opacity-50">
-              <div class="py-1.5 px-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
-                11:00 AM
-              </div>
-              <div class="py-1.5 px-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
-                12:00 PM
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-        <!-- NOTIFICACIÓN FLOTANTE DE WHATSAPP (APARECE EN ESCENA 2) -->
-        <div id="whatsapp-popup" class="absolute -top-6 -left-4 -right-4 z-40 bg-white rounded-2xl p-3 shadow-2xl border-2 border-emerald-400 flex items-center gap-3 opacity-0 pointer-events-none transition-all duration-500">
-          <div class="w-11 h-11 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl flex-shrink-0 shadow-md shadow-emerald-500/30">
+        <div class="bg-slate-800/90 rounded-2xl p-3 border border-slate-700 shadow-xl flex items-center gap-3 animate-pop-1">
+          <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0">
             <i class="fab fa-whatsapp"></i>
           </div>
-          <div class="min-w-0">
-            <span class="text-[10px] font-black text-emerald-600 uppercase tracking-wide block">Notificación Automática</span>
-            <h5 class="text-xs font-black text-slate-900 truncate">Confirmación enviada por WhatsApp</h5>
+          <div class="min-w-0 flex-1">
+            <div class="flex justify-between items-center text-[10px] text-slate-400">
+              <span class="font-bold text-slate-300">Cliente (María)</span>
+              <span>10:14 AM</span>
+            </div>
+            <p class="text-xs font-medium text-white truncate">¿Hola, tienen campo para hoy a las 3:00 PM?</p>
           </div>
         </div>
 
+        <div class="bg-slate-800/90 rounded-2xl p-3 border border-slate-700 shadow-xl flex items-center gap-3 animate-pop-2">
+          <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0">
+            <i class="fab fa-whatsapp"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex justify-between items-center text-[10px] text-slate-400">
+              <span class="font-bold text-slate-300">Cliente (Kevin)</span>
+              <span>10:15 AM</span>
+            </div>
+            <p class="text-xs font-medium text-white truncate">¿Cuánto cuesta el corte y barba?</p>
+          </div>
+        </div>
+
+        <div class="bg-slate-800/90 rounded-2xl p-3 border border-slate-700 shadow-xl flex items-center gap-3 animate-pop-3">
+          <div class="w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0">
+            <i class="fab fa-whatsapp"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex justify-between items-center text-[10px] text-slate-400">
+              <span class="font-bold text-slate-300">Cliente (Sofía)</span>
+              <span>10:17 AM</span>
+            </div>
+            <p class="text-xs font-medium text-white truncate">¿Me puede mover el turno para mañana?</p>
+          </div>
+        </div>
+
+        <div class="bg-red-500/15 border border-red-500/40 rounded-2xl p-2.5 text-center text-red-300 text-xs font-bold animate-pop-4">
+          ⚠️ Pierdes hasta el 30% de tus ventas por responder tarde.
+        </div>
+
+      </div>
+
+      <div class="text-center">
+        <span class="text-xs text-slate-400 font-semibold">¡Hay una mejor forma de trabajar! 👇</span>
       </div>
 
     </div>
 
-    <!-- 4. FOOTER INFERIOR CON LOGO OFICIAL Y DESLIZA -->
-    <div class="relative z-20 flex items-center justify-between pt-2 border-t border-slate-300/80">
+    <!-- ============================================== -->
+    <!-- SLIDE 2: LA SOLUCIÓN - RESERVAS CR             -->
+    <!-- ============================================== -->
+    <div id="slide-1" class="relative z-20 flex-1 flex flex-col justify-between py-4 transition-all duration-500 hidden">
       
-      <!-- Desliza CTA -->
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs shadow-md animate-float-arrow">
+      <div class="text-center px-2">
+        <span class="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] font-black uppercase tracking-wider inline-block mb-2">
+          ⚡ La Solución Inteligente
+        </span>
+        <h2 class="text-2xl font-black text-white leading-tight">
+          Tus clientes agendan solos <span class="text-blue-400">24/7 en 3 clics</span>
+        </h2>
+      </div>
+
+      <!-- Mockup de Reserva en Teléfono -->
+      <div class="my-auto bg-white rounded-3xl p-4 text-slate-900 shadow-2xl border-2 border-slate-200 space-y-3">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg overflow-hidden flex items-center justify-center">
+              <img src="./reservas_cr_oficial_logo.png" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="font-black text-xs">Studio Barber Elite</span>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black">Online</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Horarios de Hoy</span>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="py-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
+              09:30 AM
+            </div>
+            <div class="py-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
+              10:00 AM
+            </div>
+          </div>
+
+          <!-- Slot Seleccionado -->
+          <div class="py-2.5 px-3 rounded-xl bg-white border-2 border-emerald-500 shadow-lg shadow-emerald-500/20 flex items-center justify-between font-black text-sm text-slate-900">
+            <div class="flex items-center gap-2">
+              <i class="far fa-clock text-emerald-600"></i>
+              <span>10:30 AM</span>
+            </div>
+            <div class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]">
+              <i class="fas fa-check"></i>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs opacity-50">
+            <div class="py-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
+              11:00 AM
+            </div>
+            <div class="py-2 rounded-xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600">
+              12:00 PM
+            </div>
+          </div>
+        </div>
+
+        <div class="p-2 bg-blue-50 rounded-xl text-center text-blue-700 text-[10px] font-extrabold border border-blue-200">
+          ✨ Sin llamadas • Sin mensajes interminables • En tiempo real
+        </div>
+
+      </div>
+
+      <div class="text-center">
+        <span class="text-xs text-blue-300 font-semibold">Y las confirmaciones se envían solas 👇</span>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- SLIDE 3: WHATSAPP AUTOMÁTICO                   -->
+    <!-- ============================================== -->
+    <div id="slide-2" class="relative z-20 flex-1 flex flex-col justify-between py-4 transition-all duration-500 hidden">
+      
+      <div class="text-center px-2">
+        <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-black uppercase tracking-wider inline-block mb-2">
+          📲 Automatización Total
+        </span>
+        <h2 class="text-2xl font-black text-white leading-tight">
+          Confirmación y recordatorios por <span class="text-emerald-400">WhatsApp</span>
+        </h2>
+      </div>
+
+      <!-- Tarjeta WhatsApp -->
+      <div class="my-auto space-y-3 px-2">
+        <div class="w-14 h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center text-2xl mx-auto shadow-2xl shadow-emerald-500/40 animate-pulse-glow">
+          <i class="fab fa-whatsapp"></i>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 text-slate-900 shadow-2xl border-2 border-emerald-400 space-y-2">
+          <div class="flex items-center gap-2 text-emerald-700 font-black text-xs">
+            <i class="fab fa-whatsapp text-sm"></i>
+            <span>Mensaje Automático de WhatsApp</span>
+          </div>
+          <div class="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200 text-xs text-slate-800 space-y-1">
+            <p class="font-extrabold text-emerald-950">✅ ¡Hola Carlos, tu reserva está confirmada!</p>
+            <p>📅 <strong>Miércoles 16/09/2026</strong> a las <strong>10:30 AM</strong></p>
+            <p>💈 Servicio: <strong>Corte &amp; Barba Elite</strong></p>
+            <p>📍 Barber Elite • San José, Costa Rica</p>
+          </div>
+          <div class="text-[10px] text-slate-400 text-center font-semibold">
+            Notificaciones y recordatorios automáticos al cliente
+          </div>
+        </div>
+
+        <div class="p-2.5 bg-emerald-500/15 rounded-2xl border border-emerald-500/30 text-center text-emerald-300 text-xs font-bold">
+          🚀 Reduce faltas y cancelaciones hasta en un 80%.
+        </div>
+      </div>
+
+      <div class="text-center">
+        <span class="text-xs text-slate-400 font-semibold">¡Comienza hoy mismo! 👇</span>
+      </div>
+
+    </div>
+
+    <!-- ============================================== -->
+    <!-- SLIDE 4: LLAMADO A LA ACCIÓN / LANZAMIENTO     -->
+    <!-- ============================================== -->
+    <div id="slide-3" class="relative z-20 flex-1 flex flex-col justify-between py-4 transition-all duration-500 hidden">
+      
+      <div class="text-center px-2">
+        <span class="px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 text-white text-[11px] font-black uppercase tracking-wider inline-block mb-2 shadow-md">
+          🇨🇷 ¡MUY PRONTO EN COSTA RICA!
+        </span>
+        <h2 class="text-2xl font-black text-white leading-tight">
+          Registra tu negocio y automatiza tus reservas
+        </h2>
+      </div>
+
+      <!-- Logo Oficial 3D y Beneficios -->
+      <div class="my-auto text-center space-y-4 px-2">
+        <div class="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl mx-auto border-2 border-white/80 bg-white p-1 shadow-cyan-500/30 animate-pulse-glow">
+          <img src="./reservas_cr_oficial_logo.png" alt="Reservas CR Oficial" class="w-full h-full object-cover rounded-2xl">
+        </div>
+
+        <div>
+          <h3 class="text-xl font-black text-white">Reservas <span class="text-blue-400">CR</span></h3>
+          <p class="text-xs text-slate-400 font-bold">reservascr.app</p>
+        </div>
+
+        <div class="space-y-1.5 text-xs text-slate-300 font-semibold text-left bg-white/5 p-3 rounded-2xl border border-white/10">
+          <div class="flex items-center gap-2">
+            <i class="fas fa-check text-emerald-400"></i>
+            <span>Página web propia con catálogo y horarios</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fas fa-check text-emerald-400"></i>
+            <span>Notificaciones por WhatsApp y Correo</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fas fa-check text-emerald-400"></i>
+            <span>Panel de control en tiempo real</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón Desliza -->
+      <div class="text-center space-y-2">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-emerald-500 text-white flex items-center justify-center text-sm mx-auto shadow-lg animate-float">
           <i class="fas fa-arrow-up"></i>
         </div>
-        <span class="font-extrabold text-slate-800 text-xs">Desliza para registrarte</span>
+        <span class="font-black text-sm text-white block">Desliza para registrar tu negocio</span>
       </div>
 
-      <!-- Logo Oficial Esquina Inferior -->
-      <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-md border border-slate-200">
-        <div class="w-6 h-6 rounded-lg overflow-hidden flex items-center justify-center">
-          <img src="./reservas_cr_oficial_logo.png" alt="Reservas CR" class="w-full h-full object-cover rounded-md">
-        </div>
-        <div>
-          <span class="font-black text-xs text-slate-900 block leading-tight">Reservas <span class="text-blue-600">CR</span></span>
-          <span class="text-[9px] font-bold text-slate-500">reservascr.app</span>
-        </div>
-      </div>
+    </div>
 
+    <!-- ============================================== -->
+    <!-- FOOTER STORY                                   -->
+    <!-- ============================================== -->
+    <div class="relative z-20 flex items-center justify-between pt-2 border-t border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] text-slate-400 font-bold">Powered by</span>
+        <span class="text-[11px] font-black text-cyan-400">GEO SOFT</span>
+      </div>
+      <span class="text-[10px] font-extrabold text-slate-400">reservascr.app</span>
     </div>
 
   </div>
 
   <script>
-    let isPlaying = true;
-    let timer1, timer2, timer3, loopTimer;
+    let currentSlide = 0;
+    const totalSlides = 4;
+    const slideDuration = 4000; // 4 segundos por historia
+    let slideTimer;
+    let isAutoPlay = true;
 
-    function runAnimationSequence() {
-      if (!isPlaying) return;
+    function showSlide(index) {
+      currentSlide = index;
 
-      const bar1 = document.getElementById('bar-1');
-      const bar2 = document.getElementById('bar-2');
-      const bar3 = document.getElementById('bar-3');
-      const slot = document.getElementById('slot-1030');
-      const check = document.getElementById('slot-check');
-      const waPopup = document.getElementById('whatsapp-popup');
+      // Ocultar todos los slides
+      for (let i = 0; i < totalSlides; i++) {
+        const slide = document.getElementById('slide-' + i);
+        const pbar = document.getElementById('pbar-' + i);
+        const btn = document.getElementById('btn-slide-' + i);
 
-      // Reset inicial
-      bar1.style.width = '0%';
-      bar2.style.width = '0%';
-      bar3.style.width = '0%';
-      slot.classList.remove('selected-slot');
-      check.classList.remove('bg-emerald-500');
-      check.classList.add('bg-slate-200');
-      waPopup.classList.remove('animate-pop-in');
-      waPopup.style.opacity = '0';
-
-      // ==========================================
-      // FASE 1: Progreso Barra 1 + Selección de Horario (0s - 2.5s)
-      // ==========================================
-      bar1.style.width = '100%';
-
-      timer1 = setTimeout(() => {
-        if (!isPlaying) return;
-        // El cliente toca el slot 10:30 AM
-        slot.classList.add('selected-slot');
-        check.classList.remove('bg-slate-200');
-        check.classList.add('bg-emerald-500');
-      }, 1000);
-
-      // ==========================================
-      // FASE 2: Progreso Barra 2 + Salto Notificación WhatsApp (2.5s - 5s)
-      // ==========================================
-      timer2 = setTimeout(() => {
-        if (!isPlaying) return;
-        bar2.style.width = '100%';
-        waPopup.classList.add('animate-pop-in');
-        waPopup.style.opacity = '1';
-      }, 2500);
-
-      // ==========================================
-      // FASE 3: Progreso Barra 3 + Cierre y Bucle (5s - 7.5s)
-      // ==========================================
-      timer3 = setTimeout(() => {
-        if (!isPlaying) return;
-        bar3.style.width = '100%';
-      }, 5000);
-
-      // Reinicio del Bucle Automático cada 8 segundos
-      loopTimer = setTimeout(() => {
-        if (isPlaying) {
-          runAnimationSequence();
+        if (i === index) {
+          slide.classList.remove('hidden');
+          btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-black transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md';
+        } else {
+          slide.classList.add('hidden');
+          btn.className = 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all bg-slate-800 hover:bg-slate-700 text-slate-300';
         }
-      }, 8000);
-    }
 
-    function restartAnimation() {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(loopTimer);
-      isPlaying = true;
-      document.getElementById('play-icon').className = 'fas fa-pause';
-      document.getElementById('play-text').textContent = 'Pausar';
-      runAnimationSequence();
-    }
+        // Actualizar barras de progreso
+        if (i < index) {
+          pbar.style.transitionDuration = '0ms';
+          pbar.style.width = '100%';
+        } else if (i === index) {
+          pbar.style.transitionDuration = '0ms';
+          pbar.style.width = '0%';
+          setTimeout(() => {
+            if (isAutoPlay) {
+              pbar.style.transitionDuration = slideDuration + 'ms';
+              pbar.style.width = '100%';
+            }
+          }, 50);
+        } else {
+          pbar.style.transitionDuration = '0ms';
+          pbar.style.width = '0%';
+        }
+      }
 
-    function togglePlay() {
-      isPlaying = !isPlaying;
-      const playIcon = document.getElementById('play-icon');
-      const playText = document.getElementById('play-text');
-
-      if (isPlaying) {
-        playIcon.className = 'fas fa-pause';
-        playText.textContent = 'Pausar';
-        runAnimationSequence();
-      } else {
-        playIcon.className = 'fas fa-play';
-        playText.textContent = 'Reanudar';
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-        clearTimeout(loopTimer);
+      // Reiniciar temporizador automático
+      clearTimeout(slideTimer);
+      if (isAutoPlay) {
+        slideTimer = setTimeout(() => {
+          const next = (currentSlide + 1) % totalSlides;
+          showSlide(next);
+        }, slideDuration);
       }
     }
 
-    // Iniciar automáticamente
+    function goToSlide(index) {
+      showSlide(index);
+    }
+
+    function toggleAutoPlay() {
+      isAutoPlay = !isAutoPlay;
+      const playIcon = document.getElementById('play-icon');
+      const playText = document.getElementById('play-text');
+
+      if (isAutoPlay) {
+        playIcon.className = 'fas fa-pause text-[10px]';
+        playText.textContent = 'Auto Bucle';
+        showSlide(currentSlide);
+      } else {
+        playIcon.className = 'fas fa-play text-[10px]';
+        playText.textContent = 'Pausado';
+        clearTimeout(slideTimer);
+        const pbar = document.getElementById('pbar-' + currentSlide);
+        pbar.style.transitionDuration = '0ms';
+      }
+    }
+
+    // Iniciar
     window.addEventListener('DOMContentLoaded', () => {
-      runAnimationSequence();
+      showSlide(0);
     });
   </script>
 </body>
