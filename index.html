@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TurnoYa - Directorio de Negocios y Reservas Online</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./src/styles/main.css">
+</head>
+<body class="min-h-full flex flex-col antialiased text-slate-900 bg-slate-50">
+
+  <!-- Navbar Container -->
+  <div id="navbar-container"></div>
+
+  <!-- Main Dynamic View Container -->
+  <main id="main-content" class="flex-1"></main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200/80 py-8 px-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white text-xs">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <span class="font-bold text-slate-800">TurnoYa Platform</span> &copy; 2026. Todos los derechos reservados.
+      </div>
+      <p class="text-slate-400">Plataforma de conexión directa entre negocios locales y clientes.</p>
+    </div>
+  </footer>
+
+  <!-- Modal Container -->
+  <div id="modal-container"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
+
+  <!-- App Script (ES Module) -->
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
+
