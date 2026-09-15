@@ -3062,7 +3062,8 @@ class App {
     }
 
     if (this.activeDashboardTab === 'schedule') {
-      const sch = currentBiz.schedule || { days: [1,2,3,4,5,6], openTime: '08:00', closeTime: '18:00' };
+      const sch = currentBiz.schedule || { days: [1,2,3,4,5,6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+      const currentSlotDuration = sch.slotDuration === 15 ? 15 : 30;
       const days = [
         { id: 1, name: 'Lunes' },
         { id: 2, name: 'Martes' },
@@ -3117,6 +3118,37 @@ class App {
                   <input type="time" id="break-end" value="${sch.breakEnd || ''}" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl">
                 </div>
               </div>
+            </div>
+
+            <!-- Intervalo de Franjas Horarias (15 min vs 30 min) -->
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <div class="flex items-center justify-between">
+                <div>
+                  <label class="block font-bold text-slate-800 text-xs uppercase tracking-wider">Intervalo de Turnos / Horarios</label>
+                  <p class="text-[11px] text-slate-500">Elige la duración de cada bloque horario para las citas públicas y el bloqueo de agenda.</p>
+                </div>
+                <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm flex-shrink-0">
+                  <i class="fas fa-stopwatch"></i>
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                  <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
+                  <div>
+                    <span class="block text-xs font-bold text-slate-900">Cada 15 Minutos</span>
+                    <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:15, 8:30, 8:45...</span>
+                  </div>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                  <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
+                  <div>
+                    <span class="block text-xs font-bold text-slate-900">Cada 30 Minutos (Estándar)</span>
+                    <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:30, 9:00, 9:30...</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <!-- Autoconfirmación de Citas en Horarios -->
             <div class="p-5 rounded-2xl border transition-all ${currentBiz.autoConfirmAppointments !== false ? 'bg-emerald-50/70 border-emerald-200/80 shadow-xs' : 'bg-amber-50/80 border-amber-200/90 shadow-xs'} space-y-3">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -3726,6 +3758,8 @@ class App {
       const closeTime = document.getElementById('close-time').value;
       const breakStart = document.getElementById('break-start').value;
       const breakEnd = document.getElementById('break-end').value;
+      const slotDurationInput = document.querySelector('input[name="slot_duration"]:checked');
+      const slotDuration = slotDurationInput ? parseInt(slotDurationInput.value, 10) : (currentBiz.schedule?.slotDuration || 30);
 
       currentBiz.schedule = {
         days: selectedDays,
@@ -3733,7 +3767,7 @@ class App {
         closeTime,
         breakStart: breakStart || null,
         breakEnd: breakEnd || null,
-        slotDuration: currentBiz.schedule?.slotDuration || 30
+        slotDuration: slotDuration === 15 ? 15 : 30
       };
 
       await storage.saveBusiness(currentBiz);
