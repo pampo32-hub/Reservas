@@ -3,7 +3,6 @@ import { storage } from './services/storage.js';
 
 class App {
   constructor() {
-    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings'
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';

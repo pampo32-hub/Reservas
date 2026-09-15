@@ -6,7 +6,6 @@ const STORAGE_KEYS = {
   APPOINTMENTS: 'directorio_appointments_v1',
   ACTIVE_BUSINESS_ID: 'directorio_active_biz_id',
   BIZ_USER: 'directorio_biz_user_session',
-  CLIENT_USER: 'directorio_client_user_session'
   CLIENT_USER: 'directorio_client_user_session',
   DEV_USER: 'directorio_dev_user_session'
 };
@@ -69,15 +68,6 @@ class StorageService {
   }
 
   async loginDeveloper(email, password) {
-    const res = await fetch(`${this.apiBase}/auth/developer/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Error al autenticar desarrollador.');
-    this.setDeveloperUser(data.user);
-    return data;
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
@@ -102,12 +92,8 @@ class StorageService {
     throw new Error('Credenciales de Developer incorrectas.');
   }
 
-  // Métodos de consulta SuperAdmin / Developer
   // Métodos de consulta SuperAdmin / Developer con fallback offline/online
   async getDeveloperStats() {
-    const res = await fetch(`${this.apiBase}/developer/stats`);
-    if (!res.ok) throw new Error('Error al obtener estadísticas de developer.');
-    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/stats`);
@@ -127,9 +113,6 @@ class StorageService {
   }
 
   async getDeveloperBusinesses() {
-    const res = await fetch(`${this.apiBase}/developer/businesses`);
-    if (!res.ok) throw new Error('Error al obtener negocios.');
-    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/businesses`);
@@ -142,9 +125,6 @@ class StorageService {
   }
 
   async getDeveloperClients() {
-    const res = await fetch(`${this.apiBase}/developer/clients`);
-    if (!res.ok) throw new Error('Error al obtener clientes.');
-    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/clients`);
@@ -162,9 +142,6 @@ class StorageService {
   }
 
   async getDeveloperAppointments() {
-    const res = await fetch(`${this.apiBase}/developer/appointments`);
-    if (!res.ok) throw new Error('Error al obtener citas globales.');
-    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/appointments`);
@@ -177,9 +154,6 @@ class StorageService {
   }
 
   async getDeveloperCategoryAlerts() {
-    const res = await fetch(`${this.apiBase}/developer/category-alerts`);
-    if (!res.ok) throw new Error('Error al obtener alertas.');
-    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/category-alerts`);
@@ -193,8 +167,6 @@ class StorageService {
   }
 
   async dismissCategoryAlert(alertId) {
-    const res = await fetch(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
-    return res.ok;
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
@@ -205,9 +177,6 @@ class StorageService {
   }
 
   async deleteBusinessByDeveloper(businessId) {
-    const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Error al eliminar negocio.');
-    await this.loadFromApi();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
@@ -266,7 +235,6 @@ class StorageService {
       const res = await fetch(`${this.apiBase}/auth/business/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
         body: JSON.stringify({ email: cleanEmail, password: cleanPass })
       });
       const data = await res.json();
@@ -289,12 +257,9 @@ class StorageService {
       return data;
     }
 
-    // Fallback local: aceptar demo
-    const user = { id: 'usr-demo', name: 'Dueño Negocio Demo', email, businessId: this.getActiveBusinessId() };
     // Fallback local
     const user = { id: 'usr-demo', name: 'Dueño Negocio Demo', email: cleanEmail, businessId: this.getActiveBusinessId() };
     this.setBusinessUser(user);
-    return { success: true, user };
     return { success: true, role: 'business', user };
   }
 
@@ -425,10 +390,8 @@ class StorageService {
     return client;
   }
 
-  // --- CATEGORÍAS ---
   // --- CATEGORÍAS (INCLUYE CATEGORÍAS PERSONALIZADAS DINÁMICAS) ---
   getCategories() {
-    return INITIAL_CATEGORIES;
     const list = [...INITIAL_CATEGORIES];
     const businesses = this.getBusinesses();
     
@@ -497,6 +460,13 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
     this.businessesCache = businesses;
     return businessData.id;
+  }
+
+  async deleteBusiness(businessId) {
+    const businesses = this.getBusinesses().filter(b => b.id !== businessId);
+    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    this.businessesCache = businesses;
+    return true;
   }
 
   getActiveBusinessId() {
@@ -743,7 +713,6 @@ class StorageService {
   }
 
   // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL ---
-  getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30) {
   getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null) {
     const business = this.getBusinessById(businessId);
     if (!business || !business.schedule) return [];
@@ -775,7 +744,6 @@ class StorageService {
     const serviceDur = parseInt(serviceDurationMinutes, 10) || 30;
 
     const existingAppointments = this.getAppointmentsByBusiness(businessId).filter(
-      appt => appt.date === dateString && appt.status !== 'cancelled'
       appt => appt.date === dateString && appt.status !== 'cancelled' && (!excludeAppointmentId || appt.id !== excludeAppointmentId)
     );
 

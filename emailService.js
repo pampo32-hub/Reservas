@@ -170,3 +170,4 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     return { success: false, error: err.message };
   }
 }
+
