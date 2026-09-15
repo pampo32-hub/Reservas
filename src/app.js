@@ -1591,6 +1591,8 @@ class App {
               <!-- FORM 1: LOGIN CLIENTE (TELÉFONO/CORREO Y CONTRASEÑA) -->
               <p class="text-xs text-slate-500">Ingresa con tu teléfono o correo y tu contraseña para gestionar tus citas.</p>
               
+              <div id="cli-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
+
               <form id="auth-client-login-form" class="space-y-4 text-xs sm:text-sm">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">Teléfono o Correo Electrónico *</label>
@@ -1613,6 +1615,8 @@ class App {
               <!-- FORM 2: LOGIN NEGOCIO (CORREO Y CONTRASEÑA) -->
               <p class="text-xs text-slate-500">Ingresa tus credenciales para administrar tus citas, servicios, precios, fotos y horarios.</p>
               
+              <div id="biz-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
+
               <form id="auth-biz-login-form" class="space-y-4 text-xs sm:text-sm">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">Correo Electrónico del Negocio *</label>
@@ -1678,13 +1682,16 @@ class App {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Crear Contraseña *</label>
-                    <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   </div>
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
-                    <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   </div>
                 </div>
+
+                <!-- Mensaje Inline de Validación de Contraseñas (Aparece aquí mismo) -->
+                <div id="cli-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
 
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
                   <i class="fas fa-user-plus"></i>
@@ -1716,13 +1723,16 @@ class App {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
-                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
-                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                   </div>
+
+                  <!-- Mensaje Inline de Validación de Contraseñas (Aparece aquí mismo) -->
+                  <div id="biz-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
                 </div>
 
                 <!-- Datos Comerciales -->
@@ -1850,24 +1860,123 @@ class App {
       });
     });
 
+    // Real-time password validation for Client Registration
+    const cliRegPass = document.getElementById('cli-reg-password');
+    const cliRegPassConf = document.getElementById('cli-reg-password-confirm');
+    const cliRegErrBox = document.getElementById('cli-reg-inline-error');
+
+    const checkCliPasswordsMatch = () => {
+      if (!cliRegPass || !cliRegPassConf || !cliRegErrBox) return true;
+      const p1 = cliRegPass.value;
+      const p2 = cliRegPassConf.value;
+
+      if (!p1 && !p2) {
+        cliRegErrBox.className = 'hidden';
+        cliRegPass.classList.remove('border-rose-500', 'bg-rose-50/20', 'border-emerald-500', 'bg-emerald-50/20');
+        cliRegPassConf.classList.remove('border-rose-500', 'bg-rose-50/20', 'border-emerald-500', 'bg-emerald-50/20');
+        return true;
+      }
+
+      if (p2.length > 0 && p1 !== p2) {
+        cliRegErrBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+        cliRegErrBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas.</span>';
+        cliRegPassConf.classList.add('border-rose-500', 'bg-rose-50/20');
+        cliRegPassConf.classList.remove('border-emerald-500', 'bg-emerald-50/20');
+        return false;
+      } else if (p1.length >= 6 && p1 === p2) {
+        cliRegErrBox.className = 'p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+        cliRegErrBox.innerHTML = '<i class="fas fa-check-circle text-emerald-600 text-sm flex-shrink-0"></i> <span>¡Las contraseñas coinciden!</span>';
+        cliRegPass.classList.remove('border-rose-500', 'bg-rose-50/20');
+        cliRegPass.classList.add('border-emerald-500', 'bg-emerald-50/20');
+        cliRegPassConf.classList.remove('border-rose-500', 'bg-rose-50/20');
+        cliRegPassConf.classList.add('border-emerald-500', 'bg-emerald-50/20');
+        return true;
+      } else if (p1.length > 0 && p1.length < 6) {
+        cliRegErrBox.className = 'p-2.5 bg-amber-50 border border-amber-300 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+        cliRegErrBox.innerHTML = '<i class="fas fa-info-circle text-amber-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
+        return false;
+      } else {
+        cliRegErrBox.className = 'hidden';
+        cliRegPass.classList.remove('border-rose-500', 'bg-rose-50/20');
+        cliRegPassConf.classList.remove('border-rose-500', 'bg-rose-50/20');
+        return true;
+      }
+    };
+
+    cliRegPass?.addEventListener('input', checkCliPasswordsMatch);
+    cliRegPassConf?.addEventListener('input', checkCliPasswordsMatch);
+
+    // Real-time password validation for Business Registration
+    const bizRegPass = document.getElementById('reg-biz-password');
+    const bizRegPassConf = document.getElementById('reg-biz-password-confirm');
+    const bizRegErrBox = document.getElementById('biz-reg-inline-error');
+
+    const checkBizPasswordsMatch = () => {
+      if (!bizRegPass || !bizRegPassConf || !bizRegErrBox) return true;
+      const p1 = bizRegPass.value;
+      const p2 = bizRegPassConf.value;
+
+      if (!p1 && !p2) {
+        bizRegErrBox.className = 'hidden';
+        bizRegPass.classList.remove('border-rose-500', 'bg-rose-50/20', 'border-emerald-500', 'bg-emerald-50/20');
+        bizRegPassConf.classList.remove('border-rose-500', 'bg-rose-50/20', 'border-emerald-500', 'bg-emerald-50/20');
+        return true;
+      }
+
+      if (p2.length > 0 && p1 !== p2) {
+        bizRegErrBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+        bizRegErrBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas.</span>';
+        bizRegPassConf.classList.add('border-rose-500', 'bg-rose-50/20');
+        bizRegPassConf.classList.remove('border-emerald-500', 'bg-emerald-50/20');
+        return false;
+      } else if (p1.length >= 6 && p1 === p2) {
+        bizRegErrBox.className = 'p-2.5 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+        bizRegErrBox.innerHTML = '<i class="fas fa-check-circle text-emerald-600 text-sm flex-shrink-0"></i> <span>¡Las contraseñas coinciden!</span>';
+        bizRegPass.classList.remove('border-rose-500', 'bg-rose-50/20');
+        bizRegPass.classList.add('border-emerald-500', 'bg-emerald-50/20');
+        bizRegPassConf.classList.remove('border-rose-500', 'bg-rose-50/20');
+        bizRegPassConf.classList.add('border-emerald-500', 'bg-emerald-50/20');
+        return true;
+      } else if (p1.length > 0 && p1.length < 6) {
+        bizRegErrBox.className = 'p-2.5 bg-amber-50 border border-amber-300 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+        bizRegErrBox.innerHTML = '<i class="fas fa-info-circle text-amber-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
+        return false;
+      } else {
+        bizRegErrBox.className = 'hidden';
+        bizRegPass.classList.remove('border-rose-500', 'bg-rose-50/20');
+        bizRegPassConf.classList.remove('border-rose-500', 'bg-rose-50/20');
+        return true;
+      }
+    };
+
+    bizRegPass?.addEventListener('input', checkBizPasswordsMatch);
+    bizRegPassConf?.addEventListener('input', checkBizPasswordsMatch);
+
     // Evento Submit: Login Cliente
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const identifier = document.getElementById('cli-log-identifier').value.trim();
       const password = document.getElementById('cli-log-password').value;
+      const errBox = document.getElementById('cli-log-inline-error');
 
       try {
+        if (errBox) errBox.className = 'hidden';
         await storage.loginClient(identifier, password);
         this.showToast('¡Bienvenido(a)! Sesión iniciada como cliente.', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
         this.renderCurrentView();
       } catch (err) {
-        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
+          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
+        } else {
+          this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+        }
       }
     });
 
-    // Evento Submit: Registro Cliente (con validación de contraseña y confirmación)
+    // Evento Submit: Registro Cliente (con validación inline de contraseña y confirmación)
     document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('cli-reg-name').value.trim();
@@ -1875,15 +1984,25 @@ class App {
       const email = document.getElementById('cli-reg-email').value.trim();
       const password = document.getElementById('cli-reg-password').value;
       const passwordConfirm = document.getElementById('cli-reg-password-confirm').value;
+      const errBox = document.getElementById('cli-reg-inline-error');
 
       if (password.length < 6) {
-        this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
+        }
+        document.getElementById('cli-reg-password').focus();
         return;
       }
 
       if (password !== passwordConfirm) {
-        this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
-        document.getElementById('cli-reg-password-confirm').focus();
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
+        }
+        const confirmInput = document.getElementById('cli-reg-password-confirm');
+        confirmInput.classList.add('border-rose-500', 'bg-rose-50/20');
+        confirmInput.focus();
         return;
       }
 
@@ -1894,7 +2013,12 @@ class App {
         this.renderHeader();
         this.renderCurrentView();
       } catch (err) {
-        this.showToast(err.message || 'Error al registrarse.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrarse.'}</span>`;
+        } else {
+          this.showToast(err.message || 'Error al registrarse.', 'error');
+        }
       }
     });
 
@@ -1903,19 +2027,26 @@ class App {
       e.preventDefault();
       const email = document.getElementById('biz-log-email').value;
       const password = document.getElementById('biz-log-password').value;
+      const errBox = document.getElementById('biz-log-inline-error');
 
       try {
+        if (errBox) errBox.className = 'hidden';
         await storage.loginBusiness(email, password);
         this.showToast('¡Bienvenido a tu panel de administración!', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
         this.navigateTo('owner-dashboard');
       } catch (err) {
-        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
+          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
+        } else {
+          this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+        }
       }
     });
 
-    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes)
+    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes inline)
     document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const ownerName = document.getElementById('reg-owner-name').value;
@@ -1932,15 +2063,25 @@ class App {
       const coverImage = document.getElementById('new-biz-cover').value;
       const firstSrvName = document.getElementById('first-srv-name').value;
       const firstSrvPrice = document.getElementById('first-srv-price').value;
+      const errBox = document.getElementById('biz-reg-inline-error');
 
       if (password.length < 6) {
-        this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
+        }
+        document.getElementById('reg-biz-password').focus();
         return;
       }
 
       if (password !== passwordConfirm) {
-        this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
-        document.getElementById('reg-biz-password-confirm').focus();
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
+        }
+        const confirmInput = document.getElementById('reg-biz-password-confirm');
+        confirmInput.classList.add('border-rose-500', 'bg-rose-50/20');
+        confirmInput.focus();
         return;
       }
 
@@ -1977,7 +2118,12 @@ class App {
         this.renderHeader();
         this.navigateTo('owner-dashboard');
       } catch (err) {
-        this.showToast(err.message || 'Error al registrar negocio.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrar negocio.'}</span>`;
+        } else {
+          this.showToast(err.message || 'Error al registrar negocio.', 'error');
+        }
       }
     });
   }
@@ -2132,195 +2278,6 @@ class App {
       this.showToast('Servicio actualizado con éxito.', 'success');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
-    });
-  }
-
-  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (CON CONTRASEÑA) ---
-  renderNewBusinessModal() {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            <div>
-              <span class="text-xs font-bold text-emerald-600 uppercase">Onboarding de Comercios 🇨🇷</span>
-              <h3 class="text-xl font-extrabold text-slate-900">Registrar Nuevo Establecimiento</h3>
-            </div>
-            <button id="close-biz-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <form id="new-biz-form" class="space-y-4 text-xs sm:text-sm">
-            <!-- Cuenta de Usuario / Credenciales -->
-            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
-              <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
-                <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
-              </span>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
-                  <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
-                  <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña de Acceso *</label>
-                <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-              </div>
-            </div>
-
-            <!-- Datos Comerciales -->
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
-                <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  <option value="belleza">Belleza y Barbería</option>
-                  <option value="salud">Salud y Bienestar</option>
-                  <option value="spa">Spa y Masajes</option>
-                  <option value="fitness">Fitness y Deporte</option>
-                  <option value="autos">Talleres y Autos</option>
-                  <option value="fotografia">Fotografía y Eventos</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
-                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-                <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Descripción</label>
-              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-            </div>
-
-            <!-- Fotos con Guía de Medidas -->
-            <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
-              <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
-                <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
-              </span>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
-                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
-                </div>
-                <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
-                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
-                </div>
-                <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-              </div>
-            </div>
-
-            <!-- Primer Servicio -->
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-              <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
-              </span>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div class="sm:col-span-2">
-                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-                </div>
-                <div>
-                  <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
-                </div>
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
-              <i class="fas fa-check-circle"></i>
-              <span>Crear Cuenta y Registrar Negocio</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('close-biz-modal-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
-
-    document.getElementById('new-biz-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const ownerName = document.getElementById('reg-owner-name').value;
-      const email = document.getElementById('reg-biz-email').value;
-      const password = document.getElementById('reg-biz-password').value;
-      const name = document.getElementById('new-biz-name').value;
-      const category = document.getElementById('new-biz-cat').value;
-      const city = document.getElementById('new-biz-city').value;
-      const phone = document.getElementById('new-biz-phone').value;
-      const address = document.getElementById('new-biz-address').value;
-      const description = document.getElementById('new-biz-desc').value;
-      const image = document.getElementById('new-biz-image').value;
-      const coverImage = document.getElementById('new-biz-cover').value;
-      const firstSrvName = document.getElementById('first-srv-name').value;
-      const firstSrvPrice = document.getElementById('first-srv-price').value;
-
-      const catLabels = {
-        belleza: 'Belleza y Barbería',
-        salud: 'Salud y Bienestar',
-        spa: 'Spa y Masajes',
-        fitness: 'Fitness y Deporte',
-        autos: 'Talleres y Autos',
-        fotografia: 'Fotografía y Eventos'
-      };
-
-      try {
-        await storage.registerBusinessWithUser(ownerName, email, password, {
-          name,
-          category,
-          categoryLabel: catLabels[category] || 'Servicios',
-          city,
-          phone,
-          email,
-          address,
-          description,
-          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
-          isDemo: false,
-          features: ['Sinpe Móvil', 'Atención Personalizada'],
-          services: [
-            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
-          ]
-        });
-
-        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
-        modalContainer.innerHTML = '';
-        this.renderHeader();
-        this.navigateTo('owner-dashboard');
-      } catch (err) {
-        this.showToast(err.message || 'Error al registrar.', 'error');
-      }
     });
   }
 
