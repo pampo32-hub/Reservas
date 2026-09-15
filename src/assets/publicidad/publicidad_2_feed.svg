@@ -120,9 +120,9 @@
     <!-- Pill 1 -->
     <g transform="translate(0, 0)">
       <rect width="295" height="76" rx="20" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.12" stroke-width="1.5"/>
-      <text x="22" y="47" font-size="24">🚫</text>
-      <text x="58" y="37" fill="#ffffff" class="font-black" font-size="15">Cero Comisiones</text>
-      <text x="58" y="57" fill="#94a3b8" class="font-medium" font-size="12">100% de tus ingresos son tuyos</text>
+      <text x="22" y="47" font-size="24">💎</text>
+      <text x="58" y="37" fill="#ffffff" class="font-black" font-size="15">Suscripción Fija</text>
+      <text x="58" y="57" fill="#94a3b8" class="font-medium" font-size="12">Pago mensual sin cobros por reserva</text>
     </g>
 
     <!-- Pill 2 -->
