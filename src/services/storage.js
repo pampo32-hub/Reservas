@@ -1,4 +1,4 @@
-// Servicio de almacenamiento y lógica de negocio (Local Storage + Cálculos de Horarios)
+// Servicio de almacenamiento conectado a la API de Neon PostgreSQL con fallback local
 import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES } from '../data/initialData.js';
 
 const STORAGE_KEYS = {
@@ -9,18 +9,38 @@ const STORAGE_KEYS = {
 
 class StorageService {
   constructor() {
+    this.apiBase = '/api';
+    this.businessesCache = [];
+    this.appointmentsCache = [];
+    this.isOnlineApi = true;
     this.init();
   }
 
-  init() {
-    if (!localStorage.getItem(STORAGE_KEYS.BUSINESSES)) {
-      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(INITIAL_BUSINESSES));
+  async init() {
+    try {
+      await this.loadFromApi();
+    } catch (e) {
+      console.warn('Operando en modo local (sin servidor Express activo):', e);
+      this.isOnlineApi = false;
+      if (!localStorage.getItem(STORAGE_KEYS.BUSINESSES)) {
+        localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(INITIAL_BUSINESSES));
+      }
+      if (!localStorage.getItem(STORAGE_KEYS.APPOINTMENTS)) {
+        localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(INITIAL_APPOINTMENTS));
+      }
     }
-    if (!localStorage.getItem(STORAGE_KEYS.APPOINTMENTS)) {
-      localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(INITIAL_APPOINTMENTS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID)) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID, 'biz-1');
+  }
+
+  async loadFromApi() {
+    try {
+      const res = await fetch(`${this.apiBase}/businesses`);
+      if (!res.ok) throw new Error('API no disponible');
+      this.businessesCache = await res.json();
+      this.isOnlineApi = true;
+    } catch (e) {
+      this.isOnlineApi = false;
+      const local = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
+      this.businessesCache = local ? JSON.parse(local) : INITIAL_BUSINESSES;
     }
   }
 
@@ -31,13 +51,11 @@ class StorageService {
 
   // --- NEGOCIOS ---
   getBusinesses() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
-      return data ? JSON.parse(data) : INITIAL_BUSINESSES;
-    } catch (e) {
-      console.error('Error leyendo negocios:', e);
-      return INITIAL_BUSINESSES;
+    if (this.businessesCache && this.businessesCache.length > 0) {
+      return this.businessesCache;
     }
+    const local = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
+    return local ? JSON.parse(local) : INITIAL_BUSINESSES;
   }
 
   getBusinessById(id) {
@@ -45,32 +63,42 @@ class StorageService {
     return businesses.find(b => b.id === id) || null;
   }
 
-  saveBusiness(businessData) {
+  async saveBusiness(businessData) {
+    if (this.isOnlineApi) {
+      try {
+        if (businessData.schedule && businessData.id) {
+          await fetch(`${this.apiBase}/businesses/${businessData.id}/schedule`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ schedule: businessData.schedule })
+          });
+        } else {
+          await fetch(`${this.apiBase}/businesses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(businessData)
+          });
+        }
+        await this.loadFromApi();
+        return businessData.id;
+      } catch (e) {
+        console.error('Error guardando en API Neon:', e);
+      }
+    }
+
+    // Fallback Local
     const businesses = this.getBusinesses();
     const existingIndex = businesses.findIndex(b => b.id === businessData.id);
-
     if (existingIndex >= 0) {
       businesses[existingIndex] = { ...businesses[existingIndex], ...businessData };
     } else {
-      const newBusiness = {
+      businesses.push({
         ...businessData,
-        id: businessData.id || `biz-${Date.now()}`,
-        rating: businessData.rating || 5.0,
-        reviewsCount: businessData.reviewsCount || 0,
-        services: businessData.services || [],
-        schedule: businessData.schedule || {
-          days: [1, 2, 3, 4, 5, 6],
-          openTime: '09:00',
-          closeTime: '19:00',
-          breakStart: '14:00',
-          breakEnd: '15:00',
-          slotDuration: 30
-        }
-      };
-      businesses.push(newBusiness);
+        id: businessData.id || `biz-${Date.now()}`
+      });
     }
-
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    this.businessesCache = businesses;
     return businessData.id;
   }
 
@@ -83,7 +111,23 @@ class StorageService {
   }
 
   // --- SERVICIOS ---
-  addService(businessId, serviceData) {
+  async addService(businessId, serviceData) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/services`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(serviceData)
+        });
+        const created = await res.json();
+        await this.loadFromApi();
+        return created;
+      } catch (e) {
+        console.error('Error agregando servicio a API Neon:', e);
+      }
+    }
+
+    // Fallback Local
     const businesses = this.getBusinesses();
     const business = businesses.find(b => b.id === businessId);
     if (!business) return null;
@@ -98,55 +142,83 @@ class StorageService {
 
     business.services.push(newService);
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    this.businessesCache = businesses;
     return newService;
   }
 
-  updateService(businessId, serviceId, serviceData) {
-    const businesses = this.getBusinesses();
-    const business = businesses.find(b => b.id === businessId);
-    if (!business) return false;
+  async deleteService(businessId, serviceId) {
+    if (this.isOnlineApi) {
+      try {
+        await fetch(`${this.apiBase}/services/${serviceId}`, { method: 'DELETE' });
+        await this.loadFromApi();
+        return true;
+      } catch (e) {
+        console.error('Error eliminando servicio en API Neon:', e);
+      }
+    }
 
-    const serviceIndex = business.services.findIndex(s => s.id === serviceId);
-    if (serviceIndex === -1) return false;
-
-    business.services[serviceIndex] = {
-      ...business.services[serviceIndex],
-      ...serviceData,
-      duration: parseInt(serviceData.duration, 10) || business.services[serviceIndex].duration,
-      price: parseFloat(serviceData.price) || business.services[serviceIndex].price
-    };
-
-    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
-    return true;
-  }
-
-  deleteService(businessId, serviceId) {
+    // Fallback Local
     const businesses = this.getBusinesses();
     const business = businesses.find(b => b.id === businessId);
     if (!business) return false;
 
     business.services = business.services.filter(s => s.id !== serviceId);
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    this.businessesCache = businesses;
     return true;
   }
 
   // --- RESERVAS / CITAS ---
   getAppointments() {
-    try {
-      const data = localStorage.getItem(STORAGE_KEYS.APPOINTMENTS);
-      return data ? JSON.parse(data) : INITIAL_APPOINTMENTS;
-    } catch (e) {
-      console.error('Error leyendo reservas:', e);
-      return INITIAL_APPOINTMENTS;
+    const data = localStorage.getItem(STORAGE_KEYS.APPOINTMENTS);
+    return data ? JSON.parse(data) : INITIAL_APPOINTMENTS;
+  }
+
+  async getAppointmentsByBusinessAsync(businessId) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/appointments`);
+        if (res.ok) {
+          const data = await res.json();
+          this.appointmentsCache = data;
+          localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(data));
+          return data;
+        }
+      } catch (e) {
+        console.warn('Fallo al obtener citas remotas de Neon:', e);
+      }
     }
+    return this.getAppointmentsByBusiness(businessId);
   }
 
   getAppointmentsByBusiness(businessId) {
+    if (this.appointmentsCache && this.appointmentsCache.length > 0) {
+      const filtered = this.appointmentsCache.filter(a => a.businessId === businessId);
+      if (filtered.length > 0) return filtered;
+    }
     const all = this.getAppointments();
     return all.filter(a => a.businessId === businessId);
   }
 
-  createAppointment(appointmentData) {
+  async createAppointment(appointmentData) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/appointments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appointmentData)
+        });
+        if (res.ok) {
+          const created = await res.json();
+          await this.getAppointmentsByBusinessAsync(appointmentData.businessId);
+          return created;
+        }
+      } catch (e) {
+        console.error('Error creando reserva en API Neon:', e);
+      }
+    }
+
+    // Fallback Local
     const appointments = this.getAppointments();
     const newAppointment = {
       id: `apt-${Date.now().toString().slice(-6)}`,
@@ -157,46 +229,62 @@ class StorageService {
 
     appointments.unshift(newAppointment);
     localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
+    this.appointmentsCache = appointments;
     return newAppointment;
   }
 
-  updateAppointmentStatus(appointmentId, newStatus) {
+  async updateAppointmentStatus(appointmentId, newStatus) {
+    if (this.isOnlineApi) {
+      try {
+        await fetch(`${this.apiBase}/appointments/${appointmentId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+      } catch (e) {
+        console.error('Error actualizando estado en Neon:', e);
+      }
+    }
+
     const appointments = this.getAppointments();
     const appt = appointments.find(a => a.id === appointmentId);
-    if (!appt) return false;
-
-    appt.status = newStatus;
-    localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
+    if (appt) {
+      appt.status = newStatus;
+      localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
+      this.appointmentsCache = appointments;
+    }
     return true;
   }
 
-  deleteAppointment(appointmentId) {
+  async deleteAppointment(appointmentId) {
+    if (this.isOnlineApi) {
+      try {
+        await fetch(`${this.apiBase}/appointments/${appointmentId}`, { method: 'DELETE' });
+      } catch (e) {
+        console.error('Error eliminando cita en Neon:', e);
+      }
+    }
+
     let appointments = this.getAppointments();
     appointments = appointments.filter(a => a.id !== appointmentId);
     localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
+    this.appointmentsCache = appointments;
     return true;
   }
 
   // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL ---
-  /**
-   * Calcula los intervalos de tiempo disponibles para un negocio en una fecha determinada y duración de servicio
-   */
   getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30) {
     const business = this.getBusinessById(businessId);
     if (!business || !business.schedule) return [];
 
-    // Parsear fecha y obtener día de la semana (0: Domingo, 1: Lunes, etc.)
-    // Usamos split para evitar desfase de zona horaria UTC
     const [year, month, day] = dateString.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay();
 
-    // 1. Validar si el negocio abre este día
     if (!business.schedule.days.includes(dayOfWeek)) {
       return { isClosed: true, reason: 'El negocio no labora en este día de la semana.', slots: [] };
     }
 
-    // Convertir horas a minutos desde medianoche para cálculos precisos
     const timeToMinutes = (timeStr) => {
       const [h, m] = timeStr.split(':').map(Number);
       return h * 60 + m;
@@ -215,12 +303,10 @@ class StorageService {
     const slotStep = business.schedule.slotDuration || 30;
     const serviceDur = parseInt(serviceDurationMinutes, 10) || 30;
 
-    // 2. Obtener reservas activas en esa fecha
     const existingAppointments = this.getAppointmentsByBusiness(businessId).filter(
       appt => appt.date === dateString && appt.status !== 'cancelled'
     );
 
-    // Mapear reservas existentes a rangos de minutos [inicio, fin]
     const bookedRanges = existingAppointments.map(appt => {
       const start = timeToMinutes(appt.time);
       const duration = appt.serviceDuration || 30;
@@ -229,20 +315,14 @@ class StorageService {
 
     const availableSlots = [];
 
-    // 3. Iterar por el horario de apertura
     for (let current = openMin; current + serviceDur <= closeMin; current += slotStep) {
       const slotEnd = current + serviceDur;
 
-      // Verificar si choca con horario de receso/almuerzo
       if (breakStartMin !== -1 && breakEndMin !== -1) {
-        // Si el slot inicia o termina dentro del descanso, o envuelve el descanso
         const overlapsBreak = (current < breakEndMin && slotEnd > breakStartMin);
-        if (overlapsBreak) {
-          continue;
-        }
+        if (overlapsBreak) continue;
       }
 
-      // Verificar si choca con alguna reserva ya existente
       const hasConflict = bookedRanges.some(booked => {
         return (current < booked.end && slotEnd > booked.start);
       });
@@ -257,14 +337,6 @@ class StorageService {
       slots: availableSlots
     };
   }
-
-  // --- RESTABLECER DATOS DE PRUEBA ---
-  resetToDefaults() {
-    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(INITIAL_BUSINESSES));
-    localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(INITIAL_APPOINTMENTS));
-    localStorage.setItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID, 'biz-1');
-  }
 }
 
 export const storage = new StorageService();
-
