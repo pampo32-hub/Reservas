@@ -107,16 +107,18 @@ class App {
     // 2. Escuchar cambios directos en el Hash
     window.addEventListener('hashchange', () => {
       const route = this.parseHash(window.location.hash);
-      if (route.view !== this.currentView || (route.params.businessId && route.params.businessId !== this.selectedBusinessId)) {
-        this.navigateTo(route.view, route.params || {}, false);
-      }
+      this.navigateTo(route.view, route.params || {}, false);
     });
 
     // 3. Obtener ruta inicial según la URL actual
     const initialRoute = this.parseHash(window.location.hash);
     this.currentView = initialRoute.view;
+    this.currentRouteParams = initialRoute.params || {};
     if (initialRoute.params.businessId) {
       this.selectedBusinessId = initialRoute.params.businessId;
+    }
+    if (initialRoute.params.appointmentId) {
+      this.selectedAppointmentId = initialRoute.params.appointmentId;
     }
 
     const initialHash = this.getHashForView(this.currentView, initialRoute.params);
@@ -155,16 +157,38 @@ class App {
   }
 
   parseHash(hash = window.location.hash) {
-    const clean = (hash || '').trim();
-    if (!clean || clean === '#' || clean === '#/' || clean === '#!/') {
+    const cleanHash = (hash || '').trim();
+    const searchParams = new URLSearchParams(window.location.search);
+
+    // 1. Revisar si viene en query params (?calificar=apt-xxx o ?aptId=apt-xxx)
+    if (searchParams.has('calificar') || searchParams.has('aptId') || searchParams.has('appointmentId')) {
+      const aptId = searchParams.get('calificar') || searchParams.get('aptId') || searchParams.get('appointmentId');
+      const rating = searchParams.get('rating');
+      return {
+        view: 'review-booking',
+        params: {
+          appointmentId: decodeURIComponent(aptId),
+          rating: rating ? parseInt(rating, 10) : null
+        }
+      };
+    }
+
+    // 2. Ruta raíz vacía
+    if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
       return { view: 'directory', params: {} };
     }
 
-    const reviewMatch = clean.match(/^#\/?(calificar|review|valorar)\/([^/?#]+)/i);
+    // 3. Revisar hash #/calificar/apt-xxx?rating=5 o #calificar/apt-xxx
+    const reviewMatch = cleanHash.match(/^#\/?(calificar|review|valorar)\/([^/?#]+)/i);
     if (reviewMatch) {
-      const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
-      const urlParams = new URLSearchParams(hashQuery);
-      const ratingParam = urlParams.get('rating');
+      let ratingParam = null;
+      if (cleanHash.includes('?')) {
+        const hashQuery = cleanHash.split('?')[1];
+        const params = new URLSearchParams(hashQuery);
+        ratingParam = params.get('rating');
+      } else if (searchParams.has('rating')) {
+        ratingParam = searchParams.get('rating');
+      }
       return {
         view: 'review-booking',
         params: {
@@ -174,20 +198,41 @@ class App {
       };
     }
 
-    const bizMatch = clean.match(/^#\/?negocio\/([^/?#]+)/i);
+    // 4. Revisar hash #/calificar?id=apt-xxx&rating=5
+    if (/^#\/?(calificar|review|valorar)(\?|$)/i.test(cleanHash)) {
+      const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
+      const params = new URLSearchParams(hashQuery);
+      const aptId = params.get('id') || params.get('appointmentId') || params.get('aptId') || searchParams.get('id') || searchParams.get('appointmentId');
+      const ratingParam = params.get('rating') || searchParams.get('rating');
+      if (aptId) {
+        return {
+          view: 'review-booking',
+          params: {
+            appointmentId: decodeURIComponent(aptId),
+            rating: ratingParam ? parseInt(ratingParam, 10) : null
+          }
+        };
+      }
+    }
+
+    // 5. Negocio
+    const bizMatch = cleanHash.match(/^#\/?negocio\/([^/?#]+)/i);
     if (bizMatch) {
       return { view: 'business-detail', params: { businessId: decodeURIComponent(bizMatch[1]) } };
     }
 
-    if (/^#\/?(mis-citas|mis-reservas|cliente)/i.test(clean)) {
+    // 6. Mis citas
+    if (/^#\/?(mis-citas|mis-reservas|cliente)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
 
-    if (/^#\/?(panel-negocio|dashboard|owner)/i.test(clean)) {
+    // 7. Panel negocio
+    if (/^#\/?(panel-negocio|dashboard|owner)/i.test(cleanHash)) {
       return { view: 'owner-dashboard', params: {} };
     }
 
-    if (/^#\/?(developer|developer-dashboard|admin)/i.test(clean)) {
+    // 8. Developer
+    if (/^#\/?(developer|developer-dashboard|admin)/i.test(cleanHash)) {
       return { view: 'developer-dashboard', params: {} };
     }
 

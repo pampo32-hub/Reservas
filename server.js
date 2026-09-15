@@ -1709,12 +1709,14 @@ async function processPendingReviewEmails() {
 app.get('/api/appointments/:id/review-info', async (req, res) => {
   try {
     const { id } = req.params;
+    const cleanId = (id || '').trim();
+
     const aptRes = await pool.query(`
       SELECT a.*, b.name as business_name, b.image as business_image, b.city as business_city
       FROM reservas_appointments a
       LEFT JOIN reservas_businesses b ON a.business_id = b.id
-      WHERE a.id = $1
-    `, [id]);
+      WHERE LOWER(a.id) = LOWER($1)
+    `, [cleanId]);
 
     if (aptRes.rows.length === 0) {
       return res.status(404).json({ error: 'Cita no encontrada.' });
@@ -1723,7 +1725,7 @@ app.get('/api/appointments/:id/review-info', async (req, res) => {
     const apt = aptRes.rows[0];
 
     // Verificar si ya existe reseña para esta cita
-    const revRes = await pool.query('SELECT * FROM reservas_reviews WHERE appointment_id = $1', [id]);
+    const revRes = await pool.query('SELECT * FROM reservas_reviews WHERE LOWER(appointment_id) = LOWER($1)', [apt.id]);
     const existingReview = revRes.rows.length > 0 ? revRes.rows[0] : null;
 
     res.json({
@@ -1769,8 +1771,10 @@ app.post('/api/reviews', async (req, res) => {
       return res.status(400).json({ error: 'La calificación debe ser un número entero entre 1 y 5 estrellas.' });
     }
 
+    const cleanId = String(appointmentId).trim();
+
     // Verificar que la cita existe
-    const aptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1', [appointmentId]);
+    const aptRes = await pool.query('SELECT * FROM reservas_appointments WHERE LOWER(id) = LOWER($1)', [cleanId]);
     if (aptRes.rows.length === 0) {
       return res.status(404).json({ error: 'La cita especificada no existe.' });
     }
@@ -1778,7 +1782,7 @@ app.post('/api/reviews', async (req, res) => {
     const apt = aptRes.rows[0];
 
     // Verificar si ya fue calificada
-    const existing = await pool.query('SELECT id FROM reservas_reviews WHERE appointment_id = $1', [appointmentId]);
+    const existing = await pool.query('SELECT id FROM reservas_reviews WHERE LOWER(appointment_id) = LOWER($1)', [apt.id]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Esta cita ya ha sido calificada anteriormente.' });
     }
