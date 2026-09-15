@@ -3152,7 +3152,7 @@ class App {
         await storage.updateAppointmentStatus(aptId, newStatus);
         const statusMsgs = {
           confirmed: '✅ ¡Cita confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
-          completed: '🎉 ¡Reserva marcada como completada / atendida!',
+          completed: '🎉 ¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
           cancelled: '❌ Reserva cancelada.'
         };
         this.showToast(statusMsgs[newStatus] || `Estado actualizado a: ${newStatus}`, newStatus === 'cancelled' ? 'info' : 'success');

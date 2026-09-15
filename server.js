@@ -1312,6 +1312,38 @@ app.put('/api/appointments/:id', async (req, res) => {
       }
     }
 
+    // Si se marcó como completada ('completed') y aún no se ha enviado el correo de valoración, enviarlo de inmediato
+    if (a.status === 'completed' && prevApt && !prevApt.review_email_sent_at) {
+      const clientEmail = a.clientEmail || prevApt.client_email;
+      if (clientEmail && clientEmail.includes('@')) {
+        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
+        const business = bizRes.rows[0] || null;
+
+        const aptReviewObj = {
+          id: prevApt.id,
+          businessId: prevApt.business_id,
+          businessName: business?.name || prevApt.business_name || 'el comercio',
+          serviceName: a.serviceName || prevApt.service_name,
+          date: a.date || prevApt.date,
+          time: a.time || prevApt.time,
+          clientName: a.clientName || prevApt.client_name,
+          clientEmail: clientEmail.trim(),
+          clientPhone: a.clientPhone || prevApt.client_phone
+        };
+
+        sendReviewRequestEmail(aptReviewObj, business)
+          .then(async (emailRes) => {
+            if (emailRes && emailRes.success) {
+              await pool.query('UPDATE reservas_appointments SET review_email_sent_at = NOW() WHERE id = $1', [prevApt.id]);
+              console.log(`⭐ Correo de valoración enviado inmediatamente al completar la cita #${prevApt.id}.`);
+            }
+          })
+          .catch(err => {
+            console.error('⚠️ Error enviando correo de valoración inmediato al completar cita:', err.message);
+          });
+      }
+    }
+
     res.json({ success: true, message: 'Cita actualizada y reprogramada correctamente' });
   } catch (error) {
     console.error('Error actualizando cita:', error);
@@ -1330,7 +1362,7 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
 
     await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, id]);
 
-    // Si pasó a confirmed desde pending/otro estado, disparar notificaciones automáticamente
+    // 1. Si pasó a confirmed desde pending/otro estado, disparar notificaciones automáticamente
     let notificationsSent = false;
     if (status === 'confirmed' && prevApt && prevApt.status !== 'confirmed') {
       const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
@@ -1366,6 +1398,38 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
       }
 
       notificationsSent = true;
+    }
+
+    // 2. Si se marcó como completada ('completed') y aún no se ha enviado el correo de valoración, enviarlo de inmediato
+    if (status === 'completed' && prevApt && !prevApt.review_email_sent_at) {
+      const clientEmail = prevApt.client_email;
+      if (clientEmail && clientEmail.includes('@')) {
+        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
+        const business = bizRes.rows[0] || null;
+
+        const aptReviewObj = {
+          id: prevApt.id,
+          businessId: prevApt.business_id,
+          businessName: business?.name || 'el comercio',
+          serviceName: prevApt.service_name,
+          date: prevApt.date,
+          time: prevApt.time,
+          clientName: prevApt.client_name,
+          clientEmail: clientEmail.trim(),
+          clientPhone: prevApt.client_phone
+        };
+
+        sendReviewRequestEmail(aptReviewObj, business)
+          .then(async (emailRes) => {
+            if (emailRes && emailRes.success) {
+              await pool.query('UPDATE reservas_appointments SET review_email_sent_at = NOW() WHERE id = $1', [prevApt.id]);
+              console.log(`⭐ Correo de valoración enviado inmediatamente al completar la cita #${prevApt.id}.`);
+            }
+          })
+          .catch(err => {
+            console.error('⚠️ Error enviando correo de valoración inmediato al completar cita:', err.message);
+          });
+      }
     }
 
     res.json({ success: true, message: 'Estado actualizado', notificationsSent });
