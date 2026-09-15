@@ -7,7 +7,6 @@ const STORAGE_KEYS = {
   ACTIVE_BUSINESS_ID: 'directorio_active_biz_id',
   BIZ_USER: 'directorio_biz_user_session',
   CLIENT_USER: 'directorio_client_user_session',
-  DEV_USER: 'directorio_dev_user_session'
   DEV_USER: 'directorio_dev_user_session',
   BLOCKED_SLOTS: 'directorio_blocked_slots_v1'
 };
