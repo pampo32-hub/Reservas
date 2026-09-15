@@ -722,6 +722,100 @@ app.put('/api/businesses/:id/schedule', async (req, res) => {
   }
 });
 
+// Actualizar Plan de Suscripción de un Negocio (Dueño o Developer)
+app.put('/api/businesses/:id/plan', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan, planPriceUsd, monthlyBookingLimit } = req.body;
+
+    await pool.query(`
+      UPDATE reservas_businesses SET
+        plan = COALESCE($1, plan),
+        plan_price_usd = COALESCE($2, plan_price_usd),
+        monthly_booking_limit = $3
+      WHERE id = $4
+    `, [plan, planPriceUsd ? parseFloat(planPriceUsd) : 8.00, monthlyBookingLimit !== undefined ? monthlyBookingLimit : (plan === 'unlimited' ? null : (plan === 'pro' ? 300 : 150)), id]);
+
+    res.json({ success: true, message: 'Plan de suscripción actualizado correctamente.', plan, planPriceUsd, monthlyBookingLimit });
+  } catch (error) {
+    console.error('Error actualizando plan:', error);
+    res.status(500).json({ error: 'Error al actualizar plan de suscripción' });
+  }
+});
+
+// Cambiar Plan desde Developer Dashboard
+app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan } = req.body;
+
+    const planPrices = { basic: 8, pro: 15, unlimited: 25 };
+    const planLimits = { basic: 150, pro: 300, unlimited: null };
+
+    const planPriceUsd = planPrices[plan] || 8;
+    const monthlyBookingLimit = planLimits[plan] !== undefined ? planLimits[plan] : 150;
+
+    await pool.query(`
+      UPDATE reservas_businesses SET
+        plan = $1,
+        plan_price_usd = $2,
+        monthly_booking_limit = $3
+      WHERE id = $4
+    `, [plan, planPriceUsd, monthlyBookingLimit, id]);
+
+    res.json({ 
+      success: true, 
+      message: `Plan del comercio actualizado a "${plan === 'basic' ? 'Plan Básico ($8)' : (plan === 'pro' ? 'Plan Profesional ($15)' : 'Plan Ilimitado ($25)')}".`,
+      plan,
+      planPriceUsd,
+      monthlyBookingLimit
+    });
+  } catch (error) {
+    console.error('Error actualizando plan desde developer:', error);
+    res.status(500).json({ error: 'Error al actualizar plan del negocio.' });
+  }
+});
+
+// Consultar uso mensual de citas y límites del negocio
+app.get('/api/businesses/:id/booking-usage', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const bizRes = await pool.query('SELECT name, plan, plan_price_usd, monthly_booking_limit FROM reservas_businesses WHERE id = $1', [id]);
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado' });
+    }
+
+    const biz = bizRes.rows[0];
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const countRes = await pool.query(`
+      SELECT COUNT(*) as total FROM reservas_appointments 
+      WHERE business_id = $1 AND created_at >= $2 AND status != 'cancelled'
+    `, [id, startOfMonth]);
+
+    const used = parseInt(countRes.rows[0].total, 10) || 0;
+    const limit = biz.monthly_booking_limit;
+    const remaining = limit ? Math.max(0, limit - used) : null;
+    const percent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+    res.json({
+      plan: biz.plan || 'basic',
+      planPriceUsd: parseFloat(biz.plan_price_usd) || 8.00,
+      monthlyBookingLimit: limit,
+      usedThisMonth: used,
+      remainingThisMonth: remaining,
+      usagePercent: percent,
+      isUnlimited: !limit,
+      isLimitReached: limit ? used >= limit : false
+    });
+  } catch (error) {
+    console.error('Error consultando uso de reservas:', error);
+    res.status(500).json({ error: 'Error al consultar uso de reservas' });
+  }
+});
+
 // Agregar servicio a negocio
 app.post('/api/businesses/:id/services', async (req, res) => {
   try {
@@ -857,14 +951,44 @@ app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
 
-    // Verificar si el negocio está bloqueado
-    const bizCheck = await pool.query('SELECT is_blocked, block_reason FROM reservas_businesses WHERE id = $1', [a.businessId]);
-    if (bizCheck.rows.length > 0 && bizCheck.rows[0].is_blocked) {
+    // 1. Verificar si el negocio está bloqueado
+    const bizCheck = await pool.query('SELECT name, is_blocked, block_reason, plan, monthly_booking_limit FROM reservas_businesses WHERE id = $1', [a.businessId]);
+    if (bizCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado' });
+    }
+
+    const bizData = bizCheck.rows[0];
+    if (bizData.is_blocked) {
       return res.status(403).json({ 
         error: 'Este comercio se encuentra temporalmente suspendido / bloqueado para nuevas reservas.',
         isBlocked: true,
-        reason: bizCheck.rows[0].block_reason || 'Suspendido por la administración'
+        reason: bizData.block_reason || 'Suspendido por la administración'
       });
+    }
+
+    // 2. Verificar límite mensual de reservas según el plan
+    const bookingLimit = bizData.monthly_booking_limit;
+    if (bookingLimit && bookingLimit > 0) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const countRes = await pool.query(`
+        SELECT COUNT(*) as total FROM reservas_appointments 
+        WHERE business_id = $1 AND created_at >= $2 AND status != 'cancelled'
+      `, [a.businessId, startOfMonth]);
+
+      const currentCount = parseInt(countRes.rows[0].total, 10) || 0;
+      if (currentCount >= bookingLimit) {
+        const planName = bizData.plan === 'basic' ? 'Plan Básico ($8 / 150 citas)' : (bizData.plan === 'pro' ? 'Plan Profesional ($15 / 300 citas)' : 'su plan actual');
+        return res.status(403).json({
+          error: `El comercio "${bizData.name}" ha alcanzado el límite de ${bookingLimit} reservas de este mes de su ${planName}. Para recibir más citas este mes, debe actualizar a un plan superior.`,
+          limitReached: true,
+          currentCount,
+          bookingLimit,
+          plan: bizData.plan
+        });
+      }
     }
 
     const newId = `apt-${Date.now().toString().slice(-6)}`;

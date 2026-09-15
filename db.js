@@ -54,7 +54,7 @@ export async function initDatabase() {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS plan VARCHAR(50) DEFAULT 'basic';
-      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS plan_price_usd NUMERIC(10,2) DEFAULT 6.00;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS plan_price_usd NUMERIC(10,2) DEFAULT 8.00;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS monthly_booking_limit INT DEFAULT 150;
     `);
 

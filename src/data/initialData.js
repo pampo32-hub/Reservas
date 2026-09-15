@@ -3,18 +3,17 @@ export const SUBSCRIPTION_PLANS = [
     id: 'basic',
     name: 'Plan Básico',
     badge: 'Emprendedor',
-    priceUsd: 6,
-    priceCrc: 3200,
+    priceUsd: 8,
+    priceCrc: 4200,
     bookingLimit: 150,
     bookingLimitLabel: '150 reservas / mes',
     tagline: 'Ideal para independientes y negocios que están comenzando.',
     features: [
       'Hasta 150 reservas mensuales',
-      'Catálogo completo de servicios',
-      'Confirmación por WhatsApp automática',
-      'Confirmación por correo electrónico',
-      'Enlace directo para tu bio o WhatsApp',
-      'Panel de control de turnos'
+      'Catálogo con todos tus servicios y precios',
+      'Confirmación automática por WhatsApp y correo',
+      'Enlace directo a tu perfil para Instagram, TikTok y WhatsApp',
+      'Agenda digital y gestión de citas en tiempo real'
     ],
     popular: false,
     color: 'blue'
@@ -30,14 +29,13 @@ export const SUBSCRIPTION_PLANS = [
     tagline: 'Perfecto para barberías, spas, clínicas y talleres en crecimiento.',
     features: [
       'Hasta 300 reservas mensuales',
-      'Todo lo del Plan Básico',
-      'Soporte prioritario por WhatsApp',
-      'Estadísticas de ingresos y clientes',
-      'Gestión de descansos y feriados',
-      'Acceso multi-servicio ilimitado'
+      'Todo lo incluido en el Plan Básico',
+      'Reportes de ingresos y estadísticas de clientes frecuentes',
+      'Horarios avanzados (bloqueo de descansos, almuerzo y feriados)',
+      'Insignia oficial de Negocio Verificado en el directorio'
     ],
     popular: true,
-    color: 'indigo'
+    color: 'amber'
   },
   {
     id: 'unlimited',
@@ -49,15 +47,14 @@ export const SUBSCRIPTION_PLANS = [
     bookingLimitLabel: 'Reservas Ilimitadas',
     tagline: 'Para negocios con alto flujo de clientes sin preocupaciones de límites.',
     features: [
-      'Reservas 100% Ilimitadas al mes',
-      'Todo lo del Plan Profesional',
-      'Posicionamiento destacado en directorio',
-      'Soporte VIP prioritario 24/7',
-      'Fotos de alta resolución y portada',
-      'Sin ningún cargo extra ni comisiones'
+      'Reservas 100% Ilimitadas al mes (sin topes)',
+      'Todo lo incluido en el Plan Profesional',
+      'Posición preferencial en el buscador del directorio',
+      'Aparición destacada en comercios recomendados de la portada',
+      'Historial completo y base de datos de clientes'
     ],
     popular: false,
-    color: 'emerald'
+    color: 'purple'
   }
 ];
 

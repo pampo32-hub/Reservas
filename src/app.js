@@ -408,47 +408,67 @@ class App {
       list = list.filter(b => b.category === categoryId);
     }
     
-    if (!query || query.trim() === '') {
-      return list;
+    if (query && query.trim() !== '') {
+      const cleanQ = this.normalizeText(query);
+      const words = cleanQ.split(/\s+/).filter(w => w.length > 0);
+
+      list = list.filter(biz => {
+        const searchableFields = [
+          biz.name,
+          biz.categoryLabel,
+          biz.category,
+          biz.description,
+          biz.city,
+          biz.address,
+          ...(biz.features || []),
+          ...(biz.services ? biz.services.map(s => `${s.name} ${s.description || ''}`) : [])
+        ];
+
+        const fullHaystack = this.normalizeText(searchableFields.filter(Boolean).join(' '));
+        return words.every(word => fullHaystack.includes(word));
+      });
     }
 
-    const cleanQ = this.normalizeText(query);
-    const words = cleanQ.split(/\s+/).filter(w => w.length > 0);
-
-    return list.filter(biz => {
-      const searchableFields = [
-        biz.name,
-        biz.categoryLabel,
-        biz.category,
-        biz.description,
-        biz.city,
-        biz.address,
-        ...(biz.features || []),
-        ...(biz.services ? biz.services.map(s => `${s.name} ${s.description || ''}`) : [])
-      ];
-
-      const fullHaystack = this.normalizeText(searchableFields.filter(Boolean).join(' '));
-      return words.every(word => fullHaystack.includes(word));
+    // Ordenamiento por Plan de Suscripción (Posición Preferencial para Plan Ilimitado y Pro)
+    return list.sort((a, b) => {
+      const planScore = { unlimited: 3, pro: 2, basic: 1 };
+      const scoreA = planScore[a.plan] || 1;
+      const scoreB = planScore[b.plan] || 1;
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      // Desempate por rating o comercios reales
+      if (Boolean(a.isDemo) !== Boolean(b.isDemo)) return a.isDemo ? 1 : -1;
+      return (b.rating || 5) - (a.rating || 5);
     });
   }
 
   renderBusinessCard(biz) {
+    const isUnlimited = biz.plan === 'unlimited';
+    const isPro = biz.plan === 'pro';
+
     return `
-      <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
+      <div class="bg-white rounded-3xl border ${isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md' : isPro ? 'border-amber-300 shadow-sm' : 'border-slate-200 shadow-xs'} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
         <!-- Image Header -->
         <div class="relative h-52 overflow-hidden bg-slate-100">
           <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(biz.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
           
-          <!-- Badge COMERCIO DE MUESTRA o REGISTRADO -->
+          <!-- Badges de Plan y Tipo de Comercio -->
           <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            ${biz.isDemo ? `
+            ${isUnlimited ? `
+              <span class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-purple-400/40 animate-pulse">
+                <i class="fas fa-crown text-amber-300"></i> Top Destacado
+              </span>
+            ` : isPro ? `
+              <span class="bg-amber-500 text-slate-950 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-md border border-amber-300">
+                <i class="fas fa-check-circle text-slate-950"></i> Negocio Verificado
+              </span>
+            ` : biz.isDemo ? `
               <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
                 <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
               </span>
             ` : `
               <span class="bg-emerald-600/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md">
-                <i class="fas fa-check-circle text-emerald-200"></i> Comercio Registrado
+                <i class="fas fa-store text-emerald-200"></i> Negocio Registrado
               </span>
             `}
             <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
@@ -471,9 +491,12 @@ class App {
         <!-- Content Body -->
         <div class="p-5 flex-1 flex flex-col justify-between">
           <div>
-            <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-              ${this.escapeHtml(biz.name)}
-            </h3>
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                ${this.escapeHtml(biz.name)}
+              </h3>
+              ${isUnlimited ? `<span class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md flex-shrink-0">Preferencial</span>` : ''}
+            </div>
             <p class="text-xs text-slate-500 mt-1 line-clamp-2">
               ${this.escapeHtml(biz.description || '')}
             </p>
@@ -505,7 +528,7 @@ class App {
           <!-- Action Button -->
           <div class="mt-5 pt-3">
             <button 
-              class="view-biz-btn w-full py-2.5 px-4 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+              class="view-biz-btn w-full py-2.5 px-4 ${isUnlimited ? 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800' : 'bg-slate-900 hover:bg-blue-600'} text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
               data-business-id="${biz.id}"
             >
               <span>Ver Servicios & Reservar</span>
@@ -603,7 +626,7 @@ class App {
 
                   <button id="cta-view-plans-btn" class="px-3 py-1.5 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer">
                     <i class="fas fa-tags text-amber-400 text-[10px]"></i>
-                    <span>Ver Planes ($6, $15, $25)</span>
+                    <span>Ver Planes ($8, $15, $25)</span>
                   </button>
                   
                   <button id="cta-login-biz-btn" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer">
@@ -2003,9 +2026,20 @@ class App {
               <p class="text-xs text-slate-500">Gestiona, acepta, reprograma, cancela y actualiza reservas en tiempo real.</p>
             </div>
 
-            <button id="add-manual-appointment-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20">
-              <i class="fas fa-plus-circle"></i> Nueva Reserva Manual
-            </button>
+            <div class="flex items-center gap-2 flex-wrap">
+              ${currentBiz.plan === 'unlimited' ? `
+                <button id="dash-export-csv-btn" class="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                  <i class="fas fa-file-csv text-purple-600"></i> Exportar Clientes (CSV)
+                </button>
+              ` : `
+                <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-purple-50 text-slate-600 hover:text-purple-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar base de clientes está incluido en el Plan Ilimitado">
+                  <i class="fas fa-crown text-amber-500"></i> Base de Clientes (Plan ∞)
+                </button>
+              `}
+              <button id="add-manual-appointment-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 cursor-pointer">
+                <i class="fas fa-plus-circle"></i> Nueva Reserva Manual
+              </button>
+            </div>
           </div>
 
           <!-- Filtros de Estado para el Dueño -->
@@ -2378,6 +2412,42 @@ class App {
 
     document.getElementById('add-manual-appointment-btn')?.addEventListener('click', () => {
       this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
+    });
+
+    document.getElementById('dash-export-csv-btn')?.addEventListener('click', () => {
+      const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+      if (appointments.length === 0) {
+        this.showToast('No hay citas registradas para exportar.', 'info');
+        return;
+      }
+      const headers = ['ID Cita', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Email', 'Servicio', 'Precio CRC', 'Duración Min', 'Estado', 'Notas'];
+      const rows = appointments.map(a => [
+        `"${a.id}"`,
+        `"${a.date}"`,
+        `"${a.time}"`,
+        `"${(a.clientName || '').replace(/"/g, '""')}"`,
+        `"${a.clientPhone || ''}"`,
+        `"${a.clientEmail || ''}"`,
+        `"${(a.serviceName || '').replace(/"/g, '""')}"`,
+        a.servicePrice || 0,
+        a.serviceDuration || 30,
+        `"${a.status}"`,
+        `"${(a.notes || '').replace(/"/g, '""')}"`
+      ]);
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `clientes_${currentBiz.name.replace(/\s+/g, '_')}_${this.getTodayDateString()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      this.showToast('¡Base de datos de clientes exportada exitosamente!', 'success');
+    });
+
+    document.getElementById('dash-upgrade-prompt-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan });
     });
 
     document.getElementById('add-new-service-btn')?.addEventListener('click', () => {
@@ -2848,19 +2918,15 @@ class App {
                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${b.categoryLabel || b.category}</span>
                               </td>
                               <td class="p-3 whitespace-nowrap">
-                                ${b.plan === 'unlimited' ? `
-                                  <span class="px-2.5 py-1 bg-purple-100 text-purple-800 text-[10px] font-black rounded-lg border border-purple-200 inline-flex items-center gap-1">
-                                    <i class="fas fa-infinity text-purple-600"></i> Ilimitado ($25)
-                                  </span>
-                                ` : b.plan === 'pro' ? `
-                                  <span class="px-2.5 py-1 bg-amber-100 text-amber-900 text-[10px] font-black rounded-lg border border-amber-300 inline-flex items-center gap-1">
-                                    <i class="fas fa-star text-amber-500"></i> Pro ($15 - 300)
-                                  </span>
-                                ` : `
-                                  <span class="px-2.5 py-1 bg-blue-50 text-blue-800 text-[10px] font-bold rounded-lg border border-blue-200 inline-flex items-center gap-1">
-                                    <i class="fas fa-check text-blue-600"></i> Básico ($6 - 150)
-                                  </span>
-                                `}
+                                <select 
+                                  class="dev-change-plan-select text-xs font-bold px-2.5 py-1.5 rounded-xl border cursor-pointer transition-all shadow-2xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${b.plan === 'unlimited' ? 'bg-purple-100 text-purple-900 border-purple-300' : b.plan === 'pro' ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-blue-50 text-blue-900 border-blue-200'}" 
+                                  data-id="${b.id}" 
+                                  data-name="${b.name}"
+                                >
+                                  <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>🔹 Básico ($8 • 150)</option>
+                                  <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>⭐ Pro ($15 • 300)</option>
+                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>🚀 Ilimitado ($25 • ∞)</option>
+                                </select>
                               </td>
                               <td class="p-3">
                                 <span class="block text-slate-800 font-semibold">${b.city || 'Costa Rica'}</span>
@@ -3465,6 +3531,30 @@ class App {
             } catch (err) {
               this.showToast(err.message || 'Error al eliminar.', 'error');
             }
+          }
+        });
+      });
+
+      // Cambiar Plan de Suscripción desde el Panel Developer
+      document.querySelectorAll('.dev-change-plan-select').forEach(sel => {
+        sel.addEventListener('change', async (e) => {
+          const bizId = e.target.getAttribute('data-id');
+          const bizName = e.target.getAttribute('data-name');
+          const newPlan = e.target.value;
+          const planNames = {
+            basic: 'Plan Básico ($8 • 150 reservas)',
+            pro: 'Plan Profesional ($15 • 300 reservas)',
+            unlimited: 'Plan Ilimitado ($25 • Reservas Ilimitadas)'
+          };
+
+          try {
+            e.target.disabled = true;
+            await storage.setDeveloperBusinessPlan(bizId, newPlan);
+            this.showToast(`¡Plan de "${bizName}" actualizado a ${planNames[newPlan] || newPlan}!`, 'success');
+            this.renderDeveloperDashboardView(container);
+          } catch (err) {
+            this.showToast(err.message || 'Error al actualizar el plan del negocio.', 'error');
+            e.target.disabled = false;
           }
         });
       });

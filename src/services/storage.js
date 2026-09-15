@@ -911,6 +911,65 @@ class StorageService {
     throw new Error('No se encontró el negocio para actualizar plan.');
   }
 
+  async setDeveloperBusinessPlan(businessId, planId) {
+    const plan = this.getPlanById(planId);
+    if (!plan) throw new Error('Plan inválido seleccionado.');
+
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/plan`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: plan.id })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          await this.loadFromApi();
+          return data;
+        }
+      } catch (e) {
+        console.error('Error actualizando plan como developer:', e);
+      }
+    }
+    return this.updateBusinessPlan(businessId, planId);
+  }
+
+  async getBusinessBookingUsage(businessId) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/booking-usage`);
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {
+        console.warn('Error obteniendo uso de reservas:', e);
+      }
+    }
+
+    // Fallback local
+    const biz = this.getBusinessById(businessId);
+    const plan = this.getPlanById(biz ? biz.plan : 'basic');
+    const limit = plan ? plan.bookingLimit : 150;
+    
+    const now = new Date();
+    const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const all = this.getAppointmentsByBusiness(businessId);
+    const used = all.filter(a => (a.date || '').startsWith(curMonth) && a.status !== 'cancelled').length;
+    const remaining = limit ? Math.max(0, limit - used) : null;
+    const percent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+
+    return {
+      plan: plan ? plan.id : 'basic',
+      planPriceUsd: plan ? plan.priceUsd : 8.00,
+      monthlyBookingLimit: limit,
+      usedThisMonth: used,
+      remainingThisMonth: remaining,
+      usagePercent: percent,
+      isUnlimited: !limit,
+      isLimitReached: limit ? used >= limit : false
+    };
+  }
+
   // --- CONFIGURACIÓN DE WHATSAPP / META DEVELOPER ---
   async getWhatsAppSettings() {
     try {
