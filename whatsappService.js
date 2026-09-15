@@ -197,8 +197,80 @@ export async function sendViaMetaCloudApi(recipientPhone, messageBody, credentia
 }
 
 /**
+ * Envío a través de Plantilla (Template) oficial de Meta (Entregado 100% proactivo sin requerir mensaje previo)
+ */
+export async function sendMetaTemplateMessage(recipientPhone, appointment, business, credentials = null, templateName = 'confirmacion_cita') {
+  const meta = credentials || await getActiveMetaCredentials();
+  if (!meta.token || !meta.phoneNumberId) {
+    throw new Error('Credenciales de Meta incompletas (Falta META_WHATSAPP_TOKEN o META_PHONE_NUMBER_ID).');
+  }
+
+  const clientName = String(appointment.clientName || 'Cliente').trim();
+  const businessName = String(business?.name || appointment.businessName || 'Comercio').trim();
+  const serviceName = String(appointment.serviceName || 'Servicio General').trim();
+  const dateStr = formatDateDMY(appointment.date);
+  const timeStr = formatTime12h(appointment.time);
+  const priceStr = formatColones(appointment.servicePrice);
+  const addressStr = String(business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : 'Costa Rica').trim();
+  const appointmentCode = String((appointment.id || 'APT-000').toUpperCase()).trim();
+
+  const url = `https://graph.facebook.com/v20.0/${meta.phoneNumberId}/messages`;
+  
+  const payload = {
+    messaging_product: 'whatsapp',
+    recipient_type: 'individual',
+    to: recipientPhone,
+    type: 'template',
+    template: {
+      name: templateName,
+      language: {
+        code: 'es'
+      },
+      components: [
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: clientName },
+            { type: 'text', text: businessName },
+            { type: 'text', text: serviceName },
+            { type: 'text', text: dateStr },
+            { type: 'text', text: timeStr },
+            { type: 'text', text: priceStr },
+            { type: 'text', text: addressStr },
+            { type: 'text', text: appointmentCode }
+          ]
+        }
+      ]
+    }
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${meta.token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    const errorObj = data?.error || {};
+    const errorCode = errorObj.code || response.status;
+    throw new Error(`Meta Template Error [${errorCode}]: ${errorObj.message || response.statusText}`);
+  }
+
+  return {
+    provider: 'Meta WhatsApp Cloud API (Template)',
+    messageId: data.messages?.[0]?.id,
+    data
+  };
+}
+
+/**
  * Envío de confirmación de reserva por WhatsApp
- * (Prioriza Meta Cloud API directo, si no está configurado usa Twilio)
+ * (Prioriza Plantilla oficial de Meta, luego Texto Libre de Meta, luego Twilio)
  */
 export async function sendBookingConfirmationWhatsApp(appointment, business, pool = null) {
   if (!appointment || !appointment.clientPhone) {
@@ -221,12 +293,23 @@ export async function sendBookingConfirmationWhatsApp(appointment, business, poo
 
   const metaCreds = await getActiveMetaCredentials(pool);
 
-  // 1. INTENTO CON META WHATSAPP CLOUD API (DIRECTO)
+  // 1. INTENTO CON META WHATSAPP CLOUD API
   if (metaCreds.isConfigured) {
+    // 1A. Intentar primero con Plantilla Oficial de Utilidad (confirmacion_cita)
     try {
-      console.log(`📲 [Meta API] Enviando WhatsApp directo a +${metaRecipient}...`);
+      console.log(`📲 [Meta API] Intentando envío con plantilla 'confirmacion_cita' a +${metaRecipient}...`);
+      const templateResult = await sendMetaTemplateMessage(metaRecipient, appointment, business, metaCreds, 'confirmacion_cita');
+      console.log(`✅ [Meta API] Plantilla WhatsApp entregada con éxito! ID: ${templateResult.messageId}`);
+      return { success: true, provider: 'meta_template', messageId: templateResult.messageId };
+    } catch (templateErr) {
+      console.warn('ℹ️ Plantilla personalizada no disponible o rechazada por Meta, intentando texto libre / fallback:', templateErr.message);
+    }
+
+    // 1B. Si la plantilla aún no está creada, enviar texto libre
+    try {
+      console.log(`📲 [Meta API] Enviando WhatsApp texto directo a +${metaRecipient}...`);
       const result = await sendViaMetaCloudApi(metaRecipient, messageBody, metaCreds);
-      console.log(`✅ [Meta API] WhatsApp entregado con ID: ${result.messageId}`);
+      console.log(`✅ [Meta API] WhatsApp texto entregado con ID: ${result.messageId}`);
       return { success: true, provider: 'meta', messageId: result.messageId };
     } catch (metaErr) {
       console.error('❌ Error enviando WhatsApp con Meta Cloud API:', metaErr.message);

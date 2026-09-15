@@ -913,6 +913,13 @@ class StorageService {
 
   // --- CONFIGURACIÓN DE WHATSAPP / META DEVELOPER ---
   async getWhatsAppSettings() {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/settings/whatsapp`);
+        if (res.ok) return await res.json();
+      } catch (e) {
+        console.error('Error fetching whatsapp settings:', e);
+      }
     try {
       const res = await fetch(`${this.apiBase}/developer/settings/whatsapp`);
       if (res.ok) return await res.json();
@@ -923,6 +930,20 @@ class StorageService {
   }
 
   async saveWhatsAppSettings(settings) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/settings/whatsapp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
+        if (res.ok) return await res.json();
+        const err = await res.json();
+        throw new Error(err.error || 'Error al guardar credenciales.');
+      } catch (e) {
+        console.error('Error saving whatsapp settings:', e);
+        throw e;
+      }
     try {
       const res = await fetch(`${this.apiBase}/developer/settings/whatsapp`, {
         method: 'POST',
@@ -936,9 +957,21 @@ class StorageService {
       console.error('Error saving whatsapp settings:', e);
       throw e;
     }
+    throw new Error('Servidor no disponible para guardar credenciales.');
   }
 
   async testWhatsAppNotification(phone) {
+    if (this.isOnline) {
+      try {
+        const res = await fetch(`${this.apiBase}/test-whatsapp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+        return await res.json();
+      } catch (e) {
+        return { success: false, error: e.message };
+      }
     try {
       const res = await fetch(`${this.apiBase}/test-whatsapp`, {
         method: 'POST',
@@ -949,6 +982,7 @@ class StorageService {
     } catch (e) {
       return { success: false, error: e.message };
     }
+    return { success: false, error: 'Servidor desconectado.' };
   }
 }
 
