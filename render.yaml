@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: reservas
+    runtime: node
+    plan: free
+    region: ohio
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_DGXRwl4kBtC7@ep-shy-firefly-b5sbjmrd-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: NODE_ENV
+        value: production
