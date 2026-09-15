@@ -111,7 +111,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
 <body>
   <div class="container">
     <div class="header">
-      <h1>¡Tu Cita está Confirmada!</h1>
+      <h1>¡Tu Reserva está Confirmada!</h1>
       <p>Gracias por agendar con Reservas Costa Rica</p>
       <div class="badge">Código: #${appointmentCode}</div>
     </div>
@@ -119,7 +119,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     <div class="content">
       <div class="greeting">¡Hola, ${clientName}! 👋</div>
       <div class="message">
-        Tu turno ha sido agendado exitosamente en <strong>${businessName}</strong>. A continuación encontrarás todos los detalles de tu cita:
+        Tu turno ha sido agendado exitosamente en <strong>${businessName}</strong>. A continuación encontrarás todos los detalles de tu reserva:
       </div>
 
       <div class="card">
@@ -164,11 +164,11 @@ export async function sendBookingConfirmationEmail(appointment, business) {
       </div>
 
       <div class="whatsapp-badge">
-        <span>📲 <strong>Notificación activa:</strong> También hemos registrado tu número para enviarte recordatorios previos a tu cita vía WhatsApp.</span>
+        <span>📲 <strong>Notificación activa:</strong> También hemos registrado tu número para enviarte recordatorios previos a tu reserva vía WhatsApp.</span>
       </div>
 
       <div class="btn-container">
-        <a href="${APP_URL}/#/mis-citas" class="btn">Ver Mis Reservas en Línea</a>
+        <a href="${APP_URL}/#/mis-reservas" class="btn">Ver Mis Reservas en Línea</a>
       </div>
     </div>
 
@@ -186,7 +186,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     const { data, error } = await resend.emails.send({
       from: DEFAULT_FROM,
       to: [appointment.clientEmail.trim()],
-      subject: `✅ Cita Confirmada en ${businessName} (Código: #${appointmentCode})`,
+      subject: `✅ Reserva Confirmada en ${businessName} (Código: #${appointmentCode})`,
       html: htmlContent
     });
 
@@ -208,7 +208,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
 }
 
 /**
- * Envía correo solicitando calificación y reseña verificada al cliente (1 hora post-cita)
+ * Envía correo solicitando calificación y reseña verificada al cliente (1 hora post-servicio)
  */
 export async function sendReviewRequestEmail(appointment, business) {
   if (!appointment || !appointment.clientEmail || !appointment.clientEmail.includes('@')) {
@@ -271,16 +271,16 @@ export async function sendReviewRequestEmail(appointment, business) {
     <div class="content">
       <div class="greeting">¡Hola, ${clientName}! 👋</div>
       <div class="message">
-        Esperamos que hayas tenido una excelente experiencia con tu cita de <strong>${serviceName}</strong> en <strong>${businessName}</strong>.
+        Esperamos que hayas tenido una excelente experiencia con tu servicio de <strong>${serviceName}</strong> en <strong>${businessName}</strong>.
         ¿Nos regalas 30 segundos para contarnos cómo te fue?
       </div>
 
       <div class="card">
         <div class="card-biz">${businessName}</div>
         <div class="card-service">✨ ${serviceName}</div>
-        <div class="card-date">Fecha de atención: ${dateStr} • Cita #${appointmentCode}</div>
+        <div class="card-date">Fecha de atención: ${dateStr} • Reserva #${appointmentCode}</div>
         <div>
-          <span class="badge-verified">🛡️ Reseña Verificada por Cita Real</span>
+          <span class="badge-verified">🛡️ Reseña Verificada por Reserva Real</span>
         </div>
       </div>
 
@@ -301,7 +301,7 @@ export async function sendReviewRequestEmail(appointment, business) {
     </div>
 
     <div class="footer">
-      <p style="margin: 0 0 6px 0;">Solo los clientes que completaron una cita real pueden dejar reseñas verificadas.</p>
+      <p style="margin: 0 0 6px 0;">Solo los clientes que completaron una reserva real pueden dejar reseñas verificadas.</p>
       <p style="margin: 0;">Plataforma de Reservas de Costa Rica 🇨🇷</p>
     </div>
   </div>
@@ -314,7 +314,7 @@ export async function sendReviewRequestEmail(appointment, business) {
     const { data, error } = await resend.emails.send({
       from: DEFAULT_FROM,
       to: [appointment.clientEmail.trim()],
-      subject: `⭐ ¿Cómo fue tu experiencia en ${businessName}? Califica tu cita`,
+      subject: `⭐ ¿Cómo fue tu experiencia en ${businessName}? Califica tu experiencia`,
       html: htmlContent
     });
 

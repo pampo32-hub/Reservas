@@ -129,7 +129,7 @@ export function buildBookingConfirmationText(appointment, business) {
   const addressStr = business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : 'Costa Rica';
   const businessPhone = business?.phone || '+506 2200 0000';
 
-  return `🎉 *¡Tu Cita está Confirmada!*
+  return `🎉 *¡Tu Reserva está Confirmada!*
 
 Hola *${clientName}*, tu reserva en *${businessName}* ha sido registrada con éxito:
 
@@ -143,8 +143,8 @@ Hola *${clientName}*, tu reserva en *${businessName}* ha sido registrada con éx
 🔖 *Código de Reserva:* #${appointmentCode}
 ${appointment.notes ? `📝 *Notas:* "${appointment.notes}"\n` : ''}
 📲 *Gestión de Turnos:*
-Puedes consultar tus citas ingresando a:
-${APP_URL}/#/mis-citas
+Puedes consultar tus reservas ingresando a:
+${APP_URL}/#/mis-reservas
 
 _¡Gracias por reservar con Reservas CR!_ 🇨🇷`;
 }

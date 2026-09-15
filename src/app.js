@@ -159,7 +159,7 @@ class App {
         return aptId ? `#/calificar/${encodeURIComponent(aptId)}${query}` : '#/';
       }
       case 'my-client-bookings':
-        return '#/mis-citas';
+        return '#/mis-reservas';
       case 'owner-dashboard':
         return '#/panel-negocio';
       case 'developer-dashboard':
@@ -236,7 +236,7 @@ class App {
     }
 
     // 6. Mis citas
-    if (/^#\/?(mis-citas|mis-reservas|cliente)/i.test(cleanHash)) {
+    if (/^#\/?(mis-reservas|mis-reservas|cliente)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
 
@@ -391,7 +391,7 @@ class App {
                 <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
                   <i class="fas fa-user-circle text-blue-600 text-sm"></i>
                   <span class="max-w-[100px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mi Perfil'}</span>
-                  <span class="hidden md:inline text-[10px] text-slate-400">(Mis Citas)</span>
+                  <span class="hidden md:inline text-[10px] text-slate-400">(Mis Reservas)</span>
                 </button>
                 <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg" title="Cerrar sesión de cliente">
                   <i class="fas fa-sign-out-alt text-xs"></i>
@@ -523,12 +523,12 @@ class App {
             <span class="text-[10px] mt-0.5 tracking-tight">Explorar</span>
           </button>
 
-          <!-- 2. Mis Citas -->
+          <!-- 2. Mis Reservas -->
           <button id="mobile-nav-bookings-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isBookings ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
             <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isBookings ? 'bg-blue-50 text-blue-600' : ''}">
               <i class="fas fa-calendar-alt text-base ${isBookings ? 'scale-110' : ''}"></i>
             </div>
-            <span class="text-[10px] mt-0.5 tracking-tight">Mis Citas</span>
+            <span class="text-[10px] mt-0.5 tracking-tight">Mis Reservas</span>
           </button>
 
           <!-- 3. Mi Negocio -->
@@ -910,7 +910,7 @@ class App {
               <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
             </span>
             <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu cita al instante</span>
+              Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu reserva al instante</span>
             </h1>
             <p class="mt-3 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
               Barberías, spas, dentistas, talleres mecánicos y más. Escribe cualquier servicio o cantón para filtrar en tiempo real.
@@ -944,7 +944,7 @@ class App {
                 <i class="fas fa-store text-indigo-600"></i> ¿Tienes un negocio o prestas servicios?
               </span>
               <button id="hero-register-biz-btn" class="font-black text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-2 flex items-center gap-1 transition-colors cursor-pointer">
-                ¡Publica tu catálogo y recibe citas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
+                ¡Publica tu catálogo y recibe reservas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
               </button>
             </div>
           </div>
@@ -1250,7 +1250,7 @@ class App {
                       <i class="fas fa-shield-alt text-[10px]"></i> Verificadas
                     </span>
                   </div>
-                  <p class="text-xs text-slate-500 mt-0.5">Calificaciones 100% auténticas de personas que completaron su cita.</p>
+                  <p class="text-xs text-slate-500 mt-0.5">Calificaciones 100% auténticas de personas que completaron su reserva.</p>
                 </div>
 
                 <div class="flex items-center gap-3 bg-slate-50 px-4 py-3 rounded-2xl border border-slate-200/80">
@@ -1436,7 +1436,7 @@ class App {
       <div class="max-w-xl mx-auto px-4 py-12 animate-fade-in">
         <div class="flex items-center justify-center py-20 text-slate-400 gap-3">
           <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
-          <span class="font-medium text-slate-600">Cargando datos de tu cita...</span>
+          <span class="font-medium text-slate-600">Cargando datos de tu reserva...</span>
         </div>
       </div>
     `;
@@ -1448,8 +1448,8 @@ class App {
           <div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
             <i class="fas fa-exclamation-circle"></i>
           </div>
-          <h2 class="text-xl font-bold text-slate-900 mb-2">No pudimos encontrar la cita</h2>
-          <p class="text-xs text-slate-500 mb-6">${info.error || 'El código de la cita no es válido o ha expirado.'}</p>
+          <h2 class="text-xl font-bold text-slate-900 mb-2">No pudimos encontrar la reserva</h2>
+          <p class="text-xs text-slate-500 mb-6">${info.error || 'El código de la reserva no es válido o ha expirado.'}</p>
           <button id="review-go-home-btn" class="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl shadow-md hover:bg-blue-700 transition-all text-xs">
             Ir al Inicio
           </button>
@@ -1540,7 +1540,7 @@ class App {
           <!-- Encabezado de la Cita -->
           <div class="text-center space-y-2 pb-4 border-b border-slate-100">
             <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-extrabold border border-blue-200/80 inline-flex items-center gap-1.5">
-              <i class="fas fa-shield-alt text-[11px] text-blue-600"></i> Calificación Verificada por Cita Real
+              <i class="fas fa-shield-alt text-[11px] text-blue-600"></i> Calificación Verificada por Reserva Real
             </span>
             <h1 class="text-2xl sm:text-3xl font-black text-slate-900">¿Cómo estuvo tu atención?</h1>
             <p class="text-xs text-slate-500">Tu opinión ayuda al comercio a mejorar y a otros clientes a elegir el mejor servicio.</p>
@@ -1953,12 +1953,12 @@ class App {
             ${isPending ? '¡Solicitud de Reserva Recibida!' : '¡Turno Agendado!'}
           </span>
           <h3 class="text-2xl font-black text-slate-900 mt-1">
-            ${isPending ? 'Cita en Proceso de Confirmación' : 'Cita Confirmada'}
+            ${isPending ? 'Reserva en Proceso de Confirmación' : 'Reserva Confirmada'}
           </h3>
           <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
 
           ${isPending ? `
-            <!-- Aviso Informativo para Cita Pendiente -->
+            <!-- Aviso Informativo para Reserva Pendiente -->
             <div class="mt-4 p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-left text-xs text-amber-900 space-y-1.5 animate-fade-in">
               <div class="flex items-center gap-2 font-bold text-amber-950">
                 <i class="fas fa-clock text-amber-600 text-sm"></i>
@@ -2044,7 +2044,7 @@ class App {
 
     const biz = storage.getBusinessById(appointment.businessId);
     if (!biz) {
-      this.showToast('No se encontró el negocio asociado a esta cita.', 'error');
+      this.showToast('No se encontró el negocio asociado a esta reserva.', 'error');
       return;
     }
 
@@ -2071,10 +2071,10 @@ class App {
               <div>
                 <span class="text-xs uppercase tracking-wider text-blue-200 font-bold">
                   <i class="fas ${isOwnerMode ? 'fa-user-cog' : 'fa-calendar-alt'} mr-1"></i>
-                  ${isOwnerMode ? 'Panel de Negocio: Modificar Cita' : 'Reprogramar mi Turno'}
+                  ${isOwnerMode ? 'Panel de Negocio: Modificar Reserva' : 'Reprogramar mi Turno'}
                 </span>
                 <h3 class="text-xl font-black mt-0.5">${biz.name}</h3>
-                <span class="text-xs text-blue-100 font-mono">CÓDIGO CITA: #${appointment.id.toUpperCase()}</span>
+                <span class="text-xs text-blue-100 font-mono">CÓDIGO RESERVA: #${appointment.id.toUpperCase()}</span>
               </div>
               <button id="close-reschedule-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
                 <i class="fas fa-times"></i>
@@ -2242,7 +2242,7 @@ class App {
       document.getElementById('reschedule-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!selectedTime) {
-          this.showToast('Por favor selecciona un horario disponible para la cita.', 'error');
+          this.showToast('Por favor selecciona un horario disponible para la reserva.', 'error');
           return;
         }
 
@@ -2271,7 +2271,7 @@ class App {
         }
 
         await storage.updateAppointment(appointment.id, updatedData);
-        this.showToast('¡Cita modificada y reprogramada con éxito!', 'success');
+        this.showToast('¡Reserva modificada y reprogramada con éxito!', 'success');
         modalContainer.innerHTML = '';
         this.renderCurrentView();
       });
@@ -2317,7 +2317,7 @@ class App {
           </div>
           <div class="flex items-center gap-2">
             <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
-              <i class="fas fa-plus mr-1"></i> Nueva Cita
+              <i class="fas fa-plus mr-1"></i> Nueva Reserva
             </button>
             <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
               <i class="fas fa-sign-out-alt mr-1"></i> Salir
@@ -2346,7 +2346,7 @@ class App {
             <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
               <i class="far fa-calendar-alt"></i>
             </div>
-            <h3 class="text-lg font-bold text-slate-800">No hay citas en esta categoría</h3>
+            <h3 class="text-lg font-bold text-slate-800">No hay reservas en esta categoría</h3>
             <p class="text-xs text-slate-500 mt-1">Explora los comercios disponibles y agenda tu primer turno.</p>
             <button id="go-explore-btn" class="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20">
               Explorar Comercios
@@ -2395,7 +2395,7 @@ class App {
                   ` : ''}
                   ${apt.status === 'cancelled' ? `
                     <button class="client-reschedule-btn px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5" data-apt-id="${apt.id}">
-                      <i class="fas fa-redo"></i> Reagendar Cita
+                      <i class="fas fa-redo"></i> Reprogramar Reserva
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
@@ -2534,7 +2534,7 @@ class App {
             <h3 class="text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
             <p class="text-xs text-slate-300">
               ${isUnlimited 
-                ? `🚀 Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las citas que desees sin restricciones ni comisiones.`
+                ? `🚀 Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
                 : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas mensuales permitidas este mes.`}
             </p>
           </div>
@@ -2560,7 +2560,7 @@ class App {
                   <i class="fas fa-check-double"></i>
                   <span>Sin límite de reservas</span>
                 </div>
-                <p class="text-[11px] text-slate-400 mt-0.5">${usageCount} citas recibidas este mes</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">${usageCount} reservas recibidas este mes</p>
               </div>
             `}
 
@@ -2575,7 +2575,7 @@ class App {
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
             <div class="flex items-center justify-between text-slate-500 mb-2">
-              <span class="text-xs font-semibold uppercase">Citas Hoy</span>
+              <span class="text-xs font-semibold uppercase">Reservas Hoy</span>
               <i class="fas fa-calendar-day text-blue-600"></i>
             </div>
             <span class="text-2xl font-black text-slate-900">${todayAppointments.length}</span>
@@ -2597,7 +2597,7 @@ class App {
               <span class="font-extrabold text-emerald-600 text-sm">CRC</span>
             </div>
             <span class="text-2xl font-black text-slate-900">${this.formatColones(estimatedRevenue)}</span>
-            <span class="text-[11px] text-emerald-600 block mt-1">citas confirmadas</span>
+            <span class="text-[11px] text-emerald-600 block mt-1">reservas confirmadas</span>
           </div>
 
           <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -2704,7 +2704,7 @@ class App {
             </div>
           </div>
 
-          <!-- Banner Informativo con Switch de Autoconfirmación de Citas -->
+          <!-- Banner Informativo con Switch de Autoconfirmación de Reservas -->
           <div class="mb-6 p-4 sm:p-5 rounded-2xl border transition-all ${isAutoConfirm ? 'bg-emerald-50/70 border-emerald-200/80 shadow-xs' : 'bg-amber-50/80 border-amber-200/90 shadow-xs'}">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div class="space-y-1.5">
@@ -2712,7 +2712,7 @@ class App {
                   <div class="w-7 h-7 rounded-xl flex items-center justify-center text-xs ${isAutoConfirm ? 'bg-emerald-600 text-white shadow-xs' : 'bg-amber-500 text-slate-950 shadow-xs'}">
                     <i class="fas ${isAutoConfirm ? 'fa-magic' : 'fa-hand-paper'}"></i>
                   </div>
-                  <h3 class="text-sm font-black text-slate-900">Autoconfirmación de Citas</h3>
+                  <h3 class="text-sm font-black text-slate-900">Autoconfirmación de Reservas</h3>
                   <span class="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${isAutoConfirm ? 'bg-emerald-200/70 text-emerald-900 border border-emerald-300/60' : 'bg-amber-200/80 text-amber-950 border border-amber-300/70'}">
                     ${isAutoConfirm ? '⚡ Modo Automático Activo' : '✋ Modo Manual (Aprobación Requerida)'}
                   </span>
@@ -2721,7 +2721,7 @@ class App {
                   ${isAutoConfirm ? `
                     <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>correo electrónico y WhatsApp</strong>.
                   ` : `
-                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva cita entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El correo y WhatsApp se enviarán únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El correo y WhatsApp se enviarán únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
                   `}
                 </p>
               </div>
@@ -3088,7 +3088,7 @@ class App {
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-2xl">
           <h2 class="text-lg font-bold text-slate-900 mb-1">Configuración de Horarios y Disponibilidad</h2>
-          <p class="text-xs text-slate-500 mb-6">Define los días y franjas horarias en las que tu negocio puede recibir citas.</p>
+          <p class="text-xs text-slate-500 mb-6">Define los días y franjas horarias en las que tu negocio puede recibir reservas.</p>
 
           <form id="schedule-form" class="space-y-6 text-xs sm:text-sm">
             <!-- Días laborales -->
@@ -3136,7 +3136,7 @@ class App {
               <div class="flex items-center justify-between">
                 <div>
                   <label class="block font-bold text-slate-800 text-xs uppercase tracking-wider">Intervalo de Turnos / Horarios</label>
-                  <p class="text-[11px] text-slate-500">Elige la duración de cada bloque horario para las citas públicas y el bloqueo de agenda.</p>
+                  <p class="text-[11px] text-slate-500">Elige la duración de cada bloque horario para las reservas públicas y el bloqueo de agenda.</p>
                 </div>
                 <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm flex-shrink-0">
                   <i class="fas fa-stopwatch"></i>
@@ -3160,21 +3160,21 @@ class App {
               </div>
             </div>
 
-            <!-- Autoconfirmación de Citas en Horarios -->
+            <!-- Autoconfirmación de Reservas en Horarios -->
             <div class="p-5 rounded-2xl border transition-all ${currentBiz.autoConfirmAppointments !== false ? 'bg-emerald-50/70 border-emerald-200/80 shadow-xs' : 'bg-amber-50/80 border-amber-200/90 shadow-xs'} space-y-3">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div class="space-y-1">
                   <div class="flex items-center gap-2">
                     <i class="fas ${currentBiz.autoConfirmAppointments !== false ? 'fa-magic text-emerald-600' : 'fa-hand-paper text-amber-600'} text-base"></i>
-                    <span class="font-bold text-slate-900 text-sm">Autoconfirmación de Citas</span>
+                    <span class="font-bold text-slate-900 text-sm">Autoconfirmación de Reservas</span>
                     <span class="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${currentBiz.autoConfirmAppointments !== false ? 'bg-emerald-200/70 text-emerald-900' : 'bg-amber-200/80 text-amber-950'}">
                       ${currentBiz.autoConfirmAppointments !== false ? '⚡ Automático' : '✋ Manual'}
                     </span>
                   </div>
                   <p class="text-xs text-slate-600 leading-relaxed">
                     ${currentBiz.autoConfirmAppointments !== false
-                      ? 'Las citas se confirman inmediatamente y se envía WhatsApp y correo al cliente al agendar.'
-                      : 'Las citas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo.'}
+                      ? 'Las reservas se confirman inmediatamente y se envía WhatsApp y correo al cliente al agendar.'
+                      : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo.'}
                   </p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 self-start sm:self-center">
@@ -3394,7 +3394,7 @@ class App {
               <div class="flex items-center gap-2">
                 <span class="w-3.5 h-3.5 rounded-full bg-blue-600 ring-4 ring-blue-200 flex-shrink-0"></span>
                 <div>
-                  <span class="text-xs font-black block">Citas Clientes</span>
+                  <span class="text-xs font-black block">Reservas Clientes</span>
                   <span class="text-[10px] text-blue-700">Ya agendadas</span>
                 </div>
               </div>
@@ -3432,7 +3432,7 @@ class App {
                         ${apt.serviceName}
                       </div>
                       <span class="mt-2 text-[9px] font-black uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md inline-block text-center">
-                        Cita #${apt.id.toUpperCase().slice(-4)}
+                        Reserva #${apt.id.toUpperCase().slice(-4)}
                       </span>
                     </button>
                   `;
@@ -3515,7 +3515,7 @@ class App {
               </div>
               <div>
                 <span class="text-[10px] uppercase font-bold tracking-widest text-blue-200 block">Detalle de Reserva</span>
-                <h3 class="text-base font-black">Cita #${apt.id.toUpperCase()}</h3>
+                <h3 class="text-base font-black">Reserva #${apt.id.toUpperCase()}</h3>
               </div>
             </div>
             <button id="close-booked-slot-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
@@ -3587,7 +3587,7 @@ class App {
 
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
   setupDashboardTabEvents(currentBiz) {
-    // Switch de Autoconfirmación de Citas (en Agenda y en Horarios)
+    // Switch de Autoconfirmación de Reservas (en Agenda y en Horarios)
     const handleAutoConfirmToggle = async (isChecked) => {
       await storage.updateBusinessAutoConfirm(currentBiz.id, isChecked);
       currentBiz.autoConfirmAppointments = isChecked;
@@ -3634,7 +3634,7 @@ class App {
         const newStatus = btn.getAttribute('data-status');
         await storage.updateAppointmentStatus(aptId, newStatus);
         const statusMsgs = {
-          confirmed: '✅ ¡Cita confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
+          confirmed: '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           completed: '🎉 ¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
           cancelled: '❌ Reserva cancelada.'
         };
@@ -3661,10 +3661,10 @@ class App {
     document.getElementById('dash-export-csv-btn')?.addEventListener('click', () => {
       const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
       if (appointments.length === 0) {
-        this.showToast('No hay citas registradas para exportar.', 'info');
+        this.showToast('No hay reservas registradas para exportar.', 'info');
         return;
       }
-      const headers = ['ID Cita', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Email', 'Servicio', 'Precio CRC', 'Duración Min', 'Estado', 'Notas'];
+      const headers = ['ID Reserva', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Email', 'Servicio', 'Precio CRC', 'Duración Min', 'Estado', 'Notas'];
       const rows = appointments.map(a => [
         `"${a.id}"`,
         `"${a.date}"`,
@@ -4069,7 +4069,7 @@ class App {
               </div>
             </div>
 
-            <!-- Citas Globales -->
+            <!-- Reservas Globales -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
               <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl flex-shrink-0">
                 <i class="fas fa-calendar-check"></i>
@@ -4119,7 +4119,7 @@ class App {
 
                 <button id="dev-tab-appointments" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'appointments' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
                   <i class="fas fa-calendar-alt"></i>
-                  <span>Citas Globales (${appointments.length})</span>
+                  <span>Reservas Globales (${appointments.length})</span>
                 </button>
 
                 <button id="dev-tab-whatsapp" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
@@ -4398,7 +4398,7 @@ class App {
                   <div class="flex items-center justify-between">
                     <div>
                       <h3 class="text-base font-bold text-slate-800">Clientes Registrados en la Plataforma</h3>
-                      <p class="text-xs text-slate-500">Usuarios finales registrados para reservar citas.</p>
+                      <p class="text-xs text-slate-500">Usuarios finales registrados para realizar reservas.</p>
                     </div>
                   </div>
 
@@ -4416,7 +4416,7 @@ class App {
                             <th class="p-3">Teléfono / WhatsApp</th>
                             <th class="p-3">Correo Electrónico</th>
                             <th class="p-3">Fecha de Registro</th>
-                            <th class="p-3">Total Citas</th>
+                            <th class="p-3">Total Reservas</th>
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
@@ -4458,13 +4458,13 @@ class App {
                 </div>
               ` : ''}
 
-              <!-- PESTAÑA 4: CITAS / RESERVAS GLOBALES -->
+              <!-- PESTAÑA 4: HISTORIAL DE RESERVAS GLOBALES -->
               ${this.activeDevTab === 'appointments' ? `
                 <div class="space-y-4">
                   <div class="flex items-center justify-between">
                     <div>
                       <h3 class="text-base font-bold text-slate-800">Reservas Globales Agendadas</h3>
-                      <p class="text-xs text-slate-500">Historial en vivo de todas las citas agendadas entre clientes y comercios.</p>
+                      <p class="text-xs text-slate-500">Historial en vivo de todas las reservas agendadas entre clientes y comercios.</p>
                     </div>
                   </div>
 
@@ -5021,7 +5021,7 @@ class App {
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
             ${mode === 'login' && role === 'client' ? `
               <!-- FORM 1: LOGIN CLIENTE (TELÉFONO/CORREO Y CONTRASEÑA) -->
-              <p class="text-xs text-slate-500">Ingresa con tu teléfono o correo y tu contraseña para gestionar tus citas.</p>
+              <p class="text-xs text-slate-500">Ingresa con tu teléfono o correo y tu contraseña para gestionar tus reservas.</p>
               
               <div id="cli-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
 
@@ -5045,7 +5045,7 @@ class App {
 
             ${mode === 'login' && role === 'business' ? `
               <!-- FORM 2: LOGIN NEGOCIO (CORREO Y CONTRASEÑA) -->
-              <p class="text-xs text-slate-500">Ingresa tus credenciales para administrar tus citas, servicios, precios, fotos y horarios.</p>
+              <p class="text-xs text-slate-500">Ingresa tus credenciales para administrar tus reservas, servicios, precios, fotos y horarios.</p>
               
               <div id="biz-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
 
@@ -5132,7 +5132,7 @@ class App {
                     <div class="text-xs text-slate-700 leading-relaxed">
                       <div class="font-bold text-emerald-800 flex items-center gap-1.5 mb-0.5">
                         <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
-                        <span>Notificaciones de Citas por WhatsApp (Opt-in)</span>
+                        <span>Notificaciones de Reservas por WhatsApp (Opt-in)</span>
                       </div>
                       <p class="text-slate-600 text-[11px]">
                         Acepto recibir mensajes de confirmación de mis reservas y recordatorios de turnos vía WhatsApp a mi número telefónico.
@@ -5168,7 +5168,7 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-white">Básico</span>
-                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 citas</span>
+                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 reservas</span>
                         </div>
                         <div class="text-base font-black text-white">$6 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡3,200 CRC / mes</p>
@@ -5185,7 +5185,7 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-amber-300">Profesional</span>
-                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 citas</span>
+                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 reservas</span>
                         </div>
                         <div class="text-base font-black text-amber-300">$15 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡7,900 CRC / mes</p>
@@ -5207,7 +5207,7 @@ class App {
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡13,000 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-infinity text-purple-400 text-[9px]"></i> Citas sin límite
+                        <i class="fas fa-infinity text-purple-400 text-[9px]"></i> Reservas sin límite
                       </div>
                     </label>
                   </div>
@@ -5813,7 +5813,7 @@ class App {
                 <i class="fas fa-crown"></i> Planes de Suscripción para Negocios
               </div>
               <h3 class="text-xl sm:text-2xl font-black">Elige el plan ideal para tu comercio</h3>
-              <p class="text-xs text-slate-300 mt-0.5">Comienza a recibir citas en línea y recordatorios automáticos por WhatsApp y correo.</p>
+              <p class="text-xs text-slate-300 mt-0.5">Comienza a recibir reservas en línea y recordatorios automáticos por WhatsApp y correo.</p>
             </div>
             <button id="close-plans-modal-btn" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-sm"></i>
