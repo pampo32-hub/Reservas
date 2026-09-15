@@ -239,18 +239,11 @@ class App {
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
-          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
-            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <i class="fas fa-calendar-check text-xl"></i>
           <div class="flex items-center gap-3 cursor-pointer select-none group" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
-            <div class="w-11 h-11 rounded-2xl bg-white p-1 border border-slate-200/80 shadow-md shadow-blue-500/10 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              <img src="./src/assets/logo.png" alt="Reservas CR Logo" class="w-full h-full object-contain">
             <div class="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
               <img src="./src/assets/logo.svg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
             <div>
-              <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
-              <span class="font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
               <span class="font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
               <span class="text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Citas en Costa Rica 🇨🇷</span>
             </div>
