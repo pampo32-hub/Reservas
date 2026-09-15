@@ -1060,6 +1060,30 @@ export const INITIAL_BUSINESSES = [
   }
 ];
 
+export const INITIAL_CLIENTS = [
+  {
+    id: 'cli-demo-1',
+    name: 'Carlos Mendoza (Cliente Demo)',
+    phone: '+506 8899 1122',
+    email: 'cliente@demo.cr',
+    password: '123'
+  },
+  {
+    id: 'cli-demo-2',
+    name: 'Usuario Prueba',
+    phone: '+506 7000 1122',
+    email: 'usuario@demo.cr',
+    password: '123'
+  },
+  {
+    id: 'cli-demo-3',
+    name: 'Juan Cliente',
+    phone: '+506 8888 7777',
+    email: 'juan.cliente@demo.cr',
+    password: '123'
+  }
+];
+
 export const INITIAL_APPOINTMENTS = [
   {
     id: 'apt-001',
@@ -1070,44 +1094,42 @@ export const INITIAL_APPOINTMENTS = [
     serviceDuration: 30,
     date: new Date().toISOString().split('T')[0],
     time: '10:00',
-    clientName: 'Carlos Mendoza',
+    clientName: 'Carlos Mendoza (Cliente Demo)',
     clientPhone: '+506 8899 1122',
-    clientEmail: 'carlos.m@example.com',
-    notes: 'Preferencia corte fade bajo.',
+    clientEmail: 'cliente@demo.cr',
+    notes: 'Preferencia corte fade bajo con toalla caliente.',
     status: 'confirmed',
     createdAt: new Date().toISOString()
   },
   {
     id: 'apt-002',
-    businessId: 'biz-1',
-    serviceId: 'srv-103',
-    serviceName: 'Combo Premium (Corte + Barba)',
-    servicePrice: 11000,
+    businessId: 'biz-2',
+    serviceId: 'srv-201',
+    serviceName: 'Manicura Rusa & Gel Semipermanente',
+    servicePrice: 16000,
     serviceDuration: 60,
-    date: new Date().toISOString().split('T')[0],
-    time: '11:30',
-    clientName: 'Alejandro Rivera',
-    clientPhone: '+506 8765 1234',
-    clientEmail: 'alejandro.r@example.com',
-    notes: 'Primera visita al local.',
+    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    time: '14:30',
+    clientName: 'Carlos Mendoza (Cliente Demo)',
+    clientPhone: '+506 8899 1122',
+    clientEmail: 'cliente@demo.cr',
+    notes: 'Diseño minimalista.',
     status: 'pending',
     createdAt: new Date().toISOString()
   },
   {
     id: 'apt-003',
-    businessId: 'biz-3',
-    serviceId: 'srv-301',
     businessId: 'biz-7',
     serviceId: 'srv-701',
     serviceName: 'Masaje Relajante con Aromaterapia',
     servicePrice: 22000,
     serviceDuration: 60,
-    date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+    date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
     time: '16:00',
-    clientName: 'Mariana Gómez',
-    clientPhone: '+506 7011 2233',
-    clientEmail: 'mariana.g@example.com',
-    notes: 'Enfoque en zona lumbar.',
+    clientName: 'Usuario Prueba',
+    clientPhone: '+506 7000 1122',
+    clientEmail: 'usuario@demo.cr',
+    notes: 'Enfoque en zona lumbar y cuello.',
     status: 'confirmed',
     createdAt: new Date().toISOString()
   },
@@ -1118,7 +1140,7 @@ export const INITIAL_APPOINTMENTS = [
     serviceName: 'Limpieza Dental con Ultrasonido',
     servicePrice: 25000,
     serviceDuration: 45,
-    date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
+    date: new Date(Date.now() + 259200000).toISOString().split('T')[0],
     time: '09:00',
     clientName: 'Esteban Solís',
     clientPhone: '+506 8822 4466',

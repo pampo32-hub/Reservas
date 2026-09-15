@@ -22,7 +22,6 @@ app.use(express.static(__dirname));
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
 
-// 1. Login de Dueño de Negocio (Email y Contraseña)
 // 0. Login de Developer / SuperAdmin
 app.post('/api/auth/developer/login', async (req, res) => {
   try {
@@ -300,15 +299,18 @@ app.post('/api/auth/client/register', async (req, res) => {
   }
 });
 
+// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña)
+// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña) - Con Detección Inteligente de Developer
 // 4. Iniciar Sesión de Cliente (con Detección Inteligente de Negocios y Developer)
 app.post('/api/auth/client/login', async (req, res) => {
   try {
-    const { identifier, password } = req.body;
-    if (!identifier || !password) {
+    const rawIdent = req.body.identifier || req.body.email || req.body.phone;
+    const { password } = req.body;
+    if (!rawIdent || !password) {
       return res.status(400).json({ error: 'Ingresa tu teléfono/correo y contraseña.' });
     }
 
-    const cleanIdent = (identifier || '').trim().toLowerCase();
+    const cleanIdent = (rawIdent || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
     // 1. Master Developer Check (Fail-safe)

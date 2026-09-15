@@ -114,7 +114,6 @@ class App {
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
             ${devUser ? `
-              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md">
               <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in">
                 <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
                   <i class="fas fa-shield-alt text-xs"></i>
@@ -2625,6 +2624,8 @@ class App {
     bizRegPass?.addEventListener('input', checkBizPasswordsMatch);
     bizRegPassConf?.addEventListener('input', checkBizPasswordsMatch);
 
+    // Evento Submit: Login Cliente
+    // Evento Submit: Login Cliente (detecta Developer)
     // Evento Submit: Login Cliente (detecta Developer y Negocio)
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2634,6 +2635,7 @@ class App {
 
       try {
         if (errBox) errBox.className = 'hidden';
+        await storage.loginClient(identifier, password);
         const res = await storage.loginClient(identifier, password);
         
         if (res && res.role === 'developer') {
@@ -2657,6 +2659,7 @@ class App {
         this.renderHeader();
         this.renderCurrentView();
       } catch (err) {
+        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
@@ -2666,6 +2669,8 @@ class App {
       }
     });
 
+    // Evento Submit: Registro Cliente (con validación de contraseña y confirmación)
+    // Evento Submit: Registro Cliente (con validación inline de contraseña y confirmación)
     // Evento Submit: Registro Cliente
     document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2706,6 +2711,7 @@ class App {
         this.renderHeader();
         this.renderCurrentView();
       } catch (err) {
+        this.showToast(err.message || 'Error al registrarse.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrarse.'}</span>`;
@@ -2715,6 +2721,8 @@ class App {
       }
     });
 
+    // Evento Submit: Login Negocio
+    // Evento Submit: Login Negocio (detecta Developer)
     // Evento Submit: Login Negocio (detecta Developer y Cliente)
     document.getElementById('auth-biz-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2724,6 +2732,7 @@ class App {
 
       try {
         if (errBox) errBox.className = 'hidden';
+        await storage.loginBusiness(email, password);
         const res = await storage.loginBusiness(email, password);
 
         if (res && res.role === 'developer') {
@@ -2747,6 +2756,7 @@ class App {
         this.renderHeader();
         this.navigateTo('owner-dashboard');
       } catch (err) {
+        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
@@ -2756,6 +2766,9 @@ class App {
       }
     });
 
+    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes)
+    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes inline)
+    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes y categoría personalizada)
     // Evento Submit: Registro Negocio
     document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2764,6 +2777,7 @@ class App {
       const password = document.getElementById('reg-biz-password').value;
       const passwordConfirm = document.getElementById('reg-biz-password-confirm').value;
       const name = document.getElementById('new-biz-name').value;
+      const category = document.getElementById('new-biz-cat').value;
       const catSelectVal = document.getElementById('new-biz-cat').value;
       const city = document.getElementById('new-biz-city').value;
       const phone = document.getElementById('new-biz-phone').value;
@@ -2787,6 +2801,7 @@ class App {
 
       if (password !== passwordConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
+        document.getElementById('reg-biz-password-confirm').focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
@@ -2797,6 +2812,14 @@ class App {
         return;
       }
 
+      const catLabels = {
+        belleza: 'Belleza y Barbería',
+        salud: 'Salud y Bienestar',
+        spa: 'Spa y Masajes',
+        fitness: 'Fitness y Deporte',
+        autos: 'Talleres y Autos',
+        fotografia: 'Fotografía y Eventos'
+      };
       // Procesar Categoría (Estándar o Personalizada)
       let finalCategory = catSelectVal;
       let categoryLabel = '';
@@ -2815,7 +2838,7 @@ class App {
         isCustomCategory = true;
       } else {
         const catObj = storage.getCategories().find(c => c.id === catSelectVal);
-        categoryLabel = catObj ? catObj.name : catSelectVal;
+        categoryLabel = catObj ? catObj.name : (catLabels[catSelectVal] || catSelectVal);
       }
 
       try {

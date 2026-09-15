@@ -1,6 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS } from './src/data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CLIENTS } from './src/data/initialData.js';
 
 dotenv.config();
 
@@ -192,7 +192,7 @@ export async function initDatabase() {
       }
     }
 
-    // Sembrar citas iniciales si no existen
+    // Sembrar o actualizar citas iniciales
     for (const apt of INITIAL_APPOINTMENTS) {
       await client.query(`
         INSERT INTO reservas_appointments (
@@ -200,7 +200,19 @@ export async function initDatabase() {
           service_duration, date, time, client_name, client_phone,
           client_email, notes, status
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          business_id = EXCLUDED.business_id,
+          service_id = EXCLUDED.service_id,
+          service_name = EXCLUDED.service_name,
+          service_price = EXCLUDED.service_price,
+          service_duration = EXCLUDED.service_duration,
+          date = EXCLUDED.date,
+          time = EXCLUDED.time,
+          client_name = EXCLUDED.client_name,
+          client_phone = EXCLUDED.client_phone,
+          client_email = EXCLUDED.client_email,
+          notes = EXCLUDED.notes,
+          status = EXCLUDED.status
       `, [
         apt.id, apt.businessId, apt.serviceId, apt.serviceName, apt.servicePrice,
         apt.serviceDuration, apt.date, apt.time, apt.clientName, apt.clientPhone,
@@ -233,6 +245,24 @@ export async function initDatabase() {
         `, [u.id, u.businessId, u.name, u.email, u.password]);
       }
     }
+
+    // Asegurar perfiles demo de Clientes
+    for (const c of INITIAL_CLIENTS) {
+      const existingClient = await client.query('SELECT id FROM reservas_clients WHERE id = $1 OR email = $2 OR phone = $3', [c.id, c.email, c.phone]);
+      if (existingClient.rows.length === 0) {
+        await client.query(`
+          INSERT INTO reservas_clients (id, name, phone, email, password)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [c.id, c.name, c.phone, c.email, c.password]);
+      } else {
+        await client.query(`
+          UPDATE reservas_clients
+          SET name = $2, phone = $3, email = $4, password = $5
+          WHERE id = $1 OR email = $4 OR phone = $3
+        `, [c.id, c.name, c.phone, c.email, c.password]);
+      }
+    }
+    console.log('✨ Usuarios de negocios y perfiles de clientes demo verificados/creados.');
     console.log('✨ Base de datos poblada exitosamente con 32 comercios en 16 categorías.');
 
   } catch (error) {
