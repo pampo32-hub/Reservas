@@ -1977,12 +1977,14 @@ app.post('/api/reviews', async (req, res) => {
 
     const apt = aptRes.rows[0];
 
+    // Verificar si ya fue calificada
     // Verificar si ya fue calificada previamente
     const existing = await pool.query('SELECT id FROM reservas_reviews WHERE LOWER(appointment_id) = LOWER($1)', [apt.id]);
     let targetReviewId = `rev-${Date.now().toString().slice(-6)}`;
     let isUpdate = false;
 
     if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Esta cita ya ha sido calificada anteriormente.' });
       targetReviewId = existing.rows[0].id;
       isUpdate = true;
       await pool.query(`
@@ -2004,6 +2006,18 @@ app.post('/api/reviews', async (req, res) => {
         ratingNum, (comment || '').trim()
       ]);
     }
+
+    const newReviewId = `rev-${Date.now().toString().slice(-6)}`;
+    await pool.query(`
+      INSERT INTO reservas_reviews (
+        id, business_id, appointment_id, client_name, client_phone,
+        client_email, service_name, rating, comment, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+    `, [
+      newReviewId, apt.business_id, apt.id, apt.client_name,
+      apt.client_phone, apt.client_email || '', apt.service_name || '',
+      ratingNum, (comment || '').trim()
+    ]);
 
     // Marcar cita como completada si aún no lo estaba
     await pool.query("UPDATE reservas_appointments SET status = 'completed' WHERE id = $1 AND status != 'cancelled'", [appointmentId]);
@@ -2027,10 +2041,12 @@ app.post('/api/reviews', async (req, res) => {
 
     res.status(201).json({
       success: true,
+      message: '¡Muchas gracias! Tu reseña verificada ha sido publicada exitosamente.',
       message: isUpdate 
         ? '¡Muchas gracias! Tu reseña ha sido actualizada exitosamente.' 
         : '¡Muchas gracias! Tu reseña verificada ha sido publicada exitosamente.',
       review: {
+        id: newReviewId,
         id: targetReviewId,
         appointmentId: apt.id,
         businessId: apt.business_id,

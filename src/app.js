@@ -1591,7 +1591,6 @@ class App {
                 rows="4" 
                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-xs text-slate-800 transition-all resize-none"
                 placeholder="Cuéntanos qué tal la puntualidad, el trato del personal, las instalaciones y si recomendarías el lugar..."
-              ></textarea>
               >${allowEdit && review?.comment ? this.escapeHtml(review.comment) : ''}</textarea>
             </div>
 

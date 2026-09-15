@@ -21,6 +21,10 @@ class StorageService {
     this.init();
   }
 
+  async initAsync() {
+    return this.init();
+  }
+
   async init() {
     try {
       await this.loadFromApi();
@@ -1249,7 +1253,7 @@ class StorageService {
       const data = await res.json();
       if (res.ok) {
         // Refrescar caché de comercios local
-        await this.initAsync();
+        await this.loadFromApi();
         return data;
       }
       throw new Error(data.error || 'Error al enviar calificación.');
