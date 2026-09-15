@@ -208,19 +208,25 @@ app.post('/api/auth/business/register', async (req, res) => {
     };
     const features = business.features || ['Sinpe Móvil', 'Atención Personalizada'];
 
+    const planId = business.plan || 'pro';
+    const planPriceUsd = planId === 'unlimited' ? 25 : (planId === 'basic' ? 6 : 15);
+    const bookingLimit = planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300);
+
     // Insertar negocio
     await pool.query(`
       INSERT INTO reservas_businesses (
         id, name, category, category_label, rating, reviews_count,
         price_range, address, city, phone, email, description,
-        image, cover_image, schedule, features, is_demo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        image, cover_image, schedule, features, is_demo,
+        plan, plan_price_usd, monthly_booking_limit
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
     `, [
       newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
       5.0, 0, business.priceRange || '₡₡',
       business.address || '', business.city || '', business.phone || '', email.trim(),
       business.description || '', business.image || '', business.coverImage || '',
-      JSON.stringify(schedule), JSON.stringify(features), false
+      JSON.stringify(schedule), JSON.stringify(features), false,
+      planId, planPriceUsd, bookingLimit
     ]);
 
     // Si es una categoría personalizada, registrar alerta para el Developer
@@ -553,6 +559,9 @@ app.get('/api/businesses', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
+      plan: b.plan || 'pro',
+      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
+      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
       services: srvRes.rows
         .filter(s => s.business_id === b.id)
         .map(s => ({
@@ -604,6 +613,9 @@ app.get('/api/businesses/:id', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
+      plan: b.plan || 'pro',
+      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
+      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
       services: srvRes.rows.map(s => ({
         id: s.id,
         name: s.name,
@@ -617,6 +629,40 @@ app.get('/api/businesses/:id', async (req, res) => {
   } catch (error) {
     console.error('Error en GET /api/businesses/:id:', error);
     res.status(500).json({ error: 'Error al consultar negocio' });
+  }
+});
+
+// Actualizar plan de suscripción de un negocio
+app.put('/api/businesses/:id/plan', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan } = req.body;
+    
+    let priceUsd = 6;
+    let limit = 150;
+    if (plan === 'unlimited') {
+      priceUsd = 25;
+      limit = null;
+    } else if (plan === 'pro') {
+      priceUsd = 15;
+      limit = 300;
+    } else {
+      priceUsd = 6;
+      limit = 150;
+    }
+
+    await pool.query(`
+      UPDATE reservas_businesses SET
+        plan = $1,
+        plan_price_usd = $2,
+        monthly_booking_limit = $3
+      WHERE id = $4
+    `, [plan, priceUsd, limit, id]);
+
+    res.json({ success: true, message: 'Plan actualizado correctamente', plan, planPriceUsd: priceUsd, monthlyBookingLimit: limit });
+  } catch (error) {
+    console.error('Error al actualizar plan:', error);
+    res.status(500).json({ error: 'Error al actualizar plan del negocio.' });
   }
 });
 

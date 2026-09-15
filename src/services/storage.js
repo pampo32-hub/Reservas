@@ -1,5 +1,5 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES } from '../data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS } from '../data/initialData.js';
 
 const STORAGE_KEYS = {
   BUSINESSES: 'directorio_businesses_v1',
@@ -547,6 +547,46 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID, id);
   }
 
+  // --- PLANES DE SUSCRIPCIÓN ---
+  getSubscriptionPlans() {
+    return SUBSCRIPTION_PLANS;
+  }
+
+  getPlanById(planId) {
+    return SUBSCRIPTION_PLANS.find(p => p.id === planId) || SUBSCRIPTION_PLANS[0];
+  }
+
+  async updateBusinessPlan(businessId, planId) {
+    const plan = this.getPlanById(planId);
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/plan`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: planId })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return { success: true, plan };
+        }
+      } catch (e) {
+        console.warn('Error online actualizando plan, aplicando localmente:', e);
+      }
+    }
+
+    // Fallback local
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx !== -1) {
+      businesses[idx].plan = planId;
+      businesses[idx].planPriceUsd = plan.priceUsd;
+      businesses[idx].monthlyBookingLimit = plan.bookingLimit;
+      this.businessesCache = businesses;
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    }
+    return { success: true, plan };
+  }
+
   // --- SERVICIOS ---
   async addService(businessId, serviceData) {
     if (this.isOnlineApi) {
@@ -856,6 +896,57 @@ class StorageService {
       isClosed: false,
       slots: availableSlots
     };
+  }
+
+  // ==========================================
+  // PLANES DE SUSCRIPCIÓN ($6, $15, $25)
+  // ==========================================
+  getSubscriptionPlans() {
+    return SUBSCRIPTION_PLANS;
+  }
+
+  getPlanById(planId) {
+    const plans = this.getSubscriptionPlans();
+    return plans.find(p => p.id === planId) || plans[0];
+  }
+
+  async updateBusinessPlan(businessId, planId) {
+    const plan = this.getPlanById(planId);
+    if (!plan) throw new Error('Plan inválido seleccionado.');
+
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/plan`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            plan: plan.id,
+            planPriceUsd: plan.priceUsd,
+            monthlyBookingLimit: plan.bookingLimit
+          })
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          await this.loadFromApi();
+          return updated;
+        }
+      } catch (e) {
+        console.error('Error actualizando plan en API:', e);
+      }
+    }
+
+    // Fallback local
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx >= 0) {
+      businesses[idx].plan = plan.id;
+      businesses[idx].planPriceUsd = plan.priceUsd;
+      businesses[idx].monthlyBookingLimit = plan.bookingLimit;
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+      return businesses[idx];
+    }
+    throw new Error('No se encontró el negocio para actualizar plan.');
   }
 }
 

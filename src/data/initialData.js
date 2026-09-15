@@ -1,5 +1,65 @@
-// Datos iniciales de demostración en Colones costarricenses (₡ CRC)
-// 16 Categorías completas con mínimo 2 comercios por categoría (32 comercios en total)
+export const SUBSCRIPTION_PLANS = [
+  {
+    id: 'basic',
+    name: 'Plan Básico',
+    badge: 'Emprendedor',
+    priceUsd: 6,
+    priceCrc: 3200,
+    bookingLimit: 150,
+    bookingLimitLabel: '150 reservas / mes',
+    tagline: 'Ideal para independientes y negocios que están comenzando.',
+    features: [
+      'Hasta 150 reservas mensuales',
+      'Catálogo completo de servicios',
+      'Confirmación por WhatsApp automática',
+      'Confirmación por correo electrónico',
+      'Enlace directo para tu bio o WhatsApp',
+      'Panel de control de turnos'
+    ],
+    popular: false,
+    color: 'blue'
+  },
+  {
+    id: 'pro',
+    name: 'Plan Profesional',
+    badge: 'Más Popular',
+    priceUsd: 15,
+    priceCrc: 7900,
+    bookingLimit: 300,
+    bookingLimitLabel: '300 reservas / mes',
+    tagline: 'Perfecto para barberías, spas, clínicas y talleres en crecimiento.',
+    features: [
+      'Hasta 300 reservas mensuales',
+      'Todo lo del Plan Básico',
+      'Soporte prioritario por WhatsApp',
+      'Estadísticas de ingresos y clientes',
+      'Gestión de descansos y feriados',
+      'Acceso multi-servicio ilimitado'
+    ],
+    popular: true,
+    color: 'indigo'
+  },
+  {
+    id: 'unlimited',
+    name: 'Plan Ilimitado',
+    badge: 'Máxima Potencia',
+    priceUsd: 25,
+    priceCrc: 13000,
+    bookingLimit: null,
+    bookingLimitLabel: 'Reservas Ilimitadas',
+    tagline: 'Para negocios con alto flujo de clientes sin preocupaciones de límites.',
+    features: [
+      'Reservas 100% Ilimitadas al mes',
+      'Todo lo del Plan Profesional',
+      'Posicionamiento destacado en directorio',
+      'Soporte VIP prioritario 24/7',
+      'Fotos de alta resolución y portada',
+      'Sin ningún cargo extra ni comisiones'
+    ],
+    popular: false,
+    color: 'emerald'
+  }
+];
 
 export const INITIAL_CATEGORIES = [
   { id: 'all', name: 'Todas las Categorías', icon: 'fa-store' },

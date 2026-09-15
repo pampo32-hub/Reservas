@@ -614,7 +614,12 @@ class App {
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2">
                   <button id="cta-register-biz-btn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer">
                     <i class="fas fa-plus-circle"></i>
-                    <span>Registrar Mi Negocio Gratis</span>
+                    <span>Registrar Mi Negocio</span>
+                  </button>
+
+                  <button id="cta-view-plans-btn" class="px-4 py-2.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/40 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <i class="fas fa-tags text-amber-400"></i>
+                    <span>Ver Planes ($6, $15, $25)</span>
                   </button>
                   
                   <button id="cta-login-biz-btn" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-bold border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer">
@@ -836,6 +841,7 @@ class App {
     // Listeners para Registro / Login de Negocios
     document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
+    document.getElementById('cta-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
   }
 
@@ -1814,10 +1820,20 @@ class App {
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
 
+    // Métricas del Plan de Suscripción ($6, $15, $25)
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const monthAppointments = appointments.filter(a => (a.date || '').startsWith(currentMonth));
+    const currentPlanId = currentBiz.plan || 'basic';
+    const planConfig = storage.getPlanById(currentPlanId) || { id: 'basic', name: 'Plan Básico', priceUsd: 6, bookingLimit: 150 };
+    const monthlyLimit = (currentBiz.monthlyBookingLimit !== undefined && currentBiz.monthlyBookingLimit !== null) ? currentBiz.monthlyBookingLimit : planConfig.bookingLimit;
+    const isUnlimited = monthlyLimit === null || monthlyLimit === undefined || monthlyLimit < 0;
+    const usageCount = monthAppointments.length;
+    const percentUsed = isUnlimited ? 0 : Math.min(100, Math.round((usageCount / (monthlyLimit || 1)) * 100));
+
     container.innerHTML = `
       <div class="animate-fade-in pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <!-- Top Bar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-6">
           <div class="flex items-center gap-4">
             <img src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${currentBiz.name}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-sm">
             <div>
@@ -1835,8 +1851,60 @@ class App {
           </div>
 
           <div class="flex items-center gap-2">
-            <button id="dash-logout-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
+            <button id="dash-logout-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
               <i class="fas fa-sign-out-alt mr-1"></i> Salir del Panel
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner de Suscripción y Cuota Mensual -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div class="space-y-1.5 max-w-xl">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                <i class="fas ${currentPlanId === 'unlimited' ? 'fa-infinity' : currentPlanId === 'pro' ? 'fa-crown' : 'fa-check'}"></i>
+                ${planConfig.name}
+              </span>
+              <span class="text-xs text-amber-300 font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
+                $${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})
+              </span>
+            </div>
+            <h3 class="text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
+            <p class="text-xs text-slate-300">
+              ${isUnlimited 
+                ? `🚀 Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las citas que desees sin restricciones ni comisiones.`
+                : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas mensuales permitidas este mes.`}
+            </p>
+          </div>
+
+          <div class="w-full md:w-80 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-xs space-y-3">
+            ${!isUnlimited ? `
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-bold">
+                  <span class="text-slate-300">Progreso mensual</span>
+                  <span class="${percentUsed > 90 ? 'text-rose-400' : percentUsed > 75 ? 'text-amber-400' : 'text-emerald-400'}">${usageCount} / ${monthlyLimit}</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
+                  <div class="h-full rounded-full transition-all duration-500 ${percentUsed > 90 ? 'bg-rose-500' : percentUsed > 75 ? 'bg-amber-400' : 'bg-emerald-500'}" style="width: ${percentUsed}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+                  <span>${percentUsed}% ocupado</span>
+                  <span>${monthlyLimit - usageCount > 0 ? `${monthlyLimit - usageCount} restantes` : 'Cupo alcanzado'}</span>
+                </div>
+              </div>
+            ` : `
+              <div class="text-center py-1">
+                <div class="inline-flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                  <i class="fas fa-check-double"></i>
+                  <span>Sin límite de reservas</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">${usageCount} citas recibidas este mes</p>
+              </div>
+            `}
+
+            <button id="dash-change-plan-btn" class="w-full py-2 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+              <span>Cambiar o Mejorar Plan</span>
             </button>
           </div>
         </div>
@@ -1908,6 +1976,10 @@ class App {
       this.showToast('Sesión de negocio cerrada.', 'info');
       this.renderHeader();
       this.navigateTo('directory');
+    });
+
+    document.getElementById('dash-change-plan-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId });
     });
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
@@ -2762,35 +2834,46 @@ class App {
                           <tr>
                             <th class="p-3">Comercio</th>
                             <th class="p-3">Categoría</th>
+                            <th class="p-3">Plan Activo</th>
                             <th class="p-3">Ubicación / Contacto</th>
                             <th class="p-3">Dueño / Correo</th>
                             <th class="p-3">Servicios</th>
-                            <th class="p-3">Estado Actual</th>
+                            <th class="p-3">Estado</th>
                             <th class="p-3">Tipo</th>
-                            <th class="p-3 text-right">Acciones</th>
-                            <th class="p-3 text-right">Acciones de Developer</th>
+                            <th class="p-3 text-right">Acciones Developer</th>
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredBusinesses.map(b => `
-                            <tr class="hover:bg-slate-50/80 transition-colors">
                             <tr class="hover:bg-slate-50/80 transition-colors ${b.isBlocked ? 'bg-rose-50/30' : b.isHidden ? 'bg-amber-50/30' : ''}">
                               <td class="p-3">
                                 <div class="flex items-center gap-3">
                                   <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${b.name}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
                                   <div>
-                                    <span class="font-bold text-slate-900 block">${b.name}</span>
                                     <span class="font-bold text-slate-900 block text-sm">${b.name}</span>
                                     <span class="text-[10px] text-slate-400 font-mono">ID: ${b.id}</span>
                                   </div>
                                 </div>
                               </td>
                               <td class="p-3">
-                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">${b.categoryLabel || b.category}</span>
                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${b.categoryLabel || b.category}</span>
                               </td>
+                              <td class="p-3 whitespace-nowrap">
+                                ${b.plan === 'unlimited' ? `
+                                  <span class="px-2.5 py-1 bg-purple-100 text-purple-800 text-[10px] font-black rounded-lg border border-purple-200 inline-flex items-center gap-1">
+                                    <i class="fas fa-infinity text-purple-600"></i> Ilimitado ($25)
+                                  </span>
+                                ` : b.plan === 'pro' ? `
+                                  <span class="px-2.5 py-1 bg-amber-100 text-amber-900 text-[10px] font-black rounded-lg border border-amber-300 inline-flex items-center gap-1">
+                                    <i class="fas fa-star text-amber-500"></i> Pro ($15 - 300)
+                                  </span>
+                                ` : `
+                                  <span class="px-2.5 py-1 bg-blue-50 text-blue-800 text-[10px] font-bold rounded-lg border border-blue-200 inline-flex items-center gap-1">
+                                    <i class="fas fa-check text-blue-600"></i> Básico ($6 - 150)
+                                  </span>
+                                `}
+                              </td>
                               <td class="p-3">
-                                <span class="block text-slate-800">${b.city || 'Costa Rica'}</span>
                                 <span class="block text-slate-800 font-semibold">${b.city || 'Costa Rica'}</span>
                                 <span class="text-[10px] text-slate-400">${b.phone || 'Sin teléfono'}</span>
                               </td>
@@ -2800,6 +2883,7 @@ class App {
                               </td>
                               <td class="p-3">
                                 <span class="font-bold text-slate-800">${b.servicesCount !== undefined ? b.servicesCount : (b.services ? b.services.length : 0)} servicios</span>
+                              </td>
                               <td class="p-3 whitespace-nowrap">
                                 ${b.isBlocked ? `
                                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Suspendido: ${b.blockReason || 'Sin motivo'}">
@@ -2815,7 +2899,6 @@ class App {
                                   </span>
                                 `}
                               </td>
-                              <td class="p-3">
                               <td class="p-3 whitespace-nowrap">
                                 ${b.isDemo ? `
                                   <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded">Muestra</span>
@@ -2823,25 +2906,18 @@ class App {
                                   <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">Real</span>
                                 `}
                               </td>
-                              <td class="p-3 text-right">
                               <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
-                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-colors" data-id="${b.id}" title="Ver en Directorio">
-                                    <i class="fas fa-eye text-xs"></i>
                                   <!-- Ver en Directorio -->
                                   <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all" data-id="${b.id}" title="Ver página del comercio">
                                     <i class="fas fa-external-link-alt text-xs"></i>
                                   </button>
-                                  ${!b.isDemo ? `
-                                    <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-lg transition-colors" data-id="${b.id}" data-name="${b.name}" title="Eliminar Comercio">
-                                      <i class="fas fa-trash-alt text-xs"></i>
 
                                   <!-- Ocultar / Mostrar en Inicio -->
                                   ${b.isHidden ? `
                                     <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="show" data-name="${b.name}" title="Hacer visible en la página principal">
                                       <i class="fas fa-eye text-emerald-600"></i> Mostrar
                                     </button>
-                                  ` : ''}
                                   ` : `
                                     <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="hide" data-name="${b.name}" title="Ocultar de la página principal">
                                       <i class="fas fa-eye-slash text-amber-600"></i> Ocultar
@@ -3176,12 +3252,13 @@ class App {
   // ==========================================
   // MODAL INTEGRADO DE AUTENTICACIÓN (LOGIN & REGISTRO)
   // ==========================================
-  renderAuthModal({ mode = 'login', role = 'client' } = {}) {
+  renderAuthModal({ mode = 'login', role = 'client', selectedPlanId = 'pro' } = {}) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
     const currentClient = storage.getClientUser();
     const categories = storage.getCategories().filter(c => c.id !== 'all');
+    const plans = storage.getSubscriptionPlans();
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -3202,7 +3279,7 @@ class App {
                 </h3>
               </div>
             </div>
-            <button id="close-auth-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors">
+            <button id="close-auth-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -3211,20 +3288,20 @@ class App {
           <div class="p-5 pb-0 shrink-0 space-y-3 bg-slate-50 border-b border-slate-200/80">
             <!-- Tabs Modo: Iniciar Sesión / Registrarse -->
             <div class="flex p-1 bg-slate-200/80 rounded-2xl">
-              <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
+              <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
                 <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? 'text-blue-600' : ''}"></i> Iniciar Sesión
               </button>
-              <button id="tab-mode-register" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${mode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
+              <button id="tab-mode-register" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
                 <i class="fas fa-user-plus text-xs ${mode === 'register' ? 'text-blue-600' : ''}"></i> Registrarse
               </button>
             </div>
 
             <!-- Tabs Rol: Cliente / Negocio -->
             <div class="flex gap-2 pb-3">
-              <button id="tab-role-client" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${role === 'client' ? 'bg-blue-600 border-blue-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
+              <button id="tab-role-client" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${role === 'client' ? 'bg-blue-600 border-blue-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
                 <i class="fas fa-user text-xs"></i> Soy Cliente
               </button>
-              <button id="tab-role-business" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${role === 'business' ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
+              <button id="tab-role-business" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${role === 'business' ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
                 <i class="fas fa-store text-xs"></i> Soy Negocio / Dueño
               </button>
             </div>
@@ -3249,7 +3326,7 @@ class App {
                   <input type="password" id="cli-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-sign-in-alt"></i>
                   <span>Iniciar Sesión como Cliente</span>
                 </button>
@@ -3273,7 +3350,7 @@ class App {
                   <input type="password" id="biz-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-sign-in-alt"></i>
                   <span>Ingresar al Panel de Negocio</span>
                 </button>
@@ -3283,19 +3360,19 @@ class App {
               <div class="pt-4 border-t border-slate-100">
                 <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
                 <div class="grid grid-cols-2 gap-2">
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="barberia@demo.cr" data-pass="123">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="barberia@demo.cr" data-pass="123">
                     <span class="font-bold block truncate">Barbería Vintage</span>
                     <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
                   </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="dental@demo.cr" data-pass="123">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="dental@demo.cr" data-pass="123">
                     <span class="font-bold block truncate">Clínica Dental</span>
                     <span class="text-[10px] text-slate-400">dental@demo.cr</span>
                   </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="spa@demo.cr" data-pass="123">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="spa@demo.cr" data-pass="123">
                     <span class="font-bold block truncate">Serenity Spa</span>
                     <span class="text-[10px] text-slate-400">spa@demo.cr</span>
                   </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="taller@demo.cr" data-pass="123">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="taller@demo.cr" data-pass="123">
                     <span class="font-bold block truncate">AutoCheck Taller</span>
                     <span class="text-[10px] text-slate-400">taller@demo.cr</span>
                   </button>
@@ -3335,7 +3412,7 @@ class App {
                   </div>
                 </div>
 
-                <!-- Mensaje Inline de Validación de Contraseñas (Aparece aquí mismo) -->
+                <!-- Mensaje Inline de Validación de Contraseñas -->
                 <div id="cli-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
 
                 <!-- Consentimiento previo (Opt-in) WhatsApp -->
@@ -3354,7 +3431,7 @@ class App {
                   </label>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-user-plus"></i>
                   <span>Crear Cuenta de Cliente</span>
                 </button>
@@ -3364,7 +3441,69 @@ class App {
             ${mode === 'register' && role === 'business' ? `
               <!-- FORM 4: REGISTRO NUEVO NEGOCIO -->
               <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
-                <!-- Cuenta de Usuario / Credenciales -->
+                
+                <!-- 1. SELECCIÓN DE PLAN DE SUSCRIPCIÓN -->
+                <div class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
+                  <div class="flex items-center justify-between">
+                    <span class="font-black text-amber-400 block text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fas fa-tags"></i> Elige tu Plan de Suscripción *
+                    </span>
+                    <span class="text-[10px] text-slate-300 font-medium">Cambia o cancela cuando quieras</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <!-- Plan Básico -->
+                    <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'basic' ? 'bg-indigo-950 border-blue-400 ring-2 ring-blue-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                      <input type="radio" name="new-biz-plan" value="basic" ${selectedPlanId === 'basic' ? 'checked' : ''} class="sr-only">
+                      <div>
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="font-black text-xs text-white">Básico</span>
+                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 citas</span>
+                        </div>
+                        <div class="text-base font-black text-white">$6 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡3,200 CRC / mes</p>
+                      </div>
+                      <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
+                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 150 reservas/mes
+                      </div>
+                    </label>
+
+                    <!-- Plan Profesional -->
+                    <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'pro' ? 'bg-indigo-950 border-amber-400 ring-2 ring-amber-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                      <span class="absolute -top-2 right-2 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase">Popular</span>
+                      <input type="radio" name="new-biz-plan" value="pro" ${selectedPlanId === 'pro' ? 'checked' : ''} class="sr-only">
+                      <div>
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="font-black text-xs text-amber-300">Profesional</span>
+                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 citas</span>
+                        </div>
+                        <div class="text-base font-black text-amber-300">$15 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡7,900 CRC / mes</p>
+                      </div>
+                      <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
+                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 300 reservas/mes
+                      </div>
+                    </label>
+
+                    <!-- Plan Ilimitado -->
+                    <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'unlimited' ? 'bg-indigo-950 border-purple-400 ring-2 ring-purple-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                      <input type="radio" name="new-biz-plan" value="unlimited" ${selectedPlanId === 'unlimited' ? 'checked' : ''} class="sr-only">
+                      <div>
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="font-black text-xs text-purple-300">Ilimitado</span>
+                          <span class="text-[9px] font-bold text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded">Ilimitado</span>
+                        </div>
+                        <div class="text-base font-black text-purple-300">$25 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡13,000 CRC / mes</p>
+                      </div>
+                      <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
+                        <i class="fas fa-infinity text-purple-400 text-[9px]"></i> Citas sin límite
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 2. Cuenta de Usuario / Credenciales -->
                 <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
                   <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
                     <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
@@ -3384,21 +3523,19 @@ class App {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
-                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                      <input type="password" id="reg-biz-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
-                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                      <input type="password" id="reg-biz-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                   </div>
 
-                  <!-- Mensaje Inline de Validación de Contraseñas (Aparece aquí mismo) -->
+                  <!-- Mensaje Inline de Validación de Contraseñas -->
                   <div id="biz-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
                 </div>
 
-                <!-- Datos Comerciales -->
+                <!-- 3. Datos Comerciales -->
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
                   <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -3406,15 +3543,8 @@ class App {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
                     <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
                     <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                      <option value="belleza">Belleza y Barbería</option>
-                      <option value="salud">Salud y Bienestar</option>
-                      <option value="spa">Spa y Masajes</option>
-                      <option value="fitness">Fitness y Deporte</option>
-                      <option value="autos">Talleres y Autos</option>
-                      <option value="fotografia">Fotografía y Eventos</option>
                       ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                       <option value="otra" class="font-bold text-blue-600">➕ Otra Categoría (Personalizada)</option>
                     </select>
@@ -3490,7 +3620,7 @@ class App {
                   </div>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
+                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-check-circle"></i>
                   <span>Crear Cuenta y Registrar Negocio</span>
                 </button>
@@ -3499,7 +3629,7 @@ class App {
 
             <!-- Enlace sutil para Developer -->
             <div class="pt-3 text-center border-t border-slate-100">
-              <button type="button" id="modal-dev-link-btn" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors">
+              <button type="button" id="modal-dev-link-btn" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer">
                 <i class="fas fa-terminal text-[10px] mr-1"></i> Acceso Developer (Ctrl+Shift+D)
               </button>
             </div>
@@ -3520,18 +3650,38 @@ class App {
 
     // Pestañas de Modo (Login / Register)
     document.getElementById('tab-mode-login')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'login', role });
+      this.renderAuthModal({ mode: 'login', role, selectedPlanId });
     });
     document.getElementById('tab-mode-register')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'register', role });
+      this.renderAuthModal({ mode: 'register', role, selectedPlanId });
     });
 
     // Pestañas de Rol (Cliente / Negocio)
     document.getElementById('tab-role-client')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode, role: 'client' });
+      this.renderAuthModal({ mode, role: 'client', selectedPlanId });
     });
     document.getElementById('tab-role-business')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode, role: 'business' });
+      this.renderAuthModal({ mode, role: 'business', selectedPlanId });
+    });
+
+    // Selector visual de planes
+    document.querySelectorAll('.biz-plan-card-label').forEach(label => {
+      label.addEventListener('click', () => {
+        document.querySelectorAll('.biz-plan-card-label').forEach(l => {
+          l.classList.remove('bg-indigo-950', 'border-blue-400', 'border-amber-400', 'border-purple-400', 'ring-2', 'ring-blue-400/30', 'ring-amber-400/30', 'ring-purple-400/30');
+          l.classList.add('bg-slate-800/80', 'border-slate-700');
+        });
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+          const val = radio.value;
+          label.classList.remove('bg-slate-800/80', 'border-slate-700');
+          label.classList.add('bg-indigo-950', 'ring-2');
+          if (val === 'pro') label.classList.add('border-amber-400', 'ring-amber-400/30');
+          else if (val === 'unlimited') label.classList.add('border-purple-400', 'ring-purple-400/30');
+          else label.classList.add('border-blue-400', 'ring-blue-400/30');
+        }
+      });
     });
 
     // Toggle de Categoría Personalizada en Registro de Negocio
@@ -3652,8 +3802,6 @@ class App {
     bizRegPassConf?.addEventListener('input', checkBizPasswordsMatch);
 
     // Evento Submit: Login Cliente
-    // Evento Submit: Login Cliente (detecta Developer)
-    // Evento Submit: Login Cliente (detecta Developer y Negocio)
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const identifier = document.getElementById('cli-log-identifier').value.trim();
@@ -3662,7 +3810,6 @@ class App {
 
       try {
         if (errBox) errBox.className = 'hidden';
-        await storage.loginClient(identifier, password);
         const res = await storage.loginClient(identifier, password);
         
         if (res && res.role === 'developer') {
@@ -3690,14 +3837,10 @@ class App {
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
-        } else {
-          this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         }
       }
     });
 
-    // Evento Submit: Registro Cliente (con validación de contraseña y confirmación)
-    // Evento Submit: Registro Cliente (con validación inline de contraseña y confirmación)
     // Evento Submit: Registro Cliente
     document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -3744,15 +3887,11 @@ class App {
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrarse.'}</span>`;
-        } else {
-          this.showToast(err.message || 'Error al registrarse.', 'error');
         }
       }
     });
 
     // Evento Submit: Login Negocio
-    // Evento Submit: Login Negocio (detecta Developer)
-    // Evento Submit: Login Negocio (detecta Developer y Cliente)
     document.getElementById('auth-biz-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('biz-log-email').value;
@@ -3761,7 +3900,6 @@ class App {
 
       try {
         if (errBox) errBox.className = 'hidden';
-        await storage.loginBusiness(email, password);
         const res = await storage.loginBusiness(email, password);
 
         if (res && res.role === 'developer') {
@@ -3789,16 +3927,11 @@ class App {
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
-        } else {
-          this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         }
       }
     });
 
-    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes)
-    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes inline)
-    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes y categoría personalizada)
-    // Evento Submit: Registro Negocio
+    // Evento Submit: Registro Negocio (Con Selección de Plan)
     document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const ownerName = document.getElementById('reg-owner-name').value;
@@ -3816,6 +3949,11 @@ class App {
       const firstSrvName = document.getElementById('first-srv-name').value;
       const firstSrvPrice = document.getElementById('first-srv-price').value;
       const errBox = document.getElementById('biz-reg-inline-error');
+
+      // Plan de suscripción elegido
+      const chosenPlanRadio = document.querySelector('input[name="new-biz-plan"]:checked');
+      const chosenPlanId = chosenPlanRadio ? chosenPlanRadio.value : 'basic';
+      const planConfig = storage.getPlanById(chosenPlanId);
 
       if (password.length < 6) {
         this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
@@ -3840,14 +3978,6 @@ class App {
         return;
       }
 
-      const catLabels = {
-        belleza: 'Belleza y Barbería',
-        salud: 'Salud y Bienestar',
-        spa: 'Spa y Masajes',
-        fitness: 'Fitness y Deporte',
-        autos: 'Talleres y Autos',
-        fotografia: 'Fotografía y Eventos'
-      };
       // Procesar Categoría (Estándar o Personalizada)
       let finalCategory = catSelectVal;
       let categoryLabel = '';
@@ -3866,7 +3996,7 @@ class App {
         isCustomCategory = true;
       } else {
         const catObj = storage.getCategories().find(c => c.id === catSelectVal);
-        categoryLabel = catObj ? catObj.name : (catLabels[catSelectVal] || catSelectVal);
+        categoryLabel = catObj ? catObj.name : catSelectVal;
       }
 
       try {
@@ -3875,6 +4005,9 @@ class App {
           category: finalCategory,
           categoryLabel,
           isCustomCategory,
+          plan: planConfig.id,
+          planPriceUsd: planConfig.priceUsd,
+          monthlyBookingLimit: planConfig.bookingLimit,
           city,
           phone,
           email,
@@ -3889,7 +4022,7 @@ class App {
           ]
         });
 
-        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
+        this.showToast(`¡Negocio registrado exitosamente con ${planConfig.name}!`, 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
         this.navigateTo('owner-dashboard');
@@ -3898,10 +4031,152 @@ class App {
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrar negocio.'}</span>`;
-        } else {
-          this.showToast(err.message || 'Error al registrar negocio.', 'error');
         }
       }
+    });
+  }
+
+  // ==========================================
+  // MODAL DE PLANES DE SUSCRIPCIÓN ($6, $15, $25)
+  // ==========================================
+  renderPlansModal({ businessId = null, currentPlanId = 'basic' } = {}) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const plans = storage.getSubscriptionPlans();
+    const isOwnerContext = Boolean(businessId);
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 my-8 max-h-[92vh] flex flex-col">
+          
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-6 text-white flex items-center justify-between shrink-0 border-b border-indigo-900/50">
+            <div>
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-amber-400/30">
+                <i class="fas fa-crown"></i> Planes de Suscripción para Negocios
+              </div>
+              <h3 class="text-xl sm:text-2xl font-black">Elige el plan ideal para tu comercio</h3>
+              <p class="text-xs text-slate-300 mt-0.5">Comienza a recibir citas en línea y recordatorios automáticos por WhatsApp y correo.</p>
+            </div>
+            <button id="close-plans-modal-btn" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Body: Grid de los 3 Planes -->
+          <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+              ${plans.map(plan => {
+                const isCurrent = isOwnerContext && (currentPlanId === plan.id);
+                const isPro = plan.id === 'pro';
+                const isUnlimited = plan.id === 'unlimited';
+
+                return `
+                  <div class="relative bg-white rounded-3xl p-6 border-2 ${isPro ? 'border-amber-400 shadow-xl ring-2 ring-amber-400/20' : isUnlimited ? 'border-purple-300 shadow-md' : 'border-slate-200 shadow-sm'} flex flex-col justify-between transition-all duration-300 hover:-translate-y-1">
+                    
+                    ${plan.badge ? `
+                      <div class="absolute -top-3.5 left-1/2 transform -translate-x-1/2">
+                        <span class="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm ${isPro ? 'bg-amber-400 text-slate-950' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
+                          ${plan.badge}
+                        </span>
+                      </div>
+                    ` : ''}
+
+                    <div>
+                      <div class="flex items-center justify-between mb-2 mt-1">
+                        <h4 class="text-lg font-extrabold text-slate-900">${plan.name}</h4>
+                        <span class="w-8 h-8 rounded-xl ${isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-sm">
+                          <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : 'fa-rocket'}"></i>
+                        </span>
+                      </div>
+
+                      <p class="text-xs text-slate-500 min-h-[36px]">${plan.tagline}</p>
+
+                      <!-- Precio -->
+                      <div class="mt-4 pb-4 border-b border-slate-100">
+                        <div class="flex items-baseline gap-1">
+                          <span class="text-3xl sm:text-4xl font-black text-slate-900">$${plan.priceUsd}</span>
+                          <span class="text-xs text-slate-500 font-semibold">USD / mes</span>
+                        </div>
+                        <span class="text-xs text-slate-500 block font-medium mt-0.5">
+                          ~${this.formatColones(plan.priceCrc)} CRC / mes
+                        </span>
+                        
+                        <!-- Límite de reservas badge -->
+                        <div class="mt-3 p-2.5 rounded-xl ${isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-xs font-bold flex items-center justify-center gap-1.5">
+                          <i class="fas ${isUnlimited ? 'fa-infinity' : 'fa-calendar-check'}"></i>
+                          <span>${plan.bookingLimitLabel}</span>
+                        </div>
+                      </div>
+
+                      <!-- Lista de Beneficios -->
+                      <ul class="mt-4 space-y-2.5 text-xs text-slate-600">
+                        ${plan.features.map(f => `
+                          <li class="flex items-start gap-2">
+                            <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-xs flex-shrink-0"></i>
+                            <span>${f}</span>
+                          </li>
+                        `).join('')}
+                      </ul>
+                    </div>
+
+                    <!-- Botón de Acción -->
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                      ${isCurrent ? `
+                        <button disabled class="w-full py-3 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
+                          <i class="fas fa-check-circle"></i> Tu Plan Actual
+                        </button>
+                      ` : `
+                        <button 
+                          class="select-plan-btn w-full py-3 ${isPro ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black shadow-lg shadow-amber-500/25' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md shadow-purple-500/20' : 'bg-slate-900 hover:bg-blue-600 text-white font-bold'} rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                          data-plan-id="${plan.id}"
+                        >
+                          <span>${isOwnerContext ? 'Cambiar a este Plan' : 'Elegir este Plan'}</span>
+                          <i class="fas fa-arrow-right text-xs"></i>
+                        </button>
+                      `}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Footer Seguro -->
+          <div class="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 shrink-0">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-shield-alt text-emerald-600 text-sm"></i>
+              <span>Sin contratos forzosos. Cancela o cambia de plan en cualquier momento.</span>
+            </div>
+            <span class="font-bold text-slate-700">Aceptamos SINPE Móvil y Tarjetas en Costa Rica 🇨🇷</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-plans-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.querySelectorAll('.select-plan-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const planId = btn.getAttribute('data-plan-id');
+        if (isOwnerContext && businessId) {
+          try {
+            await storage.updateBusinessPlan(businessId, planId);
+            const chosenPlan = storage.getPlanById(planId);
+            this.showToast(`¡Plan actualizado a ${chosenPlan.name} ($${chosenPlan.priceUsd}/mes)!`, 'success');
+            modalContainer.innerHTML = '';
+            this.renderCurrentView();
+          } catch (err) {
+            this.showToast(err.message || 'Error al actualizar plan.', 'error');
+          }
+        } else {
+          modalContainer.innerHTML = '';
+          this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
+        }
+      });
     });
   }
 
