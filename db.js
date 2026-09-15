@@ -39,6 +39,9 @@ export async function initDatabase() {
         schedule JSONB NOT NULL,
         features JSONB DEFAULT '[]',
         is_demo BOOLEAN DEFAULT FALSE,
+        is_hidden BOOLEAN DEFAULT FALSE,
+        is_blocked BOOLEAN DEFAULT FALSE,
+        block_reason TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
@@ -47,6 +50,9 @@ export async function initDatabase() {
     await client.query(`
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS features JSONB DEFAULT '[]';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
     `);
 
     // 2. Crear tabla de servicios

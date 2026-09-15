@@ -29,6 +29,7 @@ class App {
     // Estado del panel de developer
     this.activeDevTab = 'alerts'; // 'alerts' | 'businesses' | 'clients' | 'appointments'
     this.devSearchQuery = '';
+    this.devBizFilter = 'all'; // 'all' | 'active' | 'hidden' | 'blocked' | 'real' | 'demo'
   }
 
   getTodayDateString() {
@@ -289,7 +290,7 @@ class App {
   // ==========================================
   renderDirectoryView(container) {
     const categories = storage.getCategories();
-    let businesses = storage.getBusinesses();
+    let businesses = storage.getBusinesses().filter(b => !b.isHidden && !b.isBlocked);
 
     if (this.selectedCategory !== 'all') {
       businesses = businesses.filter(b => b.category === this.selectedCategory);
@@ -537,7 +538,15 @@ class App {
           <div class="absolute bottom-6 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-white">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
-                ${biz.isDemo ? `
+                ${biz.isBlocked ? `
+                  <span class="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-ban mr-1"></i> Comercio Suspendido
+                  </span>
+                ` : biz.isHidden ? `
+                  <span class="px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
+                  </span>
+                ` : biz.isDemo ? `
                   <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-flask mr-1"></i> Comercio de Muestra
                   </span>
@@ -564,6 +573,18 @@ class App {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Columna Izquierda: Servicios y Catálogo (2 cols) -->
           <div class="lg:col-span-2 space-y-6">
+            ${biz.isBlocked ? `
+              <div class="p-5 bg-rose-50 border border-rose-200 rounded-3xl flex items-center gap-4 text-rose-900 shadow-sm animate-fade-in">
+                <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl flex-shrink-0">
+                  <i class="fas fa-ban"></i>
+                </div>
+                <div>
+                  <h3 class="font-extrabold text-base text-rose-950">Comercio Suspendido Temporalmente</h3>
+                  <p class="text-xs text-rose-700 mt-0.5">${biz.blockReason || 'Este comercio no está admitiendo reservas en este momento por disposición de la administración.'}</p>
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Servicios -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
               <h2 class="text-xl font-bold text-slate-900 mb-2">Servicios Disponibles</h2>
@@ -584,12 +605,18 @@ class App {
 
                     <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
                       <span class="text-lg font-extrabold text-blue-600">${this.formatColones(srv.price)}</span>
-                      <button 
-                        class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
-                        data-service-id="${srv.id}"
-                      >
-                        <i class="fas fa-calendar-plus"></i> Reservar
-                      </button>
+                      ${biz.isBlocked ? `
+                        <button disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1.5">
+                          <i class="fas fa-lock"></i> Suspendido
+                        </button>
+                      ` : `
+                        <button 
+                          class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
+                          data-service-id="${srv.id}"
+                        >
+                          <i class="fas fa-calendar-plus"></i> Reservar
+                        </button>
+                      `}
                     </div>
                   </div>
                 `).join('') : `
@@ -970,6 +997,7 @@ class App {
             </div>
             <div class="flex justify-between">
               <span class="text-slate-500">Fecha y Hora:</span>
+              <span class="font-bold text-blue-600">${appointment.date} a las ${this.formatTime12h(appointment.time)}</span>
               <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
@@ -1069,6 +1097,7 @@ class App {
               <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between text-xs">
                 <div>
                   <span class="text-[10px] uppercase font-bold text-slate-400 block">Horario Registrado</span>
+                  <span class="font-bold text-slate-700"><i class="far fa-calendar mr-1 text-blue-600"></i>${appointment.date}</span>
                   <span class="font-bold text-slate-700"><i class="far fa-calendar mr-1 text-blue-600"></i>${this.formatDateDMY(appointment.date)}</span>
                   <span class="font-bold text-slate-700 ml-2"><i class="far fa-clock mr-1 text-blue-600"></i>${this.formatTime12h(appointment.time)}</span>
                 </div>
@@ -1353,6 +1382,7 @@ class App {
                     </div>
                     <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
+                      <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${apt.date}</strong></span>
                       <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${this.formatDateDMY(apt.date)}</strong></span>
                       <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${this.formatTime12h(apt.time)}</strong> (${apt.serviceDuration} min)</span>
                       ${apt.notes ? `<span class="text-slate-400 italic">"${apt.notes}"</span>` : ''}
@@ -1635,6 +1665,7 @@ class App {
                   ${filteredAppointments.map(apt => `
                     <tr class="hover:bg-slate-50/80 transition-colors">
                       <td class="py-3.5 px-4 font-bold text-slate-900">
+                        <div>${apt.date}</div>
                         <div>${this.formatDateDMY(apt.date)}</div>
                         <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
                       </td>
@@ -2099,8 +2130,28 @@ class App {
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
       const q = (this.devSearchQuery || '').toLowerCase().trim();
 
+      // Métricas y filtrado por sub-pestañas en negocios
+      const activeBusinessesCount = businesses.filter(b => !b.isHidden && !b.isBlocked).length;
+      const hiddenBusinessesCount = businesses.filter(b => b.isHidden).length;
+      const blockedBusinessesCount = businesses.filter(b => b.isBlocked).length;
+      const realBusinessesCount = businesses.filter(b => !b.isDemo).length;
+      const demoBusinessesCount = businesses.filter(b => b.isDemo).length;
+
+      let devBusinessesList = businesses;
+      if (this.devBizFilter === 'active') {
+        devBusinessesList = businesses.filter(b => !b.isHidden && !b.isBlocked);
+      } else if (this.devBizFilter === 'hidden') {
+        devBusinessesList = businesses.filter(b => b.isHidden);
+      } else if (this.devBizFilter === 'blocked') {
+        devBusinessesList = businesses.filter(b => b.isBlocked);
+      } else if (this.devBizFilter === 'real') {
+        devBusinessesList = businesses.filter(b => !b.isDemo);
+      } else if (this.devBizFilter === 'demo') {
+        devBusinessesList = businesses.filter(b => b.isDemo);
+      }
+
       // Filtrado por buscador
-      const filteredBusinesses = businesses.filter(b => 
+      const filteredBusinesses = devBusinessesList.filter(b => 
         !q || (b.name && b.name.toLowerCase().includes(q)) || 
         (b.categoryLabel && b.categoryLabel.toLowerCase().includes(q)) || 
         (b.email && b.email.toLowerCase().includes(q)) || 
@@ -2321,18 +2372,53 @@ class App {
 
               <!-- PESTAÑA 2: DIRECTORIO DE NEGOCIOS -->
               ${this.activeDevTab === 'businesses' ? `
-                <div class="space-y-4">
-                  <div class="flex items-center justify-between">
+                <div class="space-y-5">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h3 class="text-base font-bold text-slate-800">Directorio General de Comercios</h3>
-                      <p class="text-xs text-slate-500">Listado completo de comercios de muestra y registrados con contacto de dueños.</p>
+                      <h3 class="text-base font-bold text-slate-900">Directorio General de Comercios</h3>
+                      <p class="text-xs text-slate-500">Administra todos los comercios: ocúltalos de la página de inicio, bloquéalos o elimínalos.</p>
                     </div>
+
+                    <!-- Mini resumen en badges -->
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
+                        <i class="fas fa-check-circle text-emerald-600"></i> ${activeBusinessesCount} Activos
+                      </span>
+                      <span class="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
+                        <i class="fas fa-eye-slash text-amber-600"></i> ${hiddenBusinessesCount} Ocultos
+                      </span>
+                      <span class="px-3 py-1.5 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
+                        <i class="fas fa-ban text-rose-600"></i> ${blockedBusinessesCount} Bloqueados
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Chips de filtrado rápido por estado/tipo -->
+                  <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="all">
+                      Todos (${businesses.length})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="active">
+                      <i class="fas fa-check-circle mr-1"></i> Activos (${activeBusinessesCount})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'hidden' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="hidden">
+                      <i class="fas fa-eye-slash mr-1"></i> Ocultos en Inicio (${hiddenBusinessesCount})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'blocked' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="blocked">
+                      <i class="fas fa-ban mr-1"></i> Bloqueados (${blockedBusinessesCount})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'real' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="real">
+                      Registrados Reales (${realBusinessesCount})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'demo' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="demo">
+                      Muestra (${demoBusinessesCount})
+                    </button>
                   </div>
 
                   ${filteredBusinesses.length === 0 ? `
                     <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
                       <i class="fas fa-store-slash text-3xl mb-2"></i>
-                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios con esa búsqueda</p>
+                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios en esta categoría o búsqueda</p>
                     </div>
                   ` : `
                     <div class="overflow-x-auto">
@@ -2343,54 +2429,89 @@ class App {
                             <th class="p-3">Categoría</th>
                             <th class="p-3">Ubicación / Contacto</th>
                             <th class="p-3">Dueño / Correo</th>
-                            <th class="p-3">Servicios</th>
+                            <th class="p-3">Estado Actual</th>
                             <th class="p-3">Tipo</th>
-                            <th class="p-3 text-right">Acciones</th>
+                            <th class="p-3 text-right">Acciones de Developer</th>
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredBusinesses.map(b => `
-                            <tr class="hover:bg-slate-50/80 transition-colors">
+                            <tr class="hover:bg-slate-50/80 transition-colors ${b.isBlocked ? 'bg-rose-50/30' : b.isHidden ? 'bg-amber-50/30' : ''}">
                               <td class="p-3">
                                 <div class="flex items-center gap-3">
                                   <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${b.name}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
                                   <div>
-                                    <span class="font-bold text-slate-900 block">${b.name}</span>
+                                    <span class="font-bold text-slate-900 block text-sm">${b.name}</span>
                                     <span class="text-[10px] text-slate-400 font-mono">ID: ${b.id}</span>
                                   </div>
                                 </div>
                               </td>
                               <td class="p-3">
-                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">${b.categoryLabel || b.category}</span>
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${b.categoryLabel || b.category}</span>
                               </td>
                               <td class="p-3">
-                                <span class="block text-slate-800">${b.city || 'Costa Rica'}</span>
+                                <span class="block text-slate-800 font-semibold">${b.city || 'Costa Rica'}</span>
                                 <span class="text-[10px] text-slate-400">${b.phone || 'Sin teléfono'}</span>
                               </td>
                               <td class="p-3">
                                 <span class="block text-slate-800">${b.ownerName || (b.isDemo ? 'Demo Admin' : 'Registrado')}</span>
                                 <span class="text-[10px] text-slate-400">${b.ownerEmail || b.email || 'N/A'}</span>
                               </td>
-                              <td class="p-3">
-                                <span class="font-bold text-slate-800">${b.servicesCount !== undefined ? b.servicesCount : (b.services ? b.services.length : 0)} servicios</span>
+                              <td class="p-3 whitespace-nowrap">
+                                ${b.isBlocked ? `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Suspendido: ${b.blockReason || 'Sin motivo'}">
+                                    <i class="fas fa-ban text-rose-600"></i> Bloqueado
+                                  </span>
+                                ` : b.isHidden ? `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200" title="No aparece en la página principal">
+                                    <i class="fas fa-eye-slash text-amber-600"></i> Oculto en Inicio
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200" title="Visible y aceptando reservas">
+                                    <i class="fas fa-check-circle text-emerald-600"></i> Activo & Visible
+                                  </span>
+                                `}
                               </td>
-                              <td class="p-3">
+                              <td class="p-3 whitespace-nowrap">
                                 ${b.isDemo ? `
                                   <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded">Muestra</span>
                                 ` : `
                                   <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">Real</span>
                                 `}
                               </td>
-                              <td class="p-3 text-right">
+                              <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
-                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-colors" data-id="${b.id}" title="Ver en Directorio">
-                                    <i class="fas fa-eye text-xs"></i>
+                                  <!-- Ver en Directorio -->
+                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all" data-id="${b.id}" title="Ver página del comercio">
+                                    <i class="fas fa-external-link-alt text-xs"></i>
                                   </button>
-                                  ${!b.isDemo ? `
-                                    <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-lg transition-colors" data-id="${b.id}" data-name="${b.name}" title="Eliminar Comercio">
-                                      <i class="fas fa-trash-alt text-xs"></i>
+
+                                  <!-- Ocultar / Mostrar en Inicio -->
+                                  ${b.isHidden ? `
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="show" data-name="${b.name}" title="Hacer visible en la página principal">
+                                      <i class="fas fa-eye text-emerald-600"></i> Mostrar
                                     </button>
-                                  ` : ''}
+                                  ` : `
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="hide" data-name="${b.name}" title="Ocultar de la página principal">
+                                      <i class="fas fa-eye-slash text-amber-600"></i> Ocultar
+                                    </button>
+                                  `}
+
+                                  <!-- Bloquear / Desbloquear -->
+                                  ${b.isBlocked ? `
+                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="unblock" data-name="${b.name}" title="Desbloquear este comercio">
+                                      <i class="fas fa-unlock text-emerald-600"></i> Desbloquear
+                                    </button>
+                                  ` : `
+                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="block" data-name="${b.name}" title="Bloquear / Suspender reservas">
+                                      <i class="fas fa-ban text-rose-600"></i> Bloquear
+                                    </button>
+                                  `}
+
+                                  <!-- Eliminar definitivamente -->
+                                  <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-xl transition-all" data-id="${b.id}" data-name="${b.name}" title="Eliminar Comercio Permanentemente">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                  </button>
                                 </div>
                               </td>
                             </tr>
@@ -2571,6 +2692,14 @@ class App {
         this.renderDeveloperDashboardView(container);
       });
 
+      // Subfiltros de negocios
+      document.querySelectorAll('.dev-biz-filter-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          this.devBizFilter = e.currentTarget.getAttribute('data-filter') || 'all';
+          this.renderDeveloperDashboardView(container);
+        });
+      });
+
       // Buscador
       const searchInput = document.getElementById('dev-search-input');
       if (searchInput) {
@@ -2606,15 +2735,70 @@ class App {
         });
       });
 
+      // Ocultar / Mostrar en la página principal
+      document.querySelectorAll('.dev-toggle-visibility-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const bizId = e.currentTarget.getAttribute('data-id');
+          const action = e.currentTarget.getAttribute('data-action');
+          const bizName = e.currentTarget.getAttribute('data-name');
+          const shouldHide = action === 'hide';
+
+          try {
+            await storage.toggleBusinessVisibility(bizId, shouldHide);
+            this.showToast(
+              shouldHide 
+                ? `El comercio "${bizName}" ha sido ocultado de la página principal.` 
+                : `El comercio "${bizName}" ahora es visible en la página principal.`,
+              'success'
+            );
+            this.renderDeveloperDashboardView(container);
+          } catch (err) {
+            this.showToast(err.message || 'Error al actualizar visibilidad.', 'error');
+          }
+        });
+      });
+
+      // Bloquear / Desbloquear comercio
+      document.querySelectorAll('.dev-toggle-block-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const bizId = e.currentTarget.getAttribute('data-id');
+          const action = e.currentTarget.getAttribute('data-action');
+          const bizName = e.currentTarget.getAttribute('data-name');
+
+          if (action === 'block') {
+            const reason = prompt(`¿Motivo de suspensión/bloqueo para "${bizName}"? (opcional):`, 'Suspensión administrativa temporal');
+            if (reason !== null) {
+              try {
+                await storage.toggleBusinessBlock(bizId, true, reason);
+                this.showToast(`El comercio "${bizName}" ha sido BLOQUEADO/SUSPENDIDO.`, 'warning');
+                this.renderDeveloperDashboardView(container);
+              } catch (err) {
+                this.showToast(err.message || 'Error al bloquear comercio.', 'error');
+              }
+            }
+          } else {
+            if (confirm(`¿Deseas desbloquear el comercio "${bizName}" para que vuelva a recibir reservas?`)) {
+              try {
+                await storage.toggleBusinessBlock(bizId, false, '');
+                this.showToast(`El comercio "${bizName}" ha sido DESBLOQUEADO exitosamente.`, 'success');
+                this.renderDeveloperDashboardView(container);
+              } catch (err) {
+                this.showToast(err.message || 'Error al desbloquear comercio.', 'error');
+              }
+            }
+          }
+        });
+      });
+
       // Eliminar negocio
       document.querySelectorAll('.dev-delete-biz-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const bizId = e.currentTarget.getAttribute('data-id');
           const bizName = e.currentTarget.getAttribute('data-name');
-          if (confirm(`¿Estás seguro de que deseas eliminar permanentemente el negocio "${bizName}"? Esta acción no se puede deshacer.`)) {
+          if (confirm(`⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, citas asociadas y usuarios en la base de datos.`)) {
             try {
               await storage.deleteBusinessByDeveloper(bizId);
-              this.showToast(`Negocio "${bizName}" eliminado correctamente.`, 'success');
+              this.showToast(`Negocio "${bizName}" eliminado definitivamente.`, 'success');
               this.renderDeveloperDashboardView(container);
             } catch (err) {
               this.showToast(err.message || 'Error al eliminar.', 'error');

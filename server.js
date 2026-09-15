@@ -522,10 +522,14 @@ app.get('/api/appointments', async (req, res) => {
   }
 });
 
-// Obtener todos los negocios
+// Obtener todos los negocios (Público: solo visibles y no bloqueados)
 app.get('/api/businesses', async (req, res) => {
   try {
-    const bizRes = await pool.query('SELECT * FROM reservas_businesses ORDER BY is_demo DESC, created_at ASC');
+    const bizRes = await pool.query(`
+      SELECT * FROM reservas_businesses 
+      WHERE (is_hidden IS NOT TRUE AND is_blocked IS NOT TRUE)
+      ORDER BY is_demo DESC, created_at ASC
+    `);
     const srvRes = await pool.query('SELECT * FROM reservas_services ORDER BY created_at ASC');
 
     const businesses = bizRes.rows.map(b => ({
@@ -546,6 +550,9 @@ app.get('/api/businesses', async (req, res) => {
       schedule: b.schedule,
       features: Array.isArray(b.features) ? b.features : [],
       isDemo: Boolean(b.is_demo),
+      isHidden: Boolean(b.is_hidden),
+      isBlocked: Boolean(b.is_blocked),
+      blockReason: b.block_reason || '',
       services: srvRes.rows
         .filter(s => s.business_id === b.id)
         .map(s => ({
@@ -594,6 +601,9 @@ app.get('/api/businesses/:id', async (req, res) => {
       schedule: b.schedule,
       features: Array.isArray(b.features) ? b.features : [],
       isDemo: Boolean(b.is_demo),
+      isHidden: Boolean(b.is_hidden),
+      isBlocked: Boolean(b.is_blocked),
+      blockReason: b.block_reason || '',
       services: srvRes.rows.map(s => ({
         id: s.id,
         name: s.name,
@@ -794,6 +804,17 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
 app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
+
+    // Verificar si el negocio está bloqueado
+    const bizCheck = await pool.query('SELECT is_blocked, block_reason FROM reservas_businesses WHERE id = $1', [a.businessId]);
+    if (bizCheck.rows.length > 0 && bizCheck.rows[0].is_blocked) {
+      return res.status(403).json({ 
+        error: 'Este comercio se encuentra temporalmente suspendido / bloqueado para nuevas reservas.',
+        isBlocked: true,
+        reason: bizCheck.rows[0].block_reason || 'Suspendido por la administración'
+      });
+    }
+
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
@@ -916,6 +937,7 @@ app.post('/api/test-email', async (req, res) => {
       servicePrice: 10000,
       date: '2026-09-20',
       time: '15:30',
+      time: '3:30 PM',
       notes: 'Cita de prueba del sistema de correos',
       whatsappOptIn: true
     };
@@ -1042,11 +1064,16 @@ app.get('/api/developer/businesses', async (req, res) => {
       city: row.city,
       phone: row.phone,
       email: row.email,
+      image: row.image,
+      coverImage: row.cover_image,
       ownerName: row.owner_name,
       ownerEmail: row.owner_email,
       servicesCount: parseInt(row.services_count, 10) || 0,
       appointmentsCount: parseInt(row.appointments_count, 10) || 0,
-      isDemo: row.is_demo,
+      isDemo: Boolean(row.is_demo),
+      isHidden: Boolean(row.is_hidden),
+      isBlocked: Boolean(row.is_blocked),
+      blockReason: row.block_reason || '',
       createdAt: row.created_at
     })));
   } catch (error) {
@@ -1145,12 +1172,52 @@ app.post('/api/developer/category-alerts/:id/dismiss', async (req, res) => {
   }
 });
 
-// 7. Eliminar Negocio por Developer
+// 7. Ocultar / Mostrar Negocio de la Página Principal (Visibilidad)
+app.patch('/api/developer/businesses/:id/visibility', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isHidden } = req.body;
+    await pool.query('UPDATE reservas_businesses SET is_hidden = $1 WHERE id = $2', [Boolean(isHidden), id]);
+    res.json({ 
+      success: true, 
+      message: isHidden ? 'Comercio ocultado de la página principal.' : 'Comercio ahora visible en la página principal.',
+      isHidden: Boolean(isHidden)
+    });
+  } catch (error) {
+    console.error('Error actualizando visibilidad del comercio:', error);
+    res.status(500).json({ error: 'Error al actualizar visibilidad del comercio.' });
+  }
+});
+
+// 8. Bloquear / Desbloquear Negocio (Suspensión de Operaciones)
+app.patch('/api/developer/businesses/:id/block', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isBlocked, reason = '' } = req.body;
+    await pool.query('UPDATE reservas_businesses SET is_blocked = $1, block_reason = $2 WHERE id = $3', [Boolean(isBlocked), reason.trim(), id]);
+    res.json({ 
+      success: true, 
+      message: isBlocked ? 'Comercio bloqueado/suspendido correctamente.' : 'Comercio desbloqueado exitosamente.',
+      isBlocked: Boolean(isBlocked),
+      blockReason: reason.trim()
+    });
+  } catch (error) {
+    console.error('Error actualizando estado de bloqueo del comercio:', error);
+    res.status(500).json({ error: 'Error al actualizar estado de bloqueo del comercio.' });
+  }
+});
+
+// 9. Eliminar Negocio por Developer
 app.delete('/api/developer/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    // Eliminar en cascada
+    await pool.query('DELETE FROM reservas_custom_category_alerts WHERE business_id = $1', [id]);
+    await pool.query('DELETE FROM reservas_appointments WHERE business_id = $1', [id]);
+    await pool.query('DELETE FROM reservas_services WHERE business_id = $1', [id]);
+    await pool.query('DELETE FROM reservas_business_users WHERE business_id = $1', [id]);
     await pool.query('DELETE FROM reservas_businesses WHERE id = $1', [id]);
-    res.json({ success: true, message: 'Negocio eliminado correctamente' });
+    res.json({ success: true, message: 'Negocio y todos sus registros asociados han sido eliminados correctamente.' });
   } catch (error) {
     console.error('Error eliminando negocio desde developer:', error);
     res.status(500).json({ error: 'Error al eliminar negocio.' });

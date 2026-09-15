@@ -176,6 +176,57 @@ class StorageService {
     return true;
   }
 
+  async toggleBusinessVisibility(businessId, isHidden) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/visibility`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden: Boolean(isHidden) })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return await res.json();
+        }
+      } catch (e) {
+        console.error('Error actualizando visibilidad:', e);
+      }
+    }
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx >= 0) {
+      businesses[idx].isHidden = Boolean(isHidden);
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    }
+    return { success: true, isHidden };
+  }
+
+  async toggleBusinessBlock(businessId, isBlocked, reason = '') {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/block`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isBlocked: Boolean(isBlocked), reason: String(reason || '') })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return await res.json();
+        }
+      } catch (e) {
+        console.error('Error actualizando bloqueo:', e);
+      }
+    }
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx >= 0) {
+      businesses[idx].isBlocked = Boolean(isBlocked);
+      businesses[idx].blockReason = reason;
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    }
+    return { success: true, isBlocked, blockReason: reason };
+  }
+
   async deleteBusinessByDeveloper(businessId) {
     if (this.isOnlineApi) {
       try {
@@ -184,10 +235,27 @@ class StorageService {
           await this.loadFromApi();
           return true;
         }
-      } catch (e) {}
+        const errData = await res.json();
+        throw new Error(errData.error || 'Error al eliminar negocio');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
     }
     this.deleteBusiness(businessId);
     return true;
+  }
+
+  deleteBusiness(businessId) {
+    let businesses = this.getBusinesses();
+    businesses = businesses.filter(b => b.id !== businessId);
+    this.businessesCache = businesses;
+    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    
+    // Limpiar citas asociadas en local
+    let appointments = this.getAppointments();
+    appointments = appointments.filter(a => a.businessId !== businessId);
+    this.appointmentsCache = appointments;
+    localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
   }
 
   // ==========================================
