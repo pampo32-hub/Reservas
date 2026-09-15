@@ -240,11 +240,11 @@ class App {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
           <div class="flex items-center gap-3 cursor-pointer select-none group" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
-            <div class="w-11 h-11 rounded-2xl bg-white p-1 border border-slate-200/80 shadow-md shadow-blue-500/10 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-300">
-              <img src="./src/assets/logo.png" alt="Reservas CR Logo" class="w-full h-full object-contain">
+            <div class="w-12 h-12 rounded-2xl overflow-hidden shadow-md shadow-blue-500/25 flex items-center justify-center group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-blue-500/35 transition-all duration-300 border border-blue-600/10">
+              <img src="./src/assets/logo.svg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
             <div>
-              <span class="font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
+              <span class="font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
               <span class="text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Citas en Costa Rica 🇨🇷</span>
             </div>
           </div>

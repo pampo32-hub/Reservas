@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="50%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="checkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Tile with Vibrant Indigo/Blue Gradient -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+  
+  <!-- Map Pin Contour (White, High Contrast) -->
+  <path d="M256 75C160 75 82 153 82 249C82 342 232 433 247 442C252.5 445.5 259.5 445.5 265 442C280 433 430 342 430 249C430 153 352 75 256 75Z" fill="white" fill-opacity="0.16" stroke="white" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Clock Dial -->
+  <circle cx="256" cy="240" r="105" fill="white" fill-opacity="0.1" stroke="white" stroke-width="14" stroke-dasharray="16 16"/>
+  
+  <!-- Clock 12-o'clock hand -->
+  <path d="M256 165V245" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  
+  <!-- Vibrant Emerald Checkmark Hand -->
+  <path d="M185 240L245 300L380 155" stroke="url(#checkGrad)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
