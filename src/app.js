@@ -290,7 +290,6 @@ class App {
   // ==========================================
   renderDirectoryView(container) {
     const categories = storage.getCategories();
-    let businesses = storage.getBusinesses();
     let businesses = storage.getBusinesses().filter(b => !b.isHidden && !b.isBlocked);
 
     if (this.selectedCategory !== 'all') {
@@ -539,7 +538,6 @@ class App {
           <div class="absolute bottom-6 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-white">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
-                ${biz.isDemo ? `
                 ${biz.isBlocked ? `
                   <span class="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-ban mr-1"></i> Comercio Suspendido
@@ -607,12 +605,6 @@ class App {
 
                     <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
                       <span class="text-lg font-extrabold text-blue-600">${this.formatColones(srv.price)}</span>
-                      <button 
-                        class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
-                        data-service-id="${srv.id}"
-                      >
-                        <i class="fas fa-calendar-plus"></i> Reservar
-                      </button>
                       ${biz.isBlocked ? `
                         <button disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1.5">
                           <i class="fas fa-lock"></i> Suspendido
@@ -2159,7 +2151,6 @@ class App {
       }
 
       // Filtrado por buscador
-      const filteredBusinesses = businesses.filter(b => 
       const filteredBusinesses = devBusinessesList.filter(b => 
         !q || (b.name && b.name.toLowerCase().includes(q)) || 
         (b.categoryLabel && b.categoryLabel.toLowerCase().includes(q)) || 
@@ -2826,11 +2817,9 @@ class App {
         btn.addEventListener('click', async (e) => {
           const bizId = e.currentTarget.getAttribute('data-id');
           const bizName = e.currentTarget.getAttribute('data-name');
-          if (confirm(`¿Estás seguro de que deseas eliminar permanentemente el negocio "${bizName}"? Esta acción no se puede deshacer.`)) {
           if (confirm(`⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, citas asociadas y usuarios en la base de datos.`)) {
             try {
               await storage.deleteBusinessByDeveloper(bizId);
-              this.showToast(`Negocio "${bizName}" eliminado correctamente.`, 'success');
               this.showToast(`Negocio "${bizName}" eliminado definitivamente.`, 'success');
               this.renderDeveloperDashboardView(container);
             } catch (err) {

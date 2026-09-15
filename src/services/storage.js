@@ -235,7 +235,6 @@ class StorageService {
           await this.loadFromApi();
           return true;
         }
-      } catch (e) {}
         const errData = await res.json();
         throw new Error(errData.error || 'Error al eliminar negocio');
       } catch (e) {
