@@ -1,8 +1,9 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
-// FLAG TEMPORAL: Cambiar a true cuando se desee reactivar el registro de usuarios y negocios
+// FLAGS TEMPORALES: Cambiar a true cuando se desee reactivar el registro o accesos rápidos de comercios
 const REGISTRATION_ENABLED = false;
+const SHOW_BIZ_SHORTCUTS = false;
 
 class App {
   constructor() {
@@ -431,7 +432,7 @@ class App {
             ` : ''}
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
-            ${clientUser && !bizUser && !devUser ? `
+            ${clientUser && !bizUser && !devUser && SHOW_BIZ_SHORTCUTS ? `
               <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all" title="Acceso al panel de negocio">
                 <i class="fas fa-store text-indigo-600"></i>
                 <span>Soy Negocio</span>
@@ -515,10 +516,12 @@ class App {
     const isBookings = this.currentView === 'my-client-bookings';
     const isOwner = this.currentView === 'owner-dashboard';
     const isDev = this.currentView === 'developer-dashboard';
+    const showBizTab = !!bizUser || SHOW_BIZ_SHORTCUTS;
+    const gridColsClass = showBizTab ? 'grid-cols-4' : 'grid-cols-3';
 
     navContainer.innerHTML = `
       <div class="fixed bottom-0 inset-x-0 z-40 bottom-nav-blur border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1 pb-safe md:hidden">
-        <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
+        <div class="max-w-md mx-auto grid ${gridColsClass} gap-1 text-center">
           
           <!-- 1. Explorar -->
           <button id="mobile-nav-explore-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDirectory ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
@@ -536,13 +539,15 @@ class App {
             <span class="text-[10px] mt-0.5 tracking-tight">Mis Reservas</span>
           </button>
 
-          <!-- 3. Mi Negocio -->
+          <!-- 3. Mi Negocio (solo visible si hay negocio activo o si los accesos rápidos están habilitados) -->
+          ${showBizTab ? `
           <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isOwner ? 'text-indigo-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
             <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isOwner ? 'bg-indigo-50 text-indigo-600' : ''}">
               <i class="fas fa-store text-base ${isOwner ? 'scale-110' : ''}"></i>
             </div>
             <span class="text-[10px] mt-0.5 tracking-tight">${bizUser ? 'Mi Panel' : 'Soy Negocio'}</span>
           </button>
+          ` : ''}
 
           <!-- 4. Cuenta / Dev -->
           ${devUser ? `
@@ -798,7 +803,8 @@ class App {
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
-        <!-- 1. Banner Superior Destacado para Negocios (+20% Tamaño y Espaciado Óptimo) -->
+        <!-- 1. Banner Superior Destacado para Negocios (Ocultable temporalmente) -->
+        ${SHOW_BIZ_SHORTCUTS ? `
         <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-3">
           <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-5 px-5 sm:py-6 sm:px-8 shadow-xl border border-indigo-900/40">
             <!-- Efectos de Fondo sutiles -->
@@ -819,7 +825,7 @@ class App {
                 </h2>
                 
                 <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
-                  Evita llamadas y mensajes perdidos. Ten tu página propia con catálogo, precios y citas listas para compartir por WhatsApp y redes.
+                  Evita llamadas y mensajes perdidos. Ten tu página propia con catálogo, precios y reservas listas para compartir por WhatsApp y redes.
                 </p>
 
                 <!-- Beneficios Rápidos (Chips Horizontales) -->
@@ -861,7 +867,7 @@ class App {
                   
                   <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
                     <i class="fas fa-tags text-amber-400 text-xs"></i>
-                    <span>Ver Planes</span>
+                    <span>Ver Planes ($8, $15, $25)</span>
                   </button>
                 </div>
               </div>
@@ -908,9 +914,10 @@ class App {
             </div>
           </div>
         </section>
+        ` : ''}
 
-        <!-- 2. Hero Section: Exploración y Búsqueda de Citas -->
-        <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-10 px-4 sm:px-6 lg:px-8 mt-4">
+        <!-- 2. Hero Section: Exploración y Búsqueda de Reservas -->
+        <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-10 px-4 sm:px-6 lg:px-8 ${SHOW_BIZ_SHORTCUTS ? 'mt-4' : 'mt-1'}">
           <div class="max-w-4xl mx-auto text-center">
             <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
               <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
@@ -944,7 +951,7 @@ class App {
               </button>
             </div>
 
-            ${REGISTRATION_ENABLED ? `
+            ${REGISTRATION_ENABLED && SHOW_BIZ_SHORTCUTS ? `
             <!-- Mini Banner de Acceso / Registro para Negocios en Hero -->
             <div class="mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 bg-white/90 backdrop-blur-md py-1.5 px-3.5 rounded-2xl border border-slate-200 shadow-2xs">
               <span class="font-bold text-slate-800 flex items-center gap-1.5">
@@ -3601,8 +3608,8 @@ class App {
       currentBiz.autoConfirmAppointments = isChecked;
       this.showToast(
         isChecked 
-          ? '⚡ ¡Autoconfirmación activada! Las citas se confirmarán y notificarán al instante.' 
-          : '✋ Modo manual activado: Las citas requerirán tu aprobación antes de enviar correo y WhatsApp.',
+          ? '⚡ ¡Autoconfirmación activada! Las reservas se confirmarán y notificarán al instante.' 
+          : '✋ Modo manual activado: Las reservas requerirán tu aprobación antes de enviar correo y WhatsApp.',
         'success'
       );
       this.renderCurrentView();
@@ -4917,7 +4924,7 @@ class App {
         btn.addEventListener('click', async (e) => {
           const bizId = e.currentTarget.getAttribute('data-id');
           const bizName = e.currentTarget.getAttribute('data-name');
-          if (confirm(`⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, citas asociadas y usuarios en la base de datos.`)) {
+          if (confirm(`⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, reservas asociadas y usuarios en la base de datos.`)) {
             try {
               await storage.deleteBusinessByDeveloper(bizId);
               this.showToast(`Negocio "${bizName}" eliminado definitivamente.`, 'success');
