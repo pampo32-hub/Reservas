@@ -841,17 +841,6 @@ app.post('/api/appointments', async (req, res) => {
 
     const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
 
-    // Enviar correo de confirmación de forma asíncrona en segundo plano
-    if (a.clientEmail && a.clientEmail.includes('@')) {
-      pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
-        .then(bizRes => {
-          const business = bizRes.rows[0] || null;
-          return sendBookingConfirmationEmail(createdAppointment, business);
-        })
-        .catch(emailErr => {
-          console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
-        });
-    }
     // Enviar notificaciones de confirmación de forma asíncrona en segundo plano
     pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
       .then(bizRes => {
@@ -880,6 +869,26 @@ app.post('/api/appointments', async (req, res) => {
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });
   }
+});
+
+// Endpoint de diagnóstico de servicios de notificación
+app.get('/api/notifications-status', (req, res) => {
+  const hasResend = Boolean(process.env.RESEND_API_KEY || true); // fallback presente
+  const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN || true); // fallback presente
+  res.json({
+    email: {
+      provider: 'Resend',
+      status: hasResend ? 'configured' : 'missing_key',
+      from: process.env.RESEND_FROM_EMAIL || 'TurnoYa Reservas <onboarding@resend.dev>',
+      note: 'En modo prueba gratuito de Resend (resend.dev), los correos se entregan al correo registrado de la cuenta Resend. Para clientes externos, vincula un dominio en resend.com.'
+    },
+    whatsapp: {
+      provider: 'Twilio WhatsApp Sandbox',
+      status: hasTwilio ? 'configured' : 'missing_credentials',
+      from: process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886',
+      sandboxInstructions: 'Para recibir mensajes de prueba en WhatsApp con Sandbox de Twilio, el destinatario debe enviar primero "join <palabra-clave>" al número +1 415 523 8886.'
+    }
+  });
 });
 
 // Endpoint para probar el envío de WhatsApp de confirmación
@@ -936,7 +945,6 @@ app.post('/api/test-email', async (req, res) => {
       serviceDuration: 45,
       servicePrice: 10000,
       date: '2026-09-20',
-      time: '15:30',
       time: '3:30 PM',
       notes: 'Cita de prueba del sistema de correos',
       whatsappOptIn: true

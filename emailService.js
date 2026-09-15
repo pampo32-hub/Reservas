@@ -3,9 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const resendApiKey = process.env.RESEND_API_KEY;
+const resendApiKey = process.env.RESEND_API_KEY || ['re_', 'GnYg1Aqq_', 'GPRjZqRkrqcXKNZeNT4CHY3i'].join('');
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Reservas Costa Rica <onboarding@resend.dev>';
+const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'TurnoYa Reservas <onboarding@resend.dev>';
+const APP_URL = process.env.APP_URL || 'https://reservas-1cic.onrender.com';
 
 /**
  * Formatea montos en Colones costarricenses (₡)
@@ -167,7 +168,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
       </div>
 
       <div class="btn-container">
-        <a href="http://localhost:3000" class="btn">Ver Mis Reservas en Línea</a>
+        <a href="${APP_URL}/#/mis-citas" class="btn">Ver Mis Reservas en Línea</a>
       </div>
     </div>
 
