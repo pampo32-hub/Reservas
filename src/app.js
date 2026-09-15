@@ -7,6 +7,8 @@ class App {
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
     this.searchQuery = '';
+    this.logoClickCount = 0;
+    this.logoClickTimer = null;
     
     // Estado del modal de reserva
     this.bookingState = {
@@ -76,7 +78,6 @@ class App {
   }
 
   // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
-  // --- HEADER / NAVBAR (BOTONES INICIAR SESIÓN Y REGISTRARSE) ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
@@ -89,8 +90,8 @@ class App {
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
-          <!-- Logo -->
-          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn">
+          <!-- Logo (con acceso secreto 3 clics para Developer) -->
+          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="TurnoYa Costa Rica (Triple clic: Acceso Developer)">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <i class="fas fa-calendar-check text-xl"></i>
             </div>
@@ -109,7 +110,7 @@ class App {
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
             ${devUser ? `
-              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md">
+              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in">
                 <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
                   <i class="fas fa-shield-alt text-xs"></i>
                   <span>DEVELOPER</span>
@@ -121,7 +122,7 @@ class App {
             ` : ''}
 
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
-            ${clientUser ? `
+            ${clientUser && !devUser ? `
               <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
                 <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
                   <i class="fas fa-user-circle text-blue-600 text-sm"></i>
@@ -135,7 +136,7 @@ class App {
             ` : ''}
 
             <!-- 2. SI EL NEGOCIO ESTÁ LOGUEADO -->
-            ${bizUser ? `
+            ${bizUser && !devUser ? `
               <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl">
                 <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
                   <i class="fas fa-store text-xs ${this.currentView === 'owner-dashboard' ? 'text-white' : 'text-indigo-600'}"></i>
@@ -173,7 +174,21 @@ class App {
     `;
 
     // Eventos de Navegación y Auth
-    document.getElementById('nav-logo-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('nav-logo-btn')?.addEventListener('click', () => {
+      this.logoClickCount++;
+      clearTimeout(this.logoClickTimer);
+      this.logoClickTimer = setTimeout(() => {
+        this.logoClickCount = 0;
+      }, 700);
+
+      if (this.logoClickCount >= 3) {
+        this.logoClickCount = 0;
+        this.renderDeveloperQuickLoginModal();
+        return;
+      }
+      this.navigateTo('directory');
+    });
+
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
 
     // Developer logueado
@@ -2439,6 +2454,13 @@ class App {
                 </button>
               </form>
             ` : ''}
+
+            <!-- Enlace sutil para Developer -->
+            <div class="pt-3 text-center border-t border-slate-100">
+              <button type="button" id="modal-dev-link-btn" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors">
+                <i class="fas fa-terminal text-[10px] mr-1"></i> Acceso Developer (Ctrl+Shift+D)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -2447,6 +2469,11 @@ class App {
     // Cerrar modal
     document.getElementById('close-auth-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    // Enlace Developer en el pie del modal
+    document.getElementById('modal-dev-link-btn')?.addEventListener('click', () => {
+      this.renderDeveloperQuickLoginModal();
     });
 
     // Pestañas de Modo (Login / Register)
@@ -2615,7 +2642,7 @@ class App {
       }
     });
 
-    // Evento Submit: Registro Cliente (con validación inline de contraseña y confirmación)
+    // Evento Submit: Registro Cliente
     document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('cli-reg-name').value.trim();
@@ -2637,7 +2664,6 @@ class App {
 
       if (password !== passwordConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
-        document.getElementById('cli-reg-password-confirm').focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
@@ -2697,7 +2723,7 @@ class App {
       }
     });
 
-    // Evento Submit: Registro Negocio (Valida contraseñas coincidentes y categoría personalizada)
+    // Evento Submit: Registro Negocio
     document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const ownerName = document.getElementById('reg-owner-name').value;
@@ -2728,7 +2754,6 @@ class App {
 
       if (password !== passwordConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
-        document.getElementById('reg-biz-password-confirm').focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
@@ -2740,7 +2765,7 @@ class App {
       }
 
       // Procesar Categoría (Estándar o Personalizada)
-      let category = catSelectVal;
+      let finalCategory = catSelectVal;
       let categoryLabel = '';
       let isCustomCategory = false;
 
@@ -2751,8 +2776,8 @@ class App {
           document.getElementById('new-biz-custom-cat')?.focus();
           return;
         }
-        category = customName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        if (!category) category = `cat-${Date.now()}`;
+        finalCategory = customName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        if (!finalCategory) finalCategory = `cat-${Date.now()}`;
         categoryLabel = customName;
         isCustomCategory = true;
       } else {
@@ -2763,7 +2788,7 @@ class App {
       try {
         await storage.registerBusinessWithUser(ownerName, email, password, {
           name,
-          category,
+          category: finalCategory,
           categoryLabel,
           isCustomCategory,
           city,
@@ -2790,6 +2815,78 @@ class App {
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrar negocio.'}</span>`;
         } else {
           this.showToast(err.message || 'Error al registrar negocio.', 'error');
+        }
+      }
+    });
+  }
+
+  // --- MODAL RÁPIDO DE ACCESO DEVELOPER ---
+  renderDeveloperQuickLoginModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-slate-950 text-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-800 my-8">
+          <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shadow-md">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">Consola Maestra</span>
+                <h3 class="text-base font-bold text-white">Acceso Developer</h3>
+              </div>
+            </div>
+            <button id="close-dev-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+
+          <form id="dev-quick-login-form" class="p-6 space-y-4 text-xs">
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Correo de Desarrollador</label>
+              <input type="text" id="dev-log-email" value="admin@reservas.cr" required class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono focus:border-amber-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-300 mb-1">Contraseña Maestra</label>
+              <input type="password" id="dev-log-pass" value="admin123" required class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono focus:border-amber-500 focus:outline-none">
+            </div>
+
+            <div id="dev-quick-log-error" class="hidden p-3 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl"></div>
+
+            <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-sm">
+              <i class="fas fa-key"></i>
+              <span>INGRESAR COMO DEVELOPER</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-dev-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('dev-quick-login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('dev-log-email').value;
+      const pass = document.getElementById('dev-log-pass').value;
+      const errBox = document.getElementById('dev-quick-log-error');
+
+      try {
+        await storage.loginDeveloper(email, pass);
+        this.showToast('¡Consola SuperAdmin Developer Conectada!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.navigateTo('developer-dashboard');
+      } catch (err) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.textContent = err.message || 'Credenciales incorrectas.';
+        } else {
+          this.showToast(err.message || 'Credenciales incorrectas.', 'error');
         }
       }
     });
@@ -2948,13 +3045,209 @@ class App {
     });
   }
 
+  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (CON CONTRASEÑA) ---
+  renderNewBusinessModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div>
+              <span class="text-xs font-bold text-emerald-600 uppercase">Onboarding de Comercios 🇨🇷</span>
+              <h3 class="text-xl font-extrabold text-slate-900">Registrar Nuevo Establecimiento</h3>
+            </div>
+            <button id="close-biz-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <form id="new-biz-form" class="space-y-4 text-xs sm:text-sm">
+            <!-- Cuenta de Usuario / Credenciales -->
+            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
+              <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
+                <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
+              </span>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
+                  <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
+                  <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña de Acceso *</label>
+                <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+              </div>
+            </div>
+
+            <!-- Datos Comerciales -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
+              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
+                <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="belleza">Belleza y Barbería</option>
+                  <option value="salud">Salud y Bienestar</option>
+                  <option value="spa">Spa y Masajes</option>
+                  <option value="fitness">Fitness y Deporte</option>
+                  <option value="autos">Talleres y Autos</option>
+                  <option value="fotografia">Fotografía y Eventos</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
+                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
+                <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Descripción</label>
+              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+            </div>
+
+            <!-- Fotos con Guía de Medidas -->
+            <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
+              <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
+                <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
+              </span>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
+                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
+                </div>
+                <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
+                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
+                </div>
+                <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+              </div>
+            </div>
+
+            <!-- Primer Servicio -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+              <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
+                <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
+              </span>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="sm:col-span-2">
+                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                </div>
+                <div>
+                  <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-check-circle"></i>
+              <span>Crear Cuenta y Registrar Negocio</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-biz-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('new-biz-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const ownerName = document.getElementById('reg-owner-name').value;
+      const email = document.getElementById('reg-biz-email').value;
+      const password = document.getElementById('reg-biz-password').value;
+      const name = document.getElementById('new-biz-name').value;
+      const category = document.getElementById('new-biz-cat').value;
+      const city = document.getElementById('new-biz-city').value;
+      const phone = document.getElementById('new-biz-phone').value;
+      const address = document.getElementById('new-biz-address').value;
+      const description = document.getElementById('new-biz-desc').value;
+      const image = document.getElementById('new-biz-image').value;
+      const coverImage = document.getElementById('new-biz-cover').value;
+      const firstSrvName = document.getElementById('first-srv-name').value;
+      const firstSrvPrice = document.getElementById('first-srv-price').value;
+
+      const catLabels = {
+        belleza: 'Belleza y Barbería',
+        salud: 'Salud y Bienestar',
+        spa: 'Spa y Masajes',
+        fitness: 'Fitness y Deporte',
+        autos: 'Talleres y Autos',
+        fotografia: 'Fotografía y Eventos'
+      };
+
+      try {
+        await storage.registerBusinessWithUser(ownerName, email, password, {
+          name,
+          category,
+          categoryLabel: catLabels[category] || 'Servicios',
+          city,
+          phone,
+          email,
+          address,
+          description,
+          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+          isDemo: false,
+          features: ['Sinpe Móvil', 'Atención Personalizada'],
+          services: [
+            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
+          ]
+        });
+
+        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.navigateTo('owner-dashboard');
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrar.', 'error');
+      }
+    });
+  }
+
   // --- EVENTOS GLOBALES ---
   setupGlobalEvents() {
     window.addEventListener('keydown', (e) => {
+      // Escape para cerrar cualquier modal
       if (e.key === 'Escape') {
         this.closeBookingModal();
         const modalContainer = document.getElementById('modal-container');
         if (modalContainer) modalContainer.innerHTML = '';
+      }
+
+      // Atajo Secreto de Developer: Ctrl + Shift + D (o Cmd + Shift + D en Mac)
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        this.renderDeveloperQuickLoginModal();
       }
     });
   }

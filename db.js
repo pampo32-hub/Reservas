@@ -110,6 +110,7 @@ export async function initDatabase() {
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS password VARCHAR(255);
     `);
 
+    console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');
     // 6. Crear tabla de SuperAdmin / Developer
     await client.query(`
       CREATE TABLE IF NOT EXISTS reservas_developer_users (
@@ -146,64 +147,92 @@ export async function initDatabase() {
 
     console.log('✅ Tablas y cuenta Developer verificadas/creadas en Neon PostgreSQL.');
 
-    // Verificar si hay que sembrar datos iniciales
-    const bizCheck = await client.query('SELECT COUNT(*) FROM reservas_businesses');
-    if (parseInt(bizCheck.rows[0].count, 10) === 0) {
-      console.log('🌱 Sembrando datos iniciales en Neon DB...');
+    // Sembrar o actualizar todos los comercios demo (32 negocios en 16 categorías)
+    console.log('🌱 Verificando/sembrando catálogo completo de comercios iniciales...');
 
-      for (const biz of INITIAL_BUSINESSES) {
-        await client.query(`
-          INSERT INTO reservas_businesses (
-            id, name, category, category_label, rating, reviews_count,
-            price_range, address, city, phone, email, description,
-            image, cover_image, schedule
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        `, [
-          biz.id, biz.name, biz.category, biz.categoryLabel, biz.rating, biz.reviewsCount,
-          biz.priceRange, biz.address, biz.city, biz.phone, biz.email, biz.description,
-          biz.image, biz.coverImage, JSON.stringify(biz.schedule)
-        ]);
+    for (const biz of INITIAL_BUSINESSES) {
+      await client.query(`
+        INSERT INTO reservas_businesses (
+          id, name, category, category_label, rating, reviews_count,
+          price_range, address, city, phone, email, description,
+          image, cover_image, schedule, features, is_demo
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          category = EXCLUDED.category,
+          category_label = EXCLUDED.category_label,
+          image = EXCLUDED.image,
+          cover_image = EXCLUDED.cover_image,
+          city = EXCLUDED.city,
+          address = EXCLUDED.address,
+          phone = EXCLUDED.phone,
+          email = EXCLUDED.email,
+          description = EXCLUDED.description,
+          features = EXCLUDED.features,
+          schedule = EXCLUDED.schedule,
+          is_demo = EXCLUDED.is_demo
+      `, [
+        biz.id, biz.name, biz.category, biz.categoryLabel, biz.rating, biz.reviewsCount,
+        biz.priceRange, biz.address, biz.city, biz.phone, biz.email, biz.description,
+        biz.image, biz.coverImage, JSON.stringify(biz.schedule), JSON.stringify(biz.features || []), Boolean(biz.isDemo)
+      ]);
 
+      if (biz.services && Array.isArray(biz.services)) {
         for (const srv of biz.services) {
           await client.query(`
             INSERT INTO reservas_services (id, business_id, name, duration, price, description)
             VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (id) DO UPDATE SET
+              name = EXCLUDED.name,
+              duration = EXCLUDED.duration,
+              price = EXCLUDED.price,
+              description = EXCLUDED.description
           `, [srv.id, biz.id, srv.name, srv.duration, srv.price, srv.description]);
         }
       }
+    }
 
-      for (const apt of INITIAL_APPOINTMENTS) {
-        await client.query(`
-          INSERT INTO reservas_appointments (
-            id, business_id, service_id, service_name, service_price,
-            service_duration, date, time, client_name, client_phone,
-            client_email, notes, status
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        `, [
-          apt.id, apt.businessId, apt.serviceId, apt.serviceName, apt.servicePrice,
-          apt.serviceDuration, apt.date, apt.time, apt.clientName, apt.clientPhone,
-          apt.clientEmail, apt.notes, apt.status
-        ]);
-      }
-
+    // Sembrar citas iniciales si no existen
+    for (const apt of INITIAL_APPOINTMENTS) {
+      await client.query(`
+        INSERT INTO reservas_appointments (
+          id, business_id, service_id, service_name, service_price,
+          service_duration, date, time, client_name, client_phone,
+          client_email, notes, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (id) DO NOTHING
+      `, [
+        apt.id, apt.businessId, apt.serviceId, apt.serviceName, apt.servicePrice,
+        apt.serviceDuration, apt.date, apt.time, apt.clientName, apt.clientPhone,
+        apt.clientEmail, apt.notes, apt.status
+      ]);
     }
 
     // Asegurar usuarios demo de negocios
     const demoUsers = [
       { id: 'usr-1', businessId: 'biz-1', name: 'Dueño Barbería Vintage', email: 'barberia@demo.cr', password: '123' },
-      { id: 'usr-2', businessId: 'biz-2', name: 'Dr. Roberto Salas', email: 'dental@demo.cr', password: '123' },
-      { id: 'usr-3', businessId: 'biz-3', name: 'Laura Vargas (Spa)', email: 'spa@demo.cr', password: '123' },
-      { id: 'usr-4', businessId: 'biz-4', name: 'Carlos Monge (Taller)', email: 'taller@demo.cr', password: '123' }
+      { id: 'usr-2', businessId: 'biz-2', name: 'Dueña Studio GLAM', email: 'glam@demo.cr', password: '123' },
+      { id: 'usr-3', businessId: 'biz-3', name: 'Dr. Roberto Salas', email: 'dental@demo.cr', password: '123' },
+      { id: 'usr-4', businessId: 'biz-4', name: 'Carlos Monge (Taller)', email: 'taller@demo.cr', password: '123' },
+      { id: 'usr-7', businessId: 'biz-7', name: 'Laura Vargas (Spa)', email: 'spa@demo.cr', password: '123' }
     ];
 
     for (const u of demoUsers) {
-      await client.query(`
-        INSERT INTO reservas_business_users (id, business_id, name, email, password)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (email) DO NOTHING
-      `, [u.id, u.businessId, u.name, u.email, u.password]);
+      const existingUser = await client.query('SELECT id FROM reservas_business_users WHERE id = $1 OR email = $2', [u.id, u.email]);
+      if (existingUser.rows.length === 0) {
+        await client.query(`
+          INSERT INTO reservas_business_users (id, business_id, name, email, password)
+          VALUES ($1, $2, $3, $4, $5)
+        `, [u.id, u.businessId, u.name, u.email, u.password]);
+      } else {
+        await client.query(`
+          UPDATE reservas_business_users
+          SET business_id = $2, name = $3, email = $4, password = $5
+          WHERE id = $1 OR email = $4
+        `, [u.id, u.businessId, u.name, u.email, u.password]);
+      }
     }
-    console.log('✨ Usuarios demo verificados/creados.');
+    console.log('✨ Base de datos poblada exitosamente con 32 comercios en 16 categorías.');
 
   } catch (error) {
     console.error('❌ Error inicializando base de datos Neon:', error);
