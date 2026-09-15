@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool, initDatabase } from './db.js';
+import { sendBookingConfirmationEmail } from './emailService.js';
 
 dotenv.config();
 
@@ -788,7 +789,7 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   }
 });
 
-// Crear nueva reserva
+// Crear nueva reserva (con notificación por correo electrónico)
 app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
@@ -816,10 +817,61 @@ app.post('/api/appointments', async (req, res) => {
       `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '', optIn]);
     }
 
-    res.status(201).json({ id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' });
+    const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
+
+    // Enviar correo de confirmación de forma asíncrona en segundo plano
+    if (a.clientEmail && a.clientEmail.includes('@')) {
+      pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
+        .then(bizRes => {
+          const business = bizRes.rows[0] || null;
+          return sendBookingConfirmationEmail(createdAppointment, business);
+        })
+        .catch(emailErr => {
+          console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+        });
+    }
+
+    res.status(201).json(createdAppointment);
   } catch (error) {
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });
+  }
+});
+
+// Endpoint para probar el envío de correo de confirmación
+app.post('/api/test-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Debes proporcionar un correo electrónico válido.' });
+    }
+
+    const testAppointment = {
+      id: `apt-${Date.now().toString().slice(-6)}`,
+      clientName: 'Cliente de Prueba',
+      clientEmail: email.trim(),
+      clientPhone: '+506 8888 7777',
+      serviceName: 'Corte de Cabello Clásico & Barba',
+      serviceDuration: 45,
+      servicePrice: 10000,
+      date: '2026-09-20',
+      time: '15:30',
+      notes: 'Cita de prueba del sistema de correos',
+      whatsappOptIn: true
+    };
+
+    const testBusiness = {
+      name: 'Barbería & Estilo Vintage',
+      address: 'Av. Escazú, Local 12',
+      city: 'San José, Escazú',
+      phone: '+506 8899 1122'
+    };
+
+    const result = await sendBookingConfirmationEmail(testAppointment, testBusiness);
+    res.json({ success: true, message: 'Prueba de correo procesada', result });
+  } catch (error) {
+    console.error('Error en /api/test-email:', error);
+    res.status(500).json({ error: error.message || 'Error enviando correo de prueba.' });
   }
 });
 
