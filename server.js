@@ -920,7 +920,9 @@ app.post('/api/appointments', async (req, res) => {
 // Endpoint de diagnóstico de servicios de notificación
 app.get('/api/notifications-status', (req, res) => {
   const hasResend = Boolean(process.env.RESEND_API_KEY);
-  const hasMeta = Boolean(process.env.META_WHATSAPP_TOKEN && process.env.META_PHONE_NUMBER_ID);
+  const metaToken = process.env.META_WHATSAPP_TOKEN || process.env.META_TOKEN || process.env.WHATSAPP_TOKEN || process.env.META_ACCESS_TOKEN || '';
+  const metaPhoneId = process.env.META_PHONE_NUMBER_ID || process.env.PHONE_NUMBER_ID || process.env.META_PHONE_ID || '';
+  const hasMeta = Boolean(metaToken && metaPhoneId);
   const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN);
 
   res.json({
@@ -933,10 +935,13 @@ app.get('/api/notifications-status', (req, res) => {
     whatsapp: {
       provider: hasMeta ? 'Meta WhatsApp Cloud API (Directo)' : (hasTwilio ? 'Twilio WhatsApp Sandbox' : 'Sin Configurar'),
       status: hasMeta ? 'configured_meta' : (hasTwilio ? 'configured_twilio' : 'missing_credentials'),
-      phoneNumberId: process.env.META_PHONE_NUMBER_ID || null,
+      hasToken: Boolean(metaToken),
+      hasPhoneId: Boolean(metaPhoneId),
+      phoneNumberId: metaPhoneId ? `${metaPhoneId.slice(0, 4)}...${metaPhoneId.slice(-4)}` : null,
       directMetaEnabled: hasMeta,
+      detectedKeys: Object.keys(process.env).filter(k => k.toLowerCase().includes('meta') || k.toLowerCase().includes('whatsapp') || k.toLowerCase().includes('phone')),
       note: hasMeta 
-        ? 'Conexión directa con Meta WhatsApp Cloud API activa (1.000 conversaciones gratis/mes sin Twilio).' 
+        ? 'Conexión directa con Meta WhatsApp Cloud API activa.' 
         : 'Para activar WhatsApp directo sin Twilio, configura META_WHATSAPP_TOKEN y META_PHONE_NUMBER_ID en .env o en el panel de Render.'
     }
   });
