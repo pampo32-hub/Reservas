@@ -3,6 +3,7 @@ import { storage } from './services/storage.js';
 
 class App {
   constructor() {
+    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings'
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
@@ -78,6 +79,7 @@ class App {
   }
 
   // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
+  // --- HEADER / NAVBAR (BOTONES INICIAR SESIÓN Y REGISTRARSE) ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
@@ -90,6 +92,8 @@ class App {
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
+          <!-- Logo -->
+          <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
           <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn" title="TurnoYa Costa Rica (Triple clic: Acceso Developer)">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -110,6 +114,7 @@ class App {
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
             ${devUser ? `
+              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md">
               <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in">
                 <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
                   <i class="fas fa-shield-alt text-xs"></i>
@@ -2310,10 +2315,12 @@ class App {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Crear Contraseña *</label>
+                    <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <input type="password" id="cli-reg-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   </div>
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
+                    <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                     <input type="password" id="cli-reg-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   </div>
                 </div>
@@ -2351,10 +2358,12 @@ class App {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
+                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                       <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
+                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                       <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                   </div>
@@ -2371,8 +2380,15 @@ class App {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
+                    <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
                     <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
                     <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                      <option value="belleza">Belleza y Barbería</option>
+                      <option value="salud">Salud y Bienestar</option>
+                      <option value="spa">Spa y Masajes</option>
+                      <option value="fitness">Fitness y Deporte</option>
+                      <option value="autos">Talleres y Autos</option>
+                      <option value="fotografia">Fotografía y Eventos</option>
                       ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
                       <option value="otra" class="font-bold text-blue-600">➕ Otra Categoría (Personalizada)</option>
                     </select>
@@ -2609,7 +2625,7 @@ class App {
     bizRegPass?.addEventListener('input', checkBizPasswordsMatch);
     bizRegPassConf?.addEventListener('input', checkBizPasswordsMatch);
 
-    // Evento Submit: Login Cliente (detecta Developer)
+    // Evento Submit: Login Cliente (detecta Developer y Negocio)
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const identifier = document.getElementById('cli-log-identifier').value.trim();
@@ -2625,6 +2641,14 @@ class App {
           modalContainer.innerHTML = '';
           this.renderHeader();
           this.navigateTo('developer-dashboard');
+          return;
+        }
+
+        if (res && res.role === 'business') {
+          this.showToast('¡Bienvenido a tu panel de administración!', 'success');
+          modalContainer.innerHTML = '';
+          this.renderHeader();
+          this.navigateTo('owner-dashboard');
           return;
         }
 
@@ -2664,6 +2688,7 @@ class App {
 
       if (password !== passwordConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
+        document.getElementById('cli-reg-password-confirm').focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
@@ -2690,7 +2715,7 @@ class App {
       }
     });
 
-    // Evento Submit: Login Negocio (detecta Developer)
+    // Evento Submit: Login Negocio (detecta Developer y Cliente)
     document.getElementById('auth-biz-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('biz-log-email').value;
@@ -2706,6 +2731,14 @@ class App {
           modalContainer.innerHTML = '';
           this.renderHeader();
           this.navigateTo('developer-dashboard');
+          return;
+        }
+
+        if (res && res.role === 'client') {
+          this.showToast('¡Bienvenido(a)! Sesión iniciada como cliente.', 'success');
+          modalContainer.innerHTML = '';
+          this.renderHeader();
+          this.navigateTo('my-client-bookings');
           return;
         }
 
@@ -2810,6 +2843,7 @@ class App {
         this.renderHeader();
         this.navigateTo('owner-dashboard');
       } catch (err) {
+        this.showToast(err.message || 'Error al registrar negocio.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrar negocio.'}</span>`;

@@ -211,6 +211,7 @@ export async function initDatabase() {
     // Asegurar usuarios demo de negocios
     const demoUsers = [
       { id: 'usr-1', businessId: 'biz-1', name: 'Dueño Barbería Vintage', email: 'barberia@demo.cr', password: '123' },
+      { id: 'usr-1b', businessId: 'biz-1', name: 'Barbería Vintage Contacto', email: 'contacto@barberiavintage.cr', password: '123' },
       { id: 'usr-2', businessId: 'biz-2', name: 'Dueña Studio GLAM', email: 'glam@demo.cr', password: '123' },
       { id: 'usr-3', businessId: 'biz-3', name: 'Dr. Roberto Salas', email: 'dental@demo.cr', password: '123' },
       { id: 'usr-4', businessId: 'biz-4', name: 'Carlos Monge (Taller)', email: 'taller@demo.cr', password: '123' },

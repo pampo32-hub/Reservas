@@ -22,15 +22,17 @@ app.use(express.static(__dirname));
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
 
+// 1. Login de Dueño de Negocio (Email y Contraseña)
 // 0. Login de Developer / SuperAdmin
 app.post('/api/auth/developer/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const rawEmail = req.body.email || req.body.identifier;
+    const { password } = req.body;
+    if (!rawEmail || !password) {
       return res.status(400).json({ error: 'Debes ingresar correo y contraseña.' });
     }
 
-    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanEmail = (rawEmail || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
     // Master Developer Check (Fail-safe)
@@ -75,18 +77,19 @@ app.post('/api/auth/developer/login', async (req, res) => {
   }
 });
 
-// 1. Login de Dueño de Negocio (Email y Contraseña) - Con Detección Inteligente de Developer
+// 1. Login de Dueño de Negocio (Email y Contraseña) - Con Detección Inteligente
 app.post('/api/auth/business/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
+    const rawEmail = req.body.email || req.body.identifier;
+    const { password } = req.body;
+    if (!rawEmail || !password) {
       return res.status(400).json({ error: 'Debes ingresar correo y contraseña.' });
     }
 
-    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanEmail = (rawEmail || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Master Developer Check (Fail-safe)
+    // 1. Master Developer Check (Fail-safe)
     const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanEmail);
     const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
     if (isMasterEmail && isMasterPass) {
@@ -102,57 +105,72 @@ app.post('/api/auth/business/login', async (req, res) => {
       });
     }
 
-    // Comprobar si existe en tabla de Developer
+    // 2. Comprobar si existe en tabla de Developer
     try {
       const devRes = await pool.query(
         'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
         [cleanEmail, cleanPass]
       );
-
       if (devRes.rows.length > 0) {
         const dev = devRes.rows[0];
         return res.json({
           success: true,
           role: 'developer',
-          user: {
-            id: dev.id,
-            name: dev.name,
-            email: dev.email,
-            role: 'developer'
-          }
+          user: { id: dev.id, name: dev.name, email: dev.email, role: 'developer' }
         });
       }
     } catch (e) {
       console.warn('Developer check in business login:', e.message);
     }
 
+    // 3. Comprobar si es Usuario de Negocio
     const userRes = await pool.query(
       'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1) AND password = $2',
-      [email.trim(), password.trim()]
+      [cleanEmail, cleanPass]
     );
 
-    if (userRes.rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciales inválidas. Verifica tu correo y contraseña.' });
+    if (userRes.rows.length > 0) {
+      const user = userRes.rows[0];
+      const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
+      const business = bizRes.rows[0] || null;
+
+      return res.json({
+        success: true,
+        role: 'business',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          businessId: user.business_id
+        },
+        business
+      });
     }
 
-    const user = userRes.rows[0];
-    const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
-    const business = bizRes.rows[0] || null;
+    // 4. Si ingresó credenciales de Cliente aquí por error, autenticarlo como cliente
+    const clientRes = await pool.query(
+      'SELECT * FROM reservas_clients WHERE (LOWER(email) = LOWER($1) OR phone = $1) AND password = $2',
+      [cleanEmail, cleanPass]
+    );
 
-    res.json({
-      success: true,
-      role: 'business',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        businessId: user.business_id
-      },
-      business
-    });
+    if (clientRes.rows.length > 0) {
+      const clientRow = clientRes.rows[0];
+      return res.json({
+        success: true,
+        role: 'client',
+        client: {
+          id: clientRow.id,
+          name: clientRow.name,
+          phone: clientRow.phone,
+          email: clientRow.email || ''
+        }
+      });
+    }
+
+    return res.status(401).json({ error: 'Credenciales inválidas. Verifica tu correo y contraseña.' });
   } catch (error) {
     console.error('Error en login negocio:', error);
-    res.status(500).json({ error: 'Error en el servidor al autenticar negocio.' });
+    res.status(500).json({ error: 'Error en el servidor al autenticar.' });
   }
 });
 
@@ -282,7 +300,7 @@ app.post('/api/auth/client/register', async (req, res) => {
   }
 });
 
-// 4. Iniciar Sesión de Cliente (con Teléfono o Correo + Contraseña) - Con Detección Inteligente de Developer
+// 4. Iniciar Sesión de Cliente (con Detección Inteligente de Negocios y Developer)
 app.post('/api/auth/client/login', async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -293,7 +311,7 @@ app.post('/api/auth/client/login', async (req, res) => {
     const cleanIdent = (identifier || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Master Developer Check (Fail-safe)
+    // 1. Master Developer Check (Fail-safe)
     const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanIdent);
     const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
     if (isMasterEmail && isMasterPass) {
@@ -309,7 +327,7 @@ app.post('/api/auth/client/login', async (req, res) => {
       });
     }
 
-    // Comprobar si es Developer
+    // 2. Comprobar si es Developer
     try {
       const devRes = await pool.query(
         'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
@@ -333,6 +351,31 @@ app.post('/api/auth/client/login', async (req, res) => {
       console.warn('Developer check in client login:', e.message);
     }
 
+    // 3. Comprobar si es Usuario de Negocio (por si el dueño se loguea desde la pestaña de cliente)
+    const bizUserRes = await pool.query(
+      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1) AND password = $2',
+      [cleanIdent, cleanPass]
+    );
+
+    if (bizUserRes.rows.length > 0) {
+      const user = bizUserRes.rows[0];
+      const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
+      const business = bizRes.rows[0] || null;
+
+      return res.json({
+        success: true,
+        role: 'business',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          businessId: user.business_id
+        },
+        business
+      });
+    }
+
+    // 4. Comprobar si es Cliente
     const result = await pool.query(
       'SELECT * FROM reservas_clients WHERE LOWER(email) = LOWER($1) OR phone = $1',
       [cleanIdent]
@@ -343,17 +386,18 @@ app.post('/api/auth/client/login', async (req, res) => {
     }
 
     const clientRow = result.rows[0];
-    if (clientRow.password && clientRow.password !== password.trim()) {
+    if (clientRow.password && clientRow.password !== cleanPass) {
       return res.status(401).json({ error: 'Contraseña incorrecta.' });
     }
 
     // Si no tenía contraseña guardada previamente, se le asigna esta
     if (!clientRow.password) {
-      await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [password.trim(), clientRow.id]);
+      await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [cleanPass, clientRow.id]);
     }
 
     res.json({
       success: true,
+      role: 'client',
       client: {
         id: clientRow.id,
         name: clientRow.name,
@@ -363,7 +407,7 @@ app.post('/api/auth/client/login', async (req, res) => {
     });
   } catch (error) {
     console.error('Error en login de cliente:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión de cliente.' });
+    res.status(500).json({ error: 'Error en el servidor al autenticar.' });
   }
 });
 

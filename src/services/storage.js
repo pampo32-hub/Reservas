@@ -68,6 +68,15 @@ class StorageService {
   }
 
   async loginDeveloper(email, password) {
+    const res = await fetch(`${this.apiBase}/auth/developer/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al autenticar desarrollador.');
+    this.setDeveloperUser(data.user);
+    return data;
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
@@ -92,8 +101,12 @@ class StorageService {
     throw new Error('Credenciales de Developer incorrectas.');
   }
 
+  // Métodos de consulta SuperAdmin / Developer
   // Métodos de consulta SuperAdmin / Developer con fallback offline/online
   async getDeveloperStats() {
+    const res = await fetch(`${this.apiBase}/developer/stats`);
+    if (!res.ok) throw new Error('Error al obtener estadísticas de developer.');
+    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/stats`);
@@ -113,6 +126,9 @@ class StorageService {
   }
 
   async getDeveloperBusinesses() {
+    const res = await fetch(`${this.apiBase}/developer/businesses`);
+    if (!res.ok) throw new Error('Error al obtener negocios.');
+    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/businesses`);
@@ -125,6 +141,9 @@ class StorageService {
   }
 
   async getDeveloperClients() {
+    const res = await fetch(`${this.apiBase}/developer/clients`);
+    if (!res.ok) throw new Error('Error al obtener clientes.');
+    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/clients`);
@@ -142,6 +161,9 @@ class StorageService {
   }
 
   async getDeveloperAppointments() {
+    const res = await fetch(`${this.apiBase}/developer/appointments`);
+    if (!res.ok) throw new Error('Error al obtener citas globales.');
+    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/appointments`);
@@ -154,6 +176,9 @@ class StorageService {
   }
 
   async getDeveloperCategoryAlerts() {
+    const res = await fetch(`${this.apiBase}/developer/category-alerts`);
+    if (!res.ok) throw new Error('Error al obtener alertas.');
+    return await res.json();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/category-alerts`);
@@ -167,6 +192,8 @@ class StorageService {
   }
 
   async dismissCategoryAlert(alertId) {
+    const res = await fetch(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
+    return res.ok;
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
@@ -177,6 +204,9 @@ class StorageService {
   }
 
   async deleteBusinessByDeveloper(businessId) {
+    const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Error al eliminar negocio.');
+    await this.loadFromApi();
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
@@ -246,15 +276,21 @@ class StorageService {
         return data;
       }
 
+      // Si es Cliente logueándose aquí
+      if (data.role === 'client') {
+        this.setClientUser(data.client);
+        return data;
+      }
+
       this.setBusinessUser(data.user);
       await this.loadFromApi();
       return data;
     }
 
-    // Fallback local: aceptar demo
+    // Fallback local
     const user = { id: 'usr-demo', name: 'Dueño Negocio Demo', email: cleanEmail, businessId: this.getActiveBusinessId() };
     this.setBusinessUser(user);
-    return { success: true, user };
+    return { success: true, role: 'business', user };
   }
 
   async registerBusinessWithUser(ownerName, email, password, businessData) {
@@ -350,13 +386,20 @@ class StorageService {
         return data;
       }
 
+      // Si es Negocio logueándose en pestaña de cliente
+      if (data.role === 'business') {
+        this.setBusinessUser(data.user);
+        await this.loadFromApi();
+        return data;
+      }
+
       this.setClientUser(data.client);
-      return data.client;
+      return data;
     }
 
     const client = { id: `cli-${Date.now()}`, name: identifier, phone: identifier, email: identifier };
     this.setClientUser(client);
-    return client;
+    return { success: true, role: 'client', client };
   }
 
   async loginOrRegisterClient(name, phone, email) {
