@@ -28,7 +28,7 @@ export async function initDatabase() {
         category_label VARCHAR(100),
         rating NUMERIC(3,2) DEFAULT 5.0,
         reviews_count INT DEFAULT 0,
-        price_range VARCHAR(10) DEFAULT '$$',
+        price_range VARCHAR(10) DEFAULT '₡₡',
         address TEXT,
         city VARCHAR(100),
         phone VARCHAR(50),
@@ -37,8 +37,16 @@ export async function initDatabase() {
         image TEXT,
         cover_image TEXT,
         schedule JSONB NOT NULL,
+        features JSONB DEFAULT '[]',
+        is_demo BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    // Añadir columnas si no existen (migración segura)
+    await client.query(`
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS features JSONB DEFAULT '[]';
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT FALSE;
     `);
 
     // 2. Crear tabla de servicios

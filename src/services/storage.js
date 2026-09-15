@@ -66,11 +66,12 @@ class StorageService {
   async saveBusiness(businessData) {
     if (this.isOnlineApi) {
       try {
-        if (businessData.schedule && businessData.id) {
-          await fetch(`${this.apiBase}/businesses/${businessData.id}/schedule`, {
+        const existing = this.getBusinessById(businessData.id);
+        if (existing) {
+          await fetch(`${this.apiBase}/businesses/${businessData.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ schedule: businessData.schedule })
+            body: JSON.stringify(businessData)
           });
         } else {
           await fetch(`${this.apiBase}/businesses`, {
@@ -144,6 +145,41 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
     this.businessesCache = businesses;
     return newService;
+  }
+
+  async updateService(businessId, serviceId, serviceData) {
+    if (this.isOnlineApi) {
+      try {
+        await fetch(`${this.apiBase}/services/${serviceId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(serviceData)
+        });
+        await this.loadFromApi();
+        return true;
+      } catch (e) {
+        console.error('Error actualizando servicio en API Neon:', e);
+      }
+    }
+
+    // Fallback Local
+    const businesses = this.getBusinesses();
+    const business = businesses.find(b => b.id === businessId);
+    if (!business) return false;
+
+    const sIndex = business.services.findIndex(s => s.id === serviceId);
+    if (sIndex === -1) return false;
+
+    business.services[sIndex] = {
+      ...business.services[sIndex],
+      ...serviceData,
+      duration: parseInt(serviceData.duration, 10) || business.services[sIndex].duration,
+      price: parseFloat(serviceData.price) || business.services[sIndex].price
+    };
+
+    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    this.businessesCache = businesses;
+    return true;
   }
 
   async deleteService(businessId, serviceId) {

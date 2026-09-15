@@ -14,15 +14,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(express.static(__dirname));
 
 // --- API ENDPOINTS CON NEON POSTGRESQL ---
 
-// 1. Obtener todos los negocios (con sus servicios incluidos)
+// 1. Obtener todos los negocios
 app.get('/api/businesses', async (req, res) => {
   try {
-    const bizRes = await pool.query('SELECT * FROM reservas_businesses ORDER BY created_at ASC');
+    const bizRes = await pool.query('SELECT * FROM reservas_businesses ORDER BY is_demo DESC, created_at ASC');
     const srvRes = await pool.query('SELECT * FROM reservas_services ORDER BY created_at ASC');
 
     const businesses = bizRes.rows.map(b => ({
@@ -32,7 +33,7 @@ app.get('/api/businesses', async (req, res) => {
       categoryLabel: b.category_label,
       rating: parseFloat(b.rating),
       reviewsCount: parseInt(b.reviews_count, 10),
-      priceRange: b.price_range,
+      priceRange: b.price_range || '₡₡',
       address: b.address,
       city: b.city,
       phone: b.phone,
@@ -41,6 +42,8 @@ app.get('/api/businesses', async (req, res) => {
       image: b.image,
       coverImage: b.cover_image,
       schedule: b.schedule,
+      features: Array.isArray(b.features) ? b.features : [],
+      isDemo: Boolean(b.is_demo),
       services: srvRes.rows
         .filter(s => s.business_id === b.id)
         .map(s => ({
@@ -78,7 +81,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       categoryLabel: b.category_label,
       rating: parseFloat(b.rating),
       reviewsCount: parseInt(b.reviews_count, 10),
-      priceRange: b.price_range,
+      priceRange: b.price_range || '₡₡',
       address: b.address,
       city: b.city,
       phone: b.phone,
@@ -87,6 +90,8 @@ app.get('/api/businesses/:id', async (req, res) => {
       image: b.image,
       coverImage: b.cover_image,
       schedule: b.schedule,
+      features: Array.isArray(b.features) ? b.features : [],
+      isDemo: Boolean(b.is_demo),
       services: srvRes.rows.map(s => ({
         id: s.id,
         name: s.name,
@@ -103,31 +108,33 @@ app.get('/api/businesses/:id', async (req, res) => {
   }
 });
 
-// 3. Crear o registrar nuevo negocio
+// 3. Crear o registrar nuevo negocio (Negocio real creado por usuario)
 app.post('/api/businesses', async (req, res) => {
   try {
     const b = req.body;
     const newId = b.id || `biz-${Date.now()}`;
     const schedule = b.schedule || {
       days: [1, 2, 3, 4, 5, 6],
-      openTime: '09:00',
-      closeTime: '19:00',
-      breakStart: '14:00',
-      breakEnd: '15:00',
+      openTime: '08:00',
+      closeTime: '18:00',
+      breakStart: '12:00',
+      breakEnd: '13:00',
       slotDuration: 30
     };
+    const features = b.features || ['Sinpe Móvil', 'Atención Personalizada'];
 
     await pool.query(`
       INSERT INTO reservas_businesses (
         id, name, category, category_label, rating, reviews_count,
         price_range, address, city, phone, email, description,
-        image, cover_image, schedule
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        image, cover_image, schedule, features, is_demo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
     `, [
       newId, b.name, b.category, b.categoryLabel || 'Servicios',
-      b.rating || 5.0, b.reviewsCount || 0, b.priceRange || '$$',
+      b.rating || 5.0, b.reviewsCount || 0, b.priceRange || '₡₡',
       b.address || '', b.city || '', b.phone || '', b.email || '',
-      b.description || '', b.image || '', b.coverImage || '', JSON.stringify(schedule)
+      b.description || '', b.image || '', b.coverImage || '',
+      JSON.stringify(schedule), JSON.stringify(features), false
     ]);
 
     if (b.services && Array.isArray(b.services)) {
@@ -139,14 +146,50 @@ app.post('/api/businesses', async (req, res) => {
       }
     }
 
-    res.status(201).json({ id: newId, message: 'Negocio creado con éxito' });
+    res.status(201).json({ id: newId, message: 'Negocio registrado con éxito' });
   } catch (error) {
     console.error('Error en POST /api/businesses:', error);
     res.status(500).json({ error: 'Error al registrar negocio' });
   }
 });
 
-// 4. Actualizar horarios de un negocio
+// 4. Actualizar negocio completo (Nombre, Fotos, Banner, Categoría, Descripción, Características, etc.)
+app.put('/api/businesses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const b = req.body;
+
+    await pool.query(`
+      UPDATE reservas_businesses SET
+        name = COALESCE($1, name),
+        category = COALESCE($2, category),
+        category_label = COALESCE($3, category_label),
+        city = COALESCE($4, city),
+        address = COALESCE($5, address),
+        phone = COALESCE($6, phone),
+        email = COALESCE($7, email),
+        description = COALESCE($8, description),
+        image = COALESCE($9, image),
+        cover_image = COALESCE($10, cover_image),
+        price_range = COALESCE($11, price_range),
+        features = COALESCE($12, features),
+        schedule = COALESCE($13, schedule)
+      WHERE id = $14
+    `, [
+      b.name, b.category, b.categoryLabel, b.city, b.address,
+      b.phone, b.email, b.description, b.image, b.coverImage,
+      b.priceRange, b.features ? JSON.stringify(b.features) : null,
+      b.schedule ? JSON.stringify(b.schedule) : null, id
+    ]);
+
+    res.json({ success: true, message: 'Perfil del negocio actualizado' });
+  } catch (error) {
+    console.error('Error actualizando negocio:', error);
+    res.status(500).json({ error: 'Error al actualizar negocio' });
+  }
+});
+
+// 5. Actualizar horarios de un negocio
 app.put('/api/businesses/:id/schedule', async (req, res) => {
   try {
     const { id } = req.params;
@@ -160,7 +203,7 @@ app.put('/api/businesses/:id/schedule', async (req, res) => {
   }
 });
 
-// 5. Agregar servicio a un negocio
+// 6. Agregar servicio a un negocio
 app.post('/api/businesses/:id/services', async (req, res) => {
   try {
     const { id: businessId } = req.params;
@@ -179,7 +222,29 @@ app.post('/api/businesses/:id/services', async (req, res) => {
   }
 });
 
-// 6. Eliminar servicio
+// 7. Actualizar servicio existente (Nombre, Precio, Duración, Descripción)
+app.put('/api/services/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const s = req.body;
+
+    await pool.query(`
+      UPDATE reservas_services SET
+        name = COALESCE($1, name),
+        duration = COALESCE($2, duration),
+        price = COALESCE($3, price),
+        description = COALESCE($4, description)
+      WHERE id = $5
+    `, [s.name, parseInt(s.duration, 10), parseFloat(s.price), s.description, id]);
+
+    res.json({ success: true, message: 'Servicio actualizado' });
+  } catch (error) {
+    console.error('Error actualizando servicio:', error);
+    res.status(500).json({ error: 'Error al actualizar servicio' });
+  }
+});
+
+// 8. Eliminar servicio
 app.delete('/api/services/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -191,7 +256,7 @@ app.delete('/api/services/:id', async (req, res) => {
   }
 });
 
-// 7. Obtener citas de un negocio
+// 9. Obtener citas de un negocio
 app.get('/api/businesses/:id/appointments', async (req, res) => {
   try {
     const { id } = req.params;
@@ -221,7 +286,7 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
   }
 });
 
-// 8. Crear nueva reserva
+// 10. Crear nueva reserva
 app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
@@ -246,7 +311,7 @@ app.post('/api/appointments', async (req, res) => {
   }
 });
 
-// 9. Actualizar estado de una cita
+// 11. Actualizar estado de una cita
 app.patch('/api/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
@@ -260,7 +325,7 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
   }
 });
 
-// 10. Eliminar cita
+// 12. Eliminar cita
 app.delete('/api/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -282,4 +347,3 @@ async function startServer() {
 }
 
 startServer();
-

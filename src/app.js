@@ -1,9 +1,9 @@
-// Controlador principal de la aplicación
+// Controlador principal de la aplicación (TurnoYa - Directorio & Reservas)
 import { storage } from './services/storage.js';
 
 class App {
   constructor() {
-    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-bookings'
+    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
     this.searchQuery = '';
@@ -18,7 +18,7 @@ class App {
     };
 
     // Estado del panel de dueño
-    this.activeDashboardTab = 'appointments'; // 'appointments' | 'services' | 'schedule' | 'profile'
+    this.activeDashboardTab = 'appointments'; // 'appointments' | 'services' | 'profile' | 'schedule'
   }
 
   getTodayDateString() {
@@ -86,18 +86,22 @@ class App {
             </div>
             <div>
               <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">TurnoYa</span>
-              <span class="text-xs block text-slate-500 font-medium">Directorio & Reservas</span>
+              <span class="text-xs block text-slate-500 font-medium">Directorio & Reservas Costa Rica 🇨🇷</span>
             </div>
           </div>
 
           <!-- Navigation Links -->
           <nav class="flex items-center gap-2 sm:gap-3">
             <button id="nav-directory-btn" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
-              <i class="fas fa-compass mr-1.5"></i> Explorar Negocios
+              <i class="fas fa-compass mr-1.5"></i> Explorar
+            </button>
+
+            <button id="nav-register-btn" class="hidden sm:flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all">
+              <i class="fas fa-plus-circle mr-1.5"></i> Registrar Negocio
             </button>
 
             <button id="nav-dashboard-btn" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' : 'bg-slate-900 hover:bg-slate-800 text-white'}">
-              <i class="fas fa-store mr-1.5"></i> Panel Dueño de Negocio
+              <i class="fas fa-store mr-1.5"></i> Panel Dueño
             </button>
           </nav>
         </div>
@@ -107,6 +111,7 @@ class App {
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-dashboard-btn')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
+    document.getElementById('nav-register-btn')?.addEventListener('click', () => this.renderNewBusinessModal());
   }
 
   // --- GESTIÓN DE VISTAS ---
@@ -146,7 +151,7 @@ class App {
         b.name.toLowerCase().includes(q) ||
         b.description.toLowerCase().includes(q) ||
         b.city.toLowerCase().includes(q) ||
-        b.services.some(s => s.name.toLowerCase().includes(q))
+        (b.services && b.services.some(s => s.name.toLowerCase().includes(q)))
       );
     }
 
@@ -156,13 +161,13 @@ class App {
         <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-16 px-4 sm:px-6 lg:px-8">
           <div class="max-w-4xl mx-auto text-center">
             <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-4">
-              <i class="fas fa-bolt text-blue-600"></i> Reserva sin esperas ni llamadas
+              <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
             </span>
             <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Encuentra y reserva en los mejores <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">negocios locales</span>
+              Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu cita al instante</span>
             </h1>
             <p class="mt-4 text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-              Barberías, spas, consultas médicas, talleres y más. Elige el servicio, selecciona tu horario ideal y asegura tu turno al instante.
+              Barberías, spas, dentistas, talleres mecánicos y más en colones (₡ CRC). Selecciona tu horario ideal sin llamadas.
             </p>
 
             <!-- Search Bar -->
@@ -174,7 +179,7 @@ class App {
                 type="text" 
                 id="search-input" 
                 value="${this.searchQuery}" 
-                placeholder="Busca por servicio (ej. 'corte', 'masaje', 'dentista') o nombre..." 
+                placeholder="Busca por servicio ('corte', 'masaje', 'dentista', 'frenos') o cantón..." 
                 class="w-full px-4 py-3 text-slate-800 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
               />
               ${this.searchQuery ? `
@@ -227,22 +232,35 @@ class App {
           ` : `
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               ${businesses.map(biz => `
-                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1">
+                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
                   <!-- Image Header -->
-                  <div class="relative h-48 overflow-hidden bg-slate-100">
-                    <img src="${biz.image}" alt="${biz.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                  <div class="relative h-52 overflow-hidden bg-slate-100">
+                    <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${biz.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
                     
-                    <span class="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">
-                      ${biz.categoryLabel}
-                    </span>
+                    <!-- Badge COMERCIO DE MUESTRA o VERIFICADO -->
+                    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                      ${biz.isDemo ? `
+                        <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
+                          <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
+                        </span>
+                      ` : `
+                        <span class="bg-emerald-600/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md">
+                          <i class="fas fa-check-circle text-emerald-200"></i> Comercio Registrado
+                        </span>
+                      `}
+                      <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
+                        ${biz.categoryLabel}
+                      </span>
+                    </div>
 
+                    <!-- Rating -->
                     <span class="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
-                      <i class="fas fa-star text-xs"></i> ${biz.rating} <span class="text-slate-700 font-normal">(${biz.reviewsCount})</span>
+                      <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} <span class="text-slate-700 font-normal">(${biz.reviewsCount || 0})</span>
                     </span>
 
                     <div class="absolute bottom-3 left-3 right-3 text-white">
-                      <span class="text-xs font-medium text-slate-200 flex items-center gap-1">
+                      <span class="text-xs font-semibold text-slate-200 flex items-center gap-1">
                         <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.city}
                       </span>
                     </div>
@@ -258,14 +276,26 @@ class App {
                         ${biz.description}
                       </p>
 
+                      <!-- Features pills preview -->
+                      ${biz.features && biz.features.length > 0 ? `
+                        <div class="flex flex-wrap gap-1.5 mt-3">
+                          ${biz.features.slice(0, 3).map(feat => `
+                            <span class="text-[10px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
+                              ${feat}
+                            </span>
+                          `).join('')}
+                          ${biz.features.length > 3 ? `<span class="text-[10px] text-slate-400">+${biz.features.length - 3}</span>` : ''}
+                        </div>
+                      ` : ''}
+
                       <!-- Schedule info -->
                       <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                        <span class="flex items-center gap-1.5">
+                        <span class="flex items-center gap-1.5 font-medium">
                           <i class="far fa-clock text-blue-600"></i> 
-                          ${biz.schedule.openTime} - ${biz.schedule.closeTime}
+                          ${biz.schedule ? `${biz.schedule.openTime} - ${biz.schedule.closeTime}` : '08:00 - 18:00'}
                         </span>
                         <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                          ${biz.services.length} servicios disp.
+                          ${biz.services ? biz.services.length : 0} servicios disp.
                         </span>
                       </div>
                     </div>
@@ -342,12 +372,12 @@ class App {
     }
 
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    const activeDaysText = biz.schedule.days.map(d => dayNames[d]).join(', ');
+    const activeDaysText = biz.schedule && biz.schedule.days ? biz.schedule.days.map(d => dayNames[d]).join(', ') : 'Lunes a Sábado';
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
-        <!-- Back button & Cover -->
-        <div class="relative bg-slate-900 h-64 sm:h-80 w-full overflow-hidden">
+        <!-- Cover Banner Hero -->
+        <div class="relative bg-slate-900 h-64 sm:h-96 w-full overflow-hidden">
           <img src="${biz.coverImage || biz.image}" alt="${biz.name}" class="w-full h-full object-cover opacity-60">
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"></div>
 
@@ -358,17 +388,26 @@ class App {
           </div>
 
           <div class="absolute bottom-6 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-white">
-            <div>
-              <div class="flex items-center gap-2 mb-2">
-                <span class="px-3 py-0.5 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider">
+            <div class="space-y-2">
+              <div class="flex flex-wrap items-center gap-2">
+                ${biz.isDemo ? `
+                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
+                  </span>
+                ` : `
+                  <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-check-circle mr-1"></i> Comercio Registrado
+                  </span>
+                `}
+                <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider">
                   ${biz.categoryLabel}
                 </span>
-                <span class="bg-amber-400 text-slate-900 px-2 py-0.5 rounded-md text-xs font-bold flex items-center gap-1">
-                  <i class="fas fa-star text-xs"></i> ${biz.rating} (${biz.reviewsCount} reseñas)
+                <span class="bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                  <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} (${biz.reviewsCount || 0} opiniones)
                 </span>
               </div>
               <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">${biz.name}</h1>
-              <p class="text-sm text-slate-300 mt-1 flex items-center gap-1.5">
+              <p class="text-sm text-slate-300 flex items-center gap-1.5">
                 <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.address}, ${biz.city}
               </p>
             </div>
@@ -378,12 +417,13 @@ class App {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Columna Izquierda: Servicios y Catálogo (2 cols) -->
           <div class="lg:col-span-2 space-y-6">
+            <!-- Servicios -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
               <h2 class="text-xl font-bold text-slate-900 mb-2">Servicios Disponibles</h2>
-              <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas para ver horarios y agendar tu cita.</p>
+              <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas en colones (₡) para ver turnos disponibles y agendar.</p>
 
               <div class="space-y-4">
-                ${biz.services.map(srv => `
+                ${biz.services && biz.services.length > 0 ? biz.services.map(srv => `
                   <div class="p-5 rounded-2xl border border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="flex-1">
                       <div class="flex items-center gap-3">
@@ -392,7 +432,7 @@ class App {
                           <i class="far fa-clock mr-1 text-slate-500"></i>${srv.duration} min
                         </span>
                       </div>
-                      <p class="text-xs text-slate-500 mt-1.5">${srv.description}</p>
+                      <p class="text-xs text-slate-500 mt-1.5">${srv.description || 'Sin descripción detallada'}</p>
                     </div>
 
                     <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
@@ -405,14 +445,31 @@ class App {
                       </button>
                     </div>
                   </div>
-                `).join('')}
+                `).join('') : `
+                  <p class="text-sm text-slate-400 py-4">Este comercio aún no tiene servicios agregados.</p>
+                `}
               </div>
             </div>
 
-            <!-- Reseñas y Sobre Nosotros -->
+            <!-- Características y Amenidades -->
+            ${biz.features && biz.features.length > 0 ? `
+              <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+                <h2 class="text-lg font-bold text-slate-900 mb-4">Comodidades y Métodos de Pago</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  ${biz.features.map(feat => `
+                    <div class="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700">
+                      <i class="fas fa-check text-emerald-600 text-sm"></i>
+                      <span>${feat}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Sobre Nosotros -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
               <h2 class="text-lg font-bold text-slate-900 mb-3">Sobre el Establecimiento</h2>
-              <p class="text-sm text-slate-600 leading-relaxed">${biz.description}</p>
+              <p class="text-sm text-slate-600 leading-relaxed">${biz.description || 'Sin descripción registrada.'}</p>
             </div>
           </div>
 
@@ -434,7 +491,7 @@ class App {
                   <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
                     <i class="fas fa-envelope text-xs"></i>
                   </div>
-                  <span class="truncate">${biz.email}</span>
+                  <span class="truncate">${biz.email || 'No especificado'}</span>
                 </div>
 
                 <div class="flex items-center gap-3 text-slate-600">
@@ -445,11 +502,13 @@ class App {
                 </div>
               </div>
 
-              <div class="pt-4 border-t border-slate-100">
-                <a href="https://wa.me/${biz.phone.replace(/[^0-9]/g, '')}" target="_blank" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors">
-                  <i class="fab fa-whatsapp text-sm"></i> Chatear por WhatsApp
-                </a>
-              </div>
+              ${biz.phone ? `
+                <div class="pt-4 border-t border-slate-100">
+                  <a href="https://wa.me/${biz.phone.replace(/[^0-9]/g, '')}" target="_blank" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                    <i class="fab fa-whatsapp text-sm"></i> Chatear por WhatsApp
+                  </a>
+                </div>
+              ` : ''}
             </div>
 
             <!-- Schedule Box -->
@@ -464,10 +523,10 @@ class App {
                   <span class="font-bold text-slate-800 text-right">${activeDaysText}</span>
                 </div>
                 <div class="flex justify-between py-1.5 border-b border-slate-100">
-                  <span class="font-medium">Horario de apertura:</span>
-                  <span class="font-bold text-slate-800">${biz.schedule.openTime} - ${biz.schedule.closeTime}</span>
+                  <span class="font-medium">Horario de atención:</span>
+                  <span class="font-bold text-slate-800">${biz.schedule ? `${biz.schedule.openTime} - ${biz.schedule.closeTime}` : '08:00 - 18:00'}</span>
                 </div>
-                ${biz.schedule.breakStart ? `
+                ${biz.schedule && biz.schedule.breakStart ? `
                   <div class="flex justify-between py-1.5 text-amber-700 bg-amber-50 px-2 rounded-lg">
                     <span class="font-medium">Receso / Almuerzo:</span>
                     <span class="font-bold">${biz.schedule.breakStart} - ${biz.schedule.breakEnd}</span>
@@ -616,7 +675,7 @@ class App {
                 <input 
                   type="tel" 
                   id="client-phone" 
-                  placeholder="Teléfono / WhatsApp *" 
+                  placeholder="Teléfono / WhatsApp (+506) *" 
                   required 
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
@@ -672,7 +731,7 @@ class App {
 
     // Envío del formulario de reserva
     const form = document.getElementById('booking-form');
-    form?.addEventListener('submit', (e) => {
+    form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!this.bookingState.selectedTime) {
         this.showToast('Por favor selecciona una hora disponible.', 'error');
@@ -684,7 +743,7 @@ class App {
       const clientEmail = document.getElementById('client-email').value;
       const clientNotes = document.getElementById('client-notes').value;
 
-      const newAppointment = storage.createAppointment({
+      const newAppointment = await storage.createAppointment({
         businessId: biz.id,
         serviceId: service.id,
         serviceName: service.name,
@@ -779,9 +838,16 @@ class App {
         <!-- Top Bar: Switch Business or Create New -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-8">
           <div class="flex items-center gap-4">
-            <img src="${currentBiz.image}" alt="${currentBiz.name}" class="w-14 h-14 rounded-2xl object-cover border border-slate-200">
+            <img src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${currentBiz.name}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-sm">
             <div>
-              <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Panel de Administración</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Panel de Administración</span>
+                ${currentBiz.isDemo ? `
+                  <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio de Muestra</span>
+                ` : `
+                  <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio Registrado</span>
+                `}
+              </div>
               <h1 class="text-xl font-extrabold text-slate-900">${currentBiz.name}</h1>
               <span class="text-xs text-slate-500">${currentBiz.city} • ${currentBiz.categoryLabel}</span>
             </div>
@@ -792,12 +858,12 @@ class App {
               <span class="text-[11px] font-bold text-slate-400 uppercase">Cambiar Negocio</span>
               <select id="switch-business-select" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 ${businesses.map(b => `
-                  <option value="${b.id}" ${b.id === currentBiz.id ? 'selected' : ''}>${b.name}</option>
+                  <option value="${b.id}" ${b.id === currentBiz.id ? 'selected' : ''}>${b.name} ${b.isDemo ? '(Muestra)' : ''}</option>
                 `).join('')}
               </select>
             </div>
 
-            <button id="open-new-biz-modal-btn" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all">
+            <button id="open-new-biz-modal-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/20">
               <i class="fas fa-plus"></i> Registrar Negocio
             </button>
           </div>
@@ -837,7 +903,7 @@ class App {
               <span class="text-xs font-semibold uppercase">Servicios</span>
               <i class="fas fa-list text-amber-600"></i>
             </div>
-            <span class="text-2xl font-black text-slate-900">${currentBiz.services.length}</span>
+            <span class="text-2xl font-black text-slate-900">${currentBiz.services ? currentBiz.services.length : 0}</span>
             <span class="text-[11px] text-slate-400 block mt-1">activos en catálogo</span>
           </div>
         </div>
@@ -845,13 +911,16 @@ class App {
         <!-- Tabs Navigation -->
         <div class="flex items-center gap-2 border-b border-slate-200 mb-6 overflow-x-auto pb-2">
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
-            <i class="fas fa-calendar-alt mr-1.5"></i> Agenda de Citas (${appointments.length})
+            <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
           </button>
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
-            <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services.length})
+            <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
+          </button>
+          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
+            <i class="fas fa-image mr-1.5"></i> Perfil, Fotos & Banner
           </button>
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
-            <i class="fas fa-clock mr-1.5"></i> Horarios y Disponibilidad
+            <i class="fas fa-clock mr-1.5"></i> Horarios de Atención
           </button>
         </div>
 
@@ -969,8 +1038,8 @@ class App {
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
           <div class="flex items-center justify-between mb-6">
             <div>
-              <h2 class="text-lg font-bold text-slate-900">Catálogo de Servicios</h2>
-              <p class="text-xs text-slate-500">Agrega o modifica los servicios que ofreces a tus clientes.</p>
+              <h2 class="text-lg font-bold text-slate-900">Catálogo de Servicios y Precios</h2>
+              <p class="text-xs text-slate-500">Agrega, modifica precios en colones (₡) o duraciones de tus servicios.</p>
             </div>
 
             <button id="add-new-service-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
@@ -979,7 +1048,7 @@ class App {
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            ${currentBiz.services.map(srv => `
+            ${currentBiz.services && currentBiz.services.length > 0 ? currentBiz.services.map(srv => `
               <div class="p-5 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between">
                 <div>
                   <div class="flex items-center justify-between">
@@ -993,19 +1062,131 @@ class App {
                 </div>
 
                 <div class="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-end gap-2">
+                  <button class="edit-service-btn text-xs font-bold text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors" data-service-id="${srv.id}">
+                    <i class="fas fa-edit mr-1"></i> Editar
+                  </button>
                   <button class="delete-service-btn text-xs font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors" data-service-id="${srv.id}">
                     <i class="fas fa-trash-alt mr-1"></i> Eliminar
                   </button>
                 </div>
               </div>
-            `).join('')}
+            `).join('') : `
+              <p class="text-sm text-slate-400 py-4 col-span-2 text-center">No hay servicios registrados. Agrega el primero con el botón superior.</p>
+            `}
           </div>
         </div>
       `;
     }
 
+    if (this.activeDashboardTab === 'profile') {
+      const allFeatures = [
+        'Sinpe Móvil', 'Acepta Tarjeta', 'Parqueo Gratis', 'Parqueo Bajo Techo',
+        'Aire Acondicionado', 'WiFi Gratis', 'Pet Friendly', 'Acceso Silla de Ruedas',
+        'Café de Cortesía', 'Sala de Espera', 'Atención Personalizada', 'Garantía por Escrito'
+      ];
+      const currentFeatures = currentBiz.features || [];
+
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-3xl">
+          <h2 class="text-lg font-bold text-slate-900 mb-1">Editar Perfil, Fotos & Banner</h2>
+          <p class="text-xs text-slate-500 mb-6">Personaliza la imagen y los datos de contacto que ven tus clientes en el directorio.</p>
+
+          <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
+            <!-- Sección Fotos con Guía de Medidas -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-5">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
+              </h3>
+
+              <!-- Banner de Portada -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="font-bold text-slate-700">Banner / Portada Principal</label>
+                  <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida recomendada: 1200 x 450 px (Panorámica 16:6)
+                  </span>
+                </div>
+                <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="URL de la imagen de portada (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
+                <!-- Preview Banner -->
+                <div class="h-32 w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative">
+                  <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image}" alt="Vista previa banner" class="w-full h-full object-cover">
+                  <span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">Vista previa del banner</span>
+                </div>
+              </div>
+
+              <!-- Foto de Perfil / Logo -->
+              <div class="space-y-2 pt-3 border-t border-slate-200">
+                <div class="flex items-center justify-between">
+                  <label class="font-bold text-slate-700">Foto de Perfil / Logo Cuadrado</label>
+                  <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida recomendada: 800 x 800 px (Cuadrada 1:1)
+                  </span>
+                </div>
+                <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="URL del logo o foto de perfil (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
+                <!-- Preview Logo -->
+                <div class="flex items-center gap-3">
+                  <img id="preview-logo-img" src="${currentBiz.image}" alt="Vista previa logo" class="w-16 h-16 rounded-2xl object-cover border border-slate-300">
+                  <span class="text-xs text-slate-500">Se muestra en las tarjetas de búsqueda del directorio.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Datos Generales -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Nombre del Negocio *</label>
+                <input type="text" id="edit-biz-name" value="${currentBiz.name}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Ciudad / Cantón *</label>
+                <input type="text" id="edit-biz-city" value="${currentBiz.city}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp *</label>
+                <input type="tel" id="edit-biz-phone" value="${currentBiz.phone}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico</label>
+                <input type="email" id="edit-biz-email" value="${currentBiz.email || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
+              <input type="text" id="edit-biz-address" value="${currentBiz.address || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Descripción del Negocio</label>
+              <textarea id="edit-biz-desc" rows="3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">${currentBiz.description || ''}</textarea>
+            </div>
+
+            <!-- Características / Comodidades -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-2 uppercase text-xs tracking-wider">Comodidades y Métodos de Pago</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                ${allFeatures.map(feat => `
+                  <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
+                    <input type="checkbox" name="biz_features" value="${feat}" ${currentFeatures.includes(feat) ? 'checked' : ''} class="rounded text-blue-600">
+                    <span class="font-medium text-slate-700">${feat}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/25 transition-all text-sm">
+              <i class="fas fa-save mr-1.5"></i> Guardar Cambios de Perfil
+            </button>
+          </form>
+        </div>
+      `;
+    }
+
     if (this.activeDashboardTab === 'schedule') {
-      const sch = currentBiz.schedule;
+      const sch = currentBiz.schedule || { days: [1,2,3,4,5,6], openTime: '08:00', closeTime: '18:00' };
       const days = [
         { id: 1, name: 'Lunes' },
         { id: 2, name: 'Martes' },
@@ -1028,7 +1209,7 @@ class App {
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 ${days.map(d => `
                   <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                    <input type="checkbox" name="work_days" value="${d.id}" ${sch.days.includes(d.id) ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500">
+                    <input type="checkbox" name="work_days" value="${d.id}" ${sch.days && sch.days.includes(d.id) ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500">
                     <span class="font-medium text-slate-800">${d.name}</span>
                   </label>
                 `).join('')}
@@ -1039,11 +1220,11 @@ class App {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Hora de Apertura</label>
-                <input type="time" id="open-time" value="${sch.openTime}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="time" id="open-time" value="${sch.openTime || '08:00'}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Hora de Cierre</label>
-                <input type="time" id="close-time" value="${sch.closeTime}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="time" id="close-time" value="${sch.closeTime || '18:00'}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
             </div>
 
@@ -1075,10 +1256,10 @@ class App {
   setupDashboardTabEvents(currentBiz) {
     // Cambiar estado de citas
     document.querySelectorAll('.status-change-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
         const newStatus = btn.getAttribute('data-status');
-        storage.updateAppointmentStatus(aptId, newStatus);
+        await storage.updateAppointmentStatus(aptId, newStatus);
         this.showToast(`Estado de cita actualizado a: ${newStatus}`, 'info');
         this.renderCurrentView();
       });
@@ -1086,10 +1267,10 @@ class App {
 
     // Eliminar cita
     document.querySelectorAll('.delete-apt-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
         if (confirm('¿Deseas eliminar este registro de reserva?')) {
-          storage.deleteAppointment(aptId);
+          await storage.deleteAppointment(aptId);
           this.showToast('Reserva eliminada.', 'info');
           this.renderCurrentView();
         }
@@ -1098,7 +1279,7 @@ class App {
 
     // Abrir modal de nueva cita manual
     document.getElementById('add-manual-appointment-btn')?.addEventListener('click', () => {
-      this.openBookingModal(currentBiz.id, currentBiz.services[0]?.id);
+      this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
     });
 
     // Abrir modal de agregar servicio
@@ -1106,21 +1287,75 @@ class App {
       this.renderNewServiceModal(currentBiz.id);
     });
 
-    // Eliminar servicio
-    document.querySelectorAll('.delete-service-btn').forEach(btn => {
+    // Editar servicio existente
+    document.querySelectorAll('.edit-service-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const sId = btn.getAttribute('data-service-id');
+        const service = currentBiz.services?.find(s => s.id === sId);
+        if (service) {
+          this.renderEditServiceModal(currentBiz.id, service);
+        }
+      });
+    });
+
+    // Eliminar servicio
+    document.querySelectorAll('.delete-service-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const sId = btn.getAttribute('data-service-id');
         if (confirm('¿Eliminar este servicio del catálogo?')) {
-          storage.deleteService(currentBiz.id, sId);
+          await storage.deleteService(currentBiz.id, sId);
           this.showToast('Servicio eliminado.', 'info');
           this.renderCurrentView();
         }
       });
     });
 
+    // Previsualización de imágenes en edición de perfil
+    const coverInput = document.getElementById('edit-biz-cover');
+    const imageInput = document.getElementById('edit-biz-image');
+    coverInput?.addEventListener('input', (e) => {
+      const img = document.getElementById('preview-cover-img');
+      if (img && e.target.value) img.src = e.target.value;
+    });
+    imageInput?.addEventListener('input', (e) => {
+      const img = document.getElementById('preview-logo-img');
+      if (img && e.target.value) img.src = e.target.value;
+    });
+
+    // Guardar cambios en el perfil del negocio
+    const profileForm = document.getElementById('edit-profile-form');
+    profileForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('edit-biz-name').value;
+      const city = document.getElementById('edit-biz-city').value;
+      const phone = document.getElementById('edit-biz-phone').value;
+      const email = document.getElementById('edit-biz-email').value;
+      const address = document.getElementById('edit-biz-address').value;
+      const description = document.getElementById('edit-biz-desc').value;
+      const image = document.getElementById('edit-biz-image').value;
+      const coverImage = document.getElementById('edit-biz-cover').value;
+      const features = Array.from(document.querySelectorAll('input[name="biz_features"]:checked')).map(cb => cb.value);
+
+      await storage.saveBusiness({
+        ...currentBiz,
+        name,
+        city,
+        phone,
+        email,
+        address,
+        description,
+        image,
+        coverImage,
+        features
+      });
+
+      this.showToast('¡Perfil del negocio actualizado con éxito!', 'success');
+      this.renderCurrentView();
+    });
+
     // Guardar horarios
     const scheduleForm = document.getElementById('schedule-form');
-    scheduleForm?.addEventListener('submit', (e) => {
+    scheduleForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const selectedDays = Array.from(document.querySelectorAll('input[name="work_days"]:checked')).map(cb => parseInt(cb.value, 10));
       const openTime = document.getElementById('open-time').value;
@@ -1134,10 +1369,10 @@ class App {
         closeTime,
         breakStart: breakStart || null,
         breakEnd: breakEnd || null,
-        slotDuration: currentBiz.schedule.slotDuration || 30
+        slotDuration: currentBiz.schedule?.slotDuration || 30
       };
 
-      storage.saveBusiness(currentBiz);
+      await storage.saveBusiness(currentBiz);
       this.showToast('Horarios actualizados exitosamente.', 'success');
       this.renderCurrentView();
     });
@@ -1199,48 +1434,119 @@ class App {
       modalContainer.innerHTML = '';
     });
 
-    document.getElementById('new-service-form')?.addEventListener('submit', (e) => {
+    document.getElementById('new-service-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('srv-name').value;
       const price = document.getElementById('srv-price').value;
       const duration = document.getElementById('srv-duration').value;
       const description = document.getElementById('srv-desc').value;
 
-      storage.addService(businessId, { name, price, duration, description });
+      await storage.addService(businessId, { name, price, duration, description });
       this.showToast('Servicio agregado al catálogo.', 'success');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
     });
   }
 
-  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO ---
+  // --- MODAL PARA EDITAR SERVICIO ---
+  renderEditServiceModal(businessId, service) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-slate-900">Editar Servicio</h3>
+            <button id="close-edit-srv-btn" class="text-slate-400 hover:text-slate-600">
+              <i class="fas fa-times text-lg"></i>
+            </button>
+          </div>
+
+          <form id="edit-service-form" class="space-y-4 text-xs sm:text-sm">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nombre del Servicio *</label>
+              <input type="text" id="edit-srv-name" value="${service.name}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Precio (₡ CRC) *</label>
+                <input type="number" id="edit-srv-price" value="${service.price}" required min="0" step="500" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Duración (min) *</label>
+                <select id="edit-srv-duration" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+                  <option value="15" ${service.duration === 15 ? 'selected' : ''}>15 min</option>
+                  <option value="30" ${service.duration === 30 ? 'selected' : ''}>30 min</option>
+                  <option value="45" ${service.duration === 45 ? 'selected' : ''}>45 min</option>
+                  <option value="60" ${service.duration === 60 ? 'selected' : ''}>60 min (1 hr)</option>
+                  <option value="90" ${service.duration === 90 ? 'selected' : ''}>90 min (1.5 hrs)</option>
+                  <option value="120" ${service.duration === 120 ? 'selected' : ''}>120 min (2 hrs)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Descripción</label>
+              <textarea id="edit-srv-desc" rows="2" class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl">${service.description || ''}</textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all">
+              Guardar Cambios
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-edit-srv-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('edit-service-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('edit-srv-name').value;
+      const price = document.getElementById('edit-srv-price').value;
+      const duration = document.getElementById('edit-srv-duration').value;
+      const description = document.getElementById('edit-srv-desc').value;
+
+      await storage.updateService(businessId, service.id, { name, price, duration, description });
+      this.showToast('Servicio actualizado con éxito.', 'success');
+      modalContainer.innerHTML = '';
+      this.renderCurrentView();
+    });
+  }
+
+  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (ONBOARDING) ---
   renderNewBusinessModal() {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 p-6 my-8">
-          <div class="flex items-center justify-between mb-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div>
-              <span class="text-xs font-bold text-blue-600 uppercase">Onboarding</span>
-              <h3 class="text-xl font-bold text-slate-900">Registrar Nuevo Negocio</h3>
+              <span class="text-xs font-bold text-emerald-600 uppercase">Onboarding de Comercios 🇨🇷</span>
+              <h3 class="text-xl font-extrabold text-slate-900">Registrar Nuevo Establecimiento</h3>
             </div>
-            <button id="close-biz-modal-btn" class="text-slate-400 hover:text-slate-600">
-              <i class="fas fa-times text-lg"></i>
+            <button id="close-biz-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
+              <i class="fas fa-times"></i>
             </button>
           </div>
 
           <form id="new-biz-form" class="space-y-4 text-xs sm:text-sm">
+            <!-- Datos Básicos -->
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Nombre del Negocio *</label>
-              <input type="text" id="new-biz-name" required placeholder="Ej. Spa & Relax Oasis" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
+              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental Alajuela..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
-                <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+                <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   <option value="belleza">Belleza y Barbería</option>
                   <option value="salud">Salud y Bienestar</option>
                   <option value="spa">Spa y Masajes</option>
@@ -1251,34 +1557,74 @@ class App {
               </div>
 
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Ciudad / Cantón *</label>
-                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
+                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp *</label>
-                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Correo Electrónico</label>
-                <input type="email" id="new-biz-email" placeholder="contacto@negocio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="email" id="new-biz-email" placeholder="contacto@negocio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Dirección Física</label>
-              <input type="text" id="new-biz-address" placeholder="Ej. 100m Norte de la Iglesia, Local #3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
+              <input type="text" id="new-biz-address" placeholder="Ej. 150m Oeste del Parque Central, Local #4" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Descripción del Negocio</label>
-              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+              <label class="block font-bold text-slate-700 mb-1">Descripción de Servicios</label>
+              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades y experiencia..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
             </div>
 
-            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/25 transition-all">
-              Registrar y Configurar
+            <!-- Sección de Fotos y Banner con Indicaciones de Medidas -->
+            <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
+              <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
+                <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
+              </span>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs font-bold text-slate-700">Foto de Perfil / Logo (Cuadrada)</label>
+                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
+                </div>
+                <input type="text" id="new-biz-image" placeholder="URL de la imagen (deja en blanco para imagen por defecto)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada (Panorámica)</label>
+                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
+                </div>
+                <input type="text" id="new-biz-cover" placeholder="URL del banner (deja en blanco para banner por defecto)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+              </div>
+            </div>
+
+            <!-- Primer Servicio Obligatorio -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+              <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
+                <i class="fas fa-tag mr-1 text-emerald-600"></i> Agrega tu Primer Servicio
+              </span>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="sm:col-span-2">
+                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Consulta General)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                </div>
+                <div>
+                  <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
+              <i class="fas fa-check-circle"></i>
+              <span>Completar Registro y Empezar a Recibir Citas</span>
             </button>
           </form>
         </div>
@@ -1289,7 +1635,7 @@ class App {
       modalContainer.innerHTML = '';
     });
 
-    document.getElementById('new-biz-form')?.addEventListener('submit', (e) => {
+    document.getElementById('new-biz-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('new-biz-name').value;
       const category = document.getElementById('new-biz-cat').value;
@@ -1298,6 +1644,10 @@ class App {
       const email = document.getElementById('new-biz-email').value;
       const address = document.getElementById('new-biz-address').value;
       const description = document.getElementById('new-biz-desc').value;
+      const image = document.getElementById('new-biz-image').value;
+      const coverImage = document.getElementById('new-biz-cover').value;
+      const firstSrvName = document.getElementById('first-srv-name').value;
+      const firstSrvPrice = document.getElementById('first-srv-price').value;
 
       const catLabels = {
         belleza: 'Belleza y Barbería',
@@ -1309,7 +1659,7 @@ class App {
       };
 
       const newId = `biz-${Date.now()}`;
-      storage.saveBusiness({
+      await storage.saveBusiness({
         id: newId,
         name,
         category,
@@ -1319,23 +1669,24 @@ class App {
         email,
         address,
         description,
-        image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-        coverImage: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+        image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+        coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+        isDemo: false,
+        features: ['Sinpe Móvil', 'Atención Personalizada'],
         services: [
-          { id: `srv-${Date.now()}-1`, name: 'Servicio Inicial Estándar', duration: 30, price: 10000, description: 'Servicio principal del establecimiento.' }
+          { id: `srv-${Date.now()}-1`, name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal del establecimiento.' }
         ]
       });
 
       storage.setActiveBusinessId(newId);
-      this.showToast('¡Negocio registrado exitosamente!', 'success');
+      this.showToast('¡Comercio registrado exitosamente!', 'success');
       modalContainer.innerHTML = '';
-      this.renderCurrentView();
+      this.navigateTo('owner-dashboard');
     });
   }
 
   // --- EVENTOS GLOBALES ---
   setupGlobalEvents() {
-    // Cerrar modales con Escape
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         this.closeBookingModal();
@@ -1351,4 +1702,3 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = new App();
   app.init();
 });
-

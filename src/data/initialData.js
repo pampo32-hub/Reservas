@@ -26,6 +26,8 @@ export const INITIAL_BUSINESSES = [
     description: 'Especialistas en cortes clásicos, degradados modernos, arreglo de barba con toalla caliente y tratamientos capilares para caballeros.',
     image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80',
     coverImage: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1200&q=80',
+    isDemo: true,
+    features: ['Sinpe Móvil', 'Parqueo Gratis', 'Aire Acondicionado', 'Café de Cortesía', 'WiFi Gratis'],
     schedule: {
       days: [1, 2, 3, 4, 5, 6], // 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
       openTime: '09:00',
@@ -56,6 +58,8 @@ export const INITIAL_BUSINESSES = [
     description: 'Cuidado dental integral de alta tecnología. Limpiezas ultrasónicas, blanqueamiento led, ortodoncia invisible y odontopediatría.',
     image: 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=800&q=80',
     coverImage: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=1200&q=80',
+    isDemo: true,
+    features: ['Acepta Tarjeta', 'Sinpe Móvil', 'Parqueo Bajo Techo', 'Acceso Silla de Ruedas', 'Emergencias 24/7'],
     schedule: {
       days: [1, 2, 3, 4, 5],
       openTime: '08:30',
@@ -86,6 +90,8 @@ export const INITIAL_BUSINESSES = [
     description: 'Un oasis de relajación en la ciudad. Tratamientos corporales, masajes relajantes y descontracturantes con piedras calientes y aromaterapia.',
     image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',
     coverImage: 'https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=1200&q=80',
+    isDemo: true,
+    features: ['Aromaterapia', 'Cabinas Privadas', 'Música Relajante', 'Sinpe Móvil', 'Té de Bienvenida'],
     schedule: {
       days: [1, 2, 3, 4, 5, 6, 0],
       openTime: '10:00',
@@ -116,6 +122,8 @@ export const INITIAL_BUSINESSES = [
     description: 'Mantenimiento preventivo, cambio de fluidos, diagnóstico computarizado, frenos y suspensión multimarca con garantía.',
     image: 'https://images.unsplash.com/photo-1613214149922-f1809c99b414?auto=format&fit=crop&w=800&q=80',
     coverImage: 'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=1200&q=80',
+    isDemo: true,
+    features: ['Sala de Espera con A/C', 'Garantía por Escrito', 'Sinpe Móvil', 'Scanner OBD2 Avanzado'],
     schedule: {
       days: [1, 2, 3, 4, 5, 6],
       openTime: '08:00',
