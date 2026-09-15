@@ -1,27 +1,51 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2563eb"/>
-      <stop offset="50%" stop-color="#4f46e5"/>
-      <stop offset="100%" stop-color="#1d4ed8"/>
+    <!-- Degradado vibrante de fondo: Azul Cobalto a Índigo Real -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="50%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#1E40AF"/>
     </linearGradient>
-    <linearGradient id="checkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34d399"/>
-      <stop offset="100%" stop-color="#10b981"/>
+    
+    <!-- Degradado verde esmeralda vibrante para el Checkmark -->
+    <linearGradient id="emeraldCheck" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#10B981"/>
     </linearGradient>
+
+    <!-- Sombra sutil para profundidad -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0F172A" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <!-- Background Rounded Tile with Vibrant Indigo/Blue Gradient -->
-  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+
+  <!-- 1. Fondo Cuadrado con Bordes Redondeados (Azul / Índigo Vibrante) -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGrad)"/>
   
-  <!-- Map Pin Contour (White, High Contrast) -->
-  <path d="M256 75C160 75 82 153 82 249C82 342 232 433 247 442C252.5 445.5 259.5 445.5 265 442C280 433 430 342 430 249C430 153 352 75 256 75Z" fill="white" fill-opacity="0.16" stroke="white" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 2. Tarjeta de Calendario Central Blanca con Relieve y Sombra -->
+  <rect x="96" y="110" width="320" height="300" rx="36" fill="white" filter="url(#cardShadow)"/>
   
-  <!-- Clock Dial -->
-  <circle cx="256" cy="240" r="105" fill="white" fill-opacity="0.1" stroke="white" stroke-width="14" stroke-dasharray="16 16"/>
+  <!-- 3. Franja Superior del Calendario (Azul Eléctrico) -->
+  <path d="M96 146C96 126.118 112.118 110 132 110H380C399.882 110 416 126.118 416 146V180H96V146Z" fill="#3B82F6"/>
   
-  <!-- Clock 12-o'clock hand -->
-  <path d="M256 165V245" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  <!-- 4. Anillos / Ganchos Superiores del Calendario -->
+  <rect x="156" y="80" width="28" height="56" rx="14" fill="white" stroke="#1E40AF" stroke-width="6"/>
+  <rect x="328" y="80" width="28" height="56" rx="14" fill="white" stroke="#1E40AF" stroke-width="6"/>
   
-  <!-- Vibrant Emerald Checkmark Hand -->
-  <path d="M185 240L245 300L380 155" stroke="url(#checkGrad)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 5. Puntos / Cuadrícula de Días del Calendario -->
+  <circle cx="156" cy="230" r="14" fill="#E2E8F0"/>
+  <circle cx="216" cy="230" r="14" fill="#E2E8F0"/>
+  <circle cx="276" cy="230" r="14" fill="#E2E8F0"/>
+  <circle cx="336" cy="230" r="14" fill="#E2E8F0"/>
+  
+  <circle cx="156" cy="290" r="14" fill="#E2E8F0"/>
+  <circle cx="216" cy="290" r="14" fill="#CBD5E1"/>
+  <circle cx="276" cy="290" r="14" fill="#CBD5E1"/>
+  <circle cx="336" cy="290" r="14" fill="#E2E8F0"/>
+  
+  <circle cx="156" cy="350" r="14" fill="#E2E8F0"/>
+  <circle cx="216" cy="350" r="14" fill="#E2E8F0"/>
+  
+  <!-- 6. Ícono Checkmark Dinámico y Gigante en Verde Esmeralda Vibrante -->
+  <path d="M190 280L260 350L430 170" stroke="url(#emeraldCheck)" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 8px 16px rgba(16,185,129,0.45));"/>
 </svg>
