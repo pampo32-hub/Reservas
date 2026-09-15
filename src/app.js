@@ -1026,6 +1026,35 @@ class App {
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const activeDaysText = biz.schedule && biz.schedule.days ? biz.schedule.days.map(d => dayNames[d]).join(', ') : 'Lunes a Sábado';
 
+    // Formatear enlaces de Redes Sociales
+    const social = biz.socialLinks || biz.social_links || {};
+    const formatIg = (val) => {
+      if (!val || !val.trim()) return null;
+      const c = val.trim();
+      return c.startsWith('http') ? c : `https://instagram.com/${c.replace(/^@/, '')}`;
+    };
+    const formatFb = (val) => {
+      if (!val || !val.trim()) return null;
+      const c = val.trim();
+      return c.startsWith('http') ? c : `https://facebook.com/${c}`;
+    };
+    const formatTt = (val) => {
+      if (!val || !val.trim()) return null;
+      const c = val.trim();
+      return c.startsWith('http') ? c : `https://tiktok.com/${c.startsWith('@') ? c : `@${c}`}`;
+    };
+    const formatWeb = (val) => {
+      if (!val || !val.trim()) return null;
+      const c = val.trim();
+      return c.startsWith('http') ? c : `https://${c}`;
+    };
+
+    const igUrl = formatIg(social.instagram);
+    const fbUrl = formatFb(social.facebook);
+    const ttUrl = formatTt(social.tiktok);
+    const webUrl = formatWeb(social.website);
+    const hasSocial = Boolean(igUrl || fbUrl || ttUrl || webUrl);
+
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
         <!-- Cover Banner Hero -->
@@ -1212,10 +1241,39 @@ class App {
               </div>
 
               ${biz.phone ? `
-                <div class="pt-4 border-t border-slate-100">
-                  <a href="https://wa.me/${biz.phone.replace(/[^0-9]/g, '')}" target="_blank" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+                <div class="pt-3 border-t border-slate-100">
+                  <a href="https://wa.me/${biz.phone.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-xs">
                     <i class="fab fa-whatsapp text-sm"></i> Chatear por WhatsApp
                   </a>
+                </div>
+              ` : ''}
+
+              <!-- Redes Sociales y Enlaces Oficiales -->
+              ${hasSocial ? `
+                <div class="pt-3 border-t border-slate-100 space-y-2.5">
+                  <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Redes Sociales & Web</span>
+                  <div class="flex flex-wrap items-center gap-2">
+                    ${igUrl ? `
+                      <a href="${igUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-purple-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:opacity-95 transition-opacity" title="Instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                      </a>
+                    ` : ''}
+                    ${fbUrl ? `
+                      <a href="${fbUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-[#1877F2] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:opacity-95 transition-opacity" title="Facebook">
+                        <i class="fab fa-facebook"></i> Facebook
+                      </a>
+                    ` : ''}
+                    ${ttUrl ? `
+                      <a href="${ttUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-black transition-colors" title="TikTok">
+                        <i class="fab fa-tiktok"></i> TikTok
+                      </a>
+                    ` : ''}
+                    ${webUrl ? `
+                      <a href="${webUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-indigo-700 transition-colors" title="Sitio Web">
+                        <i class="fas fa-globe"></i> Sitio Web
+                      </a>
+                    ` : ''}
+                  </div>
                 </div>
               ` : ''}
             </div>
@@ -2775,6 +2833,46 @@ class App {
               <textarea id="edit-biz-desc" rows="3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">${currentBiz.description || ''}</textarea>
             </div>
 
+            <!-- Redes Sociales y Enlaces Web -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <i class="fas fa-share-alt text-blue-600"></i> Redes Sociales & Sitio Web
+                </h3>
+                <span class="text-[11px] text-slate-400 font-medium">Visibles para tus clientes</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-pink-600 text-sm">
+                    <i class="fab fa-instagram"></i>
+                  </div>
+                  <input type="text" id="edit-biz-instagram" value="${currentBiz.socialLinks?.instagram || currentBiz.social_links?.instagram || ''}" placeholder="Instagram (@minegocio o URL)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-pink-400 focus:outline-none">
+                </div>
+
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-600 text-sm">
+                    <i class="fab fa-facebook"></i>
+                  </div>
+                  <input type="text" id="edit-biz-facebook" value="${currentBiz.socialLinks?.facebook || currentBiz.social_links?.facebook || ''}" placeholder="Facebook (usuario o enlace)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                </div>
+
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-900 text-sm">
+                    <i class="fab fa-tiktok"></i>
+                  </div>
+                  <input type="text" id="edit-biz-tiktok" value="${currentBiz.socialLinks?.tiktok || currentBiz.social_links?.tiktok || ''}" placeholder="TikTok (@minegocio)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none">
+                </div>
+
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-600 text-sm">
+                    <i class="fas fa-globe"></i>
+                  </div>
+                  <input type="text" id="edit-biz-website" value="${currentBiz.socialLinks?.website || currentBiz.social_links?.website || ''}" placeholder="Sitio Web / Menú Digital (https://...)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                </div>
+              </div>
+            </div>
+
             <!-- Características / Comodidades -->
             <div>
               <label class="block font-bold text-slate-700 mb-2 uppercase text-xs tracking-wider">Comodidades y Métodos de Pago</label>
@@ -2996,6 +3094,11 @@ class App {
       const description = document.getElementById('edit-biz-desc').value;
       const image = document.getElementById('edit-biz-image').value;
       const coverImage = document.getElementById('edit-biz-cover').value;
+      const instagram = document.getElementById('edit-biz-instagram')?.value.trim() || '';
+      const facebook = document.getElementById('edit-biz-facebook')?.value.trim() || '';
+      const tiktok = document.getElementById('edit-biz-tiktok')?.value.trim() || '';
+      const website = document.getElementById('edit-biz-website')?.value.trim() || '';
+      const socialLinks = { instagram, facebook, tiktok, website };
       const features = Array.from(document.querySelectorAll('input[name="biz_features"]:checked')).map(cb => cb.value);
 
       await storage.saveBusiness({
@@ -3008,7 +3111,8 @@ class App {
         description,
         image,
         coverImage,
-        features
+        features,
+        socialLinks
       });
 
       this.showToast('¡Perfil del negocio actualizado con éxito!', 'success');
@@ -4427,6 +4531,46 @@ class App {
                   </div>
                 </div>
 
+                <!-- Redes Sociales y Enlaces Web (Opcional) -->
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
+                      <i class="fas fa-share-alt mr-1 text-blue-600"></i> Redes Sociales y Web (Opcional)
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium">Se mostrarán en tu perfil</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-pink-600 text-xs">
+                        <i class="fab fa-instagram"></i>
+                      </div>
+                      <input type="text" id="new-biz-instagram" placeholder="Instagram (ej. @minegocio)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-pink-400 focus:outline-none">
+                    </div>
+
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-600 text-xs">
+                        <i class="fab fa-facebook"></i>
+                      </div>
+                      <input type="text" id="new-biz-facebook" placeholder="Facebook (ej. facebook.com/minegocio)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                    </div>
+
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-900 text-xs">
+                        <i class="fab fa-tiktok"></i>
+                      </div>
+                      <input type="text" id="new-biz-tiktok" placeholder="TikTok (ej. @minegocio)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none">
+                    </div>
+
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-600 text-xs">
+                        <i class="fas fa-globe"></i>
+                      </div>
+                      <input type="text" id="new-biz-website" placeholder="Sitio Web / Menú Digital" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Primer Servicio -->
                 <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
                   <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
@@ -4771,6 +4915,11 @@ class App {
       const coverImage = document.getElementById('new-biz-cover').value;
       const firstSrvName = document.getElementById('first-srv-name').value;
       const firstSrvPrice = document.getElementById('first-srv-price').value;
+      const instagram = document.getElementById('new-biz-instagram')?.value.trim() || '';
+      const facebook = document.getElementById('new-biz-facebook')?.value.trim() || '';
+      const tiktok = document.getElementById('new-biz-tiktok')?.value.trim() || '';
+      const website = document.getElementById('new-biz-website')?.value.trim() || '';
+      const socialLinks = { instagram, facebook, tiktok, website };
       const errBox = document.getElementById('biz-reg-inline-error');
 
       // Plan de suscripción elegido
@@ -4840,6 +4989,7 @@ class App {
           coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
           isDemo: false,
           features: ['Sinpe Móvil', 'Atención Personalizada'],
+          socialLinks,
           services: [
             { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
           ]

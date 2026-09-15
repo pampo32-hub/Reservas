@@ -217,6 +217,7 @@ app.post('/api/auth/business/register', async (req, res) => {
     const planId = business.plan || 'pro';
     const planPriceUsd = planId === 'unlimited' ? 25 : (planId === 'basic' ? 6 : 15);
     const bookingLimit = planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300);
+    const socialLinks = business.socialLinks || business.social_links || {};
 
     // Insertar negocio
     await pool.query(`
@@ -224,15 +225,15 @@ app.post('/api/auth/business/register', async (req, res) => {
         id, name, category, category_label, rating, reviews_count,
         price_range, address, city, phone, email, description,
         image, cover_image, schedule, features, is_demo,
-        plan, plan_price_usd, monthly_booking_limit
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        plan, plan_price_usd, monthly_booking_limit, social_links
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     `, [
       newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
       5.0, 0, business.priceRange || '₡₡',
       business.address || '', business.city || '', business.phone || '', email.trim(),
       business.description || '', business.image || '', business.coverImage || '',
       JSON.stringify(schedule), JSON.stringify(features), false,
-      planId, planPriceUsd, bookingLimit
+      planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks)
     ]);
 
     // Si es una categoría personalizada, registrar alerta para el Developer
@@ -568,6 +569,7 @@ app.get('/api/businesses', async (req, res) => {
       plan: b.plan || 'pro',
       planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
       monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
+      socialLinks: b.social_links || {},
       services: srvRes.rows
         .filter(s => s.business_id === b.id)
         .map(s => ({
@@ -622,6 +624,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       plan: b.plan || 'pro',
       planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
       monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
+      socialLinks: b.social_links || {},
       services: srvRes.rows.map(s => ({
         id: s.id,
         name: s.name,
@@ -692,13 +695,16 @@ app.put('/api/businesses/:id', async (req, res) => {
         cover_image = COALESCE($10, cover_image),
         price_range = COALESCE($11, price_range),
         features = COALESCE($12, features),
-        schedule = COALESCE($13, schedule)
-      WHERE id = $14
+        schedule = COALESCE($13, schedule),
+        social_links = COALESCE($14, social_links)
+      WHERE id = $15
     `, [
       b.name, b.category, b.categoryLabel, b.city, b.address,
       b.phone, b.email, b.description, b.image, b.coverImage,
       b.priceRange, b.features ? JSON.stringify(b.features) : null,
-      b.schedule ? JSON.stringify(b.schedule) : null, id
+      b.schedule ? JSON.stringify(b.schedule) : null,
+      b.socialLinks ? JSON.stringify(b.socialLinks) : (b.social_links ? JSON.stringify(b.social_links) : null),
+      id
     ]);
 
     res.json({ success: true, message: 'Perfil del negocio actualizado' });
