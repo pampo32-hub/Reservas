@@ -290,6 +290,7 @@ class App {
   // ==========================================
   renderDirectoryView(container) {
     const categories = storage.getCategories();
+    let businesses = storage.getBusinesses();
     let businesses = storage.getBusinesses().filter(b => !b.isHidden && !b.isBlocked);
 
     if (this.selectedCategory !== 'all') {
@@ -538,6 +539,7 @@ class App {
           <div class="absolute bottom-6 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-white">
             <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
+                ${biz.isDemo ? `
                 ${biz.isBlocked ? `
                   <span class="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-ban mr-1"></i> Comercio Suspendido
@@ -605,6 +607,12 @@ class App {
 
                     <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
                       <span class="text-lg font-extrabold text-blue-600">${this.formatColones(srv.price)}</span>
+                      <button 
+                        class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
+                        data-service-id="${srv.id}"
+                      >
+                        <i class="fas fa-calendar-plus"></i> Reservar
+                      </button>
                       ${biz.isBlocked ? `
                         <button disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1.5">
                           <i class="fas fa-lock"></i> Suspendido
@@ -2151,6 +2159,7 @@ class App {
       }
 
       // Filtrado por buscador
+      const filteredBusinesses = businesses.filter(b => 
       const filteredBusinesses = devBusinessesList.filter(b => 
         !q || (b.name && b.name.toLowerCase().includes(q)) || 
         (b.categoryLabel && b.categoryLabel.toLowerCase().includes(q)) || 
@@ -2372,9 +2381,13 @@ class App {
 
               <!-- PESTAÑA 2: DIRECTORIO DE NEGOCIOS -->
               ${this.activeDevTab === 'businesses' ? `
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
                 <div class="space-y-5">
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
+                      <h3 class="text-base font-bold text-slate-800">Directorio General de Comercios</h3>
+                      <p class="text-xs text-slate-500">Listado completo de comercios de muestra y registrados con contacto de dueños.</p>
                       <h3 class="text-base font-bold text-slate-900">Directorio General de Comercios</h3>
                       <p class="text-xs text-slate-500">Administra todos los comercios: ocúltalos de la página de inicio, bloquéalos o elimínalos.</p>
                     </div>
@@ -2418,6 +2431,7 @@ class App {
                   ${filteredBusinesses.length === 0 ? `
                     <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
                       <i class="fas fa-store-slash text-3xl mb-2"></i>
+                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios con esa búsqueda</p>
                       <p class="text-sm font-bold text-slate-700">No se encontraron comercios en esta categoría o búsqueda</p>
                     </div>
                   ` : `
@@ -2429,27 +2443,33 @@ class App {
                             <th class="p-3">Categoría</th>
                             <th class="p-3">Ubicación / Contacto</th>
                             <th class="p-3">Dueño / Correo</th>
+                            <th class="p-3">Servicios</th>
                             <th class="p-3">Estado Actual</th>
                             <th class="p-3">Tipo</th>
+                            <th class="p-3 text-right">Acciones</th>
                             <th class="p-3 text-right">Acciones de Developer</th>
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredBusinesses.map(b => `
+                            <tr class="hover:bg-slate-50/80 transition-colors">
                             <tr class="hover:bg-slate-50/80 transition-colors ${b.isBlocked ? 'bg-rose-50/30' : b.isHidden ? 'bg-amber-50/30' : ''}">
                               <td class="p-3">
                                 <div class="flex items-center gap-3">
                                   <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${b.name}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
                                   <div>
+                                    <span class="font-bold text-slate-900 block">${b.name}</span>
                                     <span class="font-bold text-slate-900 block text-sm">${b.name}</span>
                                     <span class="text-[10px] text-slate-400 font-mono">ID: ${b.id}</span>
                                   </div>
                                 </div>
                               </td>
                               <td class="p-3">
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px]">${b.categoryLabel || b.category}</span>
                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${b.categoryLabel || b.category}</span>
                               </td>
                               <td class="p-3">
+                                <span class="block text-slate-800">${b.city || 'Costa Rica'}</span>
                                 <span class="block text-slate-800 font-semibold">${b.city || 'Costa Rica'}</span>
                                 <span class="text-[10px] text-slate-400">${b.phone || 'Sin teléfono'}</span>
                               </td>
@@ -2457,6 +2477,8 @@ class App {
                                 <span class="block text-slate-800">${b.ownerName || (b.isDemo ? 'Demo Admin' : 'Registrado')}</span>
                                 <span class="text-[10px] text-slate-400">${b.ownerEmail || b.email || 'N/A'}</span>
                               </td>
+                              <td class="p-3">
+                                <span class="font-bold text-slate-800">${b.servicesCount !== undefined ? b.servicesCount : (b.services ? b.services.length : 0)} servicios</span>
                               <td class="p-3 whitespace-nowrap">
                                 ${b.isBlocked ? `
                                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Suspendido: ${b.blockReason || 'Sin motivo'}">
@@ -2472,6 +2494,7 @@ class App {
                                   </span>
                                 `}
                               </td>
+                              <td class="p-3">
                               <td class="p-3 whitespace-nowrap">
                                 ${b.isDemo ? `
                                   <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded">Muestra</span>
@@ -2479,18 +2502,25 @@ class App {
                                   <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">Real</span>
                                 `}
                               </td>
+                              <td class="p-3 text-right">
                               <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
+                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg transition-colors" data-id="${b.id}" title="Ver en Directorio">
+                                    <i class="fas fa-eye text-xs"></i>
                                   <!-- Ver en Directorio -->
                                   <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all" data-id="${b.id}" title="Ver página del comercio">
                                     <i class="fas fa-external-link-alt text-xs"></i>
                                   </button>
+                                  ${!b.isDemo ? `
+                                    <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-lg transition-colors" data-id="${b.id}" data-name="${b.name}" title="Eliminar Comercio">
+                                      <i class="fas fa-trash-alt text-xs"></i>
 
                                   <!-- Ocultar / Mostrar en Inicio -->
                                   ${b.isHidden ? `
                                     <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="show" data-name="${b.name}" title="Hacer visible en la página principal">
                                       <i class="fas fa-eye text-emerald-600"></i> Mostrar
                                     </button>
+                                  ` : ''}
                                   ` : `
                                     <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="hide" data-name="${b.name}" title="Ocultar de la página principal">
                                       <i class="fas fa-eye-slash text-amber-600"></i> Ocultar
@@ -2638,6 +2668,7 @@ class App {
                                 <span class="text-slate-800 font-medium block">${srvName}</span>
                               </td>
                               <td class="p-3 whitespace-nowrap">
+                                <span class="font-bold text-slate-800 block">${a.date}</span>
                                 <span class="font-bold text-slate-800 block">${this.formatDateDMY(a.date)}</span>
                                 <span class="text-[10px] text-blue-600 font-bold">${this.formatTime12h(a.time)}</span>
                               </td>
@@ -2795,9 +2826,11 @@ class App {
         btn.addEventListener('click', async (e) => {
           const bizId = e.currentTarget.getAttribute('data-id');
           const bizName = e.currentTarget.getAttribute('data-name');
+          if (confirm(`¿Estás seguro de que deseas eliminar permanentemente el negocio "${bizName}"? Esta acción no se puede deshacer.`)) {
           if (confirm(`⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, citas asociadas y usuarios en la base de datos.`)) {
             try {
               await storage.deleteBusinessByDeveloper(bizId);
+              this.showToast(`Negocio "${bizName}" eliminado correctamente.`, 'success');
               this.showToast(`Negocio "${bizName}" eliminado definitivamente.`, 'success');
               this.renderDeveloperDashboardView(container);
             } catch (err) {

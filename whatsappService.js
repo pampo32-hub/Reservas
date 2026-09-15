@@ -110,6 +110,7 @@ export async function sendBookingConfirmationWhatsApp(appointment, business) {
   const clientName = appointment.clientName || 'Estimado(a) Cliente';
   const businessName = business?.name || appointment.businessName || 'Comercio';
   const serviceName = appointment.serviceName || 'Servicio';
+  const dateStr = appointment.date || 'Fecha por confirmar';
   const dateStr = formatDateDMY(appointment.date);
   const timeStr = formatTime12h(appointment.time);
   const durationStr = appointment.serviceDuration ? `${appointment.serviceDuration} min` : '30 min';
