@@ -547,128 +547,108 @@ class App {
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
-        <!-- 1. Banner Superior Destacado para Negocios (Reducido ~25% y estilizado) -->
-        <section class="max-w-5xl mx-auto px-4 sm:px-6 pt-4">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-5 sm:p-7 md:p-8 shadow-xl border border-indigo-900/50">
-            <!-- Efectos de Fondo -->
-            <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <!-- 1. Banner Superior Destacado para Negocios (Diseño Delgado y Compacto) -->
+        <section class="max-w-5xl mx-auto px-4 sm:px-6 pt-2">
+          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-3.5 px-4 sm:py-4 sm:px-6 shadow-lg border border-indigo-900/40">
+            <!-- Efectos de Fondo sutiles -->
+            <div class="absolute -top-16 -right-16 w-60 h-60 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -left-16 w-60 h-60 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
             
-            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
               <!-- Columna Texto e Incentivos -->
-              <div class="lg:col-span-7 space-y-3.5 text-left">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider border border-indigo-500/30">
-                  <i class="fas fa-rocket text-amber-400"></i> Para Comercios & Profesionales
+              <div class="lg:col-span-7 space-y-2 text-left">
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-wider border border-indigo-500/30">
+                    <i class="fas fa-rocket text-amber-400 text-[9px]"></i> Para Comercios & Profesionales
+                  </span>
                 </div>
                 
-                <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-snug">
+                <h2 class="text-base sm:text-lg md:text-xl font-black tracking-tight leading-tight">
                   Dile a tus clientes que <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">ya tienen dónde reservar 24/7</span>
                 </h2>
                 
-                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg">
-                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>Reservas CR</strong> tienes tu página propia con catálogo, precios y turnos listos para compartir.
+                <p class="text-xs text-slate-300 leading-normal max-w-lg">
+                  Evita llamadas y mensajes perdidos. Ten tu página propia con catálogo, precios y citas listas para compartir.
                 </p>
 
-                <!-- Beneficios Rápidos (2x2 Compacto) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-xs">
-                      <i class="fab fa-whatsapp"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Recordatorios WhatsApp</h4>
-                      <p class="text-[10px] text-slate-400">Aviso automático al cliente y a ti.</p>
-                    </div>
+                <!-- Beneficios Rápidos (Chips Horizontales Delgados) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-0.5">
+                  <div class="flex items-center gap-1.5 p-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-medium text-slate-200">
+                    <i class="fab fa-whatsapp text-emerald-400 text-xs flex-shrink-0"></i>
+                    <span class="truncate">WhatsApp Auto</span>
                   </div>
 
-                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-xs">
-                      <i class="fas fa-link"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Enlace directo a tu perfil</h4>
-                      <p class="text-[10px] text-slate-400">Pégalo en tu bio o estado.</p>
-                    </div>
+                  <div class="flex items-center gap-1.5 p-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-medium text-slate-200">
+                    <i class="fas fa-link text-blue-400 text-xs flex-shrink-0"></i>
+                    <span class="truncate">Tu Enlace Web</span>
                   </div>
 
-                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-xs">
-                      <i class="fas fa-clock"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Control total de turnos</h4>
-                      <p class="text-[10px] text-slate-400">Horarios y descansos sin choques.</p>
-                    </div>
+                  <div class="flex items-center gap-1.5 p-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-medium text-slate-200">
+                    <i class="fas fa-clock text-amber-400 text-xs flex-shrink-0"></i>
+                    <span class="truncate">Turnos 24/7</span>
                   </div>
 
-                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-xs">
-                      <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Panel de control</h4>
-                      <p class="text-[10px] text-slate-400">Gestiona citas, servicios y clientes.</p>
-                    </div>
+                  <div class="flex items-center gap-1.5 p-1.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-medium text-slate-200">
+                    <i class="fas fa-chart-line text-purple-400 text-xs flex-shrink-0"></i>
+                    <span class="truncate">Panel de Control</span>
                   </div>
                 </div>
 
-                <!-- Botones de Acción -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2">
-                  <button id="cta-register-biz-btn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer">
-                    <i class="fas fa-plus-circle"></i>
+                <!-- Botones de Acción Delgados -->
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                  <button id="cta-register-biz-btn" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 transition-all transform hover:-translate-y-0.5 cursor-pointer">
+                    <i class="fas fa-plus-circle text-[10px]"></i>
                     <span>Registrar Mi Negocio</span>
                   </button>
 
-                  <button id="cta-view-plans-btn" class="px-4 py-2.5 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/40 flex items-center justify-center gap-2 transition-all cursor-pointer">
-                    <i class="fas fa-tags text-amber-400"></i>
+                  <button id="cta-view-plans-btn" class="px-3 py-1.5 rounded-lg bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fas fa-tags text-amber-400 text-[10px]"></i>
                     <span>Ver Planes ($6, $15, $25)</span>
                   </button>
                   
-                  <button id="cta-login-biz-btn" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-bold border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer">
-                    <i class="fas fa-store"></i>
+                  <button id="cta-login-biz-btn" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                    <i class="fas fa-store text-[10px]"></i>
                     <span>Ya tengo cuenta</span>
                   </button>
                 </div>
               </div>
 
-              <!-- Columna Ilustrativa / Preview Card -->
+              <!-- Columna Ilustrativa / Preview Card Compacta -->
               <div class="lg:col-span-5 flex justify-center">
-                <div class="w-full max-w-xs bg-slate-900/90 rounded-2xl p-4 border border-indigo-500/30 shadow-xl backdrop-blur-md space-y-3">
-                  <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
-                    <div class="flex items-center gap-2">
-                      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                <div class="w-full max-w-[280px] bg-slate-900/90 rounded-xl p-3 border border-indigo-500/30 shadow-md backdrop-blur-md space-y-2">
+                  <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-6 h-6 rounded-md bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-[10px] font-bold">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
-                        <h4 class="text-xs font-extrabold text-white">Tu Negocio Aquí</h4>
-                        <p class="text-[10px] text-slate-400">reservas.cr/#/negocio/tu-local</p>
+                        <h4 class="text-[11px] font-black text-white leading-none">Tu Negocio Aquí</h4>
+                        <p class="text-[9px] text-slate-400">reservas.cr/#/negocio/tu-local</p>
                       </div>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">Activo 24/7</span>
+                    <span class="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[8px] font-bold">Activo 24/7</span>
                   </div>
 
-                  <div class="space-y-2">
-                    <div class="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2">
-                        <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
-                        <span class="text-slate-200 text-xs font-medium">Nueva Reserva Recibida</span>
+                  <div class="space-y-1.5 text-[11px]">
+                    <div class="p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
+                      <div class="flex items-center gap-1.5">
+                        <i class="fas fa-calendar-check text-blue-400 text-[10px]"></i>
+                        <span class="text-slate-200 font-medium">Nueva Reserva</span>
                       </div>
-                      <span class="text-emerald-400 font-bold text-xs">₡15,000</span>
+                      <span class="text-emerald-400 font-bold">₡15,000</span>
                     </div>
-                    <div class="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2">
-                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
-                        <span class="text-slate-200 text-xs font-medium">WhatsApp Enviado</span>
+                    <div class="p-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
+                      <div class="flex items-center gap-1.5">
+                        <i class="fab fa-whatsapp text-emerald-400 text-[10px]"></i>
+                        <span class="text-slate-200 font-medium">WhatsApp Enviado</span>
                       </div>
-                      <span class="text-slate-400 text-[10px]">10:30 AM</span>
+                      <span class="text-slate-400 text-[9px]">10:30 AM</span>
                     </div>
                   </div>
 
-                  <div class="p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/20 text-center">
-                    <p class="text-[10px] text-indigo-200 font-medium mb-0.5">¡Empieza a recibir reservas hoy mismo!</p>
-                    <div class="text-[11px] font-black text-amber-300 flex items-center justify-center gap-1">
-                      <i class="fas fa-bolt"></i> Toma menos de 2 minutos
-                    </div>
+                  <div class="py-1 px-2 rounded-lg bg-indigo-950/60 border border-indigo-500/20 text-center flex items-center justify-center gap-1 text-[10px] font-bold text-amber-300">
+                    <i class="fas fa-bolt text-[9px]"></i>
+                    <span>Toma menos de 2 minutos</span>
                   </div>
                 </div>
               </div>
