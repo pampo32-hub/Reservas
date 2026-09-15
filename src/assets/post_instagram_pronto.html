@@ -3,263 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Generador Post Instagram 1080x1080 - Reservas CR</title>
+  <title>Post Oficial Instagram - Reservas CR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #090d16;
-    }
-    #previewCanvas {
-      max-width: 100%;
-      height: auto;
-      border-radius: 24px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(14, 165, 233, 0.2);
+      background-color: #030712;
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 text-white">
 
-  <div class="max-w-xl w-full text-center space-y-4 mb-6">
-    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold uppercase tracking-wider">
-      <i class="fas fa-check-circle"></i> Renderizado Directo Canvas 2D (Sin Fallas)
+  <!-- Header con controles -->
+  <div class="max-w-xl w-full text-center space-y-3 mb-6">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+      <i class="fas fa-check-circle"></i> Imagen Lista en Alta Resolución 1080x1080
     </div>
-    <h1 class="text-2xl sm:text-3xl font-black">Post Oficial Instagram (1080 x 1080 px)</h1>
-    <p class="text-slate-400 text-sm">Diseño de lanzamiento listo para descargar y publicar en tu feed.</p>
+    <h1 class="text-2xl sm:text-3xl font-black text-white">Post Oficial para Instagram</h1>
+    <p class="text-slate-400 text-sm">Sin palabras ambiguas, con diseño tecnológico de lanzamiento.</p>
     
-    <div class="flex justify-center gap-3 pt-2">
-      <button onclick="downloadImage()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black shadow-xl shadow-cyan-500/25 flex items-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
-        <i class="fas fa-download text-lg"></i>
-        <span>Descargar Imagen HD (PNG)</span>
+    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+      <button onclick="downloadPNG()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition-transform transform hover:scale-105 cursor-pointer">
+        <i class="fas fa-file-image"></i>
+        <span>Descargar PNG (1080x1080)</span>
       </button>
+      <a href="./reservas_cr_post_instagram.svg" download="post_instagram_reservas_cr.svg" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 flex items-center gap-2 transition-all">
+        <i class="fas fa-download"></i>
+        <span>Descargar SVG Vectorial</span>
+      </a>
     </div>
   </div>
 
-  <!-- Vista previa interactiva en vivo del canvas -->
-  <div class="max-w-[540px] w-full flex justify-center">
-    <canvas id="previewCanvas" width="1080" height="1080"></canvas>
+  <!-- Vista Previa Directa de la Imagen -->
+  <div class="max-w-[500px] w-full bg-slate-900/80 p-3 rounded-3xl border border-slate-800 shadow-2xl relative">
+    <img id="postPreviewImg" src="./reservas_cr_post_instagram.svg" alt="Post Instagram Reservas CR" class="w-full h-auto rounded-2xl shadow-xl block">
   </div>
+
+  <canvas id="exportCanvas" width="1080" height="1080" style="display:none;"></canvas>
 
   <script>
-    const canvas = document.getElementById('previewCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // Cargar imagen de logo y fuentes antes de pintar
-    const logoImg = new Image();
-    logoImg.src = './reservas_cr_clean_badge_1.jpg';
-
-    document.fonts.ready.then(() => {
-      logoImg.onload = () => {
-        renderPost();
-      };
-      if (logoImg.complete) {
-        renderPost();
-      }
-    });
-
-    function renderPost() {
-      // 1. Fondo Oscuro Premium con Degradado
-      const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080);
-      bgGrad.addColorStop(0, '#0b1329');
-      bgGrad.addColorStop(0.5, '#080f1e');
-      bgGrad.addColorStop(1, '#030712');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 1080, 1080);
-
-      // 2. Resplandores Circulares Tecnológicos de Fondo
-      const glowCyan = ctx.createRadialGradient(540, 480, 50, 540, 480, 460);
-      glowCyan.addColorStop(0, 'rgba(14, 165, 233, 0.22)');
-      glowCyan.addColorStop(0.6, 'rgba(16, 185, 129, 0.12)');
-      glowCyan.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = glowCyan;
-      ctx.beginPath();
-      ctx.arc(540, 480, 460, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Resplandor esquina superior
-      const glowTop = ctx.createRadialGradient(100, 100, 0, 100, 100, 250);
-      glowTop.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
-      glowTop.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowTop;
-      ctx.beginPath();
-      ctx.arc(100, 100, 250, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 3. HEADER: Badge "LANZAMIENTO OFICIAL" y "COSTA RICA 🇨🇷"
-      // Badge Lanzamiento
-      drawRoundedRect(ctx, 80, 70, 260, 48, 24, 'rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.15)');
-      ctx.fillStyle = '#10b981';
-      ctx.beginPath();
-      ctx.arc(105, 94, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#34d399';
-      ctx.font = '900 13px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('LANZAMIENTO OFICIAL', 122, 99);
-
-      // Badge Costa Rica
-      drawRoundedRect(ctx, 830, 70, 170, 48, 24, 'rgba(255, 255, 255, 0.08)', 'rgba(255, 255, 255, 0.15)');
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '800 15px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Costa Rica 🇨🇷', 915, 100);
-
-      // 4. LOGO CENTRAL BADGE CON SOMBRA Y BORDE SUTIL
-      const logoSize = 200;
-      const logoX = (1080 - logoSize) / 2;
-      const logoY = 190;
-
-      // Resplandor detrás del logo
-      const logoGlow = ctx.createRadialGradient(540, 290, 40, 540, 290, 160);
-      logoGlow.addColorStop(0, 'rgba(6, 182, 212, 0.45)');
-      logoGlow.addColorStop(0.7, 'rgba(59, 130, 246, 0.25)');
-      logoGlow.addColorStop(1, 'transparent');
-      ctx.fillStyle = logoGlow;
-      ctx.beginPath();
-      ctx.arc(540, 290, 160, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Recortar esquinas redondeadas para el logo
-      ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(logoX, logoY, logoSize, logoSize, 42);
-      ctx.clip();
-      ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
-      ctx.restore();
-
-      // Borde exterior del logo
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.roundRect(logoX, logoY, logoSize, logoSize, 42);
-      ctx.stroke();
-
-      // 5. PILL "¡MUY PRONTO!"
-      const pillW = 200;
-      const pillH = 46;
-      const pillX = (1080 - pillW) / 2;
-      const pillY = 430;
-      const pillGrad = ctx.createLinearGradient(pillX, pillY, pillX + pillW, pillY + pillH);
-      pillGrad.addColorStop(0, '#0284c7');
-      pillGrad.addColorStop(0.5, '#2563eb');
-      pillGrad.addColorStop(1, '#059669');
-      drawRoundedRect(ctx, pillX, pillY, pillW, pillH, 23, pillGrad);
+    function downloadPNG() {
+      const img = document.getElementById('postPreviewImg');
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
       
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 16px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🚀  ¡MUY PRONTO!', 540, pillY + 29);
-
-      // 6. TITULAR PRINCIPAL: "El mejor lugar para reservar" + "tus comercios favoritos"
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '900 46px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('El mejor lugar para reservar en tus', 540, 535);
-
-      // Línea 2 con degradado cian/menta nítido
-      const textGrad = ctx.createLinearGradient(260, 0, 820, 0);
-      textGrad.addColorStop(0, '#38bdf8');
-      textGrad.addColorStop(0.5, '#67e8f9');
-      textGrad.addColorStop(1, '#34d399');
-      ctx.fillStyle = textGrad;
-      ctx.font = '900 48px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('comercios y servicios favoritos', 540, 595);
-
-      // 7. SUBTÍTULO DESCRIPTIVO
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = '600 21px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('Salones, barberías, estética, clínicas de salud y más.', 540, 660);
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '500 19px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('Reserva tus turnos en tiempo real, sin llamadas ni esperas.', 540, 695);
-
-      // 8. 3 TARJETAS DE SERVICIOS
-      const cardY = 750;
-      const cardW = 280;
-      const cardH = 90;
-      const cardGap = 35;
-      const startX = (1080 - (cardW * 3 + cardGap * 2)) / 2;
-
-      // Tarjeta 1: Barberías & Salones
-      drawServiceCard(ctx, startX, cardY, cardW, cardH, '💈', 'Barberías & Salones', '#38bdf8');
-
-      // Tarjeta 2: Spas & Estética
-      drawServiceCard(ctx, startX + cardW + cardGap, cardY, cardW, cardH, '✨', 'Spas & Estética', '#34d399');
-
-      // Tarjeta 3: Salud & Consultas
-      drawServiceCard(ctx, startX + (cardW + cardGap) * 2, cardY, cardW, cardH, '🩺', 'Salud & Especialistas', '#60a5fa');
-
-      // 9. LÍNEA DIVISORIA INFERIOR
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(80, 920);
-      ctx.lineTo(1000, 920);
-      ctx.stroke();
-
-      // 10. FOOTER
-      // Dominio Web
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = '900 24px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('🌐 reservascr.com', 80, 975);
-      ctx.fillStyle = '#64748b';
-      ctx.font = '600 14px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('Plataforma Oficial de Reservas 🇨🇷', 80, 1000);
-
-      // Powered By Jival Soft
-      drawRoundedRect(ctx, 740, 945, 260, 56, 18, 'rgba(255, 255, 255, 0.07)', 'rgba(255, 255, 255, 0.15)');
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('Powered by', 760, 979);
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = '900 16px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText('JIVAL SOFT', 840, 979);
-    }
-
-    function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle = null) {
-      ctx.save();
-      ctx.fillStyle = fillStyle;
-      ctx.beginPath();
-      ctx.roundRect(x, y, width, height, radius);
-      ctx.fill();
-      if (strokeStyle) {
-        ctx.strokeStyle = strokeStyle;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    function drawServiceCard(ctx, x, y, w, h, icon, title, accentColor) {
-      // Fondo tipo cristal sólido
-      drawRoundedRect(ctx, x, y, w, h, 20, '#0f172a', 'rgba(255, 255, 255, 0.15)');
-
-      // Barra de acento
-      ctx.fillStyle = accentColor;
-      ctx.beginPath();
-      ctx.roundRect(x + 16, y + 20, 6, h - 40, 3);
-      ctx.fill();
-
-      // Icono
-      ctx.font = '26px "Plus Jakarta Sans", sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText(icon, x + 34, y + 54);
-
-      // Texto
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '800 16px "Plus Jakarta Sans", sans-serif';
-      ctx.fillText(title, x + 72, y + 52);
-    }
-
-    function downloadImage() {
-      const link = document.createElement('a');
-      link.download = 'post_instagram_reservas_cr.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+      const newImg = new Image();
+      newImg.crossOrigin = 'anonymous';
+      newImg.onload = function() {
+        ctx.clearRect(0, 0, 1080, 1080);
+        ctx.drawImage(newImg, 0, 0, 1080, 1080);
+        const link = document.createElement('a');
+        link.download = 'post_instagram_reservas_cr.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      };
+      newImg.src = img.src + '?t=' + new Date().getTime();
     }
   </script>
 </body>
