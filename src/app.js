@@ -74,6 +74,25 @@ class App {
     return clean;
   }
 
+  normalizeText(str) {
+    if (!str) return '';
+    return String(str)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  }
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   init() {
     // 1. Escuchar botones Atrás y Adelante del navegador
     window.addEventListener('popstate', (e) => {
@@ -380,110 +399,237 @@ class App {
   // ==========================================
   // VISTA 1: DIRECTORIO DE NEGOCIOS (CLIENTE)
   // ==========================================
+  filterBusinessesList(allBusinesses, query, categoryId) {
+    let list = allBusinesses.filter(b => !b.isHidden && !b.isBlocked);
+    
+    if (categoryId && categoryId !== 'all') {
+      list = list.filter(b => b.category === categoryId);
+    }
+    
+    if (!query || query.trim() === '') {
+      return list;
+    }
+
+    const cleanQ = this.normalizeText(query);
+    const words = cleanQ.split(/\s+/).filter(w => w.length > 0);
+
+    return list.filter(biz => {
+      const searchableFields = [
+        biz.name,
+        biz.categoryLabel,
+        biz.category,
+        biz.description,
+        biz.city,
+        biz.address,
+        ...(biz.features || []),
+        ...(biz.services ? biz.services.map(s => `${s.name} ${s.description || ''}`) : [])
+      ];
+
+      const fullHaystack = this.normalizeText(searchableFields.filter(Boolean).join(' '));
+      return words.every(word => fullHaystack.includes(word));
+    });
+  }
+
+  renderBusinessCard(biz) {
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
+        <!-- Image Header -->
+        <div class="relative h-52 overflow-hidden bg-slate-100">
+          <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(biz.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+          <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
+          
+          <!-- Badge COMERCIO DE MUESTRA o REGISTRADO -->
+          <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+            ${biz.isDemo ? `
+              <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
+                <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
+              </span>
+            ` : `
+              <span class="bg-emerald-600/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md">
+                <i class="fas fa-check-circle text-emerald-200"></i> Comercio Registrado
+              </span>
+            `}
+            <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
+              ${this.escapeHtml(biz.categoryLabel || biz.category)}
+            </span>
+          </div>
+
+          <!-- Rating -->
+          <span class="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
+            <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} <span class="text-slate-700 font-normal">(${biz.reviewsCount || 0})</span>
+          </span>
+
+          <div class="absolute bottom-3 left-3 right-3 text-white">
+            <span class="text-xs font-semibold text-slate-200 flex items-center gap-1">
+              <i class="fas fa-map-marker-alt text-rose-400"></i> ${this.escapeHtml(biz.city || 'Costa Rica')}
+            </span>
+          </div>
+        </div>
+
+        <!-- Content Body -->
+        <div class="p-5 flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+              ${this.escapeHtml(biz.name)}
+            </h3>
+            <p class="text-xs text-slate-500 mt-1 line-clamp-2">
+              ${this.escapeHtml(biz.description || '')}
+            </p>
+
+            <!-- Key Services Preview -->
+            ${biz.services && biz.services.length > 0 ? `
+              <div class="mt-3 space-y-1.5">
+                ${biz.services.slice(0, 2).map(srv => `
+                  <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                    <span class="text-slate-600 font-medium truncate max-w-[170px]">${this.escapeHtml(srv.name)}</span>
+                    <span class="font-extrabold text-blue-600 flex-shrink-0">${this.formatColones(srv.price)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <!-- Schedule info -->
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+              <span class="flex items-center gap-1.5 font-medium">
+                <i class="far fa-clock text-blue-600"></i> 
+                ${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}
+              </span>
+              <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                ${biz.services ? biz.services.length : 0} servicios
+              </span>
+            </div>
+          </div>
+
+          <!-- Action Button -->
+          <div class="mt-5 pt-3">
+            <button 
+              class="view-biz-btn w-full py-2.5 px-4 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+              data-business-id="${biz.id}"
+            >
+              <span>Ver Servicios & Reservar</span>
+              <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderDirectoryGridContent(businesses) {
+    if (businesses.length === 0) {
+      return `
+        <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8 max-w-md mx-auto shadow-xs">
+          <div class="w-14 h-14 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+            <i class="fas fa-search"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">No encontramos comercios que coincidan</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed">Prueba con otra palabra clave, nombre de servicio o selecciona otra categoría.</p>
+          <button id="reset-filter-btn" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer">
+            <i class="fas fa-undo mr-1"></i> Ver todos los negocios
+          </button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        ${businesses.map(biz => this.renderBusinessCard(biz)).join('')}
+      </div>
+    `;
+  }
+
   renderDirectoryView(container) {
     const categories = storage.getCategories();
-    let businesses = storage.getBusinesses().filter(b => !b.isHidden && !b.isBlocked);
-
-    if (this.selectedCategory !== 'all') {
-      businesses = businesses.filter(b => b.category === this.selectedCategory);
-    }
-    if (this.searchQuery.trim() !== '') {
-      const q = this.searchQuery.toLowerCase();
-      businesses = businesses.filter(b => 
-        b.name.toLowerCase().includes(q) ||
-        b.description?.toLowerCase().includes(q) ||
-        b.city?.toLowerCase().includes(q) ||
-        (b.services && b.services.some(s => s.name.toLowerCase().includes(q)))
-      );
-    }
+    const allBusinesses = storage.getBusinesses();
+    const filteredBusinesses = this.filterBusinessesList(allBusinesses, this.searchQuery, this.selectedCategory);
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
-        <!-- 1. Banner Superior Destacado para Negocios -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6 sm:p-10 shadow-2xl border border-indigo-900/50">
+        <!-- 1. Banner Superior Destacado para Negocios (Reducido ~25% y estilizado) -->
+        <section class="max-w-5xl mx-auto px-4 sm:px-6 pt-4">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-5 sm:p-7 md:p-8 shadow-xl border border-indigo-900/50">
             <!-- Efectos de Fondo -->
-            <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
             
-            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
               <!-- Columna Texto e Incentivos -->
-              <div class="lg:col-span-7 space-y-4 text-left">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider border border-indigo-500/30">
-                  <i class="fas fa-rocket text-amber-400"></i> Espacio para Comercios & Profesionales
+              <div class="lg:col-span-7 space-y-3.5 text-left">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold uppercase tracking-wider border border-indigo-500/30">
+                  <i class="fas fa-rocket text-amber-400"></i> Para Comercios & Profesionales
                 </div>
                 
-                <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
-                  Dile a tus clientes que <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">ya tienen dónde reservar tus servicios 24/7</span>
+                <h2 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-snug">
+                  Dile a tus clientes que <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">ya tienen dónde reservar 24/7</span>
                 </h2>
                 
-                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
-                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>TurnoYa</strong> tienes una página propia con tu catálogo, precios y horarios listos para compartir con tus clientes.
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg">
+                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>TurnoYa</strong> tienes tu página propia con catálogo, precios y turnos listos para compartir.
                 </p>
 
-                <!-- Beneficios Rápidos -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-sm">
+                <!-- Beneficios Rápidos (2x2 Compacto) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-xs">
                       <i class="fab fa-whatsapp"></i>
                     </div>
                     <div>
                       <h4 class="text-xs font-bold text-white">Recordatorios WhatsApp</h4>
-                      <p class="text-[11px] text-slate-400">Confirmación instantánea al cliente y a ti.</p>
+                      <p class="text-[10px] text-slate-400">Aviso automático al cliente y a ti.</p>
                     </div>
                   </div>
 
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-xs">
                       <i class="fas fa-link"></i>
                     </div>
                     <div>
                       <h4 class="text-xs font-bold text-white">Enlace directo a tu perfil</h4>
-                      <p class="text-[11px] text-slate-400">Pégalo en tu bio de Instagram o estado.</p>
+                      <p class="text-[10px] text-slate-400">Pégalo en tu bio o estado.</p>
                     </div>
                   </div>
 
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-xs">
                       <i class="fas fa-clock"></i>
                     </div>
                     <div>
                       <h4 class="text-xs font-bold text-white">Control total de turnos</h4>
-                      <p class="text-[11px] text-slate-400">Tus días, horarios y descansos sin choques.</p>
+                      <p class="text-[10px] text-slate-400">Horarios y descansos sin choques.</p>
                     </div>
                   </div>
 
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-xs">
                       <i class="fas fa-chart-line"></i>
                     </div>
                     <div>
-                      <h4 class="text-xs font-bold text-white">Panel de administración</h4>
-                      <p class="text-[11px] text-slate-400">Gestiona citas, servicios y estadísticas.</p>
+                      <h4 class="text-xs font-bold text-white">Panel de control</h4>
+                      <p class="text-[10px] text-slate-400">Gestiona citas, servicios y clientes.</p>
                     </div>
                   </div>
                 </div>
 
                 <!-- Botones de Acción -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
-                  <button id="cta-register-biz-btn" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-2">
+                  <button id="cta-register-biz-btn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer">
                     <i class="fas fa-plus-circle"></i>
                     <span>Registrar Mi Negocio Gratis</span>
                   </button>
                   
-                  <button id="cta-login-biz-btn" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-bold border border-white/10 flex items-center justify-center gap-2 transition-all">
+                  <button id="cta-login-biz-btn" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-bold border border-white/10 flex items-center justify-center gap-2 transition-all cursor-pointer">
                     <i class="fas fa-store"></i>
-                    <span>Ya tengo cuenta de negocio</span>
+                    <span>Ya tengo cuenta</span>
                   </button>
                 </div>
               </div>
 
               <!-- Columna Ilustrativa / Preview Card -->
               <div class="lg:col-span-5 flex justify-center">
-                <div class="w-full max-w-sm bg-slate-900/90 rounded-3xl p-6 border border-indigo-500/30 shadow-2xl backdrop-blur-md space-y-4">
-                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                <div class="w-full max-w-xs bg-slate-900/90 rounded-2xl p-4 border border-indigo-500/30 shadow-xl backdrop-blur-md space-y-3">
+                  <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                    <div class="flex items-center gap-2">
+                      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
@@ -491,29 +637,29 @@ class App {
                         <p class="text-[10px] text-slate-400">turnoya.cr/#/negocio/tu-local</p>
                       </div>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">Activo 24/7</span>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">Activo 24/7</span>
                   </div>
 
                   <div class="space-y-2">
-                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
+                    <div class="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
                       <div class="flex items-center gap-2">
-                        <i class="fas fa-calendar-check text-blue-400"></i>
-                        <span class="text-slate-200 font-medium">Nueva Reserva Recibida</span>
+                        <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
+                        <span class="text-slate-200 text-xs font-medium">Nueva Reserva Recibida</span>
                       </div>
-                      <span class="text-emerald-400 font-bold">₡15,000</span>
+                      <span class="text-emerald-400 font-bold text-xs">₡15,000</span>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
+                    <div class="p-2 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
                       <div class="flex items-center gap-2">
-                        <i class="fab fa-whatsapp text-emerald-400"></i>
-                        <span class="text-slate-200 font-medium">WhatsApp Enviado</span>
+                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
+                        <span class="text-slate-200 text-xs font-medium">WhatsApp Enviado</span>
                       </div>
                       <span class="text-slate-400 text-[10px]">10:30 AM</span>
                     </div>
                   </div>
 
-                  <div class="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/20 text-center">
-                    <p class="text-[11px] text-indigo-200 font-medium mb-1">¡Configura tu horario y empieza a recibir turnos hoy mismo!</p>
-                    <div class="text-xs font-black text-amber-300 flex items-center justify-center gap-1">
+                  <div class="p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/20 text-center">
+                    <p class="text-[10px] text-indigo-200 font-medium mb-0.5">¡Empieza a recibir reservas hoy mismo!</p>
+                    <div class="text-[11px] font-black text-amber-300 flex items-center justify-center gap-1">
                       <i class="fas fa-bolt"></i> Toma menos de 2 minutos
                     </div>
                   </div>
@@ -524,204 +670,160 @@ class App {
         </section>
 
         <!-- 2. Hero Section: Exploración y Búsqueda de Citas -->
-        <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-12 px-4 sm:px-6 lg:px-8 mt-6">
+        <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-10 px-4 sm:px-6 lg:px-8 mt-4">
           <div class="max-w-4xl mx-auto text-center">
-            <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-4">
+            <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
               <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
             </span>
-            <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu cita al instante</span>
             </h1>
-            <p class="mt-4 text-slate-600 text-base sm:text-lg max-w-2xl mx-auto">
-              Barberías, spas, dentistas, talleres mecánicos y más. Selecciona tu horario ideal sin llamadas.
+            <p class="mt-3 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
+              Barberías, spas, dentistas, talleres mecánicos y más. Escribe cualquier servicio o cantón para filtrar en tiempo real.
             </p>
 
-            <!-- Search Bar -->
-            <div class="mt-8 max-w-2xl mx-auto relative flex items-center shadow-xl rounded-2xl bg-white border border-slate-200 p-2">
-              <div class="pl-4 text-slate-400">
-                <i class="fas fa-search text-lg"></i>
+            <!-- Buscador Inteligente -->
+            <div class="mt-6 max-w-2xl mx-auto relative flex items-center shadow-lg rounded-2xl bg-white border border-slate-200 p-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <div class="pl-3.5 text-blue-600">
+                <i class="fas fa-search text-base"></i>
               </div>
               <input 
                 type="text" 
                 id="search-input" 
                 value="${this.searchQuery}" 
-                placeholder="Busca por servicio ('corte', 'masaje', 'dentista', 'frenos') o cantón..." 
-                class="w-full px-4 py-3 text-slate-800 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
+                placeholder="Busca por comercio, servicio ('corte', 'spa', 'frenos') o cantón..." 
+                class="w-full px-3.5 py-2.5 text-slate-800 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
+                autocomplete="off"
               />
-              ${this.searchQuery ? `
-                <button id="clear-search-btn" class="p-2 text-slate-400 hover:text-slate-600 mr-2">
-                  <i class="fas fa-times-circle"></i>
-                </button>
-              ` : ''}
-              <button id="do-search-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-md shadow-blue-500/20 text-sm">
-                Buscar
+              <button id="clear-search-btn" class="${this.searchQuery ? '' : 'hidden'} p-2 text-slate-400 hover:text-slate-600 mr-1 transition-all cursor-pointer" title="Limpiar búsqueda">
+                <i class="fas fa-times-circle text-base"></i>
+              </button>
+              <button id="do-search-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+                <i class="fas fa-search text-xs"></i>
+                <span>Buscar</span>
               </button>
             </div>
 
             <!-- Mini Banner de Acceso / Registro para Negocios en Hero -->
-            <div class="mt-6 inline-flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-slate-600 bg-white/90 backdrop-blur-md py-2 px-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span class="font-bold text-slate-900 flex items-center gap-1.5">
+            <div class="mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 bg-white/90 backdrop-blur-md py-1.5 px-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+              <span class="font-bold text-slate-800 flex items-center gap-1.5">
                 <i class="fas fa-store text-indigo-600"></i> ¿Tienes un negocio o prestas servicios?
               </span>
-              <button id="hero-register-biz-btn" class="font-black text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-2 flex items-center gap-1 transition-colors">
+              <button id="hero-register-biz-btn" class="font-black text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-2 flex items-center gap-1 transition-colors cursor-pointer">
                 ¡Publica tu catálogo y recibe citas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
               </button>
             </div>
           </div>
         </section>
 
-        <!-- Category Filter Pills -->
         <!-- 3. Filtro por Categorías -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-          <div class="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+          <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar" id="category-pills-container">
             ${categories.map(cat => `
               <button 
-                class="category-pill-btn flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${this.selectedCategory === cat.id ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}"
+                class="category-pill-btn flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${this.selectedCategory === cat.id ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'}"
                 data-category-id="${cat.id}"
               >
-                <i class="fas ${cat.icon} text-sm"></i>
+                <i class="fas ${cat.icon} text-xs"></i>
                 <span>${cat.name}</span>
               </button>
             `).join('')}
           </div>
         </div>
 
-        <!-- Business Cards Grid -->
-        <!-- 4. Catálogo de Establecimientos -->
+        <!-- 4. Catálogo de Establecimientos (Contenedor Reactivo) -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-slate-900">
-              ${this.selectedCategory === 'all' ? 'Todos los Establecimientos' : categories.find(c => c.id === this.selectedCategory)?.name || 'Negocios'} 
-              <span class="text-sm font-normal text-slate-500 ml-2">(${businesses.length} disponibles)</span>
-            </h2>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+            <div>
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900" id="catalog-category-title">
+                ${this.selectedCategory === 'all' ? 'Todos los Establecimientos' : categories.find(c => c.id === this.selectedCategory)?.name || 'Negocios'}
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5" id="catalog-count-text">
+                ${this.searchQuery ? `Mostrando ${filteredBusinesses.length} resultados para "<strong>${this.escapeHtml(this.searchQuery)}</strong>"` : `${filteredBusinesses.length} comercios disponibles`}
+              </p>
+            </div>
           </div>
 
-          ${businesses.length === 0 ? `
-            <div class="text-center py-20 bg-white rounded-3xl border border-slate-200 p-8 max-w-md mx-auto">
-              <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mx-auto mb-4 text-2xl">
-                <i class="fas fa-search"></i>
-              </div>
-              <h3 class="text-lg font-bold text-slate-800">No encontramos resultados</h3>
-              <p class="text-sm text-slate-500 mt-1">Prueba con otra palabra clave o selecciona otra categoría.</p>
-              <button id="reset-filter-btn" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700">
-                Ver todos los negocios
-              </button>
-            </div>
-          ` : `
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              ${businesses.map(biz => `
-                <div class="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
-                  <!-- Image Header -->
-                  <div class="relative h-52 overflow-hidden bg-slate-100">
-                    <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${biz.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
-                    
-                    <!-- Badge COMERCIO DE MUESTRA o REGISTRADO -->
-                    <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-                      ${biz.isDemo ? `
-                        <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
-                          <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
-                        </span>
-                      ` : `
-                        <span class="bg-emerald-600/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md">
-                          <i class="fas fa-check-circle text-emerald-200"></i> Comercio Registrado
-                        </span>
-                      `}
-                      <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
-                        ${biz.categoryLabel}
-                      </span>
-                    </div>
-
-                    <!-- Rating -->
-                    <span class="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
-                      <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} <span class="text-slate-700 font-normal">(${biz.reviewsCount || 0})</span>
-                    </span>
-
-                    <div class="absolute bottom-3 left-3 right-3 text-white">
-                      <span class="text-xs font-semibold text-slate-200 flex items-center gap-1">
-                        <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.city}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Content Body -->
-                  <div class="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                        ${biz.name}
-                      </h3>
-                      <p class="text-xs text-slate-500 mt-1 line-clamp-2">
-                        ${biz.description || ''}
-                      </p>
-
-                      <!-- Key Services Preview -->
-                      ${biz.services && biz.services.length > 0 ? `
-                        <div class="mt-3 space-y-1.5">
-                          ${biz.services.slice(0, 2).map(srv => `
-                            <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
-                              <span class="text-slate-600 font-medium truncate max-w-[170px]">${srv.name}</span>
-                              <span class="font-extrabold text-blue-600 flex-shrink-0">${this.formatColones(srv.price)}</span>
-                            </div>
-                          `).join('')}
-                        </div>
-                      ` : ''}
-
-                      <!-- Schedule info -->
-                      <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-                        <span class="flex items-center gap-1.5 font-medium">
-                          <i class="far fa-clock text-blue-600"></i> 
-                          ${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}
-                        </span>
-                        <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                          ${biz.services ? biz.services.length : 0} servicios
-                        </span>
-                      </div>
-                    </div>
-
-                    <!-- Action Button -->
-                    <div class="mt-5 pt-3">
-                      <button 
-                        class="view-biz-btn w-full py-2.5 px-4 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm"
-                        data-business-id="${biz.id}"
-                      >
-                        <span>Ver Servicios & Reservar</span>
-                        <i class="fas fa-arrow-right text-xs"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          `}
+          <div id="catalog-grid-container">
+            ${this.renderDirectoryGridContent(filteredBusinesses)}
+          </div>
         </div>
       </div>
     `;
 
-    // Listeners
+    // Listeners Inteligentes en Tiempo Real
     const searchInput = document.getElementById('search-input');
     const doSearchBtn = document.getElementById('do-search-btn');
     const clearSearchBtn = document.getElementById('clear-search-btn');
-    const resetFilterBtn = document.getElementById('reset-filter-btn');
+    const catalogGridContainer = document.getElementById('catalog-grid-container');
+    const catalogCountText = document.getElementById('catalog-count-text');
 
-    const handleSearch = () => {
-      this.searchQuery = searchInput.value;
-      this.renderCurrentView();
+    const attachCardListeners = () => {
+      document.querySelectorAll('.view-biz-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const bId = btn.getAttribute('data-business-id');
+          this.navigateTo('business-detail', { businessId: bId });
+        });
+      });
+
+      document.getElementById('reset-filter-btn')?.addEventListener('click', () => {
+        this.searchQuery = '';
+        this.selectedCategory = 'all';
+        if (searchInput) searchInput.value = '';
+        updateLiveSearch();
+        this.renderCurrentView();
+      });
     };
 
-    searchInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSearch();
-    });
-    doSearchBtn?.addEventListener('click', handleSearch);
-    clearSearchBtn?.addEventListener('click', () => {
-      this.searchQuery = '';
-      this.renderCurrentView();
-    });
-    resetFilterBtn?.addEventListener('click', () => {
-      this.searchQuery = '';
-      this.selectedCategory = 'all';
-      this.renderCurrentView();
+    const updateLiveSearch = () => {
+      const q = searchInput ? searchInput.value : '';
+      this.searchQuery = q;
+      
+      if (clearSearchBtn) {
+        clearSearchBtn.classList.toggle('hidden', !q.trim());
+      }
+
+      const allBiz = storage.getBusinesses();
+      const currentList = this.filterBusinessesList(allBiz, q, this.selectedCategory);
+
+      if (catalogGridContainer) {
+        catalogGridContainer.innerHTML = this.renderDirectoryGridContent(currentList);
+      }
+
+      if (catalogCountText) {
+        catalogCountText.innerHTML = q.trim() 
+          ? `Mostrando ${currentList.length} resultados para "<strong>${this.escapeHtml(q.trim())}</strong>"`
+          : `${currentList.length} comercios disponibles`;
+      }
+
+      attachCardListeners();
+    };
+
+    // Filtrado en vivo mientras el usuario escribe
+    searchInput?.addEventListener('input', () => {
+      updateLiveSearch();
     });
 
+    searchInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        updateLiveSearch();
+      }
+    });
+
+    doSearchBtn?.addEventListener('click', () => {
+      updateLiveSearch();
+    });
+
+    clearSearchBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+      }
+      updateLiveSearch();
+    });
+
+    // Píldoras de Categoría
     document.querySelectorAll('.category-pill-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.selectedCategory = btn.getAttribute('data-category-id');
@@ -729,12 +831,7 @@ class App {
       });
     });
 
-    document.querySelectorAll('.view-biz-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const bId = btn.getAttribute('data-business-id');
-        this.navigateTo('business-detail', { businessId: bId });
-      });
-    });
+    attachCardListeners();
 
     // Listeners para Registro / Login de Negocios
     document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
@@ -3287,10 +3384,12 @@ class App {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
+                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                       <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
+                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                       <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                   </div>
@@ -3307,6 +3406,7 @@ class App {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
+                    <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
                     <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
                     <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                       <option value="belleza">Belleza y Barbería</option>
