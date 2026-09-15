@@ -75,20 +75,112 @@ class App {
   }
 
   init() {
+    // 1. Escuchar botones Atrás y Adelante del navegador
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.view) {
+        this.navigateTo(e.state.view, e.state.params || {}, false);
+      } else {
+        const route = this.parseHash(window.location.hash);
+        this.navigateTo(route.view, route.params || {}, false);
+      }
+    });
+
+    // 2. Escuchar cambios directos en el Hash
+    window.addEventListener('hashchange', () => {
+      const route = this.parseHash(window.location.hash);
+      if (route.view !== this.currentView || (route.params.businessId && route.params.businessId !== this.selectedBusinessId)) {
+        this.navigateTo(route.view, route.params || {}, false);
+      }
+    });
+
+    // 3. Obtener ruta inicial según la URL actual
+    const initialRoute = this.parseHash(window.location.hash);
+    this.currentView = initialRoute.view;
+    if (initialRoute.params.businessId) {
+      this.selectedBusinessId = initialRoute.params.businessId;
+    }
+
+    const initialHash = this.getHashForView(this.currentView, initialRoute.params);
+    history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialHash);
+
     this.renderHeader();
     this.renderCurrentView();
     this.setupGlobalEvents();
   }
 
+  // --- RUTAS Y HASH DE NAVEGACIÓN ---
+  getHashForView(view, params = {}) {
+    switch (view) {
+      case 'business-detail': {
+        const bizId = params.businessId || this.selectedBusinessId;
+        return bizId ? `#/negocio/${encodeURIComponent(bizId)}` : '#/';
+      }
+      case 'my-client-bookings':
+        return '#/mis-citas';
+      case 'owner-dashboard':
+        return '#/panel-negocio';
+      case 'developer-dashboard':
+        return '#/developer';
+      case 'directory':
+      default:
+        return '#/';
+    }
+  }
+
+  parseHash(hash = window.location.hash) {
+    const clean = (hash || '').trim();
+    if (!clean || clean === '#' || clean === '#/' || clean === '#!/') {
+      return { view: 'directory', params: {} };
+    }
+
+    const bizMatch = clean.match(/^#\/?negocio\/([^/?#]+)/i);
+    if (bizMatch) {
+      return { view: 'business-detail', params: { businessId: decodeURIComponent(bizMatch[1]) } };
+    }
+
+    if (/^#\/?(mis-citas|mis-reservas|cliente)/i.test(clean)) {
+      return { view: 'my-client-bookings', params: {} };
+    }
+
+    if (/^#\/?(panel-negocio|dashboard|owner)/i.test(clean)) {
+      return { view: 'owner-dashboard', params: {} };
+    }
+
+    if (/^#\/?(developer|developer-dashboard|admin)/i.test(clean)) {
+      return { view: 'developer-dashboard', params: {} };
+    }
+
+    return { view: 'directory', params: {} };
+  }
+
   // --- NAVEGACIÓN ---
-  navigateTo(view, params = {}) {
+  navigateTo(view, params = {}, pushHistory = true) {
     this.currentView = view;
     if (params.businessId) {
       this.selectedBusinessId = params.businessId;
     }
+
+    const targetHash = this.getHashForView(view, params);
+
+    if (pushHistory) {
+      if (window.location.hash !== targetHash) {
+        history.pushState({ view, params }, '', targetHash);
+      } else {
+        history.replaceState({ view, params }, '', targetHash);
+      }
+    }
+
     this.renderHeader();
     this.renderCurrentView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  goBack() {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      this.navigateTo('directory');
+    }
   }
 
   // --- NOTIFICACIONES TOAST ---
@@ -713,7 +805,7 @@ class App {
       </div>
     `;
 
-    document.getElementById('back-to-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('back-to-directory-btn')?.addEventListener('click', () => this.goBack());
 
     document.querySelectorAll('.book-service-btn').forEach(btn => {
       btn.addEventListener('click', () => {
