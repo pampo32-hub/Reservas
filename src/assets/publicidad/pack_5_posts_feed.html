@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pack 5 Posts para Feed de Instagram (1080x1080 HD) - Reservas CR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #030712;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4 sm:p-8 text-white">
+
+  <!-- Header del Pack -->
+  <div class="max-w-3xl w-full text-center space-y-3 mb-8">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-bold uppercase tracking-wider">
+      <i class="fas fa-th-large"></i> Posts para el Feed de Instagram (1:1 Cuadrados)
+    </div>
+    <h1 class="text-3xl sm:text-4xl font-black text-white">Pack de 5 Posts para el Feed + Textos Cortos</h1>
+    <p class="text-slate-400 text-sm max-w-xl mx-auto">
+      5 publicaciones cuadradas en alta definición (1080 x 1080 px) con sus descripciones cortas y concisas listas para copiar y publicar.
+    </p>
+
+    <!-- Botón Descargar Todo -->
+    <div class="pt-2 flex justify-center">
+      <button onclick="downloadAllPosts()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black shadow-xl shadow-cyan-500/25 flex items-center gap-3 transition-transform transform hover:scale-105 cursor-pointer text-sm">
+        <i class="fas fa-cloud-download-alt text-lg"></i>
+        <span>Descargar los 5 Posts (Pack Completo PNG HD)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GRILLA DE LOS 5 POSTS DE FEED -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 max-w-[1400px] w-full pb-16">
+    
+    <!-- POST 1 -->
+    <div class="bg-slate-900/95 rounded-3xl p-5 border border-slate-800 flex flex-col justify-between shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black px-3 py-1 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">POST 1 • LANZAMIENTO</span>
+        <span class="text-xs text-slate-400 font-bold">1080 x 1080 px</span>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-800 bg-black">
+        <img src="./post_feed_1.svg" alt="Post 1" class="w-full h-auto block">
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-bold">
+          <span>📝 Texto para el Post (Caption):</span>
+          <button onclick="copyText('caption-1', this)" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+            <i class="fas fa-copy"></i> Copiar
+          </button>
+        </div>
+        <p id="caption-1" class="text-slate-300 font-medium leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800 select-all">
+🇨🇷 ¡Muy pronto en Costa Rica! 🚀
+
+Llega RESERVAS CR, la nueva plataforma para agendar en tus comercios y servicios favoritos en solo 3 clics:
+
+💈 Barberías y Salones
+🧖‍♀️ Spas y Estética
+🩺 Salud y Especialistas
+🐾 Mascotas y más
+
+¿Tienes un negocio? Automatiza tus turnos 24/7 sin llamadas ni enredos.
+
+🔗 Link en biografía: @reservascr.app
+Powered by @geosoft 💻
+
+#ReservasCR #CostaRica #EmprendedoresCR #ServiciosCR #TurnosOnline
+        </p>
+      </div>
+
+      <button onclick="downloadSinglePost('post_feed_1.svg', 'post_feed_1_lanzamiento.png')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar Imagen PNG HD
+      </button>
+    </div>
+
+    <!-- POST 2 -->
+    <div class="bg-slate-900/95 rounded-3xl p-5 border border-slate-800 flex flex-col justify-between shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">POST 2 • AUTOMATIZACIÓN</span>
+        <span class="text-xs text-slate-400 font-bold">1080 x 1080 px</span>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-800 bg-black">
+        <img src="./post_feed_2.svg" alt="Post 2" class="w-full h-auto block">
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-bold">
+          <span>📝 Texto para el Post (Caption):</span>
+          <button onclick="copyText('caption-2', this)" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+            <i class="fas fa-copy"></i> Copiar
+          </button>
+        </div>
+        <p id="caption-2" class="text-slate-300 font-medium leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800 select-all">
+¿Sigues respondiendo "¿qué horas tienen libres?" uno por uno en WhatsApp? 📲⏰
+
+Con RESERVAS CR tu negocio recibe reservas solo las 24 horas:
+
+✨ Tus clientes eligen el horario que más les conviene.
+📲 Confirmación instantánea enviada por WhatsApp.
+⏱️ Ahorras más de 2 horas al día en mensajes repetitivos.
+
+Tú atiendes tu negocio, el sistema agenda por ti.
+
+🔗 ¡Activa tu página hoy! Link en bio: @reservascr.app
+Desarrollado por @geosoft 🚀
+
+#NegociosCR #BarberiasCR #SalonesCR #EmprendedoresCR #ReservasCR
+        </p>
+      </div>
+
+      <button onclick="downloadSinglePost('post_feed_2.svg', 'post_feed_2_automatizacion.png')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar Imagen PNG HD
+      </button>
+    </div>
+
+    <!-- POST 3 -->
+    <div class="bg-slate-900/95 rounded-3xl p-5 border border-slate-800 flex flex-col justify-between shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black px-3 py-1 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">POST 3 • DIRECTORIO</span>
+        <span class="text-xs text-slate-400 font-bold">1080 x 1080 px</span>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-800 bg-black">
+        <img src="./post_feed_3.svg" alt="Post 3" class="w-full h-auto block">
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-bold">
+          <span>📝 Texto para el Post (Caption):</span>
+          <button onclick="copyText('caption-3', this)" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+            <i class="fas fa-copy"></i> Copiar
+          </button>
+        </div>
+        <p id="caption-3" class="text-slate-300 font-medium leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800 select-all">
+¿Buscas el mejor servicio cerca de ti en Costa Rica? 🇨🇷✨
+
+En RESERVAS CR encuentras:
+💈 Barberías y salones de belleza
+🧖‍♀️ Spas, faciales y masajes
+🩺 Profesionales de la salud
+🐾 Veterinarias y bienestar animal
+
+Compara precios en colones, revisa calificaciones reales y reserva tu turno en segundos.
+
+👉 Descubre comercios locales en: reservascr.app
+Powered by @geosoft 💻
+
+#CostaRica #ServiciosCostaRica #DirectorioCR #SanJoseCR #HerediaCR #AlajuelaCR
+        </p>
+      </div>
+
+      <button onclick="downloadSinglePost('post_feed_3.svg', 'post_feed_3_directorio.png')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar Imagen PNG HD
+      </button>
+    </div>
+
+    <!-- POST 4 -->
+    <div class="bg-slate-900/95 rounded-3xl p-5 border border-slate-800 flex flex-col justify-between shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black px-3 py-1 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">POST 4 • SUSCRIPCIÓN</span>
+        <span class="text-xs text-slate-400 font-bold">1080 x 1080 px</span>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-800 bg-black">
+        <img src="./post_feed_4.svg" alt="Post 4" class="w-full h-auto block">
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-bold">
+          <span>📝 Texto para el Post (Caption):</span>
+          <button onclick="copyText('caption-4', this)" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+            <i class="fas fa-copy"></i> Copiar
+          </button>
+        </div>
+        <p id="caption-4" class="text-slate-300 font-medium leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800 select-all">
+Tu página de reservas profesional por una tarifa mensual fija 💎
+
+Olvídate de pagar comisiones por cada cliente que te agenda:
+✅ Un solo pago mensual accesible.
+✅ Tu propio enlace listo para tu biografía de Instagram y WhatsApp.
+✅ Panel completo para horarios, fotos y servicios.
+
+El 100% de lo que cobras a tus clientes es tuyo.
+
+🔗 ¡Obtén tu link hoy! @reservascr.app
+Powered by @geosoft 🚀
+
+#PymesCR #EmprendedoresCostaRica #NegociosCR #ReservasCR #TarifaPlana
+        </p>
+      </div>
+
+      <button onclick="downloadSinglePost('post_feed_4.svg', 'post_feed_4_suscripcion.png')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar Imagen PNG HD
+      </button>
+    </div>
+
+    <!-- POST 5 -->
+    <div class="bg-slate-900/95 rounded-3xl p-5 border border-slate-800 flex flex-col justify-between shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black px-3 py-1 rounded-xl bg-teal-500/20 text-teal-400 border border-teal-500/30">POST 5 • RECORDATORIOS WA</span>
+        <span class="text-xs text-slate-400 font-bold">1080 x 1080 px</span>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden border border-slate-800 bg-black">
+        <img src="./post_feed_5.svg" alt="Post 5" class="w-full h-auto block">
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
+        <div class="flex items-center justify-between text-slate-400 font-bold">
+          <span>📝 Texto para el Post (Caption):</span>
+          <button onclick="copyText('caption-5', this)" class="text-cyan-400 hover:text-cyan-300 flex items-center gap-1">
+            <i class="fas fa-copy"></i> Copiar
+          </button>
+        </div>
+        <p id="caption-5" class="text-slate-300 font-medium leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800 select-all">
+¿Clientes que olvidan su turno o no llegan a tiempo? 🤦‍♂️📲
+
+Con RESERVAS CR el sistema envía recordatorios automáticos por WhatsApp antes de cada atención:
+
+🚀 Reduce ausencias hasta en un 80%.
+⏰ Tus clientes llegan puntuales.
+📊 Tu agenda siempre al 100% de ocupación.
+
+Moderniza la atención de tu negocio hoy mismo.
+
+🔗 Regístrate en: reservascr.app
+Powered by @geosoft 💻
+
+#WhatsAppMarketing #ProductividadCR #NegociosLocales #ReservasCR #CostaRica
+        </p>
+      </div>
+
+      <button onclick="downloadSinglePost('post_feed_5.svg', 'post_feed_5_recordatorios.png')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-download"></i> Descargar Imagen PNG HD
+      </button>
+    </div>
+
+  </div>
+
+  <canvas id="exportCanvas" width="1080" height="1080" style="display:none;"></canvas>
+
+  <script>
+    function copyText(elementId, btn) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check text-emerald-400"></i> ¡Copiado!';
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+      });
+    }
+
+    function downloadSinglePost(svgFilename, downloadName) {
+      const canvas = document.getElementById('exportCanvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        ctx.clearRect(0, 0, 1080, 1080);
+        ctx.drawImage(img, 0, 0, 1080, 1080);
+        const link = document.createElement('a');
+        link.download = downloadName;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      };
+      img.src = './' + svgFilename + '?t=' + new Date().getTime();
+    }
+
+    async function downloadAllPosts() {
+      const posts = [
+        { file: 'post_feed_1.svg', name: 'post_feed_1_lanzamiento.png' },
+        { file: 'post_feed_2.svg', name: 'post_feed_2_automatizacion.png' },
+        { file: 'post_feed_3.svg', name: 'post_feed_3_directorio.png' },
+        { file: 'post_feed_4.svg', name: 'post_feed_4_suscripcion.png' },
+        { file: 'post_feed_5.svg', name: 'post_feed_5_recordatorios.png' }
+      ];
+
+      for (let i = 0; i < posts.length; i++) {
+        downloadSinglePost(posts[i].file, posts[i].name);
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+  </script>
+</body>
+</html>
