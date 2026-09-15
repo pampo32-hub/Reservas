@@ -2027,9 +2027,11 @@ app.post('/api/reviews', async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: '¡Muchas gracias! Tu reseña verificada ha sido publicada exitosamente.',
+      message: isUpdate 
+        ? '¡Muchas gracias! Tu reseña ha sido actualizada exitosamente.' 
+        : '¡Muchas gracias! Tu reseña verificada ha sido publicada exitosamente.',
       review: {
-        id: newReviewId,
+        id: targetReviewId,
         appointmentId: apt.id,
         businessId: apt.business_id,
         clientName: apt.client_name,
