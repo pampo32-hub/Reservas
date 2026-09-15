@@ -547,6 +547,33 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID, id);
   }
 
+  async updateBusinessAutoConfirm(businessId, autoConfirmAppointments) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/auto-confirm`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ autoConfirmAppointments })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return true;
+        }
+      } catch (e) {
+        console.error('Error actualizando autoconfirmación en API Neon:', e);
+      }
+    }
+
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      biz.autoConfirmAppointments = autoConfirmAppointments;
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return true;
+  }
+
 
 
   // --- SERVICIOS ---

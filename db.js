@@ -57,6 +57,7 @@ export async function initDatabase() {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS plan_price_usd NUMERIC(10,2) DEFAULT 8.00;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS monthly_booking_limit INT DEFAULT 150;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}';
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS auto_confirm_appointments BOOLEAN DEFAULT TRUE;
     `);
 
     // 2. Crear tabla de servicios

@@ -218,6 +218,7 @@ app.post('/api/auth/business/register', async (req, res) => {
     const planPriceUsd = planId === 'unlimited' ? 25 : (planId === 'basic' ? 6 : 15);
     const bookingLimit = planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300);
     const socialLinks = business.socialLinks || business.social_links || {};
+    const autoConfirm = business.autoConfirmAppointments !== undefined ? Boolean(business.autoConfirmAppointments) : true;
 
     // Insertar negocio
     await pool.query(`
@@ -227,6 +228,9 @@ app.post('/api/auth/business/register', async (req, res) => {
         image, cover_image, schedule, features, is_demo,
         plan, plan_price_usd, monthly_booking_limit, social_links
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+        plan, plan_price_usd, monthly_booking_limit, social_links,
+        auto_confirm_appointments
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
     `, [
       newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
       5.0, 0, business.priceRange || '₡₡',
@@ -234,6 +238,8 @@ app.post('/api/auth/business/register', async (req, res) => {
       business.description || '', business.image || '', business.coverImage || '',
       JSON.stringify(schedule), JSON.stringify(features), false,
       planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks)
+      planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks),
+      autoConfirm
     ]);
 
     // Si es una categoría personalizada, registrar alerta para el Developer
@@ -570,6 +576,7 @@ app.get('/api/businesses', async (req, res) => {
       planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
       monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
       socialLinks: b.social_links || {},
+      autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows
         .filter(s => s.business_id === b.id)
         .map(s => ({
@@ -625,6 +632,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
       monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
       socialLinks: b.social_links || {},
+      autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
         id: s.id,
         name: s.name,
@@ -698,12 +706,16 @@ app.put('/api/businesses/:id', async (req, res) => {
         schedule = COALESCE($13, schedule),
         social_links = COALESCE($14, social_links)
       WHERE id = $15
+        social_links = COALESCE($14, social_links),
+        auto_confirm_appointments = COALESCE($15, auto_confirm_appointments)
+      WHERE id = $16
     `, [
       b.name, b.category, b.categoryLabel, b.city, b.address,
       b.phone, b.email, b.description, b.image, b.coverImage,
       b.priceRange, b.features ? JSON.stringify(b.features) : null,
       b.schedule ? JSON.stringify(b.schedule) : null,
       b.socialLinks ? JSON.stringify(b.socialLinks) : (b.social_links ? JSON.stringify(b.social_links) : null),
+      b.autoConfirmAppointments !== undefined ? Boolean(b.autoConfirmAppointments) : null,
       id
     ]);
 
@@ -711,6 +723,21 @@ app.put('/api/businesses/:id', async (req, res) => {
   } catch (error) {
     console.error('Error actualizando negocio:', error);
     res.status(500).json({ error: 'Error al actualizar negocio' });
+  }
+});
+
+// Actualizar switch de autoconfirmación de citas del negocio
+app.put('/api/businesses/:id/auto-confirm', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { autoConfirmAppointments } = req.body;
+    const isAuto = autoConfirmAppointments !== false;
+
+    await pool.query('UPDATE reservas_businesses SET auto_confirm_appointments = $1 WHERE id = $2', [isAuto, id]);
+    res.json({ success: true, autoConfirmAppointments: isAuto, message: `Autoconfirmación de citas ${isAuto ? 'activada' : 'desactivada'}` });
+  } catch (error) {
+    console.error('Error al actualizar autoconfirmación:', error);
+    res.status(500).json({ error: 'Error al actualizar configuración de autoconfirmación' });
   }
 });
 
@@ -959,6 +986,8 @@ app.post('/api/appointments', async (req, res) => {
 
     // 1. Verificar si el negocio está bloqueado
     const bizCheck = await pool.query('SELECT name, is_blocked, block_reason, plan, monthly_booking_limit FROM reservas_businesses WHERE id = $1', [a.businessId]);
+    // 1. Validar que el comercio no esté bloqueado/suspendido
+    const bizCheck = await pool.query('SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments FROM reservas_businesses WHERE id = $1', [a.businessId]);
     if (bizCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Comercio no encontrado' });
     }
@@ -997,6 +1026,9 @@ app.post('/api/appointments', async (req, res) => {
       }
     }
 
+    const isAutoConfirm = bizData.auto_confirm_appointments !== false;
+    const initialStatus = a.status ? a.status : (isAutoConfirm ? 'confirmed' : 'pending');
+
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
@@ -1010,6 +1042,7 @@ app.post('/api/appointments', async (req, res) => {
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
       a.serviceDuration, a.date, a.time, a.clientName, a.clientPhone,
       a.clientEmail || '', a.notes || '', a.status || 'confirmed', optIn
+      a.clientEmail || '', a.notes || '', initialStatus, optIn
     ]);
 
     // Registrar o actualizar automáticamente el cliente
@@ -1022,11 +1055,23 @@ app.post('/api/appointments', async (req, res) => {
     }
 
     const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
+    const createdAppointment = { 
+      id: newId, 
+      ...a, 
+      whatsappOptIn: optIn, 
+      status: initialStatus,
+      autoConfirmed: isAutoConfirm
+    };
 
     // Enviar notificaciones de confirmación de forma asíncrona en segundo plano
     pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
       .then(bizRes => {
         const business = bizRes.rows[0] || null;
+    // Si está autoconfirmada y confirmada, enviar notificaciones inmediatamente
+    if (isAutoConfirm && initialStatus === 'confirmed') {
+      pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
+        .then(bizRes => {
+          const business = bizRes.rows[0] || null;
 
         // 1. Enviar correo de confirmación (si proporcionó email)
         if (a.clientEmail && a.clientEmail.includes('@')) {
@@ -1034,6 +1079,12 @@ app.post('/api/appointments', async (req, res) => {
             console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
           });
         }
+          // 1. Enviar correo de confirmación (si proporcionó email)
+          if (a.clientEmail && a.clientEmail.includes('@')) {
+            sendBookingConfirmationEmail(createdAppointment, business).catch(emailErr => {
+              console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+            });
+          }
 
         // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
         if (optIn && a.clientPhone) {
@@ -1045,6 +1096,17 @@ app.post('/api/appointments', async (req, res) => {
       .catch(err => {
         console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
       });
+          // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
+          if (optIn && a.clientPhone) {
+            sendBookingConfirmationWhatsApp(createdAppointment, business, pool).catch(waErr => {
+              console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
+            });
+          }
+        })
+        .catch(err => {
+          console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
+        });
+    }
 
     res.status(201).json(createdAppointment);
   } catch (error) {
@@ -1220,6 +1282,9 @@ app.put('/api/appointments/:id', async (req, res) => {
     const { id } = req.params;
     const a = req.body;
 
+    const prevAptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1', [id]);
+    const prevApt = prevAptRes.rows[0];
+
     await pool.query(`
       UPDATE reservas_appointments SET
         date = COALESCE($1, date),
@@ -1241,6 +1306,41 @@ app.put('/api/appointments/:id', async (req, res) => {
       a.notes, a.status, a.clientName, a.clientPhone, a.clientEmail, id
     ]);
 
+    // Si pasó a confirmed y antes no lo estaba, disparar notificaciones
+    if (a.status === 'confirmed' && prevApt && prevApt.status !== 'confirmed') {
+      const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
+      const business = bizRes.rows[0] || null;
+
+      const aptNotif = {
+        id: prevApt.id,
+        businessId: prevApt.business_id,
+        serviceId: a.serviceId || prevApt.service_id,
+        serviceName: a.serviceName || prevApt.service_name,
+        servicePrice: a.servicePrice !== undefined ? parseFloat(a.servicePrice) : parseFloat(prevApt.service_price),
+        serviceDuration: a.serviceDuration !== undefined ? parseInt(a.serviceDuration, 10) : prevApt.service_duration,
+        date: a.date || prevApt.date,
+        time: a.time || prevApt.time,
+        clientName: a.clientName || prevApt.client_name,
+        clientPhone: a.clientPhone || prevApt.client_phone,
+        clientEmail: a.clientEmail || prevApt.client_email,
+        notes: a.notes !== undefined ? a.notes : prevApt.notes,
+        status: 'confirmed',
+        whatsappOptIn: prevApt.whatsapp_opt_in !== false
+      };
+
+      if (aptNotif.clientEmail && aptNotif.clientEmail.includes('@')) {
+        sendBookingConfirmationEmail(aptNotif, business).catch(err => {
+          console.error('⚠️ Error al enviar correo de confirmación:', err.message);
+        });
+      }
+
+      if (aptNotif.whatsappOptIn && aptNotif.clientPhone) {
+        sendBookingConfirmationWhatsApp(aptNotif, business, pool).catch(err => {
+          console.error('⚠️ Error al enviar WhatsApp de confirmación:', err.message);
+        });
+      }
+    }
+
     res.json({ success: true, message: 'Cita actualizada y reprogramada correctamente' });
   } catch (error) {
     console.error('Error actualizando cita:', error);
@@ -1254,8 +1354,51 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    const prevAptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1', [id]);
+    const prevApt = prevAptRes.rows[0];
+
     await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, id]);
     res.json({ success: true, message: 'Estado actualizado' });
+
+    // Si pasó a confirmed desde pending/otro estado, disparar notificaciones automáticamente
+    let notificationsSent = false;
+    if (status === 'confirmed' && prevApt && prevApt.status !== 'confirmed') {
+      const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
+      const business = bizRes.rows[0] || null;
+
+      const aptNotif = {
+        id: prevApt.id,
+        businessId: prevApt.business_id,
+        serviceId: prevApt.service_id,
+        serviceName: prevApt.service_name,
+        servicePrice: parseFloat(prevApt.service_price),
+        serviceDuration: prevApt.service_duration,
+        date: prevApt.date,
+        time: prevApt.time,
+        clientName: prevApt.client_name,
+        clientPhone: prevApt.client_phone,
+        clientEmail: prevApt.client_email,
+        notes: prevApt.notes,
+        status: 'confirmed',
+        whatsappOptIn: prevApt.whatsapp_opt_in !== false
+      };
+
+      if (aptNotif.clientEmail && aptNotif.clientEmail.includes('@')) {
+        sendBookingConfirmationEmail(aptNotif, business).catch(err => {
+          console.error('⚠️ Error no bloqueante al enviar correo de confirmación manual:', err.message);
+        });
+      }
+
+      if (aptNotif.whatsappOptIn && aptNotif.clientPhone) {
+        sendBookingConfirmationWhatsApp(aptNotif, business, pool).catch(err => {
+          console.error('⚠️ Error no bloqueante al enviar WhatsApp de confirmación manual:', err.message);
+        });
+      }
+
+      notificationsSent = true;
+    }
+
+    res.json({ success: true, message: 'Estado actualizado', notificationsSent });
   } catch (error) {
     console.error('Error actualizando estado de cita:', error);
     res.status(500).json({ error: 'Error al actualizar cita' });
