@@ -323,12 +323,14 @@ class App {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
           <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
+            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl overflow-hidden shadow-md shadow-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+              <img src="./src/assets/logo.svg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
               <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
             <div>
               <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
-              <span class="text-[11px] sm:text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Citas en Costa Rica 🇨🇷</span>
+              <span class="text-[11px] sm:text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Reservas de Servicios en Costa Rica 🇨🇷</span>
             </div>
           </div>
 
@@ -1546,6 +1548,8 @@ class App {
 
           <!-- Tarjeta del Comercio & Servicio -->
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+            <div class="w-14 h-14 rounded-xl overflow-hidden bg-slate-200 flex-shrink-0 border border-slate-200">
+              <img src="${apt.businessImage || './src/assets/logo.svg'}" alt="${apt.businessName}" class="w-full h-full object-cover">
             <div class="w-14 h-14 rounded-xl overflow-hidden bg-white flex-shrink-0 border border-slate-200">
               <img src="${apt.businessImage || './src/assets/reservas_cr_clean_badge_1.jpg'}" alt="${apt.businessName}" class="w-full h-full object-cover">
             </div>
