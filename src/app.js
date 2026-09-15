@@ -399,8 +399,132 @@ class App {
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
-        <!-- Hero Section -->
-        <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-16 px-4 sm:px-6 lg:px-8">
+        <!-- 1. Banner Superior Destacado para Negocios -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6 sm:p-10 shadow-2xl border border-indigo-900/50">
+            <!-- Efectos de Fondo -->
+            <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <!-- Columna Texto e Incentivos -->
+              <div class="lg:col-span-7 space-y-4 text-left">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider border border-indigo-500/30">
+                  <i class="fas fa-rocket text-amber-400"></i> Espacio para Comercios & Profesionales
+                </div>
+                
+                <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                  Dile a tus clientes que <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">ya tienen dónde reservar tus servicios 24/7</span>
+                </h2>
+                
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
+                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>TurnoYa</strong> tienes una página propia con tu catálogo, precios y horarios listos para compartir con tus clientes.
+                </p>
+
+                <!-- Beneficios Rápidos -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-sm">
+                      <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-white">Recordatorios WhatsApp</h4>
+                      <p class="text-[11px] text-slate-400">Confirmación instantánea al cliente y a ti.</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-sm">
+                      <i class="fas fa-link"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-white">Enlace directo a tu perfil</h4>
+                      <p class="text-[11px] text-slate-400">Pégalo en tu bio de Instagram o estado.</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-sm">
+                      <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-white">Control total de turnos</h4>
+                      <p class="text-[11px] text-slate-400">Tus días, horarios y descansos sin choques.</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
+                    <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-sm">
+                      <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-white">Panel de administración</h4>
+                      <p class="text-[11px] text-slate-400">Gestiona citas, servicios y estadísticas.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3">
+                  <button id="cta-register-biz-btn" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Registrar Mi Negocio Gratis</span>
+                  </button>
+                  
+                  <button id="cta-login-biz-btn" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-bold border border-white/10 flex items-center justify-center gap-2 transition-all">
+                    <i class="fas fa-store"></i>
+                    <span>Ya tengo cuenta de negocio</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Columna Ilustrativa / Preview Card -->
+              <div class="lg:col-span-5 flex justify-center">
+                <div class="w-full max-w-sm bg-slate-900/90 rounded-3xl p-6 border border-indigo-500/30 shadow-2xl backdrop-blur-md space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
+                        <i class="fas fa-store"></i>
+                      </div>
+                      <div>
+                        <h4 class="text-xs font-extrabold text-white">Tu Negocio Aquí</h4>
+                        <p class="text-[10px] text-slate-400">turnoya.cr/#/negocio/tu-local</p>
+                      </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">Activo 24/7</span>
+                  </div>
+
+                  <div class="space-y-2">
+                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-calendar-check text-blue-400"></i>
+                        <span class="text-slate-200 font-medium">Nueva Reserva Recibida</span>
+                      </div>
+                      <span class="text-emerald-400 font-bold">₡15,000</span>
+                    </div>
+                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
+                      <div class="flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-emerald-400"></i>
+                        <span class="text-slate-200 font-medium">WhatsApp Enviado</span>
+                      </div>
+                      <span class="text-slate-400 text-[10px]">10:30 AM</span>
+                    </div>
+                  </div>
+
+                  <div class="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/20 text-center">
+                    <p class="text-[11px] text-indigo-200 font-medium mb-1">¡Configura tu horario y empieza a recibir turnos hoy mismo!</p>
+                    <div class="text-xs font-black text-amber-300 flex items-center justify-center gap-1">
+                      <i class="fas fa-bolt"></i> Toma menos de 2 minutos
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. Hero Section: Exploración y Búsqueda de Citas -->
+        <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-12 px-4 sm:px-6 lg:px-8 mt-6">
           <div class="max-w-4xl mx-auto text-center">
             <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-4">
               <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
@@ -433,20 +557,10 @@ class App {
                 Buscar
               </button>
             </div>
-
-            <!-- Mini Banner de Acceso / Registro para Negocios en Hero -->
-            <div class="mt-6 inline-flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm text-slate-600 bg-white/90 backdrop-blur-md py-2 px-4 rounded-2xl border border-slate-200 shadow-xs">
-              <span class="font-bold text-slate-900 flex items-center gap-1.5">
-                <i class="fas fa-store text-indigo-600"></i> ¿Tienes un negocio o prestas servicios?
-              </span>
-              <button id="hero-register-biz-btn" class="font-black text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-2 flex items-center gap-1 transition-colors">
-                ¡Publica tu catálogo y recibe citas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
-              </button>
-            </div>
           </div>
         </section>
 
-        <!-- Category Filter Pills -->
+        <!-- 3. Filtro por Categorías -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
           <div class="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
             ${categories.map(cat => `
@@ -461,7 +575,7 @@ class App {
           </div>
         </div>
 
-        <!-- Business Cards Grid -->
+        <!-- 4. Catálogo de Establecimientos -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-slate-900">
@@ -528,15 +642,15 @@ class App {
                         ${biz.description || ''}
                       </p>
 
-                      <!-- Features pills preview -->
-                      ${biz.features && biz.features.length > 0 ? `
-                        <div class="flex flex-wrap gap-1.5 mt-3">
-                          ${biz.features.slice(0, 3).map(feat => `
-                            <span class="text-[10px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
-                              ${feat}
-                            </span>
+                      <!-- Key Services Preview -->
+                      ${biz.services && biz.services.length > 0 ? `
+                        <div class="mt-3 space-y-1.5">
+                          ${biz.services.slice(0, 2).map(srv => `
+                            <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                              <span class="text-slate-600 font-medium truncate max-w-[170px]">${srv.name}</span>
+                              <span class="font-extrabold text-blue-600 flex-shrink-0">${this.formatColones(srv.price)}</span>
+                            </div>
                           `).join('')}
-                          ${biz.features.length > 3 ? `<span class="text-[10px] text-slate-400">+${biz.features.length - 3}</span>` : ''}
                         </div>
                       ` : ''}
 
@@ -568,130 +682,6 @@ class App {
             </div>
           `}
         </div>
-
-        <!-- Sección de Captación & Incentivo para Negocios -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-8 sm:p-12 shadow-2xl border border-indigo-900/50">
-            <!-- Efectos de Fondo -->
-            <div class="absolute -top-24 -right-24 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              <!-- Columna Texto e Incentivos -->
-              <div class="lg:col-span-7 space-y-5 text-left">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase tracking-wider border border-indigo-500/30">
-                  <i class="fas fa-rocket text-amber-400"></i> Espacio para Comercios & Profesionales
-                </div>
-                
-                <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
-                  Dile a tus clientes que <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">ya tienen dónde reservar tus servicios 24/7</span>
-                </h2>
-                
-                <p class="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
-                  Evita llamadas en horas ocupadas y mensajes perdidos en WhatsApp. Con <strong>TurnoYa</strong> tienes una página propia con tu catálogo, precios y horarios listos para compartir con tus clientes.
-                </p>
-
-                <!-- Beneficios Rápidos -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 text-sm">
-                      <i class="fab fa-whatsapp"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Recordatorios WhatsApp</h4>
-                      <p class="text-[11px] text-slate-400">Confirmación instantánea al cliente y a ti.</p>
-                    </div>
-                  </div>
-
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center flex-shrink-0 text-sm">
-                      <i class="fas fa-link"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Enlace directo a tu perfil</h4>
-                      <p class="text-[11px] text-slate-400">Pégalo en tu bio de Instagram o estado.</p>
-                    </div>
-                  </div>
-
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 text-sm">
-                      <i class="fas fa-clock"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Control total de turnos</h4>
-                      <p class="text-[11px] text-slate-400">Tus días, horarios y descansos sin choques.</p>
-                    </div>
-                  </div>
-
-                  <div class="flex items-start gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
-                    <div class="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-sm">
-                      <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div>
-                      <h4 class="text-xs font-bold text-white">Panel de administración</h4>
-                      <p class="text-[11px] text-slate-400">Gestiona citas, servicios y estadísticas.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Botones de Acción -->
-                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4">
-                  <button id="cta-register-biz-btn" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-extrabold shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5">
-                    <i class="fas fa-plus-circle"></i>
-                    <span>Registrar Mi Negocio Gratis</span>
-                  </button>
-                  
-                  <button id="cta-login-biz-btn" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-sm font-bold border border-white/10 flex items-center justify-center gap-2 transition-all">
-                    <i class="fas fa-store"></i>
-                    <span>Ya tengo cuenta de negocio</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Columna Ilustrativa / Preview Card -->
-              <div class="lg:col-span-5 flex justify-center">
-                <div class="w-full max-w-sm bg-slate-900/90 rounded-3xl p-6 border border-indigo-500/30 shadow-2xl backdrop-blur-md space-y-4">
-                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-sm font-bold shadow-md">
-                        <i class="fas fa-store"></i>
-                      </div>
-                      <div>
-                        <h4 class="text-xs font-extrabold text-white">Tu Negocio Aquí</h4>
-                        <p class="text-[10px] text-slate-400">turnoya.cr/#/negocio/tu-local</p>
-                      </div>
-                    </div>
-                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">Activo 24/7</span>
-                  </div>
-
-                  <div class="space-y-2">
-                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2">
-                        <i class="fas fa-calendar-check text-blue-400"></i>
-                        <span class="text-slate-200 font-medium">Nueva Reserva Recibida</span>
-                      </div>
-                      <span class="text-emerald-400 font-bold">₡15,000</span>
-                    </div>
-                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between text-xs">
-                      <div class="flex items-center gap-2">
-                        <i class="fab fa-whatsapp text-emerald-400"></i>
-                        <span class="text-slate-200 font-medium">WhatsApp Enviado</span>
-                      </div>
-                      <span class="text-slate-400 text-[10px]">10:30 AM</span>
-                    </div>
-                  </div>
-
-                  <div class="p-3.5 rounded-2xl bg-indigo-950/60 border border-indigo-500/20 text-center">
-                    <p class="text-[11px] text-indigo-200 font-medium mb-1">¡Configura tu horario y empieza a recibir turnos hoy mismo!</p>
-                    <div class="text-xs font-black text-amber-300 flex items-center justify-center gap-1">
-                      <i class="fas fa-bolt"></i> Toma menos de 2 minutos
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     `;
 
@@ -735,7 +725,6 @@ class App {
     });
 
     // Listeners para Registro / Login de Negocios
-    document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
   }
@@ -3285,12 +3274,10 @@ class App {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
-                      <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                       <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
-                      <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                       <input type="password" id="reg-biz-password-confirm" required placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
                     </div>
                   </div>
