@@ -522,11 +522,9 @@ app.get('/api/appointments', async (req, res) => {
   }
 });
 
-// Obtener todos los negocios
 // Obtener todos los negocios (Público: solo visibles y no bloqueados)
 app.get('/api/businesses', async (req, res) => {
   try {
-    const bizRes = await pool.query('SELECT * FROM reservas_businesses ORDER BY is_demo DESC, created_at ASC');
     const bizRes = await pool.query(`
       SELECT * FROM reservas_businesses 
       WHERE (is_hidden IS NOT TRUE AND is_blocked IS NOT TRUE)
@@ -843,6 +841,17 @@ app.post('/api/appointments', async (req, res) => {
 
     const createdAppointment = { id: newId, ...a, whatsappOptIn: optIn, status: a.status || 'confirmed' };
 
+    // Enviar correo de confirmación de forma asíncrona en segundo plano
+    if (a.clientEmail && a.clientEmail.includes('@')) {
+      pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
+        .then(bizRes => {
+          const business = bizRes.rows[0] || null;
+          return sendBookingConfirmationEmail(createdAppointment, business);
+        })
+        .catch(emailErr => {
+          console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+        });
+    }
     // Enviar notificaciones de confirmación de forma asíncrona en segundo plano
     pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
       .then(bizRes => {
@@ -1210,7 +1219,6 @@ app.delete('/api/developer/businesses/:id', async (req, res) => {
     await pool.query('DELETE FROM reservas_services WHERE business_id = $1', [id]);
     await pool.query('DELETE FROM reservas_business_users WHERE business_id = $1', [id]);
     await pool.query('DELETE FROM reservas_businesses WHERE id = $1', [id]);
-    res.json({ success: true, message: 'Negocio eliminado correctamente' });
     res.json({ success: true, message: 'Negocio y todos sus registros asociados han sido eliminados correctamente.' });
   } catch (error) {
     console.error('Error eliminando negocio desde developer:', error);
