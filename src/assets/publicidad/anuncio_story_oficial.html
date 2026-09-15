@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anuncio Story / Reel Oficial (1080 x 1920) - Reservas CR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #030712;
+    }
+    .story-canvas {
+      width: 1080px;
+      height: 1920px;
+      min-width: 1080px;
+      min-height: 1920px;
+    }
+    .glow-slot {
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.45), 0 0 15px rgba(16, 185, 129, 0.3);
+    }
+    .glow-wa {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 30px rgba(37, 211, 102, 0.2);
+    }
+    .phone-shadow {
+      box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6), 0 20px 40px -10px rgba(14, 165, 233, 0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 text-white">
+
+  <!-- Header de Controles -->
+  <div class="max-w-xl w-full text-center space-y-3 mb-6">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+      <i class="fas fa-check-circle"></i> Story / Reel Oficial (1080 x 1920 px)
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-black text-white">Anuncio con Logo Oficial</h1>
+    <p class="text-slate-400 text-sm">Diseño publicitario de alta conversión para Instagram Stories, Reels y TikTok.</p>
+    
+    <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+      <button onclick="downloadStory()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black shadow-xl shadow-cyan-500/25 flex items-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
+        <i class="fas fa-download text-lg"></i>
+        <span>Descargar Imagen Story (1080x1920 HD)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenedor Visual (Escalado para previsualizar en pantalla) -->
+  <div class="overflow-auto max-w-full p-4 bg-slate-950 rounded-3xl border border-slate-800 shadow-2xl flex justify-center">
+    
+    <div id="story-export-node" class="story-canvas bg-gradient-to-b from-slate-100 via-slate-50 to-slate-200 relative overflow-hidden flex flex-col justify-between p-16 select-none">
+      
+      <!-- Fondo con iluminación ambiental de salón/comercio -->
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-100/60 via-slate-100/40 to-slate-200 pointer-events-none"></div>
+      <div class="absolute -top-32 -left-32 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute top-1/2 -right-32 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <!-- TITULAR SUPERIOR DE ALTO IMPACTO -->
+      <div class="relative z-10 text-center pt-8 px-4">
+        <h1 class="text-[58px] font-black text-slate-900 leading-[1.18] tracking-tight max-w-3xl mx-auto">
+          Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-600 via-sky-500 to-teal-500 bg-clip-text text-transparent">24/7</span> con confirmación inmediata
+        </h1>
+      </div>
+
+      <!-- MOCKUP CENTRAL DEL SMARTPHONE -->
+      <div class="relative z-10 flex justify-center my-auto">
+        
+        <!-- Marco del Teléfono -->
+        <div class="relative w-[520px] bg-slate-900 rounded-[56px] p-4.5 phone-shadow border-[6px] border-slate-800">
+          
+          <!-- Pantalla Interior del Teléfono -->
+          <div class="relative w-full bg-white rounded-[44px] overflow-hidden flex flex-col pb-6 border border-slate-200/80">
+            
+            <!-- Barra Superior del Teléfono -->
+            <div class="h-10 px-8 flex items-center justify-between text-xs font-bold text-slate-800 pt-2">
+              <span>9:41</span>
+              <div class="flex items-center gap-2">
+                <i class="fas fa-signal text-[10px]"></i>
+                <i class="fas fa-wifi text-[10px]"></i>
+                <i class="fas fa-battery-full text-xs"></i>
+              </div>
+            </div>
+
+            <!-- Header de la App con Logo Oficial -->
+            <div class="px-6 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-arrow-left text-slate-500 text-sm"></i>
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-xl overflow-hidden bg-white shadow-xs border border-slate-200/80 flex items-center justify-center p-0.5">
+                    <img src="./reservas_cr_oficial_logo.png" alt="Reservas CR" class="w-full h-full object-cover rounded-lg">
+                  </div>
+                  <span class="font-black text-slate-900 text-base tracking-tight">Reservas <span class="text-blue-600">CR</span></span>
+                </div>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200">Abierto</span>
+            </div>
+
+            <!-- Banner del Negocio -->
+            <div class="relative h-44 bg-slate-800 overflow-hidden">
+              <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80" alt="Salon" class="w-full h-full object-cover opacity-85">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+              <div class="absolute bottom-3 left-5 right-5 text-white">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-blue-300">Barbería & Spa</span>
+                <h3 class="text-lg font-black leading-tight">Studio Barber Elite</h3>
+              </div>
+            </div>
+
+            <!-- Selector de Horarios -->
+            <div class="p-6 space-y-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-slate-400 uppercase tracking-wider">Horarios Disponibles</span>
+                <span class="text-xs font-bold text-blue-600">Hoy, 15 de Septiembre</span>
+              </div>
+
+              <!-- Grilla de Botones de Horarios -->
+              <div class="grid grid-cols-2 gap-3">
+                <div class="py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600 text-sm">
+                  09:30 AM
+                </div>
+                <div class="py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600 text-sm">
+                  10:00 AM
+                </div>
+              </div>
+
+              <!-- SLOT SELECCIONADO (CON GLOW VERDE) -->
+              <div class="py-3.5 px-5 rounded-2xl bg-white border-2 border-emerald-500 glow-slot flex items-center justify-between text-slate-900 font-black text-base">
+                <span>10:30 AM</span>
+                <div class="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs">
+                  <i class="fas fa-check"></i>
+                </div>
+              </div>
+
+              <!-- Otros Horarios -->
+              <div class="grid grid-cols-2 gap-3 opacity-60">
+                <div class="py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600 text-sm">
+                  11:00 AM
+                </div>
+                <div class="py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600 text-sm">
+                  12:00 PM
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 opacity-40">
+                <div class="py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600 text-sm">
+                  02:00 PM
+                </div>
+                <div class="py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-center font-bold text-slate-600 text-sm">
+                  03:30 PM
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- TARJETA FLOTANTE DE NOTIFICACIÓN DE WHATSAPP (SOBRE EL TELÉFONO) -->
+          <div class="absolute -top-10 -left-12 -right-12 z-30 bg-white/95 backdrop-blur-md rounded-3xl p-5 glow-wa border-2 border-slate-100 flex items-center gap-4.5 transform -rotate-1 hover:rotate-0 transition-transform">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-3xl flex-shrink-0 shadow-lg shadow-emerald-500/30">
+              <i class="fab fa-whatsapp"></i>
+            </div>
+            <div>
+              <span class="text-xs font-extrabold text-emerald-600 uppercase tracking-wide block">Notificación Instantánea</span>
+              <h4 class="text-xl font-black text-slate-900 leading-tight">Confirmación enviada por WhatsApp</h4>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- FOOTER INFERIOR CON LOGO OFICIAL GRANDE Y FLECHA CTA -->
+      <div class="relative z-10 flex items-center justify-between pt-6 border-t border-slate-300/60">
+        
+        <!-- Flecha de Deslizar -->
+        <div class="flex items-center gap-3">
+          <div class="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-xl shadow-lg">
+            <i class="fas fa-arrow-right"></i>
+          </div>
+          <span class="font-extrabold text-slate-800 text-lg">Desliza para registrar tu negocio</span>
+        </div>
+
+        <!-- Logo Oficial en Esquina Inferior -->
+        <div class="flex items-center gap-3.5 bg-white px-5 py-3 rounded-2xl shadow-lg border border-slate-200">
+          <div class="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center p-0.5">
+            <img src="./reservas_cr_oficial_logo.png" alt="Reservas CR Oficial" class="w-full h-full object-cover rounded-lg">
+          </div>
+          <div>
+            <span class="font-black text-xl text-slate-900 block tracking-tight">Reservas <span class="text-blue-600">CR</span></span>
+            <span class="text-xs font-bold text-slate-500">reservascr.app</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    function downloadStory() {
+      const node = document.getElementById('story-export-node');
+      const btn = event.currentTarget;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando imagen HD (1080x1920)...';
+      btn.disabled = true;
+
+      html2canvas(node, {
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#f8fafc'
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'anuncio_story_reservas_cr_oficial.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }).catch(err => {
+        console.error(err);
+        alert('Error exportando. Intenta de nuevo.');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      });
+    }
+  </script>
+</body>
+</html>
