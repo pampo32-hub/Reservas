@@ -120,7 +120,9 @@ class App {
     }
 
     const initialHash = this.getHashForView(this.currentView, initialRoute.params);
-    history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialHash);
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialHash);
+    }
 
     this.renderHeader();
     this.renderCurrentView();
@@ -181,11 +183,11 @@ class App {
 
     const targetHash = this.getHashForView(view, params);
 
-    if (pushHistory) {
-      if (window.location.hash !== targetHash) {
-        history.pushState({ view, params }, '', targetHash);
-      } else {
-        history.replaceState({ view, params }, '', targetHash);
+    if (pushHistory && window.history) {
+      if (window.location.hash !== targetHash && window.history.pushState) {
+        window.history.pushState({ view, params }, '', targetHash);
+      } else if (window.history.replaceState) {
+        window.history.replaceState({ view, params }, '', targetHash);
       }
     }
 

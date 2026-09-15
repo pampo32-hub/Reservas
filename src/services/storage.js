@@ -547,45 +547,7 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID, id);
   }
 
-  // --- PLANES DE SUSCRIPCIÓN ---
-  getSubscriptionPlans() {
-    return SUBSCRIPTION_PLANS;
-  }
 
-  getPlanById(planId) {
-    return SUBSCRIPTION_PLANS.find(p => p.id === planId) || SUBSCRIPTION_PLANS[0];
-  }
-
-  async updateBusinessPlan(businessId, planId) {
-    const plan = this.getPlanById(planId);
-    if (this.isOnlineApi) {
-      try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/plan`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: planId })
-        });
-        if (res.ok) {
-          await this.loadFromApi();
-          return { success: true, plan };
-        }
-      } catch (e) {
-        console.warn('Error online actualizando plan, aplicando localmente:', e);
-      }
-    }
-
-    // Fallback local
-    const businesses = this.getBusinesses();
-    const idx = businesses.findIndex(b => b.id === businessId);
-    if (idx !== -1) {
-      businesses[idx].plan = planId;
-      businesses[idx].planPriceUsd = plan.priceUsd;
-      businesses[idx].monthlyBookingLimit = plan.bookingLimit;
-      this.businessesCache = businesses;
-      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
-    }
-    return { success: true, plan };
-  }
 
   // --- SERVICIOS ---
   async addService(businessId, serviceData) {
@@ -951,3 +913,4 @@ class StorageService {
 }
 
 export const storage = new StorageService();
+export default storage;
