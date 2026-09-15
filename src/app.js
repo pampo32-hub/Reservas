@@ -3,7 +3,7 @@ import { storage } from './services/storage.js';
 
 class App {
   constructor() {
-    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard'
+    this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
     this.searchQuery = '';
@@ -71,14 +71,18 @@ class App {
     }, 3500);
   }
 
-  // --- HEADER / NAVBAR ---
+  // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
 
+    const bizUser = storage.getBusinessUser();
+    const clientUser = storage.getClientUser();
+    const activeBiz = bizUser ? storage.getBusinessById(bizUser.businessId) : null;
+
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
           <!-- Logo -->
           <div class="flex items-center gap-3 cursor-pointer select-none" id="nav-logo-btn">
             <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
@@ -86,32 +90,81 @@ class App {
             </div>
             <div>
               <span class="font-extrabold text-xl tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">TurnoYa</span>
-              <span class="text-xs block text-slate-500 font-medium">Directorio & Reservas Costa Rica 🇨🇷</span>
+              <span class="text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Reservas Costa Rica 🇨🇷</span>
             </div>
           </div>
 
-          <!-- Navigation Links -->
-          <nav class="flex items-center gap-2 sm:gap-3">
-            <button id="nav-directory-btn" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
-              <i class="fas fa-compass mr-1.5"></i> Explorar
+          <!-- Navigation / Auth Controls -->
+          <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Explorar -->
+            <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+              <i class="fas fa-compass mr-1"></i> Explorar
             </button>
 
-            <button id="nav-register-btn" class="hidden sm:flex items-center px-3.5 py-2 rounded-xl text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all">
-              <i class="fas fa-plus-circle mr-1.5"></i> Registrar Negocio
-            </button>
+            <!-- 1. ACCESO DE USUARIOS / CLIENTES -->
+            ${clientUser ? `
+              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
+                  <i class="fas fa-user-circle text-blue-600 text-sm"></i>
+                  <span class="max-w-[100px] truncate">${clientUser.name.split(' ')[0]}</span>
+                  <span class="hidden md:inline text-[10px] text-slate-400">(Mis Citas)</span>
+                </button>
+                <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg" title="Cerrar sesión de cliente">
+                  <i class="fas fa-sign-out-alt text-xs"></i>
+                </button>
+              </div>
+            ` : `
+              <button id="nav-client-login-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
+                <i class="fas fa-user text-blue-600"></i>
+                <span>Acceso Usuarios</span>
+              </button>
+            `}
 
-            <button id="nav-dashboard-btn" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/25' : 'bg-slate-900 hover:bg-slate-800 text-white'}">
-              <i class="fas fa-store mr-1.5"></i> Panel Dueño
-            </button>
-          </nav>
+            <!-- 2. ACCESO PANEL DE NEGOCIO (CON CONTRASEÑA) -->
+            ${bizUser ? `
+              <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl">
+                <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
+                  <i class="fas fa-store text-xs ${this.currentView === 'owner-dashboard' ? 'text-white' : 'text-indigo-600'}"></i>
+                  <span class="max-w-[120px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
+                </button>
+                <button id="nav-biz-logout-btn" class="p-1.5 text-indigo-400 hover:text-rose-600 rounded-lg" title="Cerrar sesión de negocio">
+                  <i class="fas fa-sign-out-alt text-xs"></i>
+                </button>
+              </div>
+            ` : `
+              <button id="nav-biz-login-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-md shadow-slate-900/20 flex items-center gap-1.5 transition-all">
+                <i class="fas fa-store text-indigo-400"></i>
+                <span>Panel de Negocio</span>
+              </button>
+            `}
+          </div>
         </div>
       </header>
     `;
 
+    // Eventos de Navegación y Auth
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
-    document.getElementById('nav-dashboard-btn')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
-    document.getElementById('nav-register-btn')?.addEventListener('click', () => this.renderNewBusinessModal());
+
+    // Cliente
+    document.getElementById('nav-client-login-btn')?.addEventListener('click', () => this.renderClientAuthModal());
+    document.getElementById('nav-client-bookings-btn')?.addEventListener('click', () => this.navigateTo('my-client-bookings'));
+    document.getElementById('nav-client-logout-btn')?.addEventListener('click', () => {
+      storage.logoutClient();
+      this.showToast('Sesión de usuario cerrada.', 'info');
+      this.renderHeader();
+      if (this.currentView === 'my-client-bookings') this.navigateTo('directory');
+    });
+
+    // Negocio
+    document.getElementById('nav-biz-login-btn')?.addEventListener('click', () => this.renderBusinessAuthModal());
+    document.getElementById('nav-biz-dashboard-btn')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
+    document.getElementById('nav-biz-logout-btn')?.addEventListener('click', () => {
+      storage.logoutBusiness();
+      this.showToast('Sesión de negocio cerrada.', 'info');
+      this.renderHeader();
+      if (this.currentView === 'owner-dashboard') this.navigateTo('directory');
+    });
   }
 
   // --- GESTIÓN DE VISTAS ---
@@ -129,6 +182,9 @@ class App {
       case 'owner-dashboard':
         this.renderOwnerDashboardView(main);
         break;
+      case 'my-client-bookings':
+        this.renderClientBookingsView(main);
+        break;
       default:
         this.renderDirectoryView(main);
     }
@@ -141,7 +197,6 @@ class App {
     const categories = storage.getCategories();
     let businesses = storage.getBusinesses();
 
-    // Filtros
     if (this.selectedCategory !== 'all') {
       businesses = businesses.filter(b => b.category === this.selectedCategory);
     }
@@ -149,8 +204,8 @@ class App {
       const q = this.searchQuery.toLowerCase();
       businesses = businesses.filter(b => 
         b.name.toLowerCase().includes(q) ||
-        b.description.toLowerCase().includes(q) ||
-        b.city.toLowerCase().includes(q) ||
+        b.description?.toLowerCase().includes(q) ||
+        b.city?.toLowerCase().includes(q) ||
         (b.services && b.services.some(s => s.name.toLowerCase().includes(q)))
       );
     }
@@ -238,7 +293,7 @@ class App {
                     <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${biz.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
                     
-                    <!-- Badge COMERCIO DE MUESTRA o VERIFICADO -->
+                    <!-- Badge COMERCIO DE MUESTRA o REGISTRADO -->
                     <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                       ${biz.isDemo ? `
                         <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
@@ -273,7 +328,7 @@ class App {
                         ${biz.name}
                       </h3>
                       <p class="text-xs text-slate-500 mt-1 line-clamp-2">
-                        ${biz.description}
+                        ${biz.description || ''}
                       </p>
 
                       <!-- Features pills preview -->
@@ -295,7 +350,7 @@ class App {
                           ${biz.schedule ? `${biz.schedule.openTime} - ${biz.schedule.closeTime}` : '08:00 - 18:00'}
                         </span>
                         <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                          ${biz.services ? biz.services.length : 0} servicios disp.
+                          ${biz.services ? biz.services.length : 0} servicios
                         </span>
                       </div>
                     </div>
@@ -344,7 +399,6 @@ class App {
       this.renderCurrentView();
     });
 
-    // Filtros de categoría
     document.querySelectorAll('.category-pill-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.selectedCategory = btn.getAttribute('data-category-id');
@@ -352,7 +406,6 @@ class App {
       });
     });
 
-    // Botones de Ver Negocio
     document.querySelectorAll('.view-biz-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const bId = btn.getAttribute('data-business-id');
@@ -550,7 +603,7 @@ class App {
   }
 
   // ==========================================
-  // MODAL DE RESERVA EN TIEMPO REAL
+  // MODAL DE RESERVA EN TIEMPO REAL (FLUJO CLIENTE)
   // ==========================================
   openBookingModal(businessId, serviceId) {
     this.bookingState = {
@@ -574,11 +627,11 @@ class App {
     if (!modalContainer || !this.bookingState.isOpen) return;
 
     const biz = storage.getBusinessById(this.bookingState.businessId);
-    const service = biz?.services.find(s => s.id === this.bookingState.serviceId) || biz?.services[0];
+    const service = biz?.services?.find(s => s.id === this.bookingState.serviceId) || biz?.services?.[0];
     if (!biz || !service) return;
 
-    // Calcular franjas horarias disponibles para la fecha seleccionada
     const availability = storage.getAvailableSlots(biz.id, this.bookingState.selectedDate, service.duration);
+    const clientUser = storage.getClientUser();
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -655,16 +708,26 @@ class App {
               `}
             </div>
 
-            <!-- Paso 3: Datos de Contacto -->
+            <!-- Paso 3: Identificación / Datos del Cliente (Sencillo) -->
             <form id="booking-form" class="space-y-3 pt-3 border-t border-slate-100">
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                3. Tus Datos para la Reserva
-              </label>
+              <div class="flex items-center justify-between">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  3. Tus Datos para la Reserva
+                </label>
+                ${clientUser ? `
+                  <span class="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
+                    <i class="fas fa-check-circle mr-1"></i> Sesión activa
+                  </span>
+                ` : `
+                  <span class="text-[11px] text-slate-400">Sin contraseñas complicadas</span>
+                `}
+              </div>
 
               <div>
                 <input 
                   type="text" 
                   id="client-name" 
+                  value="${clientUser ? clientUser.name : ''}"
                   placeholder="Nombre y Apellidos *" 
                   required 
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -675,6 +738,7 @@ class App {
                 <input 
                   type="tel" 
                   id="client-phone" 
+                  value="${clientUser ? clientUser.phone : ''}"
                   placeholder="Teléfono / WhatsApp (+506) *" 
                   required 
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -682,6 +746,7 @@ class App {
                 <input 
                   type="email" 
                   id="client-email" 
+                  value="${clientUser ? clientUser.email || '' : ''}"
                   placeholder="Correo Electrónico" 
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
@@ -712,7 +777,6 @@ class App {
       </div>
     `;
 
-    // Listeners del modal
     document.getElementById('close-modal-btn')?.addEventListener('click', () => this.closeBookingModal());
 
     const dateInput = document.getElementById('booking-date-input');
@@ -729,7 +793,6 @@ class App {
       });
     });
 
-    // Envío del formulario de reserva
     const form = document.getElementById('booking-form');
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -742,6 +805,10 @@ class App {
       const clientPhone = document.getElementById('client-phone').value;
       const clientEmail = document.getElementById('client-email').value;
       const clientNotes = document.getElementById('client-notes').value;
+
+      // Guardar o actualizar sesión de cliente
+      await storage.loginOrRegisterClient(clientName, clientPhone, clientEmail);
+      this.renderHeader();
 
       const newAppointment = await storage.createAppointment({
         businessId: biz.id,
@@ -780,7 +847,6 @@ class App {
           <h3 class="text-2xl font-black text-slate-900 mt-1">Cita Confirmada</h3>
           <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
 
-          <!-- Ticket resumen -->
           <div class="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
             <div class="flex justify-between">
               <span class="text-slate-500">Establecimiento:</span>
@@ -805,13 +871,21 @@ class App {
           </div>
 
           <div class="mt-6 flex flex-col gap-2">
-            <button id="success-done-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all">
-              Aceptar y Continuar
+            <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
+              Ver Mis Reservas
+            </button>
+            <button id="success-done-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+              Seguir Explorando
             </button>
           </div>
         </div>
       </div>
     `;
+
+    document.getElementById('success-view-bookings-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.navigateTo('my-client-bookings');
+    });
 
     document.getElementById('success-done-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
@@ -820,51 +894,125 @@ class App {
   }
 
   // ==========================================
+  // VISTA 4: MIS RESERVAS (HISTORIAL DE CLIENTE)
+  // ==========================================
+  async renderClientBookingsView(container) {
+    const clientUser = storage.getClientUser();
+    if (!clientUser) {
+      this.renderClientAuthModal();
+      this.navigateTo('directory');
+      return;
+    }
+
+    const appointments = await storage.getClientAppointmentsAsync(clientUser.phone);
+
+    container.innerHTML = `
+      <div class="animate-fade-in pb-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <span class="text-xs font-bold text-blue-600 uppercase">Portal de Cliente</span>
+            <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
+            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone}</p>
+          </div>
+          <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
+            <i class="fas fa-sign-out-alt mr-1"></i> Cerrar Sesión
+          </button>
+        </div>
+
+        ${appointments.length === 0 ? `
+          <div class="text-center py-16 bg-white rounded-3xl border border-slate-200 p-8">
+            <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
+              <i class="far fa-calendar-alt"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">No tienes reservas activas</h3>
+            <p class="text-xs text-slate-500 mt-1">Explora los comercios disponibles y agenda tu primer turno.</p>
+            <button id="go-explore-btn" class="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20">
+              Explorar Comercios
+            </button>
+          </div>
+        ` : `
+          <div class="space-y-4">
+            ${appointments.map(apt => `
+              <div class="p-5 sm:p-6 bg-white rounded-3xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="font-extrabold text-base text-slate-900">${apt.businessName || 'Comercio'}</span>
+                    <span class="badge-status badge-status-${apt.status}">
+                      ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
+                    </span>
+                  </div>
+                  <h4 class="font-semibold text-sm text-blue-700">${apt.serviceName}</h4>
+                  <div class="text-xs text-slate-500 mt-1 flex items-center gap-3">
+                    <span><i class="far fa-calendar mr-1"></i>${apt.date}</span>
+                    <span><i class="far fa-clock mr-1"></i>${apt.time} (${apt.serviceDuration} min)</span>
+                  </div>
+                </div>
+
+                <div class="text-right flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                  <span class="text-base font-black text-slate-900">${this.formatColones(apt.servicePrice)}</span>
+                  <span class="text-[10px] text-slate-400 font-mono mt-0.5">CÓDIGO: ${apt.id.toUpperCase()}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+
+    document.getElementById('go-explore-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('client-logout-view-btn')?.addEventListener('click', () => {
+      storage.logoutClient();
+      this.showToast('Sesión cerrada.', 'info');
+      this.renderHeader();
+      this.navigateTo('directory');
+    });
+  }
+
+  // ==========================================
   // VISTA 3: PANEL DE DUEÑO DE NEGOCIO (DASHBOARD)
   // ==========================================
   renderOwnerDashboardView(container) {
-    const businesses = storage.getBusinesses();
-    const activeBizId = storage.getActiveBusinessId();
-    const currentBiz = storage.getBusinessById(activeBizId) || businesses[0];
-    const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+    const bizUser = storage.getBusinessUser();
+    if (!bizUser) {
+      this.renderBusinessAuthModal();
+      this.navigateTo('directory');
+      return;
+    }
 
-    // Métricas rápidas
+    const currentBiz = storage.getBusinessById(bizUser.businessId) || storage.getBusinesses()[0];
+    if (!currentBiz) {
+      this.navigateTo('directory');
+      return;
+    }
+
+    const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <!-- Top Bar: Switch Business or Create New -->
+        <!-- Top Bar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-8">
           <div class="flex items-center gap-4">
             <img src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${currentBiz.name}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-sm">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Panel de Administración</span>
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Panel Administrador</span>
                 ${currentBiz.isDemo ? `
                   <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio de Muestra</span>
                 ` : `
-                  <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio Registrado</span>
+                  <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio Verificado</span>
                 `}
               </div>
               <h1 class="text-xl font-extrabold text-slate-900">${currentBiz.name}</h1>
-              <span class="text-xs text-slate-500">${currentBiz.city} • ${currentBiz.categoryLabel}</span>
+              <span class="text-xs text-slate-500">Sesión iniciada como: <strong>${bizUser.name || bizUser.email}</strong></span>
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
-            <div class="flex flex-col text-right">
-              <span class="text-[11px] font-bold text-slate-400 uppercase">Cambiar Negocio</span>
-              <select id="switch-business-select" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                ${businesses.map(b => `
-                  <option value="${b.id}" ${b.id === currentBiz.id ? 'selected' : ''}>${b.name} ${b.isDemo ? '(Muestra)' : ''}</option>
-                `).join('')}
-              </select>
-            </div>
-
-            <button id="open-new-biz-modal-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/20">
-              <i class="fas fa-plus"></i> Registrar Negocio
+          <div class="flex items-center gap-2">
+            <button id="dash-logout-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
+              <i class="fas fa-sign-out-alt mr-1"></i> Salir del Panel
             </button>
           </div>
         </div>
@@ -931,10 +1079,11 @@ class App {
       </div>
     `;
 
-    // Listeners del Dashboard
-    document.getElementById('switch-business-select')?.addEventListener('change', (e) => {
-      storage.setActiveBusinessId(e.target.value);
-      this.renderCurrentView();
+    document.getElementById('dash-logout-btn')?.addEventListener('click', () => {
+      storage.logoutBusiness();
+      this.showToast('Sesión de negocio cerrada.', 'info');
+      this.renderHeader();
+      this.navigateTo('directory');
     });
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
@@ -942,10 +1091,6 @@ class App {
         this.activeDashboardTab = btn.getAttribute('data-tab');
         this.renderCurrentView();
       });
-    });
-
-    document.getElementById('open-new-biz-modal-btn')?.addEventListener('click', () => {
-      this.renderNewBusinessModal();
     });
 
     this.setupDashboardTabEvents(currentBiz);
@@ -1103,7 +1248,7 @@ class App {
                 <div class="flex items-center justify-between">
                   <label class="font-bold text-slate-700">Banner / Portada Principal</label>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    <i class="fas fa-ruler-combined mr-1"></i> Medida recomendada: 1200 x 450 px (Panorámica 16:6)
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 1200 x 450 px (16:6)
                   </span>
                 </div>
                 <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="URL de la imagen de portada (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
@@ -1119,7 +1264,7 @@ class App {
                 <div class="flex items-center justify-between">
                   <label class="font-bold text-slate-700">Foto de Perfil / Logo Cuadrado</label>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    <i class="fas fa-ruler-combined mr-1"></i> Medida recomendada: 800 x 800 px (Cuadrada 1:1)
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 800 x 800 px (1:1)
                   </span>
                 </div>
                 <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="URL del logo o foto de perfil (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
@@ -1254,7 +1399,6 @@ class App {
 
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
   setupDashboardTabEvents(currentBiz) {
-    // Cambiar estado de citas
     document.querySelectorAll('.status-change-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
@@ -1265,7 +1409,6 @@ class App {
       });
     });
 
-    // Eliminar cita
     document.querySelectorAll('.delete-apt-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
@@ -1277,17 +1420,14 @@ class App {
       });
     });
 
-    // Abrir modal de nueva cita manual
     document.getElementById('add-manual-appointment-btn')?.addEventListener('click', () => {
       this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
     });
 
-    // Abrir modal de agregar servicio
     document.getElementById('add-new-service-btn')?.addEventListener('click', () => {
       this.renderNewServiceModal(currentBiz.id);
     });
 
-    // Editar servicio existente
     document.querySelectorAll('.edit-service-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const sId = btn.getAttribute('data-service-id');
@@ -1298,7 +1438,6 @@ class App {
       });
     });
 
-    // Eliminar servicio
     document.querySelectorAll('.delete-service-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const sId = btn.getAttribute('data-service-id');
@@ -1310,7 +1449,6 @@ class App {
       });
     });
 
-    // Previsualización de imágenes en edición de perfil
     const coverInput = document.getElementById('edit-biz-cover');
     const imageInput = document.getElementById('edit-biz-image');
     coverInput?.addEventListener('input', (e) => {
@@ -1322,7 +1460,6 @@ class App {
       if (img && e.target.value) img.src = e.target.value;
     });
 
-    // Guardar cambios en el perfil del negocio
     const profileForm = document.getElementById('edit-profile-form');
     profileForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1353,7 +1490,6 @@ class App {
       this.renderCurrentView();
     });
 
-    // Guardar horarios
     const scheduleForm = document.getElementById('schedule-form');
     scheduleForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1375,6 +1511,196 @@ class App {
       await storage.saveBusiness(currentBiz);
       this.showToast('Horarios actualizados exitosamente.', 'success');
       this.renderCurrentView();
+    });
+  }
+
+  // ==========================================
+  // MODALES DE AUTENTICACIÓN
+  // ==========================================
+
+  // 1. MODAL LOGIN / REGISTRO NEGOCIO (CON CONTRASEÑA)
+  renderBusinessAuthModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-8">
+          <!-- Header -->
+          <div class="bg-slate-900 p-6 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-lg">
+                <i class="fas fa-store"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase text-indigo-300 font-bold">Portal Comercial</span>
+                <h3 class="text-lg font-bold">Acceso a Panel de Negocio</h3>
+              </div>
+            </div>
+            <button id="close-biz-auth-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="p-6 space-y-5">
+            <form id="biz-login-form" class="space-y-4 text-xs sm:text-sm">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico del Negocio *</label>
+                <input type="email" id="biz-login-email" required placeholder="correo@tucomercio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Contraseña *</label>
+                <input type="password" id="biz-login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+              </div>
+
+              <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Ingresar al Panel</span>
+              </button>
+            </form>
+
+            <!-- Acceso Rápido Demo -->
+            <div class="pt-4 border-t border-slate-100">
+              <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="barberia@demo.cr" data-pass="123">
+                  <span class="font-bold block truncate">Barbería Vintage</span>
+                  <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
+                </button>
+                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="dental@demo.cr" data-pass="123">
+                  <span class="font-bold block truncate">Clínica Dental</span>
+                  <span class="text-[10px] text-slate-400">dental@demo.cr</span>
+                </button>
+                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="spa@demo.cr" data-pass="123">
+                  <span class="font-bold block truncate">Serenity Spa</span>
+                  <span class="text-[10px] text-slate-400">spa@demo.cr</span>
+                </button>
+                <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors" data-email="taller@demo.cr" data-pass="123">
+                  <span class="font-bold block truncate">AutoCheck Taller</span>
+                  <span class="text-[10px] text-slate-400">taller@demo.cr</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Registro nuevo negocio link -->
+            <div class="text-center pt-3 border-t border-slate-100">
+              <span class="text-xs text-slate-500">¿Aún no tienes cuenta para tu negocio?</span>
+              <button id="open-register-from-login-btn" class="text-xs font-bold text-indigo-600 hover:underline block mx-auto mt-1">
+                Registrar nuevo establecimiento comercial
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-biz-auth-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.querySelectorAll('.quick-demo-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('biz-login-email').value = btn.getAttribute('data-email');
+        document.getElementById('biz-login-password').value = btn.getAttribute('data-pass');
+        document.getElementById('biz-login-form').dispatchEvent(new Event('submit'));
+      });
+    });
+
+    document.getElementById('open-register-from-login-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.renderNewBusinessModal();
+    });
+
+    document.getElementById('biz-login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('biz-login-email').value;
+      const password = document.getElementById('biz-login-password').value;
+
+      try {
+        await storage.loginBusiness(email, password);
+        this.showToast('¡Bienvenido a tu panel de administración!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.navigateTo('owner-dashboard');
+      } catch (err) {
+        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+      }
+    });
+  }
+
+  // 2. MODAL LOGIN / REGISTRO CLIENTE (ULTRA RÁPIDO: NOMBRE, TELÉFONO, CORREO)
+  renderClientAuthModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const currentClient = storage.getClientUser();
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 p-6 sm:p-8">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+              <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
+                <i class="fas fa-user-check"></i>
+              </div>
+              <div>
+                <span class="text-[11px] font-bold text-blue-600 uppercase">Acceso Rápido</span>
+                <h3 class="text-base font-bold text-slate-900">Datos de Usuario</h3>
+              </div>
+            </div>
+            <button id="close-client-auth-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-500 mb-5">Ingresa tus datos una sola vez para agendar tus turnos al instante y consultar tus citas.</p>
+
+          <form id="client-auth-form" class="space-y-4 text-xs sm:text-sm">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nombre Completo *</label>
+              <input type="text" id="cli-auth-name" value="${currentClient ? currentClient.name : ''}" required placeholder="Ej. Juan Pérez" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+              <input type="tel" id="cli-auth-phone" value="${currentClient ? currentClient.phone : ''}" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
+              <input type="email" id="cli-auth-email" value="${currentClient ? currentClient.email || '' : ''}" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
+              <i class="fas fa-check"></i>
+              <span>Guardar y Continuar</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-client-auth-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('client-auth-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('cli-auth-name').value;
+      const phone = document.getElementById('cli-auth-phone').value;
+      const email = document.getElementById('cli-auth-email').value;
+
+      try {
+        await storage.loginOrRegisterClient(name, phone, email);
+        this.showToast('¡Identificación guardada exitosamente!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al guardar datos.', 'error');
+      }
     });
   }
 
@@ -1518,7 +1844,7 @@ class App {
     });
   }
 
-  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (ONBOARDING) ---
+  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (CON CONTRASEÑA) ---
   renderNewBusinessModal() {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
@@ -1537,10 +1863,33 @@ class App {
           </div>
 
           <form id="new-biz-form" class="space-y-4 text-xs sm:text-sm">
-            <!-- Datos Básicos -->
+            <!-- Cuenta de Usuario / Credenciales -->
+            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
+              <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
+                <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
+              </span>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
+                  <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
+                  <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña de Acceso *</label>
+                <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+              </div>
+            </div>
+
+            <!-- Datos Comerciales -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental Alajuela..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1568,22 +1917,17 @@ class App {
                 <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico</label>
-                <input type="email" id="new-biz-email" placeholder="contacto@negocio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
+                <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-              <input type="text" id="new-biz-address" placeholder="Ej. 150m Oeste del Parque Central, Local #4" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <label class="block font-bold text-slate-700 mb-1">Descripción</label>
+              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
             </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Descripción de Servicios</label>
-              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades y experiencia..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-            </div>
-
-            <!-- Sección de Fotos y Banner con Indicaciones de Medidas -->
+            <!-- Fotos con Guía de Medidas -->
             <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
               <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
                 <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
@@ -1591,30 +1935,30 @@ class App {
 
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Foto de Perfil / Logo (Cuadrada)</label>
+                  <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
                   <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
                 </div>
-                <input type="text" id="new-biz-image" placeholder="URL de la imagen (deja en blanco para imagen por defecto)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
               </div>
 
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada (Panorámica)</label>
+                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
                   <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
                 </div>
-                <input type="text" id="new-biz-cover" placeholder="URL del banner (deja en blanco para banner por defecto)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
               </div>
             </div>
 
-            <!-- Primer Servicio Obligatorio -->
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+            <!-- Primer Servicio -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
               <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                <i class="fas fa-tag mr-1 text-emerald-600"></i> Agrega tu Primer Servicio
+                <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
               </span>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div class="sm:col-span-2">
-                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Consulta General)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
+                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
                 </div>
                 <div>
                   <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
@@ -1624,7 +1968,7 @@ class App {
 
             <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
               <i class="fas fa-check-circle"></i>
-              <span>Completar Registro y Empezar a Recibir Citas</span>
+              <span>Crear Cuenta y Registrar Negocio</span>
             </button>
           </form>
         </div>
@@ -1637,11 +1981,13 @@ class App {
 
     document.getElementById('new-biz-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const ownerName = document.getElementById('reg-owner-name').value;
+      const email = document.getElementById('reg-biz-email').value;
+      const password = document.getElementById('reg-biz-password').value;
       const name = document.getElementById('new-biz-name').value;
       const category = document.getElementById('new-biz-cat').value;
       const city = document.getElementById('new-biz-city').value;
       const phone = document.getElementById('new-biz-phone').value;
-      const email = document.getElementById('new-biz-email').value;
       const address = document.getElementById('new-biz-address').value;
       const description = document.getElementById('new-biz-desc').value;
       const image = document.getElementById('new-biz-image').value;
@@ -1658,30 +2004,32 @@ class App {
         fotografia: 'Fotografía y Eventos'
       };
 
-      const newId = `biz-${Date.now()}`;
-      await storage.saveBusiness({
-        id: newId,
-        name,
-        category,
-        categoryLabel: catLabels[category] || 'Servicios',
-        city,
-        phone,
-        email,
-        address,
-        description,
-        image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-        coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
-        isDemo: false,
-        features: ['Sinpe Móvil', 'Atención Personalizada'],
-        services: [
-          { id: `srv-${Date.now()}-1`, name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal del establecimiento.' }
-        ]
-      });
+      try {
+        await storage.registerBusinessWithUser(ownerName, email, password, {
+          name,
+          category,
+          categoryLabel: catLabels[category] || 'Servicios',
+          city,
+          phone,
+          email,
+          address,
+          description,
+          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+          isDemo: false,
+          features: ['Sinpe Móvil', 'Atención Personalizada'],
+          services: [
+            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
+          ]
+        });
 
-      storage.setActiveBusinessId(newId);
-      this.showToast('¡Comercio registrado exitosamente!', 'success');
-      modalContainer.innerHTML = '';
-      this.navigateTo('owner-dashboard');
+        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.navigateTo('owner-dashboard');
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrar.', 'error');
+      }
     });
   }
 
@@ -1697,7 +2045,6 @@ class App {
   }
 }
 
-// Inicializar la aplicación cuando cargue el DOM
 document.addEventListener('DOMContentLoaded', () => {
   const app = new App();
   app.init();

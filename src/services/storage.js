@@ -1,10 +1,12 @@
-// Servicio de almacenamiento conectado a la API de Neon PostgreSQL con fallback local
+// Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
 import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES } from '../data/initialData.js';
 
 const STORAGE_KEYS = {
   BUSINESSES: 'directorio_businesses_v1',
   APPOINTMENTS: 'directorio_appointments_v1',
-  ACTIVE_BUSINESS_ID: 'directorio_active_biz_id'
+  ACTIVE_BUSINESS_ID: 'directorio_active_biz_id',
+  BIZ_USER: 'directorio_biz_user_session',
+  CLIENT_USER: 'directorio_client_user_session'
 };
 
 class StorageService {
@@ -42,6 +44,109 @@ class StorageService {
       const local = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
       this.businessesCache = local ? JSON.parse(local) : INITIAL_BUSINESSES;
     }
+  }
+
+  // ==========================================
+  // AUTENTICACIÓN: NEGOCIO (DUEÑO)
+  // ==========================================
+  getBusinessUser() {
+    const data = localStorage.getItem(STORAGE_KEYS.BIZ_USER);
+    return data ? JSON.parse(data) : null;
+  }
+
+  setBusinessUser(user) {
+    if (user) {
+      localStorage.setItem(STORAGE_KEYS.BIZ_USER, JSON.stringify(user));
+      if (user.businessId) {
+        this.setActiveBusinessId(user.businessId);
+      }
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.BIZ_USER);
+    }
+  }
+
+  logoutBusiness() {
+    localStorage.removeItem(STORAGE_KEYS.BIZ_USER);
+  }
+
+  async loginBusiness(email, password) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/business/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+      this.setBusinessUser(data.user);
+      await this.loadFromApi();
+      return data;
+    }
+
+    // Fallback local: aceptar demo
+    const user = { id: 'usr-demo', name: 'Dueño Negocio Demo', email, businessId: this.getActiveBusinessId() };
+    this.setBusinessUser(user);
+    return { success: true, user };
+  }
+
+  async registerBusinessWithUser(ownerName, email, password, businessData) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/business/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ownerName, email, password, business: businessData })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al registrar negocio.');
+      this.setBusinessUser(data.user);
+      await this.loadFromApi();
+      return data;
+    }
+
+    // Fallback local
+    const newId = `biz-${Date.now()}`;
+    const user = { id: `usr-${Date.now()}`, name: ownerName, email, businessId: newId };
+    this.saveBusiness({ ...businessData, id: newId });
+    this.setBusinessUser(user);
+    return { success: true, user };
+  }
+
+  // ==========================================
+  // AUTENTICACIÓN: CLIENTE (USUARIO FINAL)
+  // ==========================================
+  getClientUser() {
+    const data = localStorage.getItem(STORAGE_KEYS.CLIENT_USER);
+    return data ? JSON.parse(data) : null;
+  }
+
+  setClientUser(client) {
+    if (client) {
+      localStorage.setItem(STORAGE_KEYS.CLIENT_USER, JSON.stringify(client));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
+    }
+  }
+
+  logoutClient() {
+    localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
+  }
+
+  async loginOrRegisterClient(name, phone, email) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/client/login-or-register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, email })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error en acceso de cliente.');
+      this.setClientUser(data.client);
+      return data.client;
+    }
+
+    const client = { id: `cli-${Date.now()}`, name, phone, email };
+    this.setClientUser(client);
+    return client;
   }
 
   // --- CATEGORÍAS ---
@@ -87,7 +192,6 @@ class StorageService {
       }
     }
 
-    // Fallback Local
     const businesses = this.getBusinesses();
     const existingIndex = businesses.findIndex(b => b.id === businessData.id);
     if (existingIndex >= 0) {
@@ -104,6 +208,8 @@ class StorageService {
   }
 
   getActiveBusinessId() {
+    const user = this.getBusinessUser();
+    if (user && user.businessId) return user.businessId;
     return localStorage.getItem(STORAGE_KEYS.ACTIVE_BUSINESS_ID) || 'biz-1';
   }
 
@@ -128,7 +234,6 @@ class StorageService {
       }
     }
 
-    // Fallback Local
     const businesses = this.getBusinesses();
     const business = businesses.find(b => b.id === businessId);
     if (!business) return null;
@@ -141,6 +246,7 @@ class StorageService {
       description: serviceData.description || ''
     };
 
+    if (!business.services) business.services = [];
     business.services.push(newService);
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
     this.businessesCache = businesses;
@@ -162,10 +268,9 @@ class StorageService {
       }
     }
 
-    // Fallback Local
     const businesses = this.getBusinesses();
     const business = businesses.find(b => b.id === businessId);
-    if (!business) return false;
+    if (!business || !business.services) return false;
 
     const sIndex = business.services.findIndex(s => s.id === serviceId);
     if (sIndex === -1) return false;
@@ -193,10 +298,9 @@ class StorageService {
       }
     }
 
-    // Fallback Local
     const businesses = this.getBusinesses();
     const business = businesses.find(b => b.id === businessId);
-    if (!business) return false;
+    if (!business || !business.services) return false;
 
     business.services = business.services.filter(s => s.id !== serviceId);
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
@@ -236,6 +340,21 @@ class StorageService {
     return all.filter(a => a.businessId === businessId);
   }
 
+  async getClientAppointmentsAsync(phone) {
+    if (this.isOnlineApi && phone) {
+      try {
+        const res = await fetch(`${this.apiBase}/clients/${encodeURIComponent(phone)}/appointments`);
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {
+        console.warn('Error consultando citas de cliente:', e);
+      }
+    }
+    const all = this.getAppointments();
+    return all.filter(a => a.clientPhone === phone);
+  }
+
   async createAppointment(appointmentData) {
     if (this.isOnlineApi) {
       try {
@@ -254,7 +373,6 @@ class StorageService {
       }
     }
 
-    // Fallback Local
     const appointments = this.getAppointments();
     const newAppointment = {
       id: `apt-${Date.now().toString().slice(-6)}`,
@@ -317,7 +435,7 @@ class StorageService {
     const dateObj = new Date(year, month - 1, day);
     const dayOfWeek = dateObj.getDay();
 
-    if (!business.schedule.days.includes(dayOfWeek)) {
+    if (!business.schedule.days || !business.schedule.days.includes(dayOfWeek)) {
       return { isClosed: true, reason: 'El negocio no labora en este día de la semana.', slots: [] };
     }
 

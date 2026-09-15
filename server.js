@@ -18,9 +18,168 @@ app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(express.static(__dirname));
 
-// --- API ENDPOINTS CON NEON POSTGRESQL ---
+// ==========================================
+// ENDPOINTS DE AUTENTICACIÓN
+// ==========================================
 
-// 1. Obtener todos los negocios
+// 1. Login de Dueño de Negocio (Email y Contraseña)
+app.post('/api/auth/business/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Debes ingresar correo y contraseña.' });
+    }
+
+    const userRes = await pool.query(
+      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1) AND password = $2',
+      [email.trim(), password.trim()]
+    );
+
+    if (userRes.rows.length === 0) {
+      return res.status(401).json({ error: 'Credenciales inválidas. Verifica tu correo y contraseña.' });
+    }
+
+    const user = userRes.rows[0];
+    const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
+    const business = bizRes.rows[0] || null;
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        businessId: user.business_id
+      },
+      business
+    });
+  } catch (error) {
+    console.error('Error en login negocio:', error);
+    res.status(500).json({ error: 'Error en el servidor al autenticar negocio.' });
+  }
+});
+
+// 2. Registro de Negocio con Usuario y Contraseña
+app.post('/api/auth/business/register', async (req, res) => {
+  try {
+    const { ownerName, email, password, business } = req.body;
+    if (!email || !password || !business || !business.name) {
+      return res.status(400).json({ error: 'Faltan campos obligatorios para registrar el negocio.' });
+    }
+
+    // Verificar si el correo ya existe
+    const existing = await pool.query('SELECT id FROM reservas_business_users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Ya existe una cuenta con este correo electrónico.' });
+    }
+
+    const newBizId = `biz-${Date.now()}`;
+    const newUserId = `usr-${Date.now()}`;
+    const schedule = business.schedule || {
+      days: [1, 2, 3, 4, 5, 6],
+      openTime: '08:00',
+      closeTime: '18:00',
+      breakStart: '12:00',
+      breakEnd: '13:00',
+      slotDuration: 30
+    };
+    const features = business.features || ['Sinpe Móvil', 'Atención Personalizada'];
+
+    // Insertar negocio
+    await pool.query(`
+      INSERT INTO reservas_businesses (
+        id, name, category, category_label, rating, reviews_count,
+        price_range, address, city, phone, email, description,
+        image, cover_image, schedule, features, is_demo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    `, [
+      newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
+      5.0, 0, business.priceRange || '₡₡',
+      business.address || '', business.city || '', business.phone || '', email.trim(),
+      business.description || '', business.image || '', business.coverImage || '',
+      JSON.stringify(schedule), JSON.stringify(features), false
+    ]);
+
+    // Insertar usuario del negocio
+    await pool.query(`
+      INSERT INTO reservas_business_users (id, business_id, name, email, password)
+      VALUES ($1, $2, $3, $4, $5)
+    `, [newUserId, newBizId, ownerName || business.name, email.trim(), password.trim()]);
+
+    // Insertar primer servicio si existe
+    if (business.services && Array.isArray(business.services)) {
+      for (const s of business.services) {
+        await pool.query(`
+          INSERT INTO reservas_services (id, business_id, name, duration, price, description)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `, [s.id || `srv-${Date.now()}`, newBizId, s.name, s.duration || 30, s.price || 0, s.description || '']);
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      user: {
+        id: newUserId,
+        name: ownerName || business.name,
+        email: email.trim(),
+        businessId: newBizId
+      },
+      business: { id: newBizId, ...business }
+    });
+  } catch (error) {
+    console.error('Error en registro de negocio:', error);
+    res.status(500).json({ error: 'Error al registrar negocio y usuario.' });
+  }
+});
+
+// 3. Login / Registro Rápido de Cliente (Solo Nombre, Teléfono, Correo)
+app.post('/api/auth/client/login-or-register', async (req, res) => {
+  try {
+    const { name, phone, email } = req.body;
+    if (!name || !phone) {
+      return res.status(400).json({ error: 'Nombre y Teléfono son requeridos.' });
+    }
+
+    // Buscar si ya existe por teléfono o correo
+    const existing = await pool.query(
+      'SELECT * FROM reservas_clients WHERE phone = $1 OR (email = $2 AND email != \'\')',
+      [phone.trim(), (email || '').trim()]
+    );
+
+    let clientUser;
+    if (existing.rows.length > 0) {
+      clientUser = existing.rows[0];
+      // Actualizar nombre si cambió
+      await pool.query('UPDATE reservas_clients SET name = $1, email = $2 WHERE id = $3', [name.trim(), (email || clientUser.email).trim(), clientUser.id]);
+      clientUser.name = name.trim();
+      clientUser.email = (email || clientUser.email).trim();
+    } else {
+      const newClientId = `cli-${Date.now()}`;
+      await pool.query(`
+        INSERT INTO reservas_clients (id, name, phone, email)
+        VALUES ($1, $2, $3, $4)
+      `, [newClientId, name.trim(), phone.trim(), (email || '').trim()]);
+
+      clientUser = {
+        id: newClientId,
+        name: name.trim(),
+        phone: phone.trim(),
+        email: (email || '').trim()
+      };
+    }
+
+    res.json({ success: true, client: clientUser });
+  } catch (error) {
+    console.error('Error en login/registro cliente:', error);
+    res.status(500).json({ error: 'Error al procesar acceso de cliente.' });
+  }
+});
+
+// ==========================================
+// ENDPOINTS DE NEGOCIOS Y SERVICIOS
+// ==========================================
+
+// Obtener todos los negocios
 app.get('/api/businesses', async (req, res) => {
   try {
     const bizRes = await pool.query('SELECT * FROM reservas_businesses ORDER BY is_demo DESC, created_at ASC');
@@ -62,7 +221,7 @@ app.get('/api/businesses', async (req, res) => {
   }
 });
 
-// 2. Obtener un negocio por ID
+// Obtener un negocio por ID
 app.get('/api/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -108,52 +267,7 @@ app.get('/api/businesses/:id', async (req, res) => {
   }
 });
 
-// 3. Crear o registrar nuevo negocio (Negocio real creado por usuario)
-app.post('/api/businesses', async (req, res) => {
-  try {
-    const b = req.body;
-    const newId = b.id || `biz-${Date.now()}`;
-    const schedule = b.schedule || {
-      days: [1, 2, 3, 4, 5, 6],
-      openTime: '08:00',
-      closeTime: '18:00',
-      breakStart: '12:00',
-      breakEnd: '13:00',
-      slotDuration: 30
-    };
-    const features = b.features || ['Sinpe Móvil', 'Atención Personalizada'];
-
-    await pool.query(`
-      INSERT INTO reservas_businesses (
-        id, name, category, category_label, rating, reviews_count,
-        price_range, address, city, phone, email, description,
-        image, cover_image, schedule, features, is_demo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-    `, [
-      newId, b.name, b.category, b.categoryLabel || 'Servicios',
-      b.rating || 5.0, b.reviewsCount || 0, b.priceRange || '₡₡',
-      b.address || '', b.city || '', b.phone || '', b.email || '',
-      b.description || '', b.image || '', b.coverImage || '',
-      JSON.stringify(schedule), JSON.stringify(features), false
-    ]);
-
-    if (b.services && Array.isArray(b.services)) {
-      for (const s of b.services) {
-        await pool.query(`
-          INSERT INTO reservas_services (id, business_id, name, duration, price, description)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `, [s.id || `srv-${Date.now()}-${Math.random()}`, newId, s.name, s.duration || 30, s.price || 0, s.description || '']);
-      }
-    }
-
-    res.status(201).json({ id: newId, message: 'Negocio registrado con éxito' });
-  } catch (error) {
-    console.error('Error en POST /api/businesses:', error);
-    res.status(500).json({ error: 'Error al registrar negocio' });
-  }
-});
-
-// 4. Actualizar negocio completo (Nombre, Fotos, Banner, Categoría, Descripción, Características, etc.)
+// Actualizar negocio completo
 app.put('/api/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -189,7 +303,7 @@ app.put('/api/businesses/:id', async (req, res) => {
   }
 });
 
-// 5. Actualizar horarios de un negocio
+// Actualizar horarios
 app.put('/api/businesses/:id/schedule', async (req, res) => {
   try {
     const { id } = req.params;
@@ -203,7 +317,7 @@ app.put('/api/businesses/:id/schedule', async (req, res) => {
   }
 });
 
-// 6. Agregar servicio a un negocio
+// Agregar servicio a negocio
 app.post('/api/businesses/:id/services', async (req, res) => {
   try {
     const { id: businessId } = req.params;
@@ -222,7 +336,7 @@ app.post('/api/businesses/:id/services', async (req, res) => {
   }
 });
 
-// 7. Actualizar servicio existente (Nombre, Precio, Duración, Descripción)
+// Actualizar servicio existente
 app.put('/api/services/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -244,7 +358,7 @@ app.put('/api/services/:id', async (req, res) => {
   }
 });
 
-// 8. Eliminar servicio
+// Eliminar servicio
 app.delete('/api/services/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -256,7 +370,11 @@ app.delete('/api/services/:id', async (req, res) => {
   }
 });
 
-// 9. Obtener citas de un negocio
+// ==========================================
+// ENDPOINTS DE CITAS Y RESERVAS
+// ==========================================
+
+// Obtener citas de un negocio
 app.get('/api/businesses/:id/appointments', async (req, res) => {
   try {
     const { id } = req.params;
@@ -286,7 +404,38 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
   }
 });
 
-// 10. Crear nueva reserva
+// Obtener citas de un cliente por teléfono
+app.get('/api/clients/:phone/appointments', async (req, res) => {
+  try {
+    const { phone } = req.params;
+    const result = await pool.query('SELECT a.*, b.name as business_name FROM reservas_appointments a LEFT JOIN reservas_businesses b ON a.business_id = b.id WHERE a.client_phone = $1 ORDER BY a.date DESC, a.time ASC', [phone]);
+
+    const appointments = result.rows.map(a => ({
+      id: a.id,
+      businessId: a.business_id,
+      businessName: a.business_name,
+      serviceId: a.service_id,
+      serviceName: a.service_name,
+      servicePrice: parseFloat(a.service_price),
+      serviceDuration: a.service_duration,
+      date: a.date,
+      time: a.time,
+      clientName: a.client_name,
+      clientPhone: a.client_phone,
+      clientEmail: a.client_email,
+      notes: a.notes,
+      status: a.status,
+      createdAt: a.created_at
+    }));
+
+    res.json(appointments);
+  } catch (error) {
+    console.error('Error consultando citas de cliente:', error);
+    res.status(500).json({ error: 'Error al consultar citas' });
+  }
+});
+
+// Crear nueva reserva
 app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
@@ -304,6 +453,15 @@ app.post('/api/appointments', async (req, res) => {
       a.clientEmail || '', a.notes || '', a.status || 'confirmed'
     ]);
 
+    // Registrar o actualizar automáticamente el cliente
+    if (a.clientName && a.clientPhone) {
+      await pool.query(`
+        INSERT INTO reservas_clients (id, name, phone, email)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (id) DO NOTHING
+      `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '']);
+    }
+
     res.status(201).json({ id: newId, ...a, status: a.status || 'confirmed' });
   } catch (error) {
     console.error('Error creando cita:', error);
@@ -311,7 +469,7 @@ app.post('/api/appointments', async (req, res) => {
   }
 });
 
-// 11. Actualizar estado de una cita
+// Actualizar estado de una cita
 app.patch('/api/appointments/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
@@ -325,7 +483,7 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
   }
 });
 
-// 12. Eliminar cita
+// Eliminar cita
 app.delete('/api/appointments/:id', async (req, res) => {
   try {
     const { id } = req.params;

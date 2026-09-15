@@ -82,6 +82,29 @@ export async function initDatabase() {
       );
     `);
 
+    // 4. Crear tabla de usuarios dueños de negocio
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_business_users (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(150) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // 5. Crear tabla de clientes registrados
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_clients (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        email VARCHAR(150) NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');
 
     // Verificar si hay que sembrar datos iniciales
@@ -124,8 +147,25 @@ export async function initDatabase() {
         ]);
       }
 
-      console.log('✨ Datos iniciales cargados en Neon PostgreSQL con éxito.');
     }
+
+    // Asegurar usuarios demo de negocios
+    const demoUsers = [
+      { id: 'usr-1', businessId: 'biz-1', name: 'Dueño Barbería Vintage', email: 'barberia@demo.cr', password: '123' },
+      { id: 'usr-2', businessId: 'biz-2', name: 'Dr. Roberto Salas', email: 'dental@demo.cr', password: '123' },
+      { id: 'usr-3', businessId: 'biz-3', name: 'Laura Vargas (Spa)', email: 'spa@demo.cr', password: '123' },
+      { id: 'usr-4', businessId: 'biz-4', name: 'Carlos Monge (Taller)', email: 'taller@demo.cr', password: '123' }
+    ];
+
+    for (const u of demoUsers) {
+      await client.query(`
+        INSERT INTO reservas_business_users (id, business_id, name, email, password)
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (email) DO NOTHING
+      `, [u.id, u.businessId, u.name, u.email, u.password]);
+    }
+    console.log('✨ Usuarios demo verificados/creados.');
+
   } catch (error) {
     console.error('❌ Error inicializando base de datos Neon:', error);
   } finally {
