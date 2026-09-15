@@ -58,9 +58,52 @@
       <div class="absolute -top-32 -left-32 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute top-1/2 -right-32 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
+      <!-- TOP INSTAGRAM STORY HEADER & PERFIL OFICIAL -->
+      <div class="relative z-20 flex flex-col gap-3">
+        <!-- Barras de Progreso de Story (Instagram) -->
+        <div class="flex items-center gap-2 px-2">
+          <div class="h-1.5 flex-1 bg-slate-900/20 rounded-full overflow-hidden">
+            <div class="h-full bg-slate-900 w-full"></div>
+          </div>
+          <div class="h-1.5 flex-1 bg-slate-900/20 rounded-full overflow-hidden">
+            <div class="h-full bg-slate-900/60 w-1/2"></div>
+          </div>
+          <div class="h-1.5 flex-1 bg-slate-900/20 rounded-full"></div>
+        </div>
+
+        <!-- Barra de Perfil de Instagram (Superior) -->
+        <div class="flex items-center justify-between px-2 pt-1">
+          <!-- Perfil Izquierda -->
+          <div class="flex items-center gap-3.5">
+            <!-- Avatar con Anillo de Historia Activa -->
+            <div class="w-14 h-14 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 shadow-md flex items-center justify-center">
+              <div class="w-full h-full bg-white rounded-full overflow-hidden p-0.5 flex items-center justify-center">
+                <img src="./reservas_cr_oficial_logo.png" alt="Reservas CR Perfil" class="w-full h-full object-cover rounded-full">
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-black text-slate-900 text-xl tracking-tight">reservascr.app</span>
+                <i class="fas fa-check-circle text-blue-500 text-sm"></i>
+                <span class="text-slate-400 text-sm font-semibold">1 h</span>
+              </div>
+              <span class="text-xs font-extrabold text-blue-600 uppercase tracking-wider block">Publicidad Oficial</span>
+            </div>
+          </div>
+
+          <!-- Perfil / Logo Badge Superior Derecha -->
+          <div class="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="w-7 h-7 rounded-lg overflow-hidden flex items-center justify-center">
+              <img src="./reservas_cr_oficial_logo.png" alt="Logo" class="w-full h-full object-cover">
+            </div>
+            <span class="font-black text-slate-900 text-xs">Reservas <span class="text-blue-600">CR</span></span>
+          </div>
+        </div>
+      </div>
+
       <!-- TITULAR SUPERIOR DE ALTO IMPACTO -->
-      <div class="relative z-10 text-center pt-8 px-4">
-        <h1 class="text-[58px] font-black text-slate-900 leading-[1.18] tracking-tight max-w-3xl mx-auto">
+      <div class="relative z-10 text-center pt-4 px-4">
+        <h1 class="text-[54px] font-black text-slate-900 leading-[1.18] tracking-tight max-w-3xl mx-auto">
           Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-600 via-sky-500 to-teal-500 bg-clip-text text-transparent">24/7</span> con confirmación inmediata
         </h1>
       </div>
@@ -229,3 +272,4 @@
   </script>
 </body>
 </html>
+
