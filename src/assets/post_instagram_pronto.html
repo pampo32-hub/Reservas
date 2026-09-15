@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Post Oficial Instagram - Reservas CR</title>
+  <title>Post Oficial Instagram (1080x1080) - Reservas CR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -16,29 +16,29 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 text-white">
 
-  <!-- Header con controles -->
-  <div class="max-w-xl w-full text-center space-y-3 mb-6">
+  <!-- Header de Controles -->
+  <div class="max-w-2xl w-full text-center space-y-3 mb-6">
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
-      <i class="fas fa-check-circle"></i> Imagen Lista en Alta Resolución 1080x1080
+      <i class="fas fa-check-circle"></i> Rediseño con Letras Grandes & Branding GEO SOFT
     </div>
-    <h1 class="text-2xl sm:text-3xl font-black text-white">Post Oficial para Instagram</h1>
-    <p class="text-slate-400 text-sm">Sin palabras ambiguas, con diseño tecnológico de lanzamiento.</p>
+    <h1 class="text-2xl sm:text-3xl font-black text-white">Post Oficial de Lanzamiento para Instagram</h1>
+    <p class="text-slate-400 text-sm">Optimizado con tipografía de alto impacto para teléfonos móviles (1080 x 1080 px).</p>
     
     <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-      <button onclick="downloadPNG()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-extrabold shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition-transform transform hover:scale-105 cursor-pointer">
-        <i class="fas fa-file-image"></i>
-        <span>Descargar PNG (1080x1080)</span>
+      <button onclick="downloadPNG()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black shadow-xl shadow-cyan-500/25 flex items-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
+        <i class="fas fa-download text-lg"></i>
+        <span>Descargar Imagen PNG (1080x1080)</span>
       </button>
-      <a href="./reservas_cr_post_instagram.svg" download="post_instagram_reservas_cr.svg" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 flex items-center gap-2 transition-all">
-        <i class="fas fa-download"></i>
-        <span>Descargar SVG Vectorial</span>
+      <a href="./reservas_cr_post_instagram.svg" download="post_instagram_reservas_cr.svg" class="px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 flex items-center gap-2 transition-all">
+        <i class="fas fa-file-code"></i>
+        <span>Descargar SVG</span>
       </a>
     </div>
   </div>
 
-  <!-- Vista Previa Directa de la Imagen -->
-  <div class="max-w-[500px] w-full bg-slate-900/80 p-3 rounded-3xl border border-slate-800 shadow-2xl relative">
-    <img id="postPreviewImg" src="./reservas_cr_post_instagram.svg" alt="Post Instagram Reservas CR" class="w-full h-auto rounded-2xl shadow-xl block">
+  <!-- Vista Previa Directa de la Imagen Rediseñada -->
+  <div class="max-w-[560px] w-full bg-slate-900/90 p-3 rounded-3xl border border-slate-800 shadow-2xl relative">
+    <img id="postPreviewImg" src="./reservas_cr_post_instagram.svg" alt="Post Instagram Reservas CR - GEO SOFT" class="w-full h-auto rounded-2xl shadow-xl block">
   </div>
 
   <canvas id="exportCanvas" width="1080" height="1080" style="display:none;"></canvas>
@@ -55,7 +55,7 @@
         ctx.clearRect(0, 0, 1080, 1080);
         ctx.drawImage(newImg, 0, 0, 1080, 1080);
         const link = document.createElement('a');
-        link.download = 'post_instagram_reservas_cr.png';
+        link.download = 'post_instagram_reservas_cr_geosoft.png';
         link.href = canvas.toDataURL('image/png', 1.0);
         link.click();
       };
