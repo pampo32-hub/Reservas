@@ -115,3 +115,58 @@ body {
   backdrop-filter: blur(4px);
 }
 
+/* ==========================================================================
+   OPTIMIZACIONES MÓVILES (ESTILO APP NATIVA - SOLO MÓVIL Y TABLET)
+   ========================================================================== */
+
+/* Eliminar retardo táctil de 300ms y destello gris en iOS/Android */
+html, body, button, a, input, select, textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Ocultar barra de desplazamiento sin perder el scroll táctil */
+.scrollbar-none, .no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Efecto de pulsación táctil nativa en botones móviles */
+@media (max-width: 768px) {
+  .app-touch-btn:active {
+    transform: scale(0.94);
+    transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Animación de apertura Bottom Sheet (deslizamiento desde abajo en móviles) */
+@keyframes slideUpMobile {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .mobile-bottom-sheet {
+    animation: slideUpMobile 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+/* Soporte para notch y barra de inicio inferior (Safe Area Insets) */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+}
+.bottom-nav-blur {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+

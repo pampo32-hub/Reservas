@@ -125,6 +125,7 @@ class App {
     }
 
     this.renderHeader();
+    this.renderMobileBottomNav();
     this.renderCurrentView();
     this.setupGlobalEvents();
   }
@@ -192,6 +193,7 @@ class App {
     }
 
     this.renderHeader();
+    this.renderMobileBottomNav();
     this.renderCurrentView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -225,7 +227,6 @@ class App {
   }
 
   // --- HEADER / NAVBAR (ACCESO USUARIOS Y NEGOCIOS) ---
-  // --- HEADER / NAVBAR ---
   renderHeader() {
     const headerContainer = document.getElementById('navbar-container');
     if (!headerContainer) return;
@@ -237,20 +238,51 @@ class App {
 
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-2">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
           <!-- Logo (con acceso secreto 3 clics para Developer) -->
-          <div class="flex items-center gap-3 cursor-pointer select-none group" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
-            <div class="w-11 h-11 rounded-2xl overflow-hidden shadow-md shadow-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+          <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
+            <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl overflow-hidden shadow-md shadow-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
               <img src="./src/assets/logo.svg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
             <div>
-              <span class="font-black text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
-              <span class="text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Citas en Costa Rica 🇨🇷</span>
+              <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
+              <span class="text-[11px] sm:text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Citas en Costa Rica 🇨🇷</span>
             </div>
           </div>
 
-          <!-- Navigation / Auth Controls -->
-          <div class="flex items-center gap-2 sm:gap-3">
+          <!-- MÓVIL (< md): Controles Compactos Superiores -->
+          <div class="flex md:hidden items-center gap-1.5">
+            ${devUser ? `
+              <button id="mobile-top-dev-badge" class="px-2.5 py-1 rounded-lg bg-slate-900 text-amber-400 text-[11px] font-black border border-slate-700 flex items-center gap-1 app-touch-btn" title="Panel Developer">
+                <i class="fas fa-shield-alt text-[10px]"></i>
+                <span>DEV</span>
+              </button>
+            ` : ''}
+
+            ${clientUser && !devUser ? `
+              <button id="mobile-top-profile-badge" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/60 flex items-center gap-1.5 app-touch-btn">
+                <i class="fas fa-user-circle text-xs text-blue-600"></i>
+                <span class="max-w-[80px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil'}</span>
+              </button>
+            ` : ''}
+
+            ${bizUser && !devUser ? `
+              <button id="mobile-top-biz-badge" class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/60 flex items-center gap-1.5 app-touch-btn">
+                <i class="fas fa-store text-xs text-indigo-600"></i>
+                <span class="max-w-[80px] truncate">${activeBiz ? activeBiz.name : 'Negocio'}</span>
+              </button>
+            ` : ''}
+
+            ${!clientUser && !bizUser && !devUser ? `
+              <button id="mobile-top-login-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn">
+                <i class="fas fa-sign-in-alt text-xs"></i>
+                <span>Entrar</span>
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- ESCRITORIO PC (>= md): Navigation & Auth Controls Completos -->
+          <div class="hidden md:flex items-center gap-2 sm:gap-3">
             <!-- Explorar -->
             <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
@@ -339,12 +371,19 @@ class App {
 
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
 
+    // Acciones móviles superiores
+    document.getElementById('mobile-top-dev-badge')?.addEventListener('click', () => this.navigateTo('developer-dashboard'));
+    document.getElementById('mobile-top-profile-badge')?.addEventListener('click', () => this.navigateTo('my-client-bookings'));
+    document.getElementById('mobile-top-biz-badge')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
+    document.getElementById('mobile-top-login-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'client' }));
+
     // Developer logueado
     document.getElementById('nav-dev-dashboard-btn')?.addEventListener('click', () => this.navigateTo('developer-dashboard'));
     document.getElementById('nav-dev-logout-btn')?.addEventListener('click', () => {
       storage.logoutDeveloper();
       this.showToast('Sesión de Developer cerrada.', 'info');
       this.renderHeader();
+      this.renderMobileBottomNav();
       if (this.currentView === 'developer-dashboard') this.navigateTo('directory');
     });
 
@@ -359,6 +398,7 @@ class App {
       storage.logoutClient();
       this.showToast('Sesión de usuario cerrada.', 'info');
       this.renderHeader();
+      this.renderMobileBottomNav();
       if (this.currentView === 'my-client-bookings') this.navigateTo('directory');
     });
 
@@ -368,7 +408,103 @@ class App {
       storage.logoutBusiness();
       this.showToast('Sesión de negocio cerrada.', 'info');
       this.renderHeader();
+      this.renderMobileBottomNav();
       if (this.currentView === 'owner-dashboard') this.navigateTo('directory');
+    });
+  }
+
+  // --- BARRA DE NAVEGACIÓN MÓVIL INFERIOR (ESTILO APP NATIVA - EXCLUSIVO CELULARES Y TABLETS) ---
+  renderMobileBottomNav() {
+    const navContainer = document.getElementById('mobile-bottom-nav-container');
+    if (!navContainer) return;
+
+    const devUser = storage.getDeveloperUser();
+    const bizUser = storage.getBusinessUser();
+    const clientUser = storage.getClientUser();
+
+    const isDirectory = this.currentView === 'directory' || this.currentView === 'business-detail';
+    const isBookings = this.currentView === 'my-client-bookings';
+    const isOwner = this.currentView === 'owner-dashboard';
+    const isDev = this.currentView === 'developer-dashboard';
+
+    navContainer.innerHTML = `
+      <div class="fixed bottom-0 inset-x-0 z-40 bottom-nav-blur border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1 pb-safe md:hidden">
+        <div class="max-w-md mx-auto grid grid-cols-4 gap-1 text-center">
+          
+          <!-- 1. Explorar -->
+          <button id="mobile-nav-explore-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDirectory ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDirectory ? 'bg-blue-50 text-blue-600' : ''}">
+              <i class="fas fa-compass text-base ${isDirectory ? 'scale-110' : ''}"></i>
+            </div>
+            <span class="text-[10px] mt-0.5 tracking-tight">Explorar</span>
+          </button>
+
+          <!-- 2. Mis Citas -->
+          <button id="mobile-nav-bookings-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isBookings ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isBookings ? 'bg-blue-50 text-blue-600' : ''}">
+              <i class="fas fa-calendar-alt text-base ${isBookings ? 'scale-110' : ''}"></i>
+            </div>
+            <span class="text-[10px] mt-0.5 tracking-tight">Mis Citas</span>
+          </button>
+
+          <!-- 3. Mi Negocio -->
+          <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isOwner ? 'text-indigo-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isOwner ? 'bg-indigo-50 text-indigo-600' : ''}">
+              <i class="fas fa-store text-base ${isOwner ? 'scale-110' : ''}"></i>
+            </div>
+            <span class="text-[10px] mt-0.5 tracking-tight">${bizUser ? 'Mi Panel' : 'Soy Negocio'}</span>
+          </button>
+
+          <!-- 4. Cuenta / Dev -->
+          ${devUser ? `
+            <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-500 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+              <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDev ? 'bg-amber-100 text-amber-600' : ''}">
+                <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
+              </div>
+              <span class="text-[10px] mt-0.5 tracking-tight">Developer</span>
+            </button>
+          ` : `
+            <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
+              <div class="w-8 h-8 flex items-center justify-center rounded-xl ${clientUser || bizUser ? 'bg-blue-50 text-blue-600' : ''}">
+                <i class="fas fa-user-circle text-base"></i>
+              </div>
+              <span class="text-[10px] mt-0.5 tracking-tight">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
+            </button>
+          `}
+
+        </div>
+      </div>
+    `;
+
+    // Eventos de la barra inferior móvil
+    document.getElementById('mobile-nav-explore-btn')?.addEventListener('click', () => {
+      this.navigateTo('directory');
+    });
+
+    document.getElementById('mobile-nav-bookings-btn')?.addEventListener('click', () => {
+      this.navigateTo('my-client-bookings');
+    });
+
+    document.getElementById('mobile-nav-biz-btn')?.addEventListener('click', () => {
+      if (bizUser) {
+        this.navigateTo('owner-dashboard');
+      } else {
+        this.renderAuthModal({ mode: 'login', role: 'business' });
+      }
+    });
+
+    document.getElementById('mobile-nav-dev-btn')?.addEventListener('click', () => {
+      this.navigateTo('developer-dashboard');
+    });
+
+    document.getElementById('mobile-nav-account-btn')?.addEventListener('click', () => {
+      if (clientUser) {
+        this.navigateTo('my-client-bookings');
+      } else if (bizUser) {
+        this.navigateTo('owner-dashboard');
+      } else {
+        this.renderAuthModal({ mode: 'login', role: 'client' });
+      }
     });
   }
 
@@ -619,17 +755,17 @@ class App {
 
                 <!-- Botones de Acción -->
                 <div class="flex flex-wrap items-center gap-2.5 pt-1.5">
-                  <button id="cta-register-biz-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer">
+                  <button id="cta-register-biz-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
                     <i class="fas fa-plus-circle text-xs"></i>
                     <span>Registrar Mi Negocio</span>
                   </button>
 
-                  <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                  <button id="cta-view-plans-btn" class="px-3.5 py-2 rounded-xl bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 hover:text-amber-200 text-xs sm:text-sm font-bold border border-amber-400/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
                     <i class="fas fa-tags text-amber-400 text-xs"></i>
                     <span>Ver Planes ($8, $15, $25)</span>
                   </button>
                   
-                  <button id="cta-login-biz-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                  <button id="cta-login-biz-btn" class="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 hover:text-white text-xs sm:text-sm font-medium border border-white/10 flex items-center justify-center gap-1.5 transition-all cursor-pointer app-touch-btn">
                     <i class="fas fa-store text-xs"></i>
                     <span>Ya tengo cuenta</span>
                   </button>
@@ -1096,10 +1232,10 @@ class App {
     const clientUser = storage.getClientUser();
 
     modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-0 sm:my-8 mobile-bottom-sheet flex flex-col max-h-[92vh]">
           <!-- Header -->
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex items-center justify-between">
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6 text-white flex items-center justify-between shrink-0">
             <div>
               <span class="text-xs uppercase tracking-wider text-blue-200 font-bold">Reserva de Turno</span>
               <h3 class="text-xl font-bold">${biz.name}</h3>
@@ -3585,8 +3721,8 @@ class App {
     const plans = storage.getSubscriptionPlans();
 
     modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl ${role === 'business' && mode === 'register' ? 'max-w-xl' : 'max-w-md'} w-full overflow-hidden border border-slate-200 my-8 max-h-[92vh] flex flex-col">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl ${role === 'business' && mode === 'register' ? 'max-w-xl' : 'max-w-md'} w-full overflow-hidden border border-slate-200 my-0 sm:my-8 max-h-[92vh] flex flex-col mobile-bottom-sheet">
           
           <!-- Header del Modal -->
           <div class="bg-slate-900 p-5 text-white flex items-center justify-between shrink-0">
