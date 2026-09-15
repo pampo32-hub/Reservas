@@ -919,20 +919,25 @@ app.post('/api/appointments', async (req, res) => {
 
 // Endpoint de diagnóstico de servicios de notificación
 app.get('/api/notifications-status', (req, res) => {
-  const hasResend = Boolean(process.env.RESEND_API_KEY || true); // fallback presente
-  const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN || true); // fallback presente
+  const hasResend = Boolean(process.env.RESEND_API_KEY);
+  const hasMeta = Boolean(process.env.META_WHATSAPP_TOKEN && process.env.META_PHONE_NUMBER_ID);
+  const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN);
+
   res.json({
     email: {
-      provider: 'Resend',
-      status: hasResend ? 'configured' : 'missing_key',
-      from: process.env.RESEND_FROM_EMAIL || 'Reservas CR <onboarding@resend.dev>',
-      note: 'En modo prueba gratuito de Resend (resend.dev), los correos se entregan al correo registrado de la cuenta Resend. Para clientes externos, vincula un dominio en resend.com.'
+      provider: 'Resend Email API',
+      status: hasResend ? 'configured' : 'fallback',
+      from: process.env.RESEND_FROM_EMAIL || 'Reservas Costa Rica <onboarding@resend.dev>',
+      note: 'Los correos de confirmación se envían automáticamente al cliente y al negocio.'
     },
     whatsapp: {
-      provider: 'Twilio WhatsApp Sandbox',
-      status: hasTwilio ? 'configured' : 'missing_credentials',
-      from: process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886',
-      sandboxInstructions: 'Para recibir mensajes de prueba en WhatsApp con Sandbox de Twilio, el destinatario debe enviar primero "join <palabra-clave>" al número +1 415 523 8886.'
+      provider: hasMeta ? 'Meta WhatsApp Cloud API (Directo)' : (hasTwilio ? 'Twilio WhatsApp Sandbox' : 'Sin Configurar'),
+      status: hasMeta ? 'configured_meta' : (hasTwilio ? 'configured_twilio' : 'missing_credentials'),
+      phoneNumberId: process.env.META_PHONE_NUMBER_ID || null,
+      directMetaEnabled: hasMeta,
+      note: hasMeta 
+        ? 'Conexión directa con Meta WhatsApp Cloud API activa (1.000 conversaciones gratis/mes sin Twilio).' 
+        : 'Para activar WhatsApp directo sin Twilio, configura META_WHATSAPP_TOKEN y META_PHONE_NUMBER_ID en .env o en el panel de Render.'
     }
   });
 });
