@@ -783,7 +783,7 @@ class App {
                       class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center ${this.bookingState.selectedTime === slot ? 'selected' : ''}"
                       data-slot="${slot}"
                     >
-                      <i class="far fa-clock mr-1 text-[10px]"></i>${this.formatTime12h(slot)}
+                      ${this.formatTime12h(slot)}
                     </button>
                   `).join('')}
                 </div>
@@ -867,7 +867,7 @@ class App {
                 class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
               >
                 <i class="fas fa-check-circle"></i>
-                <span>Confirmar Reserva ${this.bookingState.selectedTime ? `(${this.bookingState.selectedTime})` : ''}</span>
+                <span>Confirmar Reserva ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
               </button>
             </form>
           </div>
@@ -1128,7 +1128,7 @@ class App {
                         class="reschedule-slot-btn py-2 px-2 text-xs font-bold rounded-xl border transition-all ${selectedTime === slot ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400 hover:bg-blue-50'}"
                         data-slot="${slot}"
                       >
-                        <i class="far fa-clock mr-1 text-[10px]"></i>${this.formatTime12h(slot)}
+                        ${this.formatTime12h(slot)}
                       </button>
                     `).join('')}
                   </div>

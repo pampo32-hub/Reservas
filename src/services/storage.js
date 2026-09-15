@@ -726,14 +726,26 @@ class StorageService {
     }
 
     const timeToMinutes = (timeStr) => {
-      const [h, m] = timeStr.split(':').map(Number);
+      if (!timeStr) return 0;
+      let str = String(timeStr).trim().toUpperCase();
+      const isPM = str.includes('PM');
+      const isAM = str.includes('AM');
+      str = str.replace(/[APM\s]/g, '');
+      const [hStr, mStr] = str.split(':');
+      let h = parseInt(hStr, 10) || 0;
+      const m = parseInt(mStr, 10) || 0;
+      if (isPM && h < 12) h += 12;
+      if (isAM && h === 12) h = 0;
       return h * 60 + m;
     };
 
     const minutesToTime = (totalMinutes) => {
-      const h = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+      const totalH = Math.floor(totalMinutes / 60);
       const m = (totalMinutes % 60).toString().padStart(2, '0');
-      return `${h}:${m}`;
+      const period = totalH >= 12 ? 'PM' : 'AM';
+      let hour12 = totalH % 12;
+      if (hour12 === 0) hour12 = 12;
+      return `${hour12}:${m} ${period}`;
     };
 
     const openMin = timeToMinutes(business.schedule.openTime || '09:00');
