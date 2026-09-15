@@ -17,3 +17,4 @@ TurnoYa es una aplicaci√≥n web interactiva que conecta negocios locales (barber√
 - HTML5 / CSS3 (Tailwind CSS CDN + FontAwesome)
 - JavaScript Vanilla (ES Modules)
 - Arquitectura desacoplada con LocalStorage y soporte para backend PostgreSQL / Firebase / Supabase.
+
