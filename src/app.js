@@ -6753,9 +6753,16 @@ class App {
     document.querySelectorAll('.select-plan-paypal-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const planId = btn.getAttribute('data-plan-id');
-        const activeBizId = businessId || storage.getActiveBusinessId() || 'biz-1';
+        const bizUser = storage.getBusinessUser();
+        const activeBizId = businessId || (bizUser ? bizUser.businessId : null);
         modalContainer.innerHTML = '';
-        this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
+
+        if (activeBizId) {
+          this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
+        } else {
+          this.showToast('Primero crea la cuenta de tu negocio para asociarle tu plan.', 'info');
+          this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
+        }
       });
     });
 
@@ -6763,9 +6770,16 @@ class App {
     document.querySelectorAll('.select-plan-sinpe-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const planId = btn.getAttribute('data-plan-id');
-        const activeBizId = businessId || storage.getActiveBusinessId() || 'biz-1';
+        const bizUser = storage.getBusinessUser();
+        const activeBizId = businessId || (bizUser ? bizUser.businessId : null);
         modalContainer.innerHTML = '';
-        this.renderSinpePaymentModal({ businessId: activeBizId, planId });
+
+        if (activeBizId) {
+          this.renderSinpePaymentModal({ businessId: activeBizId, planId });
+        } else {
+          this.showToast('Primero crea la cuenta de tu negocio para asociarle tu plan.', 'info');
+          this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
+        }
       });
     });
   }
@@ -7007,6 +7021,7 @@ class App {
 
             <div id="paypal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
+            <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
             <!-- Alternativa Local: SINPE Móvil -->
             <div class="pt-3 border-t border-slate-200 text-center space-y-2">
               <span class="text-[11px] text-slate-500 block font-medium">¿Prefieres pagar por transferencia local en Costa Rica?</span>
@@ -7163,6 +7178,7 @@ class App {
 
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}`;
       script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}&locale=es_CR`;
       script.onload = () => resolve(window.paypal);
       script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
