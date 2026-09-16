@@ -3010,17 +3010,12 @@ class App {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'basic' });
     });
 
-    document.getElementById('export-reports-excel-btn')?.addEventListener('click', () => {
-      this.exportBusinessReportsExcel(currentBiz, appointments);
+    document.getElementById('export-reports-csv-btn')?.addEventListener('click', () => {
+      this.exportBusinessReportsCSV(currentBiz, appointments);
     });
 
     document.getElementById('export-reports-pdf-btn')?.addEventListener('click', () => {
       this.exportBusinessReportsPDF(currentBiz, appointments);
-    });
-
-    document.getElementById('export-reports-csv-btn')?.addEventListener('click', () => {
-      this.exportBusinessReportsCSV(currentBiz, appointments);
-      this.exportBusinessReportsExcel(currentBiz, appointments);
     });
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
@@ -3241,10 +3236,6 @@ class App {
                             </button>
                           ` : ''}
 
-                        <!-- Marcar como Completada -->
-                        ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
-                            <i class="fas fa-clipboard-check"></i> Completar
                           <!-- Marcar como Completada -->
                           ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
                             <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
@@ -3256,12 +3247,7 @@ class App {
                           <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
                             <i class="fas fa-calendar-alt"></i> Modificar
                           </button>
-                        ` : ''}
 
-                        <!-- Reprogramar / Modificar -->
-                        <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
-                          <i class="fas fa-calendar-alt"></i> Modificar
-                        </button>
                           <!-- Cancelar -->
                           ${apt.status !== 'cancelled' ? `
                             <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
@@ -3269,20 +3255,10 @@ class App {
                             </button>
                           ` : ''}
 
-                        <!-- Cancelar -->
-                        ${apt.status !== 'cancelled' ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
-                            <i class="fas fa-ban"></i> Cancelar
                           <!-- Eliminar -->
                           <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
                             <i class="fas fa-trash-alt"></i>
                           </button>
-                        ` : ''}
-
-                        <!-- Eliminar -->
-                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
-                          <i class="fas fa-trash-alt"></i>
-                        </button>
                         </div>
                       </td>
                     </tr>
@@ -3782,12 +3758,9 @@ class App {
             <p class="text-xs text-slate-500 mt-0.5">Estadísticas en tiempo real de ingresos recaudados, clientes recurrentes y demanda de servicios.</p>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button id="export-reports-csv-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer">
-              <i class="fas fa-file-excel"></i> Exportar Reporte a Excel (CSV)
           <div class="flex items-center gap-2.5 flex-wrap">
-            <button id="export-reports-excel-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer">
-              <i class="fas fa-file-excel text-emerald-100 text-sm"></i> Exportar a Excel (.xls)
+            <button id="export-reports-csv-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer">
+              <i class="fas fa-file-excel text-emerald-100 text-sm"></i> Exportar a Excel (CSV)
             </button>
             <button id="export-reports-pdf-btn" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/20 flex items-center gap-2 cursor-pointer">
               <i class="fas fa-file-pdf text-rose-100 text-sm"></i> Descargar Reporte PDF
@@ -3956,8 +3929,8 @@ class App {
     `;
   }
 
-  // --- EXPORTACIÓN PROFESIONAL A EXCEL (.XLS CON FORMATO ESTRUCTURADO) ---
-  exportBusinessReportsExcel(currentBiz, appointments) {
+  // --- EXPORTACIÓN PROFESIONAL A CSV (COMPATIBLE AL 100% CON EXCEL, GOOGLE SHEETS Y NUMBERS) ---
+  exportBusinessReportsCSV(currentBiz, appointments) {
     if (!appointments || appointments.length === 0) {
       this.showToast('No hay datos de reservas para exportar.', 'info');
       return;
@@ -4027,177 +4000,110 @@ class App {
     });
     const topServices = Array.from(serviceMap.values()).sort((a, b) => b.count - a.count);
 
-    const escapeXml = (str) => {
-      if (!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    // Formateador de celda CSV con comillas y escape de comillas dobles
+    const cell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).trim();
+      return `"${str.replace(/"/g, '""')}"`;
     };
+    const row = (...cells) => cells.map(cell).join(';');
 
-    const excelHtml = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <style>
-          body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; }
-          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
-          .main-header { background-color: #0F172A; color: #FFFFFF; font-size: 15pt; font-weight: bold; padding: 12px; }
-          .sub-header { background-color: #1E293B; color: #94A3B8; font-size: 9pt; padding: 6px 12px; }
-          .section-banner { background-color: #2563EB; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
-          .section-subbanner { background-color: #059669; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
-          .section-purple { background-color: #7C3AED; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
-          .section-dark { background-color: #334155; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
-          .th-cell { background-color: #F1F5F9; color: #1E293B; font-weight: bold; border: 1px solid #CBD5E1; padding: 8px; font-size: 9.5pt; }
-          .td-cell { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 9.5pt; color: #334155; vertical-align: middle; }
-          .td-num { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 9.5pt; text-align: right; color: #0F172A; }
-          .td-center { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 9.5pt; text-align: center; color: #334155; }
-          .kpi-label { background-color: #F8FAFC; font-weight: bold; color: #475569; border: 1px solid #CBD5E1; padding: 8px; font-size: 9.5pt; }
-          .kpi-value { font-weight: bold; font-size: 11pt; color: #0F172A; border: 1px solid #CBD5E1; text-align: right; padding: 8px; background-color: #FFFFFF; }
-          .status-badge { font-weight: bold; padding: 3px 6px; border-radius: 4px; text-align: center; }
-          .status-confirmed { color: #1D4ED8; font-weight: bold; }
-          .status-completed { color: #047857; font-weight: bold; }
-          .status-pending { color: #B45309; font-weight: bold; }
-          .status-cancelled { color: #B91C1C; font-weight: bold; }
-        </style>
-      </head>
-      <body>
-        <table>
-          <!-- ENCABEZADO COMERCIAL -->
-          <tr>
-            <td colspan="8" class="main-header">${escapeXml(currentBiz.name).toUpperCase()} - REPORTE EJECUTIVO Y FINANCIERO</td>
-          </tr>
-          <tr>
-            <td colspan="8" class="sub-header">Fecha de Generación: ${new Date().toLocaleString('es-CR')} | Plan Activo: ${(currentBiz.plan || 'pro').toUpperCase()} | Teléfono: ${escapeXml(currentBiz.phone || '')} | Ubicación: ${escapeXml(currentBiz.city || 'Costa Rica')}</td>
-          </tr>
-          <tr><td colspan="8" style="height: 12px;"></td></tr>
+    const lines = [];
 
-          <!-- 1. RESUMEN FINANCIERO Y OPERATIVO -->
-          <tr>
-            <td colspan="8" class="section-banner">1. RESUMEN EJECUTIVO FINANCIERO Y OPERATIVO</td>
-          </tr>
-          <tr>
-            <td class="kpi-label" colspan="2">Ingresos Totales Recaudados (₡)</td>
-            <td class="kpi-value" colspan="2">₡${totalRevenue.toLocaleString('es-CR')}</td>
-            <td class="kpi-label" colspan="2">Tasa de Asistencia / Cumplimiento</td>
-            <td class="kpi-value" colspan="2">${attendanceRate}%</td>
-          </tr>
-          <tr>
-            <td class="kpi-label" colspan="2">Ingresos del Mes Actual (₡)</td>
-            <td class="kpi-value" colspan="2">₡${monthRevenue.toLocaleString('es-CR')}</td>
-            <td class="kpi-label" colspan="2">Total de Reservas Registradas</td>
-            <td class="kpi-value" colspan="2">${totalAppointmentsCount} citas</td>
-          </tr>
-          <tr>
-            <td class="kpi-label" colspan="2">Ticket Promedio por Servicio (₡)</td>
-            <td class="kpi-value" colspan="2">₡${avgTicket.toLocaleString('es-CR')}</td>
-            <td class="kpi-label" colspan="2">Citas Atendidas vs Canceladas</td>
-            <td class="kpi-value" colspan="2">${completedCount} completadas / ${cancelledCount} canceladas</td>
-          </tr>
-          <tr><td colspan="8" style="height: 16px;"></td></tr>
+    // ENCABEZADO CORPORATIVO
+    lines.push(row('REPORTE EJECUTIVO FINANCIERO Y AUDITORÍA DE RESERVAS - RESERVAS CR', '', '', '', '', '', '', '', ''));
+    lines.push(row('Nombre del Negocio:', currentBiz.name || 'Negocio', 'Plan Suscripción:', (currentBiz.plan || 'pro').toUpperCase(), 'Fecha de Emisión:', new Date().toLocaleString('es-CR'), '', '', ''));
+    lines.push(row('Teléfono / WhatsApp:', currentBiz.phone || 'N/A', 'Correo Electrónico:', currentBiz.email || 'N/A', 'Ubicación:', currentBiz.city || 'Costa Rica', '', '', ''));
+    lines.push(row('', '', '', '', '', '', '', '', ''));
 
-          <!-- 2. RANKING DE CLIENTES FRECUENTES -->
-          <tr>
-            <td colspan="8" class="section-subbanner">2. RANKING DE CLIENTES FRECUENTES Y FIDELIDAD (${frequentClients.length} Clientes Únicos)</td>
-          </tr>
-          <tr>
-            <th class="th-cell" style="width: 40px;">#</th>
-            <th class="th-cell" colspan="2">Nombre del Cliente</th>
-            <th class="th-cell">Teléfono / WhatsApp</th>
-            <th class="th-cell" style="text-align: center;">Total Visitas</th>
-            <th class="th-cell" style="text-align: center;">Completadas</th>
-            <th class="th-cell" style="text-align: right;">Total Invertido (₡)</th>
-            <th class="th-cell" style="text-align: center;">Última Visita</th>
-          </tr>
-          ${frequentClients.length === 0 ? `
-            <tr><td colspan="8" class="td-center">No hay clientes con reservas registradas aún.</td></tr>
-          ` : frequentClients.map((c, idx) => `
-            <tr>
-              <td class="td-center"><strong>${idx + 1}</strong></td>
-              <td class="td-cell" colspan="2"><strong>${escapeXml(c.name)}</strong></td>
-              <td class="td-cell">${escapeXml(c.phone || 'Sin número')}</td>
-              <td class="td-center"><strong>${c.totalBookings}</strong></td>
-              <td class="td-center">${c.completedBookings}</td>
-              <td class="td-num" style="font-weight: bold; color: #047857;">₡${c.totalSpent.toLocaleString('es-CR')}</td>
-              <td class="td-center">${c.lastDate || 'N/A'}</td>
-            </tr>
-          `).join('')}
-          <tr><td colspan="8" style="height: 16px;"></td></tr>
+    // SECCIÓN 1: RESUMEN EJECUTIVO FINANCIERO Y OPERATIVO
+    lines.push(row('1. RESUMEN EJECUTIVO FINANCIERO Y OPERATIVO', '', '', '', '', '', '', '', ''));
+    lines.push(row('Indicador Clave', 'Monto / Cifra', 'Detalle / Explicación', '', '', '', '', '', ''));
+    lines.push(row('Ingresos Totales Recaudados', `₡${totalRevenue.toLocaleString('es-CR')}`, 'Suma acumulada de citas confirmadas y completadas', '', '', '', '', '', ''));
+    lines.push(row('Ingresos del Mes Actual', `₡${monthRevenue.toLocaleString('es-CR')}`, `${monthAppointments.length} citas registradas en el mes en curso`, '', '', '', '', '', ''));
+    lines.push(row('Ticket Promedio por Reserva', `₡${avgTicket.toLocaleString('es-CR')}`, 'Gasto medio por cliente atendido', '', '', '', '', '', ''));
+    lines.push(row('Total de Reservas en Sistema', totalAppointmentsCount, 'Historial total de citas agendadas', '', '', '', '', '', ''));
+    lines.push(row('Reservas Atendidas (Completadas)', completedCount, 'Servicios concluidos con éxito', '', '', '', '', '', ''));
+    lines.push(row('Reservas Confirmadas en Agenda', confirmedAppointments.length, 'Citas agendadas válidas', '', '', '', '', '', ''));
+    lines.push(row('Reservas Canceladas', cancelledCount, 'Citas canceladas por el cliente o negocio', '', '', '', '', '', ''));
+    lines.push(row('Tasa de Asistencia / Cumplimiento', `${attendanceRate}%`, 'Porcentaje de efectividad operativa', '', '', '', '', '', ''));
+    lines.push(row('', '', '', '', '', '', '', '', ''));
 
-          <!-- 3. DEMANDA Y RENDIMIENTO POR SERVICIO -->
-          <tr>
-            <td colspan="8" class="section-purple">3. RENDIMIENTO Y DEMANDA POR CATÁLOGO DE SERVICIOS</td>
-          </tr>
-          <tr>
-            <th class="th-cell" colspan="3">Servicio</th>
-            <th class="th-cell" style="text-align: center;">Citas Totales</th>
-            <th class="th-cell" style="text-align: center;">% Demanda</th>
-            <th class="th-cell" colspan="3" style="text-align: right;">Total Recaudado (₡)</th>
-          </tr>
-          ${topServices.length === 0 ? `
-            <tr><td colspan="8" class="td-center">No hay servicios con reservas registradas.</td></tr>
-          ` : topServices.map(s => {
-            const pct = validAppointments.length > 0 ? Math.round((s.count / validAppointments.length) * 100) : 0;
-            return `
-              <tr>
-                <td class="td-cell" colspan="3"><strong>${escapeXml(s.name)}</strong></td>
-                <td class="td-center"><strong>${s.count}</strong></td>
-                <td class="td-center">${pct}%</td>
-                <td class="td-num" colspan="3" style="font-weight: bold; color: #1D4ED8;">₡${s.revenue.toLocaleString('es-CR')}</td>
-              </tr>
-            `;
-          }).join('')}
-          <tr><td colspan="8" style="height: 16px;"></td></tr>
+    // SECCIÓN 2: RANKING DE CLIENTES FRECUENTES Y FIDELIDAD
+    lines.push(row(`2. RANKING DE CLIENTES FRECUENTES Y FIDELIDAD (${frequentClients.length} Clientes Únicos)`, '', '', '', '', '', '', '', ''));
+    lines.push(row('Ranking', 'Nombre del Cliente', 'Teléfono / WhatsApp', 'Total Visitas', 'Completadas', 'Canceladas', 'Total Invertido (₡)', 'Última Visita', ''));
+    if (frequentClients.length === 0) {
+      lines.push(row('Sin registros', 'Aún no se registran clientes con citas en el sistema', '', '', '', '', '', '', ''));
+    } else {
+      frequentClients.forEach((c, idx) => {
+        lines.push(row(
+          `#${idx + 1}`,
+          c.name,
+          c.phone || 'Sin número',
+          c.totalBookings,
+          c.completedBookings,
+          c.cancelledBookings,
+          `₡${c.totalSpent.toLocaleString('es-CR')}`,
+          c.lastDate ? this.formatDateDMY(c.lastDate) : 'Reciente',
+          ''
+        ));
+      });
+    }
+    lines.push(row('', '', '', '', '', '', '', '', ''));
 
-          <!-- 4. HISTORIAL COMPLETO DE RESERVAS -->
-          <tr>
-            <td colspan="8" class="section-dark">4. HISTORIAL COMPLETO DE RESERVAS Y AUDITORÍA (${appointments.length} Registros)</td>
-          </tr>
-          <tr>
-            <th class="th-cell">ID Cita</th>
-            <th class="th-cell">Fecha</th>
-            <th class="th-cell">Hora</th>
-            <th class="th-cell">Cliente</th>
-            <th class="th-cell">Teléfono</th>
-            <th class="th-cell">Servicio</th>
-            <th class="th-cell">Especialista</th>
-            <th class="th-cell" style="text-align: right;">Precio (₡)</th>
-            <th class="th-cell" style="text-align: center;">Estado</th>
-          </tr>
-          ${appointments.map(a => {
-            const statusLabel = a.status === 'confirmed' ? 'Confirmada' : a.status === 'completed' ? 'Completada' : a.status === 'pending' ? 'Pendiente' : 'Cancelada';
-            const statusClass = a.status === 'confirmed' ? 'status-confirmed' : a.status === 'completed' ? 'status-completed' : a.status === 'pending' ? 'status-pending' : 'status-cancelled';
-            return `
-              <tr>
-                <td class="td-cell"><small>${escapeXml(a.id || '')}</small></td>
-                <td class="td-cell">${escapeXml(a.date || '')}</td>
-                <td class="td-cell">${escapeXml(a.time || '')}</td>
-                <td class="td-cell"><strong>${escapeXml(a.clientName || 'Cliente')}</strong></td>
-                <td class="td-cell">${escapeXml(a.clientPhone || '')}</td>
-                <td class="td-cell">${escapeXml(a.serviceName || '')}</td>
-                <td class="td-cell">${escapeXml(a.staffName || 'General')}</td>
-                <td class="td-num">₡${(Number(a.servicePrice) || 0).toLocaleString('es-CR')}</td>
-                <td class="td-center ${statusClass}">${statusLabel}</td>
-              </tr>
-            `;
-          }).join('')}
-        </table>
-      </body>
-      </html>
-    `;
+    // SECCIÓN 3: RENDIMIENTO Y DEMANDA POR CATÁLOGO DE SERVICIOS
+    lines.push(row('3. RENDIMIENTO Y DEMANDA POR CATÁLOGO DE SERVICIOS', '', '', '', '', '', '', '', ''));
+    lines.push(row('Servicio', 'Citas Solicitadas', '% de Demanda', 'Total Recaudado (₡)', '', '', '', '', ''));
+    if (topServices.length === 0) {
+      lines.push(row('Sin registros', 'Aún no hay servicios reservados en el catálogo', '', '', '', '', '', ''));
+    } else {
+      topServices.forEach(s => {
+        const pct = validAppointments.length > 0 ? Math.round((s.count / validAppointments.length) * 100) : 0;
+        lines.push(row(
+          s.name,
+          s.count,
+          `${pct}%`,
+          `₡${s.revenue.toLocaleString('es-CR')}`,
+          '', '', '', '', ''
+        ));
+      });
+    }
+    lines.push(row('', '', '', '', '', '', '', '', ''));
 
-    const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    // SECCIÓN 4: HISTORIAL COMPLETO DE RESERVAS
+    lines.push(row(`4. HISTORIAL COMPLETO DE RESERVAS Y AUDITORÍA (${appointments.length} Registros)`, '', '', '', '', '', '', '', ''));
+    lines.push(row('ID Reserva', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Servicio', 'Especialista', 'Monto (₡)', 'Estado', 'Notas'));
+    appointments.forEach(a => {
+      const statusLabel = a.status === 'confirmed' ? 'Confirmada' : a.status === 'completed' ? 'Completada' : a.status === 'pending' ? 'Pendiente' : 'Cancelada';
+      lines.push(row(
+        a.id || '',
+        a.date || '',
+        a.time || '',
+        a.clientName || 'Cliente',
+        a.clientPhone || '',
+        a.serviceName || 'Servicio',
+        a.staffName || 'General',
+        `₡${(Number(a.servicePrice) || 0).toLocaleString('es-CR')}`,
+        statusLabel,
+        a.notes || ''
+      ));
+    });
+
+    lines.push(row('', '', '', '', '', '', '', '', ''));
+    lines.push(row('Directorio & Reservas Costa Rica • Plataforma Comercial Oficial - Documento Confidencial', '', '', '', '', '', '', '', ''));
+
+    const csvContent = lines.join('\r\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
+    const safeName = (currentBiz.name || 'negocio').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '_');
     link.setAttribute('href', url);
-    link.setAttribute('download', `reporte_reservas_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.csv`);
-    link.setAttribute('download', `reporte_financiero_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.xls`);
+    link.setAttribute('download', `reporte_financiero_${safeName}_${this.getTodayDateString()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    this.showToast('¡Reporte exportado exitosamente a CSV!', 'success');
-    this.showToast('¡Reporte ordenado y formateado descargado en Excel (.xls)!', 'success');
+    URL.revokeObjectURL(url);
+    this.showToast('¡Reporte en CSV estructurado y descargado exitosamente!', 'success');
   }
 
   // --- EXPORTACIÓN Y VISUALIZACIÓN ELEGANTE EN PDF ---
