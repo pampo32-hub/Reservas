@@ -1,11 +1,11 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
-// FLAGS TEMPORALES: Cambiar a true cuando se desee reactivar el registro, login o accesos rápidos de comercios
-const REGISTRATION_ENABLED = false;
-const SHOW_BIZ_SHORTCUTS = false;
-const SHOW_LOGIN_BUTTON = false;
-const SHOW_PREREGISTER_BANNER = true;
+// FLAGS DE LA PLATAFORMA: Registro, login y suscripciones activas
+const REGISTRATION_ENABLED = true;
+const SHOW_BIZ_SHORTCUTS = true;
+const SHOW_LOGIN_BUTTON = true;
+const SHOW_PREREGISTER_BANNER = false;
 
 class App {
   constructor() {
@@ -1113,11 +1113,10 @@ class App {
 
     attachCardListeners();
 
-    // Listeners para Banner de Prelanzamiento & Pre-registro
-    document.getElementById('banner-preregister-btn')?.addEventListener('click', () => this.renderPreRegistrationModal('pro'));
+    // Listeners para Banners de Negocios y Planes
     document.getElementById('banner-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
-    document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderPreRegistrationModal('pro'));
-    document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderPreRegistrationModal('pro'));
+    document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
+    document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
   }
@@ -6465,28 +6464,20 @@ class App {
                       </ul>
                     </div>
 
-                    <!-- Botones de Acción -->
-                    <div class="mt-6 pt-4 border-t border-slate-100 space-y-2">
+                    <!-- Botón de Acción -->
+                    <div class="mt-6 pt-4 border-t border-slate-100">
                       ${isCurrent ? `
-                        <button disabled class="w-full py-3 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
+                        <button disabled class="w-full py-3.5 bg-emerald-100 text-emerald-800 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
                           <i class="fas fa-check-circle"></i> Tu Plan Actual
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-paypal-btn w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 cursor-pointer app-touch-btn"
+                          class="select-plan-paypal-btn w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer app-touch-btn"
                           data-plan-id="${plan.id}"
                         >
                           <i class="fab fa-paypal text-sm text-blue-950"></i>
-                          <span>Pagar con PayPal ($${plan.priceUsd}/mes)</span>
+                          <span>Suscribirme con PayPal ($${plan.priceUsd}/mes)</span>
                           <i class="fas fa-arrow-right text-xs"></i>
-                        </button>
-
-                        <button 
-                          class="select-plan-prereg-btn w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn"
-                          data-plan-id="${plan.id}"
-                        >
-                          <i class="fas fa-gift text-amber-600"></i>
-                          <span>Pre-registrar Negocio (15 Días Gratis)</span>
                         </button>
                       `}
                     </div>
@@ -6502,7 +6493,7 @@ class App {
               <i class="fas fa-shield-alt text-emerald-600 text-sm"></i>
               <span>Sin contratos forzosos. Cancela o cambia de plan en cualquier momento.</span>
             </div>
-            <span class="font-bold text-slate-700">Aceptamos PayPal, Tarjetas y SINPE Móvil en Costa Rica 🇨🇷</span>
+            <span class="font-bold text-slate-700">Aceptamos PayPal, Tarjetas y Apple Pay en Costa Rica 🇨🇷</span>
           </div>
         </div>
       </div>
@@ -6512,22 +6503,13 @@ class App {
       modalContainer.innerHTML = '';
     });
 
-    // Acción 1: Pagar / Probar Pasarela con PayPal
+    // Acción: Suscribirse con PayPal
     document.querySelectorAll('.select-plan-paypal-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const planId = btn.getAttribute('data-plan-id');
         const activeBizId = businessId || storage.getActiveBusinessId() || 'biz-1';
         modalContainer.innerHTML = '';
         this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
-      });
-    });
-
-    // Acción 2: Pre-registro con beneficio
-    document.querySelectorAll('.select-plan-prereg-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const planId = btn.getAttribute('data-plan-id');
-        modalContainer.innerHTML = '';
-        this.renderPreRegistrationModal(planId);
       });
     });
   }
