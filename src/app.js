@@ -113,7 +113,7 @@ class App {
       .replace(/'/g, '&#039;');
   }
 
-  init() {
+  async init() {
     // 1. Escuchar botones Atrás y Adelante del navegador
     window.addEventListener('popstate', (e) => {
       if (e.state && e.state.view) {
@@ -146,10 +146,26 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialHash);
     }
 
-    this.renderHeader();
-    this.renderMobileBottomNav();
-    this.renderCurrentView();
-    this.setupGlobalEvents();
+    try {
+      this.renderHeader();
+      this.renderMobileBottomNav();
+      this.renderCurrentView();
+      this.setupGlobalEvents();
+    } catch (err) {
+      console.error('Error inicializando vista:', err);
+    }
+
+    // Sincronizar datos frescos del servidor y refrescar
+    try {
+      if (storage.initAsync) {
+        await storage.initAsync();
+        this.renderHeader();
+        this.renderMobileBottomNav();
+        this.renderCurrentView();
+      }
+    } catch (err) {
+      console.warn('Storage sync warning:', err);
+    }
   }
 
   // --- RUTAS Y HASH DE NAVEGACIÓN ---
@@ -990,7 +1006,7 @@ class App {
 
                 <!-- Propuesta de Valor -->
                 <p class="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed max-w-2xl">
-                  Planes mensuales fijos <strong class="text-amber-300 font-black">($8, $15, $25/mes)</strong>. <span class="text-emerald-300 font-black underline decoration-emerald-400/50 underline-offset-2">Cero comisiones por reserva</span>. Recibe turnos directos por WhatsApp y ten tu enlace web propio con catálogo profesional listo para compartir.
+                  Planes mensuales fijos <strong class="text-amber-300 font-black">($10, $18, $35/mes)</strong>. <span class="text-emerald-300 font-black underline decoration-emerald-400/50 underline-offset-2">Cero comisiones por reserva</span>. Recibe turnos directos por WhatsApp y ten tu enlace web propio con catálogo profesional listo para compartir.
                 </p>
 
                 <!-- Gancho / Incentivo de Prelanzamiento (Card Destacada) -->
@@ -8723,6 +8739,7 @@ class App {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">URL Imagen de Perfil / Logo</label>
+                <input type="url" id="edit-biz-image" value="${this.escapeHtml(biz.image || '')}" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus
                 <input type="url" id="edit-biz-image" value="${this.escapeHtml(biz.image || '')}" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
 
