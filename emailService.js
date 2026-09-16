@@ -579,6 +579,10 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
           <span class="val">${lead.phone || 'No especificado'}</span>
         </div>
         <div class="info-row">
+          <span class="label">✉️ Correo Electrónico:</span>
+          <span class="val">${lead.email || 'No proporcionado'}</span>
+        </div>
+        <div class="info-row">
           <span class="label">🏷️ Categoría:</span>
           <span class="val">${lead.category || 'Servicios'}</span>
         </div>

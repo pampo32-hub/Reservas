@@ -673,7 +673,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 // ==========================================
 app.post('/api/pre-registrations', async (req, res) => {
   try {
-    const { businessName, contactName, phone, category, city, planInterest = 'pro', notes = '' } = req.body;
+    const { businessName, contactName, phone, email = '', category, city, planInterest = 'pro', notes = '' } = req.body;
     if (!businessName || !phone || !contactName) {
       return res.status(400).json({ error: 'Nombre del negocio, persona de contacto y número de WhatsApp son obligatorios.' });
     }
@@ -682,21 +682,23 @@ app.post('/api/pre-registrations', async (req, res) => {
     const cleanBizName = (businessName || '').trim();
     const cleanContact = (contactName || '').trim();
     const cleanPhone = (phone || '').trim();
+    const cleanEmail = (email || '').trim();
     const cleanCat = (category || 'Servicios Generales').trim();
     const cleanCity = (city || '').trim();
     const cleanPlan = (planInterest || 'pro').trim();
     const cleanNotes = (notes || '').trim();
 
     await pool.query(`
-      INSERT INTO reservas_pre_registrations (id, business_name, contact_name, phone, category, city, plan_interest, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    `, [id, cleanBizName, cleanContact, cleanPhone, cleanCat, cleanCity, cleanPlan, cleanNotes]);
+      INSERT INTO reservas_pre_registrations (id, business_name, contact_name, phone, email, category, city, plan_interest, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `, [id, cleanBizName, cleanContact, cleanPhone, cleanEmail, cleanCat, cleanCity, cleanPlan, cleanNotes]);
 
     // Notificación por correo al Administrador (pampo32@gmail.com)
     sendAdminPreRegistrationNotificationEmail({
       businessName: cleanBizName,
       contactName: cleanContact,
       phone: cleanPhone,
+      email: cleanEmail,
       category: cleanCat,
       city: cleanCity,
       planInterest: cleanPlan,
@@ -726,6 +728,7 @@ app.post('/api/pre-registrations', async (req, res) => {
         businessName: cleanBizName,
         contactName: cleanContact,
         phone: cleanPhone,
+        email: cleanEmail,
         category: cleanCat,
         city: cleanCity,
         planInterest: cleanPlan,
@@ -746,6 +749,7 @@ app.get('/api/pre-registrations', async (req, res) => {
       businessName: r.business_name,
       contactName: r.contact_name,
       phone: r.phone,
+      email: r.email || '',
       category: r.category,
       city: r.city,
       planInterest: r.plan_interest,
@@ -766,25 +770,27 @@ app.get('/api/pre-registrations', async (req, res) => {
 app.put('/api/developer/pre-registrations/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { businessName, contactName, phone, category, city, planInterest, notes, status, isBlocked, blockReason } = req.body;
+    const { businessName, contactName, phone, email, category, city, planInterest, notes, status, isBlocked, blockReason } = req.body;
 
     await pool.query(`
       UPDATE reservas_pre_registrations SET
         business_name = COALESCE($1, business_name),
         contact_name = COALESCE($2, contact_name),
         phone = COALESCE($3, phone),
-        category = COALESCE($4, category),
-        city = COALESCE($5, city),
-        plan_interest = COALESCE($6, plan_interest),
-        notes = COALESCE($7, notes),
-        status = COALESCE($8, status),
-        is_blocked = COALESCE($9, is_blocked),
-        block_reason = COALESCE($10, block_reason)
-      WHERE id = $11
+        email = COALESCE($4, email),
+        category = COALESCE($5, category),
+        city = COALESCE($6, city),
+        plan_interest = COALESCE($7, plan_interest),
+        notes = COALESCE($8, notes),
+        status = COALESCE($9, status),
+        is_blocked = COALESCE($10, is_blocked),
+        block_reason = COALESCE($11, block_reason)
+      WHERE id = $12
     `, [
       businessName !== undefined ? businessName.trim() : null,
       contactName !== undefined ? contactName.trim() : null,
       phone !== undefined ? phone.trim() : null,
+      email !== undefined ? email.trim() : null,
       category !== undefined ? category.trim() : null,
       city !== undefined ? city.trim() : null,
       planInterest !== undefined ? planInterest.trim() : null,

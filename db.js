@@ -228,6 +228,7 @@ export async function initDatabase() {
         phone VARCHAR(50) NOT NULL,
         category VARCHAR(100) NOT NULL,
         city VARCHAR(100),
+        email VARCHAR(150) DEFAULT '',
         plan_interest VARCHAR(50) DEFAULT 'pro',
         notes TEXT,
         is_blocked BOOLEAN DEFAULT FALSE,
@@ -238,6 +239,7 @@ export async function initDatabase() {
     `);
 
     await client.query(`
+      ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS email VARCHAR(150) DEFAULT '';
       ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
       ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
       ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';

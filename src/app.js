@@ -6676,8 +6676,11 @@ class App {
                                   <strong class="text-slate-900 block font-bold text-sm">${this.escapeHtml(pr.businessName)}</strong>
                                   <span class="text-[10px] text-slate-400 font-mono">${pr.id}</span>
                                 </td>
-                                <td class="p-3 font-semibold text-slate-700">
-                                  <i class="fas fa-user-circle text-slate-400 mr-1"></i> ${this.escapeHtml(pr.contactName || '-')}
+                                <td class="p-3">
+                                  <span class="font-semibold text-slate-700 block">
+                                    <i class="fas fa-user-circle text-slate-400 mr-1"></i> ${this.escapeHtml(pr.contactName || '-')}
+                                  </span>
+                                  ${pr.email ? `<span class="text-[10px] text-slate-400 block truncate max-w-[150px]"><i class="fas fa-envelope text-slate-400 mr-1"></i>${this.escapeHtml(pr.email)}</span>` : ''}
                                 </td>
                                 <td class="p-3">
                                   <a href="${waUrl}" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold hover:bg-emerald-100 transition-colors">
@@ -9442,27 +9445,32 @@ class App {
               </div>
 
               <div>
+                <label class="block font-black text-slate-800 mb-1">Correo Electrónico del Negocio *</label>
+                <input type="email" id="prereg-email" required placeholder="negocio@ejemplo.com" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
                 <label class="block font-black text-slate-800 mb-1">WhatsApp de Contacto *</label>
                 <div class="relative">
                   <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
                   <input type="tel" id="prereg-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs">
                 </div>
               </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-black text-slate-800 mb-1">Categoría del Negocio *</label>
-                <select id="prereg-category" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-                  ${categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
-                  <option value="Otro Servicio">Otro Tipo de Servicio</option>
-                </select>
-              </div>
 
               <div>
                 <label class="block font-black text-slate-800 mb-1">Cantón o Ciudad</label>
                 <input type="text" id="prereg-city" placeholder="Ej: San José, Heredia, Alajuela..." class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
               </div>
+            </div>
+
+            <div>
+              <label class="block font-black text-slate-800 mb-1">Categoría del Negocio *</label>
+              <select id="prereg-category" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
+                ${categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
+                <option value="Otro Servicio">Otro Tipo de Servicio</option>
+              </select>
             </div>
 
             <!-- Selección de Plan de Interés -->
@@ -9510,15 +9518,16 @@ class App {
       const errBox = document.getElementById('prereg-error-box');
       const bizName = document.getElementById('prereg-biz-name').value.trim();
       const contactName = document.getElementById('prereg-contact-name').value.trim();
+      const email = document.getElementById('prereg-email')?.value.trim() || '';
       const phone = document.getElementById('prereg-phone').value.trim();
       const category = document.getElementById('prereg-category').value.trim();
       const city = document.getElementById('prereg-city').value.trim();
       const planInterest = document.querySelector('input[name="prereg-plan"]:checked')?.value || 'pro';
 
-      if (!bizName || !contactName || !phone) {
+      if (!bizName || !contactName || !phone || !email) {
         if (errBox) {
           errBox.classList.remove('hidden');
-          errBox.textContent = 'Por favor completa todos los campos obligatorios.';
+          errBox.textContent = 'Por favor completa todos los campos obligatorios, incluyendo el correo.';
         }
         return;
       }
@@ -9533,6 +9542,7 @@ class App {
           businessName: bizName,
           contactName: contactName,
           phone: phone,
+          email: email,
           category: category,
           city: city,
           planInterest: planInterest
@@ -10408,16 +10418,23 @@ class App {
                 <input type="tel" id="edit-prereg-phone" value="${this.escapeHtml(pr.phone || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
               </div>
               <div>
-                <label class="block font-bold text-slate-700 mb-1 text-xs">Provincia / Cantón</label>
-                <input type="text" id="edit-prereg-city" value="${this.escapeHtml(pr.city || '')}" placeholder="Ej. San José, Escazú" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Correo Electrónico</label>
+                <input type="email" id="edit-prereg-email" value="${this.escapeHtml(pr.email || '')}" placeholder="negocio@ejemplo.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Provincia / Cantón</label>
+                <input type="text" id="edit-prereg-city" value="${this.escapeHtml(pr.city || '')}" placeholder="Ej. San José, Escazú" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+              <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Categoría</label>
                 <input type="text" id="edit-prereg-cat" value="${this.escapeHtml(pr.category || '')}" placeholder="Ej. Belleza y Barbería" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
               </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Plan de Interés</label>
                 <select id="edit-prereg-plan" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
@@ -10426,9 +10443,6 @@ class App {
                   <option value="unlimited" ${pr.planInterest === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($35)</option>
                 </select>
               </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Estado / Bloqueo</label>
                 <select id="edit-prereg-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
@@ -10438,6 +10452,9 @@ class App {
                   <option value="blocked" ${pr.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Descartado</option>
                 </select>
               </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Motivo de Bloqueo (opcional)</label>
                 <input type="text" id="edit-prereg-reason" value="${this.escapeHtml(pr.blockReason || '')}" placeholder="Ej. Número no responde / Descartado" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
@@ -10482,6 +10499,7 @@ class App {
         businessName: document.getElementById('edit-prereg-biz-name')?.value.trim(),
         contactName: document.getElementById('edit-prereg-contact-name')?.value.trim(),
         phone: document.getElementById('edit-prereg-phone')?.value.trim(),
+        email: document.getElementById('edit-prereg-email')?.value.trim() || '',
         city: document.getElementById('edit-prereg-city')?.value.trim(),
         category: document.getElementById('edit-prereg-cat')?.value.trim(),
         planInterest: document.getElementById('edit-prereg-plan')?.value,
