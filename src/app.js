@@ -5046,7 +5046,7 @@ class App {
 
                         <div>
                           <label class="block font-bold text-slate-700 mb-1">Client Secret</label>
-                          <input type="password" id="dev-paypal-client-secret" placeholder="••••••••••••••••••••••••••••••••" value="EA9WRXaxhPFwdhIaPkyE2BUflM7JgdwfcjRgHz8hfAv8QYTAhnOCPJkSrWGsl5fL_uzF63t0p0aK9pUP" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                          <input type="password" id="dev-paypal-client-secret" placeholder="••••••••••••••••••••••••••••••••" value="ECkYk7RbWEG2ok9w2Kx5SCGPHwnFegU4I8y3Jv-e-YXWR8wx6jYwXFCBSSMeICkmO2rTVFLAwDXmW6P6" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100">
