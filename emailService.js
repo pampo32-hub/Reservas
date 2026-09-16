@@ -6,7 +6,8 @@ dotenv.config();
 const resendApiKey = process.env.RESEND_API_KEY || ['re_', 'GnYg1Aqq_', 'GPRjZqRkrqcXKNZeNT4CHY3i'].join('');
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Reservas CR <onboarding@resend.dev>';
-const APP_URL = process.env.APP_URL || 'https://reservas-1cic.onrender.com';
+const APP_URL = process.env.APP_URL || 'https://reservascr.app';
+export const ADMIN_NOTIFICATION_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'pampo32@gmail.com';
 
 /**
  * Formatea montos en Colones costarricenses (₡)
@@ -519,6 +520,298 @@ export async function sendPasswordResetEmail({ to, code, name = 'Usuario', userT
     return { success: true, data };
   } catch (err) {
     console.error('❌ Error enviando correo de recuperación:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Notificación por correo al administrador cuando un comercio hace PRE-REGISTRO
+ */
+export async function sendAdminPreRegistrationNotificationEmail(lead) {
+  if (!resend) {
+    console.warn('⚠️ No se pudo enviar notificación de pre-registro: Resend no está inicializado.');
+    return { success: false, reason: 'no_resend' };
+  }
+
+  const cleanPhone = (lead.phone || '').replace(/\D/g, '');
+  const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); padding: 30px 24px; text-align: center; color: #ffffff; }
+    .badge { display: inline-block; background: #f59e0b; color: #000000; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px; }
+    .content { padding: 28px 24px; }
+    .info-box { background: #f1f5f9; border-radius: 14px; padding: 18px; margin: 18px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    .info-row:last-child { border-bottom: none; }
+    .label { color: #64748b; font-weight: 600; }
+    .val { color: #0f172a; font-weight: 700; text-align: right; }
+    .btn { display: inline-block; background: #2563eb; color: #ffffff !important; font-weight: 700; padding: 12px 24px; border-radius: 12px; text-decoration: none; margin-top: 10px; }
+    .btn-wa { background: #22c55e !important; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #94a3b8; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">🚀 Nuevo Prospecto de Preventa</span>
+      <h2 style="margin: 0; font-size: 22px; font-weight: 800;">¡Nuevo Comercio Pre-Registrado!</h2>
+      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Un comercio acaba de solicitar sus 15 días gratis</p>
+    </div>
+    <div class="content">
+      <div class="info-box">
+        <div class="info-row">
+          <span class="label">🏢 Nombre del Negocio:</span>
+          <span class="val">${lead.businessName || 'No especificado'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">👤 Persona de Contacto:</span>
+          <span class="val">${lead.contactName || 'No especificado'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">📱 WhatsApp / Teléfono:</span>
+          <span class="val">${lead.phone || 'No especificado'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">🏷️ Categoría:</span>
+          <span class="val">${lead.category || 'Servicios'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">📍 Ciudad / Ubicación:</span>
+          <span class="val">${lead.city || 'Costa Rica'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">⭐ Plan de Interés:</span>
+          <span class="val">${(lead.planInterest || 'pro').toUpperCase()} (15 Días Gratis)</span>
+        </div>
+        ${lead.notes ? `
+        <div class="info-row" style="flex-direction: column; align-items: flex-start;">
+          <span class="label" style="margin-bottom: 4px;">📝 Notas / Mensaje:</span>
+          <span class="val" style="text-align: left; font-weight: 500; font-style: italic; color: #334155;">"${lead.notes}"</span>
+        </div>` : ''}
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${waLink}" class="btn btn-wa" target="_blank" style="margin-right: 8px;">
+          💬 Contactar por WhatsApp
+        </a>
+        <a href="${APP_URL}" class="btn" target="_blank">
+          🌐 Ir a Reservas CR
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAIL}
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`📧 Enviando notificación de pre-registro a ${ADMIN_NOTIFICATION_EMAIL}...`);
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [ADMIN_NOTIFICATION_EMAIL.trim()],
+      subject: `🚀 [Nuevo Pre-Registro] ${lead.businessName} (${lead.contactName})`,
+      html: htmlContent
+    });
+
+    if (error) {
+      console.warn('⚠️ Error enviando correo al admin de pre-registro:', error.message || error);
+      return { success: false, error };
+    }
+    console.log(`✅ Correo de pre-registro entregado al admin (${ADMIN_NOTIFICATION_EMAIL}) con ID: ${data?.id}`);
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ Excepción enviando correo al admin:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Notificación por correo al administrador cuando un comercio crea su CUENTA OFICIAL
+ */
+export async function sendAdminBusinessRegistrationNotificationEmail({ business, ownerName, email }) {
+  if (!resend) return { success: false, reason: 'no_resend' };
+
+  const cleanPhone = (business.phone || '').replace(/\D/g, '');
+  const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px 24px; text-align: center; color: #ffffff; }
+    .badge { display: inline-block; background: #ffffff; color: #065f46; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px; }
+    .content { padding: 28px 24px; }
+    .info-box { background: #f1f5f9; border-radius: 14px; padding: 18px; margin: 18px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    .info-row:last-child { border-bottom: none; }
+    .label { color: #64748b; font-weight: 600; }
+    .val { color: #0f172a; font-weight: 700; text-align: right; }
+    .btn { display: inline-block; background: #2563eb; color: #ffffff !important; font-weight: 700; padding: 12px 24px; border-radius: 12px; text-decoration: none; margin-top: 10px; }
+    .btn-wa { background: #22c55e !important; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #94a3b8; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">🏪 Comercio Registrado</span>
+      <h2 style="margin: 0; font-size: 22px; font-weight: 800;">¡Nuevo Negocio Creado!</h2>
+      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Se ha registrado una nueva cuenta de comercio en la plataforma</p>
+    </div>
+    <div class="content">
+      <div class="info-box">
+        <div class="info-row">
+          <span class="label">🏢 Nombre del Negocio:</span>
+          <span class="val">${business.name || 'Sin nombre'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">👤 Dueño / Encargado:</span>
+          <span class="val">${ownerName || business.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">✉️ Correo Electrónico:</span>
+          <span class="val">${email}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">📱 Teléfono / WhatsApp:</span>
+          <span class="val">${business.phone || 'No especificado'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">🏷️ Categoría:</span>
+          <span class="val">${business.categoryLabel || business.category || 'General'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">📍 Ubicación:</span>
+          <span class="val">${business.address || ''}, ${business.city || 'Costa Rica'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">⭐ Plan:</span>
+          <span class="val">${(business.plan || 'pro').toUpperCase()} ($${business.plan === 'unlimited' ? '35' : (business.plan === 'basic' ? '10' : '18')}/mes)</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${waLink}" class="btn btn-wa" target="_blank" style="margin-right: 8px;">
+          💬 Escribir por WhatsApp
+        </a>
+        <a href="${APP_URL}" class="btn" target="_blank">
+          🌐 Ver Directorio
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAIL}
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`📧 Enviando notificación de registro de negocio a ${ADMIN_NOTIFICATION_EMAIL}...`);
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [ADMIN_NOTIFICATION_EMAIL.trim()],
+      subject: `🏪 [Nuevo Comercio] ${business.name} (${ownerName || email})`,
+      html: htmlContent
+    });
+    return { success: !error, data, error };
+  } catch (err) {
+    console.error('❌ Error enviando correo al admin de registro de negocio:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Notificación por correo al administrador cuando un CLIENTE se registra
+ */
+export async function sendAdminClientRegistrationNotificationEmail(client) {
+  if (!resend) return { success: false, reason: 'no_resend' };
+
+  const cleanPhone = (client.phone || '').replace(/\D/g, '');
+  const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 30px 24px; text-align: center; color: #ffffff; }
+    .badge { display: inline-block; background: #ffffff; color: #4338ca; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px; }
+    .content { padding: 28px 24px; }
+    .info-box { background: #f1f5f9; border-radius: 14px; padding: 18px; margin: 18px 0; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+    .info-row:last-child { border-bottom: none; }
+    .label { color: #64748b; font-weight: 600; }
+    .val { color: #0f172a; font-weight: 700; text-align: right; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #94a3b8; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <span class="badge">👤 Nuevo Cliente</span>
+      <h2 style="margin: 0; font-size: 22px; font-weight: 800;">¡Nuevo Cliente Registrado!</h2>
+      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Un usuario ha creado su cuenta de cliente</p>
+    </div>
+    <div class="content">
+      <div class="info-box">
+        <div class="info-row">
+          <span class="label">👤 Nombre:</span>
+          <span class="val">${client.name || 'Sin nombre'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">📱 Teléfono / WhatsApp:</span>
+          <span class="val">${client.phone || 'No especificado'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">✉️ Correo Electrónico:</span>
+          <span class="val">${client.email || 'No proporcionado'}</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="${waLink}" style="display: inline-block; background: #22c55e; color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; text-decoration: none;" target="_blank">
+          💬 Contactar por WhatsApp
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAIL}
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`📧 Enviando notificación de nuevo cliente a ${ADMIN_NOTIFICATION_EMAIL}...`);
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [ADMIN_NOTIFICATION_EMAIL.trim()],
+      subject: `👤 [Nuevo Cliente] ${client.name} (${client.phone})`,
+      html: htmlContent
+    });
+    return { success: !error, data, error };
+  } catch (err) {
+    console.error('❌ Error enviando correo al admin de nuevo cliente:', err.message);
     return { success: false, error: err.message };
   }
 }

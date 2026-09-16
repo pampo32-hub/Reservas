@@ -5,7 +5,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as XLSX from 'xlsx';
 import { pool, initDatabase } from './db.js';
-import { sendBookingConfirmationEmail, sendReviewRequestEmail, sendPasswordResetEmail } from './emailService.js';
+import { 
+  sendBookingConfirmationEmail, 
+  sendReviewRequestEmail, 
+  sendPasswordResetEmail,
+  sendAdminPreRegistrationNotificationEmail,
+  sendAdminBusinessRegistrationNotificationEmail,
+  sendAdminClientRegistrationNotificationEmail,
+  ADMIN_NOTIFICATION_EMAIL
+} from './emailService.js';
 import { 
   sendBookingConfirmationWhatsApp, 
   sendPreRegistrationConfirmationWhatsApp,
@@ -266,6 +274,15 @@ app.post('/api/auth/business/register', async (req, res) => {
       }
     }
 
+    // Notificación por correo al Administrador (pampo32@gmail.com)
+    sendAdminBusinessRegistrationNotificationEmail({
+      business: { id: newBizId, ...business },
+      ownerName: ownerName || business.name,
+      email: email.trim()
+    }).catch(err => {
+      console.error('⚠️ Error no bloqueante enviando correo de registro de negocio al admin:', err.message);
+    });
+
     res.status(201).json({
       success: true,
       role: 'business',
@@ -318,6 +335,11 @@ app.post('/api/auth/client/register', async (req, res) => {
       email: (email || '').trim(),
       whatsappOptIn: Boolean(whatsappOptIn)
     };
+
+    // Notificación por correo al Administrador (pampo32@gmail.com)
+    sendAdminClientRegistrationNotificationEmail(clientUser).catch(err => {
+      console.error('⚠️ Error no bloqueante enviando correo de registro de cliente al admin:', err.message);
+    });
 
     res.json({ success: true, client: clientUser });
   } catch (error) {
@@ -474,6 +496,11 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
         email: (email || '').trim(),
         whatsappOptIn: Boolean(whatsappOptIn)
       };
+
+      // Notificación por correo al Administrador (pampo32@gmail.com)
+      sendAdminClientRegistrationNotificationEmail(clientUser).catch(err => {
+        console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente al admin:', err.message);
+      });
     }
 
     res.json({ success: true, client: clientUser });
@@ -665,7 +692,20 @@ app.post('/api/pre-registrations', async (req, res) => {
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [id, cleanBizName, cleanContact, cleanPhone, cleanCat, cleanCity, cleanPlan, cleanNotes]);
 
-    // Enviar confirmación automática por WhatsApp (no bloqueante)
+    // Notificación por correo al Administrador (pampo32@gmail.com)
+    sendAdminPreRegistrationNotificationEmail({
+      businessName: cleanBizName,
+      contactName: cleanContact,
+      phone: cleanPhone,
+      category: cleanCat,
+      city: cleanCity,
+      planInterest: cleanPlan,
+      notes: cleanNotes
+    }).catch(err => {
+      console.error('⚠️ Error no bloqueante enviando correo de pre-registro al admin:', err.message);
+    });
+
+    // Enviar confirmación automática por WhatsApp al cliente (no bloqueante)
     if (cleanPhone) {
       sendPreRegistrationConfirmationWhatsApp({
         businessName: cleanBizName,

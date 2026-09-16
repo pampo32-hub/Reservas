@@ -968,9 +968,22 @@ class App {
               <span class="bg-rose-600 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-rose-400 animate-pulse">
                 <i class="fas fa-ban"></i> Negocio Bloqueado
               </span>
+            ` : isUnlimited ? `
+              <span class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-purple-400/40 animate-pulse">
+                <i class="fas fa-crown text-amber-300"></i> Top Destacado
+              </span>
+            ` : isPro ? `
+              <span class="bg-amber-500 text-slate-950 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-md border border-amber-300">
+                <i class="fas fa-check-circle text-slate-950"></i> Negocio Verificado
+              </span>
+            ` : biz.isDemo ? `
             ` : `
               <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
                 <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
+              </span>
+            ` : `
+              <span class="bg-emerald-600/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md">
+                <i class="fas fa-store text-emerald-200"></i> Negocio Registrado
               </span>
             `}
             <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
@@ -1661,9 +1674,14 @@ class App {
                   <span class="px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
+                ` : biz.isDemo ? `
                 ` : `
                   <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-flask mr-1"></i> Comercio de Muestra
+                  </span>
+                ` : `
+                  <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-check-circle mr-1"></i> Comercio Registrado
                   </span>
                 `}
                 <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider">
@@ -8658,6 +8676,28 @@ class App {
                 </button>
               </form>
 
+              <!-- Acceso Rápido Demo -->
+              <div class="pt-4 border-t border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="barberia@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Barbería Vintage</span>
+                    <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="dental@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Clínica Dental</span>
+                    <span class="text-[10px] text-slate-400">dental@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="spa@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Serenity Spa</span>
+                    <span class="text-[10px] text-slate-400">spa@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="taller@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">AutoCheck Taller</span>
+                    <span class="text-[10px] text-slate-400">taller@demo.cr</span>
+                  </button>
+                </div>
+              </div>
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
