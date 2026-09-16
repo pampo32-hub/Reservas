@@ -5452,29 +5452,6 @@ class App {
                   <span>Ingresar al Panel de Negocio</span>
                 </button>
               </form>
-
-              <!-- Acceso Rápido Demo -->
-              <div class="pt-4 border-t border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
-                <div class="grid grid-cols-2 gap-2">
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="barberia@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Barbería Vintage</span>
-                    <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="dental@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Clínica Dental</span>
-                    <span class="text-[10px] text-slate-400">dental@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="spa@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Serenity Spa</span>
-                    <span class="text-[10px] text-slate-400">spa@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="taller@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">AutoCheck Taller</span>
-                    <span class="text-[10px] text-slate-400">taller@demo.cr</span>
-                  </button>
-                </div>
-              </div>
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
@@ -5555,13 +5532,13 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-white">Básico</span>
-                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 reservas</span>
+                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">50 reservas</span>
                         </div>
-                        <div class="text-base font-black text-white">$6 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡3,200 CRC / mes</p>
+                        <div class="text-base font-black text-white">$8 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡4,200 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 150 reservas/mes
+                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 50 reservas/mes
                       </div>
                     </label>
 
@@ -5572,13 +5549,13 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-amber-300">Profesional</span>
-                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 reservas</span>
+                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">200 reservas</span>
                         </div>
                         <div class="text-base font-black text-amber-300">$15 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡7,900 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 300 reservas/mes
+                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 200 reservas/mes
                       </div>
                     </label>
 
@@ -5763,13 +5740,6 @@ class App {
                 </button>
               </form>
             ` : ''}
-
-            <!-- Enlace sutil para Developer -->
-            <div class="pt-3 text-center border-t border-slate-100">
-              <button type="button" id="modal-dev-link-btn" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer">
-                <i class="fas fa-terminal text-[10px] mr-1"></i> Acceso Developer (Ctrl+Shift+D)
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -5778,11 +5748,6 @@ class App {
     // Cerrar modal
     document.getElementById('close-auth-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
-    });
-
-    // Enlace Developer en el pie del modal
-    document.getElementById('modal-dev-link-btn')?.addEventListener('click', () => {
-      this.renderDeveloperQuickLoginModal();
     });
 
     // Pestañas de Modo (Login / Register)
@@ -5833,18 +5798,6 @@ class App {
       }
     });
 
-    // Demo Buttons (en login de negocio)
-    document.querySelectorAll('.quick-demo-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const emailInput = document.getElementById('biz-log-email');
-        const passInput = document.getElementById('biz-log-password');
-        if (emailInput && passInput) {
-          emailInput.value = btn.getAttribute('data-email');
-          passInput.value = btn.getAttribute('data-pass');
-          document.getElementById('auth-biz-login-form')?.dispatchEvent(new Event('submit'));
-        }
-      });
-    });
 
     // Real-time password validation for Client Registration
     const cliRegPass = document.getElementById('cli-reg-password');
@@ -6142,7 +6095,7 @@ class App {
       }
 
       try {
-        await storage.registerBusinessWithUser(ownerName, email, password, {
+        const regData = await storage.registerBusinessWithUser(ownerName, email, password, {
           name,
           category: finalCategory,
           categoryLabel,
@@ -6165,10 +6118,16 @@ class App {
           ]
         });
 
-        this.showToast(`¡Negocio registrado exitosamente con ${planConfig.name}!`, 'success');
+        this.showToast(`¡Negocio creado! Conectando con la pasarela para activar tu ${planConfig.name}...`, 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
-        this.navigateTo('owner-dashboard');
+
+        const createdBizId = regData?.user?.businessId || storage.getActiveBusinessId();
+        if (createdBizId) {
+          this.renderPayPalCheckoutModal(createdBizId, planConfig.id);
+        } else {
+          this.navigateTo('owner-dashboard');
+        }
       } catch (err) {
         this.showToast(err.message || 'Error al registrar negocio.', 'error');
         if (errBox) {
@@ -6558,18 +6517,42 @@ class App {
 
           <!-- Contenedor de Botones Inteligentes de PayPal -->
           <div class="p-6 space-y-4">
+            
+            <!-- Checkbox Obligatorio de Confirmación de Suscripción Recurrente -->
+            <div class="p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl">
+              <label class="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="paypal-recurring-agree-check" class="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-amber-300 cursor-pointer">
+                <div class="text-xs text-slate-800 leading-relaxed">
+                  <span class="font-bold text-amber-950 block mb-0.5 flex items-center gap-1.5">
+                    <i class="fas fa-sync-alt text-amber-600"></i> Autorización de Suscripción Mensual
+                  </span>
+                  <p class="text-slate-600 text-[11px]">
+                    Entiendo que es una suscripción mensual recurrente de <strong>$${plan.priceUsd} USD/mes</strong> (~${this.formatColones(plan.priceCrc)} CRC) y autorizo el cobro para renovar mi plan cada 30 días.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <!-- Aviso previo a marcar el checkbox -->
+            <div id="paypal-check-notice" class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold text-center flex items-center justify-center gap-2 animate-fade-in">
+              <i class="fas fa-hand-point-up text-amber-600 animate-bounce"></i>
+              <span>Marca la casilla de arriba para habilitar las opciones de pago seguro.</span>
+            </div>
+
             <div id="paypal-loading-spinner" class="py-8 flex flex-col items-center justify-center text-slate-500 gap-2">
               <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
               <span class="text-xs font-semibold">Cargando pasarela segura de PayPal...</span>
             </div>
 
-            <div id="paypal-button-container" class="min-h-[120px]"></div>
+            <div id="paypal-button-wrapper" class="opacity-30 pointer-events-none filter grayscale transition-all duration-300">
+              <div id="paypal-button-container" class="min-h-[120px]"></div>
+            </div>
 
             <div id="paypal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
             <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
-              <i class="fas fa-lock text-emerald-600"></i>
-              <span>Pago 100% seguro con Tarjeta o PayPal. Sin contratos obligatorios.</span>
+              <i class="fas fa-shield-alt text-emerald-600"></i>
+              <span>Procesamiento 100% encriptado y seguro. Sin contratos forzosos.</span>
             </div>
           </div>
 
@@ -6579,6 +6562,21 @@ class App {
 
     document.getElementById('close-paypal-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    // Control del Checkbox de Autorización Recurrente
+    const agreeCheck = document.getElementById('paypal-recurring-agree-check');
+    const buttonWrapper = document.getElementById('paypal-button-wrapper');
+    const checkNotice = document.getElementById('paypal-check-notice');
+
+    agreeCheck?.addEventListener('change', () => {
+      if (agreeCheck.checked) {
+        buttonWrapper?.classList.remove('opacity-30', 'pointer-events-none', 'filter', 'grayscale');
+        checkNotice?.classList.add('hidden');
+      } else {
+        buttonWrapper?.classList.add('opacity-30', 'pointer-events-none', 'filter', 'grayscale');
+        checkNotice?.classList.remove('hidden');
+      }
     });
 
     try {
@@ -6602,6 +6600,10 @@ class App {
           label: 'pay'
         },
         createOrder: async (data, actions) => {
+          if (!agreeCheck?.checked) {
+            this.showToast('Debes autorizar la suscripción mensual marcando la casilla.', 'warning');
+            throw new Error('Debes aceptar la casilla de suscripción recurrente.');
+          }
           const res = await storage.createPayPalOrder(businessId, planId);
           return res.orderId;
         },
