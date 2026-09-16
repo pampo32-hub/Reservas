@@ -2781,11 +2781,11 @@ class App {
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
 
-    // Métricas del Plan de Suscripción ($6, $15, $25)
+    // Métricas del Plan de Suscripción ($10, $18, $35)
     const currentMonth = new Date().toISOString().slice(0, 7);
     const monthAppointments = appointments.filter(a => (a.date || '').startsWith(currentMonth));
     const currentPlanId = currentBiz.plan || 'basic';
-    const planConfig = storage.getPlanById(currentPlanId) || { id: 'basic', name: 'Plan Básico', priceUsd: 6, bookingLimit: 150 };
+    const planConfig = storage.getPlanById(currentPlanId) || { id: 'basic', name: 'Plan Básico', priceUsd: 10, bookingLimit: 150 };
     const monthlyLimit = (currentBiz.monthlyBookingLimit !== undefined && currentBiz.monthlyBookingLimit !== null) ? currentBiz.monthlyBookingLimit : planConfig.bookingLimit;
     const isUnlimited = monthlyLimit === null || monthlyLimit === undefined || monthlyLimit < 0;
     const usageCount = monthAppointments.length;
@@ -2999,6 +2999,7 @@ class App {
     });
 
     document.getElementById('export-reports-csv-btn')?.addEventListener('click', () => {
+      this.exportBusinessReportsCSV(currentBiz, appointments);
       this.exportBusinessReportsExcel(currentBiz, appointments);
     });
 
@@ -3731,6 +3732,9 @@ class App {
             <p class="text-xs text-slate-500 mt-0.5">Estadísticas en tiempo real de ingresos recaudados, clientes recurrentes y demanda de servicios.</p>
           </div>
 
+          <div class="flex items-center gap-2">
+            <button id="export-reports-csv-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer">
+              <i class="fas fa-file-excel"></i> Exportar Reporte a Excel (CSV)
           <div class="flex items-center gap-2.5 flex-wrap">
             <button id="export-reports-excel-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer">
               <i class="fas fa-file-excel text-emerald-100 text-sm"></i> Exportar a Excel (.xls)
@@ -4137,10 +4141,12 @@ class App {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_reservas_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.csv`);
     link.setAttribute('download', `reporte_financiero_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    this.showToast('¡Reporte exportado exitosamente a CSV!', 'success');
     this.showToast('¡Reporte ordenado y formateado descargado en Excel (.xls)!', 'success');
   }
 
@@ -9169,7 +9175,7 @@ class App {
 
         this.showToast('¡Pre-registro completado con éxito! 15 días gratis reservados.', 'success');
 
-        const chosenPlanObj = plans.find(p => p.id === planInterest) || { name: 'Plan Profesional', priceUsd: 15 };
+        const chosenPlanObj = plans.find(p => p.id === planInterest) || { name: 'Plan Profesional', priceUsd: 18 };
 
         modalContainer.innerHTML = `
           <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
@@ -9549,6 +9555,7 @@ class App {
           <div class="p-5 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Comercio:</span>
+              <strong class="text-slate-900 font
               <strong class="text-slate-900 font-black">${biz ? this.escapeHtml(biz.name) : 'Tu Comercio'}</strong>
             </div>
             <div class="flex items-center justify-between">

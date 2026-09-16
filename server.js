@@ -216,7 +216,7 @@ app.post('/api/auth/business/register', async (req, res) => {
     const features = business.features || ['Sinpe Móvil', 'Atención Personalizada'];
 
     const planId = business.plan || 'pro';
-    const planPriceUsd = planId === 'unlimited' ? 25 : (planId === 'basic' ? 6 : 15);
+    const planPriceUsd = planId === 'unlimited' ? 35 : (planId === 'basic' ? 10 : 18);
     const bookingLimit = planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300);
     const socialLinks = business.socialLinks || business.social_links || {};
     const autoConfirm = business.autoConfirmAppointments !== undefined ? Boolean(business.autoConfirmAppointments) : true;
@@ -873,8 +873,8 @@ app.get('/api/businesses', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       plan: b.plan || 'pro',
-      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 8 : 15)),
-      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 50 : 200)),
+      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18)),
+      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows
@@ -929,8 +929,8 @@ app.get('/api/businesses/:id', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       plan: b.plan || 'pro',
-      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 8 : 15)),
-      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 50 : 200)),
+      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18)),
+      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
@@ -1262,10 +1262,10 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
     const { id } = req.params;
     const { plan } = req.body;
 
-    const planPrices = { basic: 8, pro: 15, unlimited: 25 };
+    const planPrices = { basic: 10, pro: 18, unlimited: 35 };
     const planLimits = { basic: 150, pro: 300, unlimited: null };
 
-    const planPriceUsd = planPrices[plan] || 8;
+    const planPriceUsd = planPrices[plan] || 10;
     const monthlyBookingLimit = planLimits[plan] !== undefined ? planLimits[plan] : 150;
 
     await pool.query(`

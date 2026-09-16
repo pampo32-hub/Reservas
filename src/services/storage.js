@@ -621,11 +621,23 @@ class StorageService {
 
   // --- NEGOCIOS ---
   getBusinesses() {
-    if (this.businessesCache && this.businessesCache.length > 0) {
-      return this.businessesCache;
-    }
-    const local = localStorage.getItem(STORAGE_KEYS.BUSINESSES);
-    return local ? JSON.parse(local) : INITIAL_BUSINESSES;
+    let list = (this.businessesCache && this.businessesCache.length > 0)
+      ? this.businessesCache
+      : (JSON.parse(localStorage.getItem(STORAGE_KEYS.BUSINESSES) || 'null') || INITIAL_BUSINESSES);
+    
+    // Normalizar límites y precios de planes para asegurar coherencia total
+    return list.map(b => {
+      if (b.plan === 'pro' && (b.monthlyBookingLimit === 200 || !b.monthlyBookingLimit)) {
+        return { ...b, monthlyBookingLimit: 300, planPriceUsd: 18.00 };
+      }
+      if (b.plan === 'basic' && (b.monthlyBookingLimit === 50 || !b.monthlyBookingLimit)) {
+        return { ...b, monthlyBookingLimit: 150, planPriceUsd: 10.00 };
+      }
+      if (b.plan === 'unlimited') {
+        return { ...b, monthlyBookingLimit: null, planPriceUsd: 35.00 };
+      }
+      return b;
+    });
   }
 
   getBusinessById(id) {
@@ -1563,7 +1575,7 @@ class StorageService {
 
     return {
       plan: plan ? plan.id : 'basic',
-      planPriceUsd: plan ? plan.priceUsd : 8.00,
+      planPriceUsd: plan ? plan.priceUsd : 10.00,
       monthlyBookingLimit: limit,
       usedThisMonth: used,
       remainingThisMonth: remaining,

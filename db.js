@@ -392,11 +392,19 @@ export async function initDatabase() {
       console.log('✨ Especialistas demo sembrados/actualizados en base de datos.');
     }
 
-    // Asegurar planes adecuados para los negocios demo con equipo
+    // Asegurar planes adecuados y límites exactos para todos los negocios
     await client.query(`
       UPDATE reservas_businesses
-      SET plan = 'pro', monthly_booking_limit = 300, plan_price_usd = 18.00
-      WHERE id IN ('biz-1', 'biz-2', 'biz-3') AND (plan IS NULL OR plan = 'basic');
+      SET monthly_booking_limit = 300, plan_price_usd = 18.00
+      WHERE plan = 'pro';
+
+      UPDATE reservas_businesses
+      SET monthly_booking_limit = 150, plan_price_usd = 10.00
+      WHERE plan = 'basic' OR plan IS NULL;
+
+      UPDATE reservas_businesses
+      SET monthly_booking_limit = NULL, plan_price_usd = 35.00
+      WHERE plan = 'unlimited';
     `);
 
     // Asegurar usuarios demo de negocios
