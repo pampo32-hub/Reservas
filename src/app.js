@@ -3010,8 +3010,8 @@ class App {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'basic' });
     });
 
-    document.getElementById('export-reports-csv-btn')?.addEventListener('click', () => {
-      this.exportBusinessReportsCSV(currentBiz, appointments);
+    document.getElementById('export-reports-excel-btn')?.addEventListener('click', () => {
+      this.exportBusinessReportsExcel(currentBiz, appointments);
     });
 
     document.getElementById('export-reports-pdf-btn')?.addEventListener('click', () => {
@@ -3759,8 +3759,8 @@ class App {
           </div>
 
           <div class="flex items-center gap-2.5 flex-wrap">
-            <button id="export-reports-csv-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer">
-              <i class="fas fa-file-excel text-emerald-100 text-sm"></i> Exportar a Excel (CSV)
+            <button id="export-reports-excel-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer">
+              <i class="fas fa-file-excel text-emerald-100 text-sm"></i> Exportar a Excel (.xlsx)
             </button>
             <button id="export-reports-pdf-btn" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/20 flex items-center gap-2 cursor-pointer">
               <i class="fas fa-file-pdf text-rose-100 text-sm"></i> Descargar Reporte PDF
@@ -3929,31 +3929,41 @@ class App {
     `;
   }
 
-  // --- EXPORTACIÓN PROFESIONAL A CSV (COMPATIBLE AL 100% CON EXCEL, GOOGLE SHEETS Y NUMBERS) ---
-  exportBusinessReportsCSV(currentBiz, appointments) {
+  // --- EXPORTACIÓN PROFESIONAL A EXCEL (.XLSX CON SHEETJS) ---
+  exportBusinessReportsExcel(currentBiz, appointments) {
     if (!appointments || appointments.length === 0) {
       this.showToast('No hay datos de reservas para exportar.', 'info');
       return;
     }
 
-    // Cálculos de métricas
-    const validAppointments = appointments.filter(a => a.status !== 'cancelled');
-    const completedAppointments = appointments.filter(a => a.status === 'completed');
-    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
-    const revenueAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed');
+    const statusLabels = {
+      'completed': 'Completada / Atendida',
+      'confirmed': 'Confirmada',
+      'pending': 'Pendiente',
+      'cancelled': 'Cancelada'
+    };
 
-    const totalRevenue = revenueAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
-    const totalAppointmentsCount = appointments.length;
-    const completedCount = completedAppointments.length;
-    const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
-    const attendanceRate = totalAppointmentsCount > 0 ? Math.round(((completedCount + confirmedAppointments.length) / totalAppointmentsCount) * 100) : 100;
-    const avgTicket = revenueAppointments.length > 0 ? Math.round(totalRevenue / revenueAppointments.length) : 0;
+    // 1. Datos de Citas con estructura exacta al panel Developer
+    const excelAppointmentsData = appointments.map((a, i) => ({
+      '#': i + 1,
+      'ID Reserva': a.id || '',
+      'Fecha Cita': a.date || '',
+      'Hora': a.time || '',
+      'Estado': statusLabels[a.status] || a.status || 'Pendiente',
+      'Comercio': currentBiz.name || 'N/A',
+      'Nombre Cliente': a.clientName || 'Cliente',
+      'Teléfono Cliente': a.clientPhone || '',
+      'WhatsApp Enlace': a.clientPhone ? `https://wa.me/506${a.clientPhone.replace(/[^0-9]/g, '')}` : '',
+      'Correo Cliente': a.clientEmail || 'Sin correo',
+      'Servicio': a.serviceName || 'Servicio General',
+      'Especialista': a.staffName || 'Sin asignar / General',
+      'Duración (min)': a.serviceDuration || 30,
+      'Monto (CRC ₡)': Number(a.servicePrice) || 0,
+      'Notas / Observaciones': a.notes || '',
+      'Fecha de Registro': a.createdAt ? new Date(a.createdAt).toLocaleString('es-CR') : (a.date || '')
+    }));
 
-    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
-    const monthAppointments = revenueAppointments.filter(a => (a.date || '').startsWith(currentMonthPrefix));
-    const monthRevenue = monthAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
-
-    // Clientes Frecuentes
+    // 2. Ranking de Clientes Frecuentes
     const clientMap = new Map();
     appointments.forEach(apt => {
       const phone = (apt.clientPhone || '').trim();
@@ -3985,125 +3995,100 @@ class App {
     });
     const frequentClients = Array.from(clientMap.values()).sort((a, b) => b.totalBookings - a.totalBookings || b.totalSpent - a.totalSpent);
 
-    // Servicios Populares
-    const serviceMap = new Map();
-    validAppointments.forEach(apt => {
-      const sName = apt.serviceName || 'Servicio General';
-      if (!serviceMap.has(sName)) {
-        serviceMap.set(sName, { name: sName, count: 0, revenue: 0 });
-      }
-      const s = serviceMap.get(sName);
-      s.count += 1;
-      if (apt.status === 'confirmed' || apt.status === 'completed') {
-        s.revenue += (Number(apt.servicePrice) || 0);
-      }
-    });
-    const topServices = Array.from(serviceMap.values()).sort((a, b) => b.count - a.count);
+    const excelClientsData = frequentClients.map((c, i) => ({
+      'Ranking': i + 1,
+      'Nombre del Cliente': c.name,
+      'Teléfono / WhatsApp': c.phone || 'Sin número',
+      'WhatsApp Enlace': c.phone ? `https://wa.me/506${c.phone.replace(/[^0-9]/g, '')}` : '',
+      'Total Reservas': c.totalBookings,
+      'Citas Completadas': c.completedBookings,
+      'Citas Canceladas': c.cancelledBookings,
+      'Total Invertido (CRC ₡)': c.totalSpent,
+      'Última Visita': c.lastDate || 'Reciente'
+    }));
 
-    // Formateador de celda CSV con comillas y escape de comillas dobles
-    const cell = (val) => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val).trim();
-      return `"${str.replace(/"/g, '""')}"`;
-    };
-    const row = (...cells) => cells.map(cell).join(';');
+    // 3. Resumen Financiero y Operativo
+    const completedAppointments = appointments.filter(a => a.status === 'completed');
+    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
+    const revenueAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed');
+    const totalRevenue = revenueAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+    const avgTicket = revenueAppointments.length > 0 ? Math.round(totalRevenue / revenueAppointments.length) : 0;
+    const attendanceRate = appointments.length > 0 ? Math.round(((completedAppointments.length + confirmedAppointments.length) / appointments.length) * 100) : 100;
 
-    const lines = [];
+    const excelSummaryData = [
+      { 'Indicador / Métrica': 'Nombre del Comercio', 'Valor': currentBiz.name, 'Detalle': `Plan ${(currentBiz.plan || 'pro').toUpperCase()}` },
+      { 'Indicador / Métrica': 'Fecha de Emisión del Reporte', 'Valor': new Date().toLocaleString('es-CR'), 'Detalle': 'Generado desde Reservas CR' },
+      { 'Indicador / Métrica': 'Ingresos Totales Recaudados (₡)', 'Valor': totalRevenue, 'Detalle': 'Citas confirmadas y atendidas' },
+      { 'Indicador / Métrica': 'Ticket Promedio por Cita (₡)', 'Valor': avgTicket, 'Detalle': 'Gasto medio por cliente atendido' },
+      { 'Indicador / Métrica': 'Total de Citas Registradas', 'Valor': appointments.length, 'Detalle': 'Historial acumulado' },
+      { 'Indicador / Métrica': 'Citas Atendidas / Completadas', 'Valor': completedAppointments.length, 'Detalle': 'Servicios concluidos con éxito' },
+      { 'Indicador / Métrica': 'Citas Confirmadas en Agenda', 'Valor': confirmedAppointments.length, 'Detalle': 'Citas vigentes' },
+      { 'Indicador / Métrica': 'Citas Canceladas', 'Valor': appointments.filter(a => a.status === 'cancelled').length, 'Detalle': 'Anuladas' },
+      { 'Indicador / Métrica': 'Tasa de Asistencia / Cumplimiento', 'Valor': `${attendanceRate}%`, 'Detalle': 'Efectividad operativa' }
+    ];
 
-    // ENCABEZADO CORPORATIVO
-    lines.push(row('REPORTE EJECUTIVO FINANCIERO Y AUDITORÍA DE RESERVAS - RESERVAS CR', '', '', '', '', '', '', '', ''));
-    lines.push(row('Nombre del Negocio:', currentBiz.name || 'Negocio', 'Plan Suscripción:', (currentBiz.plan || 'pro').toUpperCase(), 'Fecha de Emisión:', new Date().toLocaleString('es-CR'), '', '', ''));
-    lines.push(row('Teléfono / WhatsApp:', currentBiz.phone || 'N/A', 'Correo Electrónico:', currentBiz.email || 'N/A', 'Ubicación:', currentBiz.city || 'Costa Rica', '', '', ''));
-    lines.push(row('', '', '', '', '', '', '', '', ''));
-
-    // SECCIÓN 1: RESUMEN EJECUTIVO FINANCIERO Y OPERATIVO
-    lines.push(row('1. RESUMEN EJECUTIVO FINANCIERO Y OPERATIVO', '', '', '', '', '', '', '', ''));
-    lines.push(row('Indicador Clave', 'Monto / Cifra', 'Detalle / Explicación', '', '', '', '', '', ''));
-    lines.push(row('Ingresos Totales Recaudados', `₡${totalRevenue.toLocaleString('es-CR')}`, 'Suma acumulada de citas confirmadas y completadas', '', '', '', '', '', ''));
-    lines.push(row('Ingresos del Mes Actual', `₡${monthRevenue.toLocaleString('es-CR')}`, `${monthAppointments.length} citas registradas en el mes en curso`, '', '', '', '', '', ''));
-    lines.push(row('Ticket Promedio por Reserva', `₡${avgTicket.toLocaleString('es-CR')}`, 'Gasto medio por cliente atendido', '', '', '', '', '', ''));
-    lines.push(row('Total de Reservas en Sistema', totalAppointmentsCount, 'Historial total de citas agendadas', '', '', '', '', '', ''));
-    lines.push(row('Reservas Atendidas (Completadas)', completedCount, 'Servicios concluidos con éxito', '', '', '', '', '', ''));
-    lines.push(row('Reservas Confirmadas en Agenda', confirmedAppointments.length, 'Citas agendadas válidas', '', '', '', '', '', ''));
-    lines.push(row('Reservas Canceladas', cancelledCount, 'Citas canceladas por el cliente o negocio', '', '', '', '', '', ''));
-    lines.push(row('Tasa de Asistencia / Cumplimiento', `${attendanceRate}%`, 'Porcentaje de efectividad operativa', '', '', '', '', '', ''));
-    lines.push(row('', '', '', '', '', '', '', '', ''));
-
-    // SECCIÓN 2: RANKING DE CLIENTES FRECUENTES Y FIDELIDAD
-    lines.push(row(`2. RANKING DE CLIENTES FRECUENTES Y FIDELIDAD (${frequentClients.length} Clientes Únicos)`, '', '', '', '', '', '', '', ''));
-    lines.push(row('Ranking', 'Nombre del Cliente', 'Teléfono / WhatsApp', 'Total Visitas', 'Completadas', 'Canceladas', 'Total Invertido (₡)', 'Última Visita', ''));
-    if (frequentClients.length === 0) {
-      lines.push(row('Sin registros', 'Aún no se registran clientes con citas en el sistema', '', '', '', '', '', '', ''));
-    } else {
-      frequentClients.forEach((c, idx) => {
-        lines.push(row(
-          `#${idx + 1}`,
-          c.name,
-          c.phone || 'Sin número',
-          c.totalBookings,
-          c.completedBookings,
-          c.cancelledBookings,
-          `₡${c.totalSpent.toLocaleString('es-CR')}`,
-          c.lastDate ? this.formatDateDMY(c.lastDate) : 'Reciente',
-          ''
-        ));
-      });
-    }
-    lines.push(row('', '', '', '', '', '', '', '', ''));
-
-    // SECCIÓN 3: RENDIMIENTO Y DEMANDA POR CATÁLOGO DE SERVICIOS
-    lines.push(row('3. RENDIMIENTO Y DEMANDA POR CATÁLOGO DE SERVICIOS', '', '', '', '', '', '', '', ''));
-    lines.push(row('Servicio', 'Citas Solicitadas', '% de Demanda', 'Total Recaudado (₡)', '', '', '', '', ''));
-    if (topServices.length === 0) {
-      lines.push(row('Sin registros', 'Aún no hay servicios reservados en el catálogo', '', '', '', '', '', ''));
-    } else {
-      topServices.forEach(s => {
-        const pct = validAppointments.length > 0 ? Math.round((s.count / validAppointments.length) * 100) : 0;
-        lines.push(row(
-          s.name,
-          s.count,
-          `${pct}%`,
-          `₡${s.revenue.toLocaleString('es-CR')}`,
-          '', '', '', '', ''
-        ));
-      });
-    }
-    lines.push(row('', '', '', '', '', '', '', '', ''));
-
-    // SECCIÓN 4: HISTORIAL COMPLETO DE RESERVAS
-    lines.push(row(`4. HISTORIAL COMPLETO DE RESERVAS Y AUDITORÍA (${appointments.length} Registros)`, '', '', '', '', '', '', '', ''));
-    lines.push(row('ID Reserva', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Servicio', 'Especialista', 'Monto (₡)', 'Estado', 'Notas'));
-    appointments.forEach(a => {
-      const statusLabel = a.status === 'confirmed' ? 'Confirmada' : a.status === 'completed' ? 'Completada' : a.status === 'pending' ? 'Pendiente' : 'Cancelada';
-      lines.push(row(
-        a.id || '',
-        a.date || '',
-        a.time || '',
-        a.clientName || 'Cliente',
-        a.clientPhone || '',
-        a.serviceName || 'Servicio',
-        a.staffName || 'General',
-        `₡${(Number(a.servicePrice) || 0).toLocaleString('es-CR')}`,
-        statusLabel,
-        a.notes || ''
-      ));
-    });
-
-    lines.push(row('', '', '', '', '', '', '', '', ''));
-    lines.push(row('Directorio & Reservas Costa Rica • Plataforma Comercial Oficial - Documento Confidencial', '', '', '', '', '', '', '', ''));
-
-    const csvContent = lines.join('\r\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
     const safeName = (currentBiz.name || 'negocio').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '_');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `reporte_financiero_${safeName}_${this.getTodayDateString()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    this.showToast('¡Reporte en CSV estructurado y descargado exitosamente!', 'success');
+    const fileName = `Reporte_Reservas_${safeName}_${this.getTodayDateString()}.xlsx`;
+
+    // Si XLSX está disponible en window (SheetJS)
+    if (typeof window.XLSX !== 'undefined') {
+      const wb = window.XLSX.utils.book_new();
+
+      // Hoja 1: Citas
+      const ws1 = window.XLSX.utils.json_to_sheet(excelAppointmentsData);
+      ws1['!cols'] = [
+        { wch: 5 },  // #
+        { wch: 14 }, // ID
+        { wch: 12 }, // Fecha
+        { wch: 10 }, // Hora
+        { wch: 22 }, // Estado
+        { wch: 26 }, // Comercio
+        { wch: 26 }, // Cliente
+        { wch: 16 }, // Tel
+        { wch: 28 }, // WA
+        { wch: 24 }, // Email
+        { wch: 28 }, // Servicio
+        { wch: 24 }, // Especialista
+        { wch: 14 }, // Duración
+        { wch: 16 }, // Monto
+        { wch: 30 }, // Notas
+        { wch: 22 }  // Registro
+      ];
+      window.XLSX.utils.book_append_sheet(wb, ws1, 'Historial de Citas');
+
+      // Hoja 2: Clientes
+      const ws2 = window.XLSX.utils.json_to_sheet(excelClientsData);
+      ws2['!cols'] = [
+        { wch: 8 },  // Ranking
+        { wch: 26 }, // Cliente
+        { wch: 18 }, // Tel
+        { wch: 28 }, // WA
+        { wch: 15 }, // Total
+        { wch: 18 }, // Completadas
+        { wch: 16 }, // Canceladas
+        { wch: 22 }, // Invertido
+        { wch: 16 }  // Última
+      ];
+      window.XLSX.utils.book_append_sheet(wb, ws2, 'Clientes Frecuentes');
+
+      // Hoja 3: Resumen
+      const ws3 = window.XLSX.utils.json_to_sheet(excelSummaryData);
+      ws3['!cols'] = [
+        { wch: 35 },
+        { wch: 25 },
+        { wch: 35 }
+      ];
+      window.XLSX.utils.book_append_sheet(wb, ws3, 'Resumen Ejecutivo');
+
+      window.XLSX.writeFile(wb, fileName);
+      this.showToast('¡Reporte en Excel (.xlsx) descargado exitosamente!', 'success');
+      return;
+    }
+
+    // Fallback: endpoint del servidor
+    const exportUrl = `${storage.apiBase}/developer/export/appointments-excel?businessId=${encodeURIComponent(currentBiz.id)}&status=all`;
+    window.open(exportUrl, '_blank');
+    this.showToast('Descargando reporte Excel...', 'info');
   }
 
   // --- EXPORTACIÓN Y VISUALIZACIÓN ELEGANTE EN PDF ---
