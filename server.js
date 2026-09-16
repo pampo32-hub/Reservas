@@ -8,6 +8,7 @@ import { pool, initDatabase } from './db.js';
 import { sendBookingConfirmationEmail, sendReviewRequestEmail, sendPasswordResetEmail } from './emailService.js';
 import { 
   sendBookingConfirmationWhatsApp, 
+  sendPreRegistrationConfirmationWhatsApp,
   getActiveMetaCredentials, 
   sendViaMetaCloudApi, 
   buildBookingConfirmationText, 
@@ -663,6 +664,18 @@ app.post('/api/pre-registrations', async (req, res) => {
       INSERT INTO reservas_pre_registrations (id, business_name, contact_name, phone, category, city, plan_interest, notes)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [id, cleanBizName, cleanContact, cleanPhone, cleanCat, cleanCity, cleanPlan, cleanNotes]);
+
+    // Enviar confirmación automática por WhatsApp (no bloqueante)
+    if (cleanPhone) {
+      sendPreRegistrationConfirmationWhatsApp({
+        businessName: cleanBizName,
+        contactName: cleanContact,
+        phone: cleanPhone,
+        planInterest: cleanPlan
+      }, pool).catch(waErr => {
+        console.error('⚠️ Error no bloqueante al enviar WhatsApp de pre-registro:', waErr.message);
+      });
+    }
 
     res.json({
       success: true,

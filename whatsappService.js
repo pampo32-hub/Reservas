@@ -359,3 +359,75 @@ export async function sendBookingConfirmationWhatsApp(appointment, business, poo
   console.warn('⚠️ No hay credenciales de WhatsApp configuradas (Configura Meta Token y Phone ID en el panel Developer o .env).');
   return { success: false, reason: 'no_credentials' };
 }
+
+/**
+ * Envío de confirmación de pre-registro (Leads de Preventa / 15 Días Gratis)
+ */
+export async function sendPreRegistrationConfirmationWhatsApp(lead, pool = null) {
+  if (!lead || !lead.phone) return { success: false, reason: 'no_phone' };
+  
+  const recipient = formatMetaPhone(lead.phone);
+  if (!recipient) return { success: false, reason: 'invalid_phone' };
+
+  const contactName = String(lead.contactName || 'Emprendedor(a)').trim();
+  const businessName = String(lead.businessName || 'Tu Negocio').trim();
+
+  const metaCreds = await getActiveMetaCredentials(pool);
+
+  if (metaCreds.isConfigured) {
+    const url = `https://graph.facebook.com/v20.0/${metaCreds.phoneNumberId}/messages`;
+    const languageCodes = ['es', 'es_LA', 'es_ES', 'es_CR'];
+    
+    // 1. Intentar plantilla oficial confirmacion_preregistro
+    for (const langCode of languageCodes) {
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipient,
+        type: 'template',
+        template: {
+          name: 'confirmacion_preregistro',
+          language: { code: langCode },
+          components: [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: contactName },
+                { type: 'text', text: businessName }
+              ]
+            }
+          ]
+        }
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${metaCreds.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (response.ok && data.messages?.[0]?.id) {
+          console.log(`✅ [WhatsApp Pre-registro] Plantilla enviada con éxito a +${recipient}: ${data.messages[0].id}`);
+          return { success: true, provider: 'meta_template', messageId: data.messages[0].id };
+        }
+      } catch (e) {
+        // Seguir intentando
+      }
+    }
+
+    // 2. Fallback con texto directo si Meta lo permite
+    try {
+      const freeText = `¡Hola *${contactName}*! 🎉\n\nTu pre-registro para *${businessName}* en Reservas CR ha sido confirmado con éxito.\n\n🎁 Has asegurado tus *15 Días Gratis* de prueba completa a partir del día del lanzamiento oficial.\n\nTe escribiremos por aquí antes del estreno para ayudarte a configurar tus servicios y horarios sin costo.\n\n¡Bienvenido a Reservas CR! 🇨🇷\nhttps://reservascr.app`;
+      const directRes = await sendViaMetaCloudApi(recipient, freeText, metaCreds);
+      return directRes;
+    } catch (e) {
+      console.warn('ℹ️ Fallback texto libre de pre-registro:', e.message);
+    }
+  }
+
+  return { success: false, reason: 'pending_template_approval' };
+}
