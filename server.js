@@ -304,8 +304,8 @@ app.post('/api/auth/business/register', async (req, res) => {
 app.post('/api/auth/client/register', async (req, res) => {
   try {
     const { name, phone, email, password, whatsappOptIn = true } = req.body;
-    if (!name || !phone || !password) {
-      return res.status(400).json({ error: 'Nombre, Teléfono y Contraseña son obligatorios.' });
+    if (!name || !phone || !email || !password) {
+      return res.status(400).json({ error: 'Nombre, Teléfono, Correo Electrónico y Contraseña son obligatorios.' });
     }
 
     if (password.trim().length < 6) {

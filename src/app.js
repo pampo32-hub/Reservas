@@ -8678,8 +8678,8 @@ class App {
                     <input type="tel" id="cli-reg-phone" required placeholder="Ej. +506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   </div>
                   <div>
-                    <label class="block font-bold text-slate-700 mb-1">Correo Electrónico (Opcional)</label>
-                    <input type="email" id="cli-reg-email" placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <label class="block font-bold text-slate-700 mb-1">Correo Electrónico *</label>
+                    <input type="email" id="cli-reg-email" required placeholder="juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   </div>
                 </div>
 
@@ -9143,6 +9143,12 @@ class App {
       const password = document.getElementById('cli-reg-password').value;
       const passwordConfirm = document.getElementById('cli-reg-password-confirm').value;
       const errBox = document.getElementById('cli-reg-inline-error');
+
+      if (!name || !phone || !email) {
+        this.showToast('Por favor completa todos los campos obligatorios, incluyendo tu correo electrónico.', 'error');
+        if (!email) document.getElementById('cli-reg-email')?.focus();
+        return;
+      }
 
       if (password.length < 6) {
         this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
