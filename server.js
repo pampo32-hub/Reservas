@@ -2180,6 +2180,41 @@ app.get('/api/businesses/:id/reviews', async (req, res) => {
   }
 });
 
+// 4. Endpoint de prueba para enviar correo de calificación a cualquier dirección
+app.post('/api/test-review-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'Debes proporcionar un correo electrónico válido.' });
+    }
+
+    const testAppointment = {
+      id: `apt-${Date.now().toString().slice(-6)}`,
+      clientName: 'Cliente VIP de Prueba',
+      clientEmail: email.trim(),
+      clientPhone: '+506 8888 7777',
+      serviceName: 'Corte de Cabello Clásico & Barba',
+      serviceDuration: 45,
+      servicePrice: 10000,
+      date: '2026-09-15',
+      time: '10:00 AM'
+    };
+
+    const testBusiness = {
+      name: 'Barbería & Estilo Vintage',
+      address: 'Av. Escazú, Local 12',
+      city: 'San José, Escazú',
+      phone: '+506 8899 1122'
+    };
+
+    const result = await sendReviewRequestEmail(testAppointment, testBusiness);
+    res.json({ success: true, message: 'Correo de valoración de prueba enviado exitosamente.', result });
+  } catch (error) {
+    console.error('Error en /api/test-review-email:', error);
+    res.status(500).json({ error: error.message || 'Error enviando correo de prueba de valoración.' });
+  }
+});
+
 // ==========================================
 // INTEGRACIÓN DE PAGOS Y SUSCRIPCIONES PAYPAL
 // ==========================================
@@ -2301,6 +2336,8 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
       'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
     };
 
+    const result = await sendReviewRequestEmail(testAppointment, testBusiness);
+    res.json({ success: true, message: 'Correo de valoración de prueba enviado exitosamente.', result });
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
 
     // Actualizar comercio en la Base de Datos PostgreSQL
@@ -2330,6 +2367,8 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
       business: updateRes.rows[0]
     });
   } catch (error) {
+    console.error('Error en /api/test-review-email:', error);
+    res.status(500).json({ error: error.message || 'Error enviando correo de prueba de valoración.' });
     console.error('Error en /api/paypal/verify-subscription:', error);
     res.status(500).json({ error: error.message || 'Error al procesar suscripción de PayPal.' });
   }

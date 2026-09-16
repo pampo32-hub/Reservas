@@ -367,6 +367,12 @@ class App {
               </button>
             ` : ''}
 
+            <!-- Botón Planes y Suscripciones (Móvil) -->
+            <button id="mobile-top-plans-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center gap-1 app-touch-btn" title="Ver Planes de Suscripción">
+              <i class="fas fa-crown text-amber-600 text-xs"></i>
+              <span>Planes</span>
+            </button>
+
             ${!clientUser && !bizUser && !devUser && SHOW_LOGIN_BUTTON ? `
               <button id="mobile-top-login-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn">
                 <i class="fas fa-sign-in-alt text-xs"></i>
@@ -380,6 +386,12 @@ class App {
             <!-- Explorar -->
             <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
+            </button>
+
+            <!-- Planes y Precios -->
+            <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
+              <i class="fas fa-crown text-amber-600 text-xs"></i>
+              <span>Planes & Precios</span>
             </button>
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
@@ -468,6 +480,8 @@ class App {
     });
 
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('nav-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
+    document.getElementById('mobile-top-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
 
     // Acciones móviles superiores
     document.getElementById('mobile-top-dev-badge')?.addEventListener('click', () => this.navigateTo('developer-dashboard'));
@@ -4171,6 +4185,7 @@ class App {
 
                 <button id="dev-tab-whatsapp" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
                   <i class="fab fa-whatsapp ${this.activeDevTab === 'whatsapp' ? 'text-white' : 'text-emerald-600'}"></i>
+                  <span>WhatsApp & Meta API</span>
                   <span>WhatsApp & Meta</span>
                   ${waSettings.configured ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded font-bold">Por Configurar</span>'}
                 </button>
@@ -6450,19 +6465,28 @@ class App {
                       </ul>
                     </div>
 
-                    <!-- Botón de Acción -->
-                    <div class="mt-6 pt-4 border-t border-slate-100">
+                    <!-- Botones de Acción -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 space-y-2">
                       ${isCurrent ? `
                         <button disabled class="w-full py-3 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
                           <i class="fas fa-check-circle"></i> Tu Plan Actual
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-btn w-full py-3 ${isPro ? 'bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black shadow-lg shadow-amber-500/25' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md shadow-purple-500/20' : 'bg-slate-900 hover:bg-blue-600 text-white font-bold'} rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                          class="select-plan-paypal-btn w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 cursor-pointer app-touch-btn"
                           data-plan-id="${plan.id}"
                         >
-                          <span>${isOwnerContext ? 'Cambiar a este Plan' : (REGISTRATION_ENABLED ? 'Elegir este Plan' : 'Pre-registrar con este Plan')}</span>
+                          <i class="fab fa-paypal text-sm text-blue-950"></i>
+                          <span>Pagar con PayPal ($${plan.priceUsd}/mes)</span>
                           <i class="fas fa-arrow-right text-xs"></i>
+                        </button>
+
+                        <button 
+                          class="select-plan-prereg-btn w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn"
+                          data-plan-id="${plan.id}"
+                        >
+                          <i class="fas fa-gift text-amber-600"></i>
+                          <span>Pre-registrar Negocio (15 Días Gratis)</span>
                         </button>
                       `}
                     </div>
@@ -6478,7 +6502,7 @@ class App {
               <i class="fas fa-shield-alt text-emerald-600 text-sm"></i>
               <span>Sin contratos forzosos. Cancela o cambia de plan en cualquier momento.</span>
             </div>
-            <span class="font-bold text-slate-700">Aceptamos SINPE Móvil y Tarjetas en Costa Rica 🇨🇷</span>
+            <span class="font-bold text-slate-700">Aceptamos PayPal, Tarjetas y SINPE Móvil en Costa Rica 🇨🇷</span>
           </div>
         </div>
       </div>
@@ -6488,20 +6512,22 @@ class App {
       modalContainer.innerHTML = '';
     });
 
-    document.querySelectorAll('.select-plan-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
+    // Acción 1: Pagar / Probar Pasarela con PayPal
+    document.querySelectorAll('.select-plan-paypal-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
         const planId = btn.getAttribute('data-plan-id');
-        if (isOwnerContext && businessId) {
-          modalContainer.innerHTML = '';
-          this.renderPayPalCheckoutModal({ businessId, planId });
-        } else {
-          modalContainer.innerHTML = '';
-          if (REGISTRATION_ENABLED) {
-            this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
-          } else {
-            this.renderPreRegistrationModal(planId);
-          }
-        }
+        const activeBizId = businessId || storage.getActiveBusinessId() || 'biz-1';
+        modalContainer.innerHTML = '';
+        this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
+      });
+    });
+
+    // Acción 2: Pre-registro con beneficio
+    document.querySelectorAll('.select-plan-prereg-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const planId = btn.getAttribute('data-plan-id');
+        modalContainer.innerHTML = '';
+        this.renderPreRegistrationModal(planId);
       });
     });
   }

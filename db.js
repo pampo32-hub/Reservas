@@ -220,6 +220,7 @@ export async function initDatabase() {
       ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password
     `, ['dev-master', 'Master Developer', devEmail, devPassword, 'developer']);
 
+    console.log('✅ Tablas y cuenta Developer verificadas/creadas en Neon PostgreSQL.');
     // Sembrar configuraciones iniciales de PayPal
     const initialPayPalSettings = [
       ['paypal_client_id', process.env.PAYPAL_CLIENT_ID || 'BAAAlUaiVs_WHAYUvyr-dQjoW6umQpPKSL5UhhUVxLrLRtXSs3KloYFxV8u-UijYJvylfFsr06KlrwCW6c'],
