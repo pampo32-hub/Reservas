@@ -148,6 +148,8 @@ export async function initDatabase() {
     await client.query(`
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS password VARCHAR(255);
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN DEFAULT TRUE;
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
     `);
 
     console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');
@@ -208,8 +210,17 @@ export async function initDatabase() {
         city VARCHAR(100),
         plan_interest VARCHAR(50) DEFAULT 'pro',
         notes TEXT,
+        is_blocked BOOLEAN DEFAULT FALSE,
+        block_reason TEXT DEFAULT '',
+        status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    await client.query(`
+      ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
+      ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';
     `);
 
     // Sembrar cuenta Master Developer si no existe

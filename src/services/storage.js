@@ -1451,6 +1451,165 @@ class StorageService {
     return JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
   }
 
+  async savePreRegistrationByDeveloper(leadData) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/pre-registrations/${leadData.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          await this.getPreRegistrations();
+          return data;
+        }
+        const err = await res.json();
+        throw new Error(err.error || 'Error al actualizar pre-registro.');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+
+    const stored = JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
+    const idx = stored.findIndex(pr => pr.id === leadData.id);
+    if (idx >= 0) {
+      stored[idx] = { ...stored[idx], ...leadData };
+    }
+    localStorage.setItem('reservas_pre_registrations', JSON.stringify(stored));
+    return { success: true };
+  }
+
+  async togglePreRegistrationBlock(prId, isBlocked, reason = '') {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/pre-registrations/${prId}/block`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isBlocked, reason })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          await this.getPreRegistrations();
+          return data;
+        }
+        const err = await res.json();
+        throw new Error(err.error || 'Error al actualizar estado del pre-registro.');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+
+    const stored = JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
+    const item = stored.find(pr => pr.id === prId);
+    if (item) {
+      item.isBlocked = Boolean(isBlocked);
+      item.blockReason = reason;
+      item.status = isBlocked ? 'discarded' : 'pending';
+      localStorage.setItem('reservas_pre_registrations', JSON.stringify(stored));
+    }
+    return { success: true, isBlocked };
+  }
+
+  async deletePreRegistrationByDeveloper(prId) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/pre-registrations/${prId}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          await this.getPreRegistrations();
+          return await res.json();
+        }
+        const err = await res.json();
+        throw new Error(err.error || 'Error al eliminar pre-registro.');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+
+    let stored = JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
+    stored = stored.filter(pr => pr.id !== prId);
+    localStorage.setItem('reservas_pre_registrations', JSON.stringify(stored));
+    return { success: true };
+  }
+
+  // --- MÉTODOS DE CLIENTES / USUARIOS PARA DEVELOPER ---
+  async saveClientByDeveloper(clientData) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/clients/${clientData.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientData)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        throw new Error(err.error || 'Error al actualizar usuario cliente.');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+
+    const clientUser = this.getClientUser();
+    if (clientUser && clientUser.id === clientData.id) {
+      this.setClientUser({ ...clientUser, ...clientData });
+    }
+    return { success: true };
+  }
+
+  async toggleClientBlock(clientId, isBlocked, reason = '') {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/clients/${clientId}/block`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isBlocked, reason })
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        throw new Error(err.error || 'Error al bloquear usuario cliente.');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+
+    const clientUser = this.getClientUser();
+    if (clientUser && clientUser.id === clientId) {
+      clientUser.isBlocked = Boolean(isBlocked);
+      clientUser.blockReason = reason;
+      this.setClientUser(clientUser);
+    }
+    return { success: true, isBlocked };
+  }
+
+  async deleteClientByDeveloper(clientId) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/clients/${clientId}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+        const err = await res.json();
+        throw new Error(err.error || 'Error al eliminar usuario cliente.');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+
+    const clientUser = this.getClientUser();
+    if (clientUser && clientUser.id === clientId) {
+      this.logoutClient();
+    }
+    return { success: true };
+  }
+
   // --- INTEGRACIÓN PAYPAL ---
   async getPayPalConfig() {
     if (this.isOnlineApi) {

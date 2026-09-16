@@ -4392,15 +4392,17 @@ class App {
                             <th class="p-3">Categoría & Cantón</th>
                             <th class="p-3">Plan de Interés</th>
                             <th class="p-3">Fecha</th>
-                            <th class="p-3 text-right">Contacto Directo</th>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3 text-right">Acciones Developer</th>
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredPreRegs.map(pr => {
                             const waClean = (pr.phone || '').replace(/\D/g, '');
                             const waUrl = `https://wa.me/506${waClean}?text=${encodeURIComponent('Hola ' + (pr.contactName || '') + ', te saludamos de Reservas CR respecto al pre-registro de tu negocio ' + (pr.businessName || '') + '.')}`;
+                            const isPrBlocked = Boolean(pr.isBlocked);
                             return `
-                              <tr class="hover:bg-slate-50/80 transition-colors">
+                              <tr class="hover:bg-slate-50/80 transition-colors ${isPrBlocked ? 'bg-rose-50/30' : ''}">
                                 <td class="p-3">
                                   <strong class="text-slate-900 block font-bold text-sm">${this.escapeHtml(pr.businessName)}</strong>
                                   <span class="text-[10px] text-slate-400 font-mono">${pr.id}</span>
@@ -4428,10 +4430,55 @@ class App {
                                 <td class="p-3 text-[11px] text-slate-500">
                                   ${new Date(pr.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </td>
-                                <td class="p-3 text-right">
-                                  <a href="${waUrl}" target="_blank" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all">
-                                    <i class="fab fa-whatsapp"></i> Chatear
-                                  </a>
+                                <td class="p-3 whitespace-nowrap">
+                                  ${isPrBlocked ? `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Descartado/Bloqueado: ${this.escapeHtml(pr.blockReason || 'Sin motivo')}">
+                                      <i class="fas fa-ban text-rose-600"></i> Descartado
+                                    </span>
+                                  ` : pr.status === 'contacted' ? `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                      <i class="fas fa-comments text-blue-600"></i> Contactado
+                                    </span>
+                                  ` : pr.status === 'active' ? `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                      <i class="fas fa-check-circle text-emerald-600"></i> Activado
+                                    </span>
+                                  ` : `
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                      <i class="fas fa-clock text-amber-600"></i> Pendiente
+                                    </span>
+                                  `}
+                                </td>
+                                <td class="p-3 text-right whitespace-nowrap">
+                                  <div class="flex items-center justify-end gap-1.5">
+                                    <!-- Modificar / Editar Pre-Registro -->
+                                    <button class="dev-edit-prereg-btn px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${pr.id}" data-name="${this.escapeHtml(pr.businessName)}" title="Modificar datos del pre-registro">
+                                      <i class="fas fa-edit text-xs"></i>
+                                      <span>Modificar</span>
+                                    </button>
+
+                                    <!-- Bloquear / Descartar / Reactivar -->
+                                    ${isPrBlocked ? `
+                                      <button class="dev-toggle-block-prereg-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${pr.id}" data-action="unblock" data-name="${this.escapeHtml(pr.businessName)}" title="Reactivar pre-registro">
+                                        <i class="fas fa-undo text-emerald-600"></i> Reactivar
+                                      </button>
+                                    ` : `
+                                      <button class="dev-toggle-block-prereg-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" data-id="${pr.id}" data-action="block" data-name="${this.escapeHtml(pr.businessName)}" title="Descartar o bloquear pre-registro">
+                                        <i class="fas fa-ban text-rose-600"></i> Bloquear
+                                      </button>
+                                    `}
+
+                                    <!-- Eliminar definitivamente -->
+                                    <button class="dev-delete-prereg-btn p-2 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-xl transition-all cursor-pointer" data-id="${pr.id}" data-name="${this.escapeHtml(pr.businessName)}" title="Eliminar pre-registro permanentemente">
+                                      <i class="fas fa-trash-alt text-xs"></i>
+                                    </button>
+
+                                    <!-- Chatear WhatsApp -->
+                                    <a href="${waUrl}" target="_blank" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1 shadow-xs transition-all" title="Abrir WhatsApp">
+                                      <i class="fab fa-whatsapp"></i>
+                                      <span class="hidden sm:inline">WhatsApp</span>
+                                    </a>
+                                  </div>
                                 </td>
                               </tr>
                             `;
@@ -4822,18 +4869,21 @@ class App {
                             <th class="p-3">Correo Electrónico</th>
                             <th class="p-3">Fecha de Registro</th>
                             <th class="p-3">Total Reservas</th>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3 text-right">Acciones Developer</th>
                           </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredClients.map(c => {
                             const regDate = c.createdAt || c.created_at;
                             const count = c.appointmentsCount !== undefined ? c.appointmentsCount : (c.booking_count || 0);
+                            const isCliBlocked = Boolean(c.isBlocked);
 
                             return `
-                            <tr class="hover:bg-slate-50/80 transition-colors">
+                            <tr class="hover:bg-slate-50/80 transition-colors ${isCliBlocked ? 'bg-rose-50/30' : ''}">
                               <td class="p-3">
                                 <div class="flex items-center gap-2">
-                                  <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs">
+                                  <div class="w-7 h-7 rounded-full ${isCliBlocked ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'} font-bold flex items-center justify-center text-xs">
                                     ${c.name ? c.name.charAt(0).toUpperCase() : 'U'}
                                   </div>
                                   <div>
@@ -4854,8 +4904,45 @@ class App {
                               <td class="p-3">
                                 <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-bold text-xs">${count}</span>
                               </td>
+                              <td class="p-3 whitespace-nowrap">
+                                ${isCliBlocked ? `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Suspendido: ${this.escapeHtml(c.blockReason || 'Sin motivo')}">
+                                    <i class="fas fa-ban text-rose-600"></i> Bloqueado
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    <i class="fas fa-check-circle text-emerald-600"></i> Activo
+                                  </span>
+                                `}
+                              </td>
+                              <td class="p-3 text-right whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1.5">
+                                  <!-- Modificar / Editar Cliente -->
+                                  <button class="dev-edit-client-btn px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${c.id}" data-name="${this.escapeHtml(c.name)}" title="Modificar datos del cliente">
+                                    <i class="fas fa-edit text-xs"></i>
+                                    <span>Modificar</span>
+                                  </button>
+
+                                  <!-- Bloquear / Desbloquear Cliente -->
+                                  ${isCliBlocked ? `
+                                    <button class="dev-toggle-block-client-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${c.id}" data-action="unblock" data-name="${this.escapeHtml(c.name)}" title="Desbloquear este cliente">
+                                      <i class="fas fa-unlock text-emerald-600"></i> Desbloquear
+                                    </button>
+                                  ` : `
+                                    <button class="dev-toggle-block-client-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" data-id="${c.id}" data-action="block" data-name="${this.escapeHtml(c.name)}" title="Bloquear / Suspender cliente">
+                                      <i class="fas fa-ban text-rose-600"></i> Bloquear
+                                    </button>
+                                  `}
+
+                                  <!-- Eliminar definitivamente -->
+                                  <button class="dev-delete-client-btn p-2 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-xl transition-all cursor-pointer" data-id="${c.id}" data-name="${this.escapeHtml(c.name)}" title="Eliminar cliente permanentemente">
+                                    <i class="fas fa-trash-alt text-xs"></i>
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
-                          `}).join('')}
+                          `;
+                        }).join('')}
                         </tbody>
                       </table>
                     </div>
@@ -5609,6 +5696,126 @@ class App {
           } catch (err) {
             this.showToast(err.message || 'Error al actualizar el plan del negocio.', 'error');
             e.target.disabled = false;
+          }
+        });
+      });
+
+      // --- ACCIONES DE PRE-REGISTROS ---
+      // 1. Modificar Pre-registro
+      document.querySelectorAll('.dev-edit-prereg-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const prId = e.currentTarget.getAttribute('data-id');
+          if (prId) {
+            this.renderEditPreRegistrationModal(prId);
+          }
+        });
+      });
+
+      // 2. Bloquear / Descartar / Reactivar Pre-registro
+      document.querySelectorAll('.dev-toggle-block-prereg-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const prId = e.currentTarget.getAttribute('data-id');
+          const action = e.currentTarget.getAttribute('data-action');
+          const name = e.currentTarget.getAttribute('data-name');
+
+          if (action === 'block') {
+            const reason = prompt(`¿Motivo para descartar/bloquear el pre-registro de "${name}"? (opcional):`, 'Número no responde / Datos inválidos');
+            if (reason !== null) {
+              try {
+                await storage.togglePreRegistrationBlock(prId, true, reason);
+                this.showToast(`Pre-registro de "${name}" descartado/bloqueado.`, 'warning');
+                this.renderDeveloperDashboardView(container);
+              } catch (err) {
+                this.showToast(err.message || 'Error al bloquear.', 'error');
+              }
+            }
+          } else {
+            if (confirm(`¿Deseas reactivar el pre-registro de "${name}"?`)) {
+              try {
+                await storage.togglePreRegistrationBlock(prId, false, '');
+                this.showToast(`Pre-registro de "${name}" reactivado.`, 'success');
+                this.renderDeveloperDashboardView(container);
+              } catch (err) {
+                this.showToast(err.message || 'Error al reactivar.', 'error');
+              }
+            }
+          }
+        });
+      });
+
+      // 3. Eliminar Pre-registro
+      document.querySelectorAll('.dev-delete-prereg-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const prId = e.currentTarget.getAttribute('data-id');
+          const name = e.currentTarget.getAttribute('data-name');
+          if (confirm(`⚠️ ¿Estás seguro de que deseas ELIMINAR el pre-registro de "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+            try {
+              await storage.deletePreRegistrationByDeveloper(prId);
+              this.showToast(`Pre-registro de "${name}" eliminado.`, 'success');
+              this.renderDeveloperDashboardView(container);
+            } catch (err) {
+              this.showToast(err.message || 'Error al eliminar pre-registro.', 'error');
+            }
+          }
+        });
+      });
+
+      // --- ACCIONES DE CLIENTES / USUARIOS ---
+      // 1. Modificar Cliente
+      document.querySelectorAll('.dev-edit-client-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const clientId = e.currentTarget.getAttribute('data-id');
+          if (clientId) {
+            this.renderEditClientModal(clientId);
+          }
+        });
+      });
+
+      // 2. Bloquear / Desbloquear Cliente
+      document.querySelectorAll('.dev-toggle-block-client-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const clientId = e.currentTarget.getAttribute('data-id');
+          const action = e.currentTarget.getAttribute('data-action');
+          const name = e.currentTarget.getAttribute('data-name');
+
+          if (action === 'block') {
+            const reason = prompt(`¿Motivo de suspensión/bloqueo para el usuario "${name}"? (opcional):`, 'Suspensión por incumplimiento');
+            if (reason !== null) {
+              try {
+                await storage.toggleClientBlock(clientId, true, reason);
+                this.showToast(`Usuario "${name}" bloqueado/suspendido.`, 'warning');
+                this.renderDeveloperDashboardView(container);
+              } catch (err) {
+                this.showToast(err.message || 'Error al bloquear usuario.', 'error');
+              }
+            }
+          } else {
+            if (confirm(`¿Deseas desbloquear al usuario "${name}"?`)) {
+              try {
+                await storage.toggleClientBlock(clientId, false, '');
+                this.showToast(`Usuario "${name}" desbloqueado exitosamente.`, 'success');
+                this.renderDeveloperDashboardView(container);
+              } catch (err) {
+                this.showToast(err.message || 'Error al desbloquear usuario.', 'error');
+              }
+            }
+          }
+        });
+      });
+
+      // 3. Eliminar Cliente
+      document.querySelectorAll('.dev-delete-client-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const clientId = e.currentTarget.getAttribute('data-id');
+          const name = e.currentTarget.getAttribute('data-name');
+          if (confirm(`⚠️ ¿Estás seguro de que deseas ELIMINAR al usuario "${name}"?\n\nEsta acción borrará su cuenta del sistema.`)) {
+            try {
+              await storage.deleteClientByDeveloper(clientId);
+              this.showToast(`Usuario "${name}" eliminado permanentemente.`, 'success');
+              this.renderDeveloperDashboardView(container);
+            } catch (err) {
+              this.showToast(err.message || 'Error al eliminar cliente.', 'error');
+            }
           }
         });
       });
@@ -7511,6 +7718,276 @@ class App {
         this.renderCurrentView();
       } catch (err) {
         this.showToast(err.message || 'Error al guardar cambios del negocio.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Cambios';
+        }
+      }
+    });
+  }
+
+  // --- MODAL PARA EDITAR PRE-REGISTRO ---
+  async renderEditPreRegistrationModal(prId) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const preRegs = await storage.getPreRegistrations();
+    const pr = preRegs.find(p => p.id === prId);
+    if (!pr) {
+      this.showToast('Pre-registro no encontrado.', 'error');
+      return;
+    }
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] flex flex-col">
+          
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg font-black shadow-xs">
+                <i class="fas fa-rocket"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">SuperAdmin Dev</span>
+                <h3 class="text-lg font-black text-slate-900">Modificar Pre-Registro</h3>
+              </div>
+            </div>
+            <button id="close-edit-prereg-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+
+          <form id="edit-prereg-form" class="p-2 pt-4 space-y-4 overflow-y-auto text-xs sm:text-sm flex-1">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">ID: <strong class="font-mono text-slate-800">${pr.id}</strong></span>
+              <span class="text-slate-400 font-medium">${new Date(pr.createdAt).toLocaleString('es-CR')}</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Nombre del Comercio / Negocio *</label>
+                <input type="text" id="edit-prereg-biz-name" value="${this.escapeHtml(pr.businessName || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Persona de Contacto *</label>
+                <input type="text" id="edit-prereg-contact-name" value="${this.escapeHtml(pr.contactName || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Teléfono / WhatsApp (+506) *</label>
+                <input type="tel" id="edit-prereg-phone" value="${this.escapeHtml(pr.phone || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Provincia / Cantón</label>
+                <input type="text" id="edit-prereg-city" value="${this.escapeHtml(pr.city || '')}" placeholder="Ej. San José, Escazú" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Categoría</label>
+                <input type="text" id="edit-prereg-cat" value="${this.escapeHtml(pr.category || '')}" placeholder="Ej. Belleza y Barbería" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Plan de Interés</label>
+                <select id="edit-prereg-plan" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                  <option value="basic" ${pr.planInterest === 'basic' ? 'selected' : ''}>Plan Básico ($8)</option>
+                  <option value="pro" ${pr.planInterest === 'pro' || !pr.planInterest ? 'selected' : ''}>Plan Pro ($15)</option>
+                  <option value="unlimited" ${pr.planInterest === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($25)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Estado / Bloqueo</label>
+                <select id="edit-prereg-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                  <option value="pending" ${!pr.isBlocked ? 'selected' : ''}>🟡 Pendiente de Contacto</option>
+                  <option value="contacted" ${pr.status === 'contacted' ? 'selected' : ''}>💬 Contactado</option>
+                  <option value="active" ${pr.status === 'active' ? 'selected' : ''}>🟢 Activado en la Plataforma</option>
+                  <option value="blocked" ${pr.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Descartado</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Motivo de Bloqueo (opcional)</label>
+                <input type="text" id="edit-prereg-reason" value="${this.escapeHtml(pr.blockReason || '')}" placeholder="Ej. Número no responde / Descartado" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1 text-xs">Notas / Observaciones</label>
+              <textarea id="edit-prereg-notes" rows="2" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">${this.escapeHtml(pr.notes || '')}</textarea>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button type="button" id="cancel-edit-prereg-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                Cancelar
+              </button>
+              <button type="submit" id="save-edit-prereg-btn" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-save"></i>
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-edit-prereg-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+    document.getElementById('cancel-edit-prereg-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+
+    document.getElementById('edit-prereg-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-edit-prereg-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+      }
+
+      const statusVal = document.getElementById('edit-prereg-status')?.value;
+      const isBlockedVal = statusVal === 'blocked';
+
+      const updated = {
+        id: pr.id,
+        businessName: document.getElementById('edit-prereg-biz-name')?.value.trim(),
+        contactName: document.getElementById('edit-prereg-contact-name')?.value.trim(),
+        phone: document.getElementById('edit-prereg-phone')?.value.trim(),
+        city: document.getElementById('edit-prereg-city')?.value.trim(),
+        category: document.getElementById('edit-prereg-cat')?.value.trim(),
+        planInterest: document.getElementById('edit-prereg-plan')?.value,
+        status: statusVal,
+        isBlocked: isBlockedVal,
+        blockReason: isBlockedVal ? (document.getElementById('edit-prereg-reason')?.value.trim() || 'Descartado por administración') : '',
+        notes: document.getElementById('edit-prereg-notes')?.value.trim()
+      };
+
+      try {
+        await storage.savePreRegistrationByDeveloper(updated);
+        this.showToast(`Pre-registro de "${updated.businessName}" actualizado.`, 'success');
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al guardar.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Cambios';
+        }
+      }
+    });
+  }
+
+  // --- MODAL PARA EDITAR CLIENTE / USUARIO ---
+  async renderEditClientModal(clientId) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const clients = await storage.getDeveloperClients();
+    const c = clients.find(cl => cl.id === clientId);
+    if (!c) {
+      this.showToast('Cliente no encontrado.', 'error');
+      return;
+    }
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] flex flex-col">
+          
+          <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center text-lg font-black shadow-xs">
+                <i class="fas fa-user-edit"></i>
+              </div>
+              <div>
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">SuperAdmin Dev</span>
+                <h3 class="text-lg font-black text-slate-900">Modificar Usuario Cliente</h3>
+              </div>
+            </div>
+            <button id="close-edit-client-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+
+          <form id="edit-client-form" class="p-2 pt-4 space-y-4 overflow-y-auto text-xs sm:text-sm flex-1">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">ID Cliente: <strong class="font-mono text-slate-800">${c.id}</strong></span>
+              <span class="text-blue-600 font-bold">${c.appointmentsCount || 0} Reservas Totales</span>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1 text-xs">Nombre Completo *</label>
+              <input type="text" id="edit-client-name" value="${this.escapeHtml(c.name || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Teléfono / WhatsApp (+506) *</label>
+                <input type="tel" id="edit-client-phone" value="${this.escapeHtml(c.phone || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Correo Electrónico</label>
+                <input type="email" id="edit-client-email" value="${this.escapeHtml(c.email || '')}" placeholder="cliente@correo.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Estado de Acceso</label>
+                <select id="edit-client-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <option value="active" ${!c.isBlocked ? 'selected' : ''}>🟢 Activo (Puede Reservar)</option>
+                  <option value="blocked" ${c.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Suspendido</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Motivo de Bloqueo (si aplica)</label>
+                <input type="text" id="edit-client-reason" value="${this.escapeHtml(c.blockReason || '')}" placeholder="Ej. Inasistencias reiteradas / Spam" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+              </div>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button type="button" id="cancel-edit-client-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                Cancelar
+              </button>
+              <button type="submit" id="save-edit-client-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-save"></i>
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-edit-client-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+    document.getElementById('cancel-edit-client-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+
+    document.getElementById('edit-client-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-edit-client-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+      }
+
+      const isBlockedVal = document.getElementById('edit-client-status')?.value === 'blocked';
+
+      const updated = {
+        id: c.id,
+        name: document.getElementById('edit-client-name')?.value.trim(),
+        phone: document.getElementById('edit-client-phone')?.value.trim(),
+        email: document.getElementById('edit-client-email')?.value.trim(),
+        isBlocked: isBlockedVal,
+        blockReason: isBlockedVal ? (document.getElementById('edit-client-reason')?.value.trim() || 'Bloqueado por administración') : ''
+      };
+
+      try {
+        await storage.saveClientByDeveloper(updated);
+        this.showToast(`Usuario "${updated.name}" actualizado con éxito.`, 'success');
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al guardar usuario.', 'error');
         if (saveBtn) {
           saveBtn.disabled = false;
           saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Cambios';

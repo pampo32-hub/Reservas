@@ -538,12 +538,93 @@ app.get('/api/pre-registrations', async (req, res) => {
       city: r.city,
       planInterest: r.plan_interest,
       notes: r.notes,
+      isBlocked: Boolean(r.is_blocked),
+      blockReason: r.block_reason || '',
+      status: r.status || 'pending',
       createdAt: r.created_at
     }));
     res.json({ success: true, leads });
   } catch (error) {
     console.error('Error obteniendo pre-registros:', error);
     res.status(500).json({ error: 'Error al consultar pre-registros' });
+  }
+});
+
+// Actualizar Pre-registro desde Developer Panel
+app.put('/api/developer/pre-registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { businessName, contactName, phone, category, city, planInterest, notes, status, isBlocked, blockReason } = req.body;
+
+    await pool.query(`
+      UPDATE reservas_pre_registrations SET
+        business_name = COALESCE($1, business_name),
+        contact_name = COALESCE($2, contact_name),
+        phone = COALESCE($3, phone),
+        category = COALESCE($4, category),
+        city = COALESCE($5, city),
+        plan_interest = COALESCE($6, plan_interest),
+        notes = COALESCE($7, notes),
+        status = COALESCE($8, status),
+        is_blocked = COALESCE($9, is_blocked),
+        block_reason = COALESCE($10, block_reason)
+      WHERE id = $11
+    `, [
+      businessName !== undefined ? businessName.trim() : null,
+      contactName !== undefined ? contactName.trim() : null,
+      phone !== undefined ? phone.trim() : null,
+      category !== undefined ? category.trim() : null,
+      city !== undefined ? city.trim() : null,
+      planInterest !== undefined ? planInterest.trim() : null,
+      notes !== undefined ? notes.trim() : null,
+      status !== undefined ? status.trim() : null,
+      isBlocked !== undefined ? Boolean(isBlocked) : null,
+      blockReason !== undefined ? blockReason.trim() : null,
+      id
+    ]);
+
+    res.json({ success: true, message: 'Pre-registro actualizado correctamente.' });
+  } catch (error) {
+    console.error('Error actualizando pre-registro:', error);
+    res.status(500).json({ error: 'Error al actualizar pre-registro.' });
+  }
+});
+
+// Bloquear / Desbloquear / Descartar Pre-registro
+app.patch('/api/developer/pre-registrations/:id/block', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isBlocked, reason = '' } = req.body;
+
+    await pool.query(`
+      UPDATE reservas_pre_registrations SET
+        is_blocked = $1,
+        block_reason = $2,
+        status = $3
+      WHERE id = $4
+    `, [Boolean(isBlocked), reason.trim(), isBlocked ? 'discarded' : 'pending', id]);
+
+    res.json({ 
+      success: true, 
+      message: isBlocked ? 'Pre-registro descartado/bloqueado.' : 'Pre-registro reactivado.',
+      isBlocked: Boolean(isBlocked),
+      blockReason: reason.trim()
+    });
+  } catch (error) {
+    console.error('Error alternando bloqueo de pre-registro:', error);
+    res.status(500).json({ error: 'Error al cambiar estado del pre-registro.' });
+  }
+});
+
+// Eliminar Pre-registro
+app.delete('/api/developer/pre-registrations/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM reservas_pre_registrations WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Pre-registro eliminado definitivamente.' });
+  } catch (error) {
+    console.error('Error eliminando pre-registro:', error);
+    res.status(500).json({ error: 'Error al eliminar pre-registro.' });
   }
 });
 
@@ -1769,7 +1850,7 @@ app.get('/api/developer/businesses', async (req, res) => {
 app.get('/api/developer/clients', async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT c.id, c.name, c.phone, c.email, c.created_at,
+      SELECT c.id, c.name, c.phone, c.email, c.is_blocked, c.block_reason, c.created_at,
              (SELECT COUNT(*) FROM reservas_appointments WHERE client_phone = c.phone OR (client_email = c.email AND client_email != '')) as appointments_count
       FROM reservas_clients c
       ORDER BY c.created_at DESC
@@ -1780,12 +1861,81 @@ app.get('/api/developer/clients', async (req, res) => {
       name: row.name,
       phone: row.phone,
       email: row.email || '',
+      isBlocked: Boolean(row.is_blocked),
+      blockReason: row.block_reason || '',
       createdAt: row.created_at,
       appointmentsCount: parseInt(row.appointments_count, 10) || 0
     })));
   } catch (error) {
     console.error('Error obteniendo clientes para developer:', error);
     res.status(500).json({ error: 'Error al obtener clientes.' });
+  }
+});
+
+// Modificar Cliente / Usuario desde Developer Panel
+app.put('/api/developer/clients/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, email, isBlocked, blockReason } = req.body;
+
+    await pool.query(`
+      UPDATE reservas_clients SET
+        name = COALESCE($1, name),
+        phone = COALESCE($2, phone),
+        email = COALESCE($3, email),
+        is_blocked = COALESCE($4, is_blocked),
+        block_reason = COALESCE($5, block_reason)
+      WHERE id = $6
+    `, [
+      name !== undefined ? name.trim() : null,
+      phone !== undefined ? phone.trim() : null,
+      email !== undefined ? email.trim() : null,
+      isBlocked !== undefined ? Boolean(isBlocked) : null,
+      blockReason !== undefined ? blockReason.trim() : null,
+      id
+    ]);
+
+    res.json({ success: true, message: 'Usuario cliente actualizado exitosamente.' });
+  } catch (error) {
+    console.error('Error actualizando cliente:', error);
+    res.status(500).json({ error: 'Error al actualizar usuario cliente.' });
+  }
+});
+
+// Bloquear / Desbloquear Cliente / Usuario
+app.patch('/api/developer/clients/:id/block', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isBlocked, reason = '' } = req.body;
+
+    await pool.query(`
+      UPDATE reservas_clients SET
+        is_blocked = $1,
+        block_reason = $2
+      WHERE id = $3
+    `, [Boolean(isBlocked), reason.trim(), id]);
+
+    res.json({
+      success: true,
+      message: isBlocked ? 'Usuario cliente bloqueado/suspendido.' : 'Usuario cliente desbloqueado.',
+      isBlocked: Boolean(isBlocked),
+      blockReason: reason.trim()
+    });
+  } catch (error) {
+    console.error('Error alternando bloqueo de cliente:', error);
+    res.status(500).json({ error: 'Error al actualizar estado del cliente.' });
+  }
+});
+
+// Eliminar Cliente / Usuario
+app.delete('/api/developer/clients/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM reservas_clients WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Usuario cliente eliminado permanentemente.' });
+  } catch (error) {
+    console.error('Error eliminando cliente:', error);
+    res.status(500).json({ error: 'Error al eliminar cliente.' });
   }
 });
 
