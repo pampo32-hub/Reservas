@@ -3080,12 +3080,12 @@ class App {
                 <button id="dash-export-excel-btn" class="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-excel text-emerald-600"></i> Exportar a Excel (.xlsx)
                 </button>
-                <button id="dash-export-csv-btn" class="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                  <i class="fas fa-file-csv text-purple-600"></i> Exportar (CSV)
+                <button id="dash-export-pdf-btn" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                  <i class="fas fa-file-pdf text-rose-600"></i> Descargar Reporte PDF
                 </button>
               ` : `
-                <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar base de datos a Excel está disponible a partir del Plan Profesional">
-                  <i class="fas fa-crown text-amber-500"></i> Exportar a Excel (Plan Pro & ∞)
+                <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar reportes a Excel y PDF está disponible a partir del Plan Profesional">
+                  <i class="fas fa-crown text-amber-500"></i> Excel & PDF (Plan Pro & ∞)
                 </button>
               `}
               <button id="add-manual-appointment-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 cursor-pointer">
@@ -3636,7 +3636,7 @@ class App {
             <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Ilimitado</span>
             <h2 class="text-2xl font-black text-slate-900 mt-1">Reportes de Ingresos y Clientes Frecuentes</h2>
             <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
-              El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel/CSV, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
+              El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
@@ -3657,11 +3657,11 @@ class App {
               </div>
 
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-2">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-2">
                   <i class="fas fa-file-excel"></i>
                 </div>
-                <h4 class="text-xs font-bold text-slate-900">Exportación a CSV / Excel</h4>
-                <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes e ingresos para tu contabilidad.</p>
+                <h4 class="text-xs font-bold text-slate-900">Exportación a Excel & PDF</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes, citas e ingresos en hojas de cálculo y PDF.</p>
               </div>
             </div>
 
@@ -5687,36 +5687,9 @@ class App {
       this.exportBusinessReportsExcel(currentBiz, appointments);
     });
 
-    document.getElementById('dash-export-csv-btn')?.addEventListener('click', () => {
+    document.getElementById('dash-export-pdf-btn')?.addEventListener('click', () => {
       const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
-      if (appointments.length === 0) {
-        this.showToast('No hay reservas registradas para exportar.', 'info');
-        return;
-      }
-      const headers = ['ID Reserva', 'Fecha', 'Hora', 'Cliente', 'Teléfono', 'Email', 'Servicio', 'Precio CRC', 'Duración Min', 'Estado', 'Notas'];
-      const rows = appointments.map(a => [
-        `"${a.id}"`,
-        `"${a.date}"`,
-        `"${a.time}"`,
-        `"${(a.clientName || '').replace(/"/g, '""')}"`,
-        `"${a.clientPhone || ''}"`,
-        `"${a.clientEmail || ''}"`,
-        `"${(a.serviceName || '').replace(/"/g, '""')}"`,
-        a.servicePrice || 0,
-        a.serviceDuration || 30,
-        `"${a.status}"`,
-        `"${(a.notes || '').replace(/"/g, '""')}"`
-      ]);
-      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `clientes_${currentBiz.name.replace(/\s+/g, '_')}_${this.getTodayDateString()}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      this.showToast('¡Base de datos de clientes exportada en CSV exitosamente!', 'success');
+      this.exportBusinessReportsPDF(currentBiz, appointments);
     });
 
     document.getElementById('dash-upgrade-prompt-btn')?.addEventListener('click', () => {
