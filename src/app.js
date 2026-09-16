@@ -8673,29 +8673,6 @@ class App {
                   <span>Ingresar al Panel de Negocio</span>
                 </button>
               </form>
-
-              <!-- Acceso Rápido Demo -->
-              <div class="pt-4 border-t border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
-                <div class="grid grid-cols-2 gap-2">
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="barberia@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Barbería Vintage</span>
-                    <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="dental@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Clínica Dental</span>
-                    <span class="text-[10px] text-slate-400">dental@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="spa@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Serenity Spa</span>
-                    <span class="text-[10px] text-slate-400">spa@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="taller@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">AutoCheck Taller</span>
-                    <span class="text-[10px] text-slate-400">taller@demo.cr</span>
-                  </button>
-                </div>
-              </div>
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
@@ -9027,19 +9004,6 @@ class App {
       } else {
         customCatBox?.classList.add('hidden');
       }
-    });
-
-    // Demo Buttons (en login de negocio)
-    document.querySelectorAll('.quick-demo-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const emailInput = document.getElementById('biz-log-email');
-        const passInput = document.getElementById('biz-log-password');
-        if (emailInput && passInput) {
-          emailInput.value = btn.getAttribute('data-email');
-          passInput.value = btn.getAttribute('data-pass');
-          document.getElementById('auth-biz-login-form')?.dispatchEvent(new Event('submit'));
-        }
-      });
     });
 
     // Real-time password validation for Client Registration
