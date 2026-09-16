@@ -770,6 +770,10 @@ class App {
             </span>
           </div>
 
+          <!-- Rating -->
+          <span class="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
+            <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} <span class="text-slate-700 font-normal">(${biz.reviewsCount || 0})</span>
+          </span>
           <!-- Rating Badge -->
           <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-slate-900 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md">
             <i class="fas fa-star text-amber-400"></i>
@@ -777,6 +781,10 @@ class App {
             <span class="text-slate-500 font-normal">(${biz.reviewsCount || 0})</span>
           </div>
 
+          <div class="absolute bottom-3 left-3 right-3 text-white">
+            <span class="text-xs font-semibold text-slate-200 flex items-center gap-1">
+              <i class="fas fa-map-marker-alt text-rose-400"></i> ${this.escapeHtml(biz.city || 'Costa Rica')}
+            </span>
           <!-- Ubicación sobre la imagen -->
           <div class="absolute bottom-3 left-3 text-white text-xs font-semibold flex items-center gap-1.5 drop-shadow-md">
             <i class="fas fa-map-marker-alt text-rose-400"></i>
@@ -786,13 +794,24 @@ class App {
 
         <!-- Content Body -->
         <div class="p-5 flex-1 flex flex-col justify-between">
+        <!-- Content -->
+        <div class="p-6 flex-1 flex flex-col justify-between">
           <div>
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                ${this.escapeHtml(biz.name)}
+              </h3>
+              ${isUnlimited ? `<span class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md flex-shrink-0">Preferencial</span>` : ''}
             <!-- Category Tag -->
+            <div class="mb-2.5">
+              <span class="text-[11px] font-bold tracking-wider uppercase text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100/80">
             <div class="mb-2">
               <span class="text-[10px] font-bold tracking-wider uppercase text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100/80">
                 ${this.escapeHtml(biz.categoryLabel || biz.category || 'General')}
               </span>
             </div>
+            <p class="text-xs text-slate-500 mt-1 line-clamp-2">
+              ${this.escapeHtml(biz.description || '')}
 
             <!-- Name -->
             <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
@@ -800,28 +819,53 @@ class App {
             </h3>
 
             <!-- Description -->
+            <p class="text-slate-600 text-xs mt-2 line-clamp-2 leading-relaxed">
             <p class="text-slate-600 text-xs mt-1.5 line-clamp-2 leading-relaxed">
               ${this.escapeHtml(biz.description || 'Servicios profesionales y atención personalizada.')}
             </p>
 
             <!-- Key Services Preview -->
             ${biz.services && biz.services.length > 0 ? `
+              <div class="mt-3 space-y-1.5">
               <div class="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
                 ${biz.services.slice(0, 2).map(srv => `
+                  <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                    <span class="text-slate-600 font-medium truncate max-w-[170px]">${this.escapeHtml(srv.name)}</span>
+                    <span class="font-extrabold text-blue-600 flex-shrink-0">${this.formatColones(srv.price)}</span>
                   <div class="flex items-center justify-between text-xs py-0.5">
                     <span class="text-slate-600 font-medium truncate max-w-[180px]">${this.escapeHtml(srv.name)}</span>
                     <span class="font-extrabold text-blue-600 shrink-0">${this.formatColones(srv.price)}</span>
                   </div>
                 `).join('')}
+            <!-- Previsualización de Servicios Destacados -->
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="space-y-1.5">
+                ${biz.services && biz.services.length > 0 
+                  ? biz.services.slice(0, 2).map(s => `
+                    <div class="flex justify-between items-center text-xs py-0.5">
+                      <span class="text-slate-600 truncate mr-2">${this.escapeHtml(s.name)}</span>
+                      <span class="font-bold text-blue-600 shrink-0">₡${(s.price || 0).toLocaleString()}</span>
+                    </div>
+                  `).join('')
+                  : '<span class="text-xs text-slate-500">Consultar catálogo</span>'
+                }
               </div>
             ` : ''}
+            </div>
 
             <!-- Schedule info -->
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
             <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
               <span class="flex items-center gap-1.5 font-medium">
                 <i class="far fa-clock text-blue-600"></i> 
                 ${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}
+            <!-- Schedule & Count -->
+            <div class="mt-4 flex items-center justify-between text-xs text-slate-600 pt-3 border-t border-slate-50">
+              <span class="flex items-center gap-1.5">
+                <i class="far fa-clock text-blue-500"></i>
+                ${biz.schedule ? `${this.formatTime(biz.schedule.openTime)} - ${this.formatTime(biz.schedule.closeTime)}` : 'Horario flexible'}
               </span>
+              <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
               <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md text-[11px]">
                 ${biz.services ? biz.services.length : 0} servicios
               </span>
@@ -829,6 +873,7 @@ class App {
           </div>
 
           <!-- Action Buttons -->
+          <div class="mt-5 pt-3 space-y-2.5">
           <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
             <button 
               class="view-biz-btn w-full py-2.5 px-4 ${isBlocked ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (isUnlimited ? 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800' : 'bg-slate-900 hover:bg-blue-600')} text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
@@ -839,6 +884,20 @@ class App {
               <i class="fas ${isBlocked ? 'fa-lock' : 'fa-arrow-right'} text-xs"></i>
             </button>
 
+            <!-- Barra de Administración Rápida de Negocios (Bloquear, Modificar, Eliminar) -->
+            <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
+              <!-- 1. Bloquear / Desbloquear -->
+              <button 
+                type="button"
+                class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
+                data-biz-id="${biz.id}"
+                data-biz-name="${this.escapeHtml(biz.name)}"
+                data-is-blocked="${isBlocked}"
+                title="${isBlocked ? 'Desbloquear negocio' : 'Bloquear negocio'}"
+              >
+                <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'} text-xs"></i>
+                <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
+              </button>
             <!-- Barra de Administración Rápida de Negocios (Solo visible para Developer / SuperAdmin) -->
             ${isDev ? `
               <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
@@ -855,6 +914,16 @@ class App {
                   <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
                 </button>
 
+              <!-- 2. Modificar -->
+              <button 
+                type="button"
+                class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                data-biz-id="${biz.id}"
+                title="Modificar y editar información del negocio"
+              >
+                <i class="fas fa-edit text-xs"></i>
+                <span>Modificar</span>
+              </button>
                 <!-- 2. Modificar -->
                 <button 
                   type="button"
@@ -866,6 +935,18 @@ class App {
                   <span>Modificar</span>
                 </button>
 
+              <!-- 3. Eliminar -->
+              <button 
+                type="button"
+                class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                data-biz-id="${biz.id}"
+                data-biz-name="${this.escapeHtml(biz.name)}"
+                title="Eliminar este negocio permanentemente"
+              >
+                <i class="fas fa-trash-alt text-xs"></i>
+                <span>Eliminar</span>
+              </button>
+            </div>
                 <!-- 3. Eliminar -->
                 <button 
                   type="button"
@@ -8063,80 +8144,82 @@ class App {
     const isOwnerContext = Boolean(businessId);
 
     modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 my-8 max-h-[92vh] flex flex-col">
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full overflow-hidden border border-slate-200 my-auto max-h-[96vh] flex flex-col">
           
-          <!-- Header -->
-          <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 p-6 text-white flex items-center justify-between shrink-0 border-b border-indigo-900/50">
+          <!-- Header Compacto -->
+          <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 px-5 py-3.5 sm:px-6 sm:py-4 text-white flex items-center justify-between shrink-0 border-b border-indigo-900/50">
             <div>
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5 border border-amber-400/30">
-                <i class="fas fa-crown"></i> Planes de Suscripción para Negocios
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-1 border border-amber-400/30">
+                <i class="fas fa-crown text-[10px]"></i> Planes de Suscripción para Negocios
               </div>
-              <h3 class="text-xl sm:text-2xl font-black">Elige el plan ideal para tu comercio</h3>
-              <p class="text-xs text-slate-300 mt-0.5">Comienza a recibir reservas en línea y recordatorios automáticos por WhatsApp y correo.</p>
+              <h3 class="text-base sm:text-xl font-black">Elige el plan ideal para tu comercio</h3>
             </div>
-            <button id="close-plans-modal-btn" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-sm"></i>
+            <button id="close-plans-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
             </button>
           </div>
 
           <!-- Body: Grid de los 3 Planes -->
-          <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          <div class="p-4 sm:p-5 overflow-y-auto flex-1 bg-slate-50">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
               ${plans.map(plan => {
                 const isCurrent = isOwnerContext && (currentPlanId === plan.id);
                 const isPro = plan.id === 'pro';
                 const isUnlimited = plan.id === 'unlimited';
 
                 return `
-                  <div class="relative bg-white rounded-3xl p-6 border-2 ${isPro ? 'border-amber-400 shadow-xl ring-2 ring-amber-400/20' : isUnlimited ? 'border-purple-300 shadow-md' : 'border-slate-200 shadow-sm'} flex flex-col justify-between transition-all duration-300 hover:-translate-y-1">
+                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isPro ? 'border-amber-400 shadow-md ring-1 ring-amber-400/30' : isUnlimited ? 'border-purple-300 shadow-xs' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-slate-400">
                     
                     ${plan.badge ? `
-                      <div class="absolute -top-3.5 left-1/2 transform -translate-x-1/2">
-                        <span class="px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm ${isPro ? 'bg-amber-400 text-slate-950' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
+                      <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isPro ? 'bg-amber-400 text-slate-950 font-black' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
                           ${plan.badge}
                         </span>
                       </div>
                     ` : ''}
 
                     <div>
-                      <div class="flex items-center justify-between mb-2 mt-1">
-                        <h4 class="text-lg font-extrabold text-slate-900">${plan.name}</h4>
-                        <span class="w-8 h-8 rounded-xl ${isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-sm">
+                      <!-- Nombre del Plan e Icono -->
+                      <div class="flex items-center justify-between mb-1 mt-0.5">
+                        <h4 class="text-base font-extrabold text-slate-900">${plan.name}</h4>
+                        <span class="w-7 h-7 rounded-lg ${isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
                           <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : 'fa-rocket'}"></i>
                         </span>
                       </div>
 
-                      <p class="text-xs text-slate-500 min-h-[36px]">${plan.tagline}</p>
+                      <p class="text-[11px] text-slate-500 leading-tight mb-2.5 line-clamp-2">${plan.tagline}</p>
 
-                      <!-- Precio -->
-                      <div class="mt-4 pb-4 border-b border-slate-100">
-                        <div class="flex items-baseline gap-1">
-                          <span class="text-3xl sm:text-4xl font-black text-slate-900">$${plan.priceUsd}</span>
-                          <span class="text-xs text-slate-500 font-semibold">USD / mes</span>
-                        </div>
-                        <span class="text-xs text-slate-500 block font-medium mt-0.5">
-                          ~${this.formatColones(plan.priceCrc)} CRC / mes
-                        </span>
-                        
-                        <!-- Límite de reservas y especialistas badges -->
-                        <div class="mt-3 space-y-1.5">
-                          <div class="p-2 rounded-xl ${isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-xs font-bold flex items-center justify-center gap-1.5">
-                            <i class="fas ${isUnlimited ? 'fa-infinity' : 'fa-calendar-check'}"></i>
-                            <span>${plan.bookingLimitLabel}</span>
+                      <!-- PRECIO: Visible Inmediatamente en la parte superior -->
+                      <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 mb-2.5">
+                        <div class="flex items-baseline justify-between">
+                          <div class="flex items-baseline gap-1">
+                            <span class="text-2xl sm:text-3xl font-black text-slate-900">$${plan.priceUsd}</span>
+                            <span class="text-[10px] text-slate-500 font-bold uppercase">USD/mes</span>
                           </div>
-                          <div class="p-2 rounded-xl bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold flex items-center justify-center gap-1.5">
-                            <i class="fas ${isUnlimited ? 'fa-users text-purple-600' : (plan.staffLimit > 1 ? 'fa-users text-amber-600' : 'fa-user text-blue-600')}"></i>
-                            <span>${plan.staffLimitLabel}</span>
-                          </div>
+                          <span class="text-[11px] text-slate-700 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
+                            ~${this.formatColones(plan.priceCrc)} CRC
+                          </span>
                         </div>
                       </div>
 
-                      <!-- Lista de Beneficios -->
-                      <ul class="mt-4 space-y-2.5 text-xs text-slate-600">
-                        ${plan.features.map(f => `
-                          <li class="flex items-start gap-2">
-                            <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-xs flex-shrink-0"></i>
+                      <!-- Capacidad / Límites -->
+                      <div class="grid grid-cols-2 gap-1.5 mb-2.5">
+                        <div class="p-1.5 rounded-lg ${isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
+                          <i class="fas ${isUnlimited ? 'fa-infinity text-[9px]' : 'fa-calendar-check text-[9px]'}"></i>
+                          <span class="truncate">${plan.bookingLimitLabel}</span>
+                        </div>
+                        <div class="p-1.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold flex items-center justify-center gap-1 text-center">
+                          <i class="fas ${isUnlimited ? 'fa-users text-purple-600 text-[9px]' : (plan.staffLimit > 1 ? 'fa-users text-amber-600 text-[9px]' : 'fa-user text-blue-600 text-[9px]')}"></i>
+                          <span class="truncate">${plan.staffLimitLabel}</span>
+                        </div>
+                      </div>
+
+                      <!-- Lista de Beneficios Compacta -->
+                      <ul class="space-y-1.5 text-[11px] text-slate-600">
+                        ${plan.features.slice(0, 5).map(f => `
+                          <li class="flex items-start gap-1.5 leading-tight">
+                            <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px] flex-shrink-0"></i>
                             <span>${f}</span>
                           </li>
                         `).join('')}
@@ -8144,18 +8227,18 @@ class App {
                     </div>
 
                     <!-- Botón de Acción: Seleccionar Plan -->
-                    <div class="mt-6 pt-4 border-t border-slate-100">
+                    <div class="mt-3.5 pt-2.5 border-t border-slate-100">
                       ${isCurrent ? `
-                        <button disabled class="w-full py-3.5 bg-emerald-100 text-emerald-800 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
+                        <button disabled class="w-full py-2.5 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
                           <i class="fas fa-check-circle"></i> Tu Plan Actual
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-btn w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer app-touch-btn"
+                          class="select-plan-btn w-full py-2.5 ${isPro ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
                           data-plan-id="${plan.id}"
                         >
-                          <span>Elegir ${plan.name} ($${plan.priceUsd}/mes)</span>
-                          <i class="fas fa-arrow-right text-xs"></i>
+                          <span>Elegir Plan ($${plan.priceUsd}/mes)</span>
+                          <i class="fas fa-arrow-right text-[10px]"></i>
                         </button>
                       `}
                     </div>
@@ -8165,10 +8248,10 @@ class App {
             </div>
           </div>
 
-          <!-- Footer Seguro -->
-          <div class="p-4 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 shrink-0">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-shield-alt text-emerald-600 text-sm"></i>
+          <!-- Footer Seguro Compacto -->
+          <div class="px-5 py-2.5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 shrink-0">
+            <div class="flex items-center gap-1.5">
+              <i class="fas fa-shield-alt text-emerald-600 text-xs"></i>
               <span>Sin contratos forzosos. Cancela o cambia de plan en cualquier momento.</span>
             </div>
             <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica 🇨🇷</span>
@@ -8192,6 +8275,7 @@ class App {
         if (activeBizId) {
           this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
         } else {
+          this.showToast('Primero crea la cuenta de tu negocio para asociarle tu plan.', 'info');
           this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
         }
       });
@@ -8383,7 +8467,6 @@ class App {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Duración activa:</span>
-              <span class="text-slate-900 font-bold">${durationLabel} <span class="text-slate-400 font-normal">(renovación manual mes a mes)</span></span>
               <span class="text-slate-900 font-bold">Mensual (30 Días) <span class="text-slate-400 font-normal">(renovación mes a mes)</span></span>
             </div>
             <div class="flex items-center justify-between">
