@@ -1358,13 +1358,13 @@ class StorageService {
     }
     return {
       success: true,
-      clientId: 'BAAAlUaiVs_WHAYUvyr-dQjoW6umQpPKSL5UhhUVxLrLRtXSs3KloYFxV8u-UijYJvylfFsr06KlrwCW6c',
-      env: 'sandbox',
+      clientId: 'BAAsEQDC0BKe7tSW6HzeTRQaXGSaWDvD2WkilEkv31h9Ttq2K2phZ8RGMOp9SyNN-sM0wuAnBVMVPr7YHo',
+      env: 'live',
       currency: 'USD',
       plans: {
-        basic: 'P-91741099FP9750211NKU7KDY',
-        pro: 'P-92V739915R025452UNKU7KDY',
-        unlimited: 'P-7KJ77800M6332750RNKU7KEA'
+        basic: 'P-2J419336TA519012VNKU75PY',
+        pro: 'P-3ER02078XB861273LNKU75QA',
+        unlimited: 'P-8VC868094T599031CNKU75QA'
       }
     };
   }

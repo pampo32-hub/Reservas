@@ -2222,12 +2222,12 @@ app.post('/api/test-review-email', async (req, res) => {
 // Helper para obtener ajustes de PayPal desde la BD o variables de entorno
 async function getPayPalSettings() {
   const defaults = {
-    clientId: process.env.PAYPAL_CLIENT_ID || 'BAAAlUaiVs_WHAYUvyr-dQjoW6umQpPKSL5UhhUVxLrLRtXSs3KloYFxV8u-UijYJvylfFsr06KlrwCW6c',
-    clientSecret: process.env.PAYPAL_CLIENT_SECRET || 'EA9WRXaxhPFwdhIaPkyE2BUflM7JgdwfcjRgHz8hfAv8QYTAhnOCPJkSrWGsl5fL_uzF63t0p0aK9pUP',
-    env: process.env.PAYPAL_ENV || 'sandbox',
-    planBasic: 'P-91741099FP9750211NKU7KDY',
-    planPro: 'P-92V739915R025452UNKU7KDY',
-    planUnlimited: 'P-7KJ77800M6332750RNKU7KEA'
+    clientId: process.env.PAYPAL_CLIENT_ID || 'BAAsEQDC0BKe7tSW6HzeTRQaXGSaWDvD2WkilEkv31h9Ttq2K2phZ8RGMOp9SyNN-sM0wuAnBVMVPr7YHo',
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET || 'ECkYk7RbWEG2ok9w2Kx5SCGPHwnFegU4I8y3Jv-e-YXWR8wx6jYwXFCBSSMeICkmO2rTVFLAwDXmW6P6',
+    env: process.env.PAYPAL_ENV || 'live',
+    planBasic: 'P-2J419336TA519012VNKU75PY',
+    planPro: 'P-3ER02078XB861273LNKU75QA',
+    planUnlimited: 'P-8VC868094T599031CNKU75QA'
   };
 
   try {
