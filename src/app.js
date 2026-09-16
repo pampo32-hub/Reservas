@@ -37,6 +37,7 @@ class App {
     this.activeDashboardTab = 'appointments'; // 'appointments' | 'blocked-slots' | 'services' | 'team' | 'profile' | 'schedule' | 'manual'
     this.ownerAgendaViewMode = 'list'; // 'list' | 'calendar'
     this.ownerCalendarCurrentMonth = new Date();
+    this.ownerCalendarExpandedDays = new Set();
 
     // Estado del panel de developer
     this.activeDevTab = 'alerts'; // 'alerts' | 'businesses' | 'clients' | 'appointments'
@@ -4203,27 +4204,30 @@ class App {
           <div class="grid grid-cols-7 divide-x divide-y divide-slate-100 bg-slate-50/30">
             ${cells.map(cell => {
               const count = cell.appointments.length;
+              const isExpanded = this.ownerCalendarExpandedDays && this.ownerCalendarExpandedDays.has(cell.dateKey);
+              const visibleApts = isExpanded ? cell.appointments : cell.appointments.slice(0, 3);
+
               return `
                 <div 
-                  class="cal-day-cell min-h-[105px] sm:min-h-[125px] p-1.5 sm:p-2 flex flex-col justify-between transition-colors ${cell.isCurrentMonth ? 'bg-white hover:bg-blue-50/30 cursor-pointer' : 'bg-slate-50/50 opacity-40'} ${cell.isToday ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/20' : ''}" 
+                  class="cal-day-cell min-h-[115px] sm:min-h-[135px] p-1.5 sm:p-2 flex flex-col justify-between transition-all duration-200 ${cell.isCurrentMonth ? 'bg-white hover:bg-blue-50/20 cursor-pointer' : 'bg-slate-50/50 opacity-40'} ${cell.isToday ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/20' : ''} ${isExpanded ? 'z-20 ring-2 ring-indigo-500 shadow-xl bg-white scale-[1.02] rounded-2xl' : ''}" 
                   data-date="${cell.dateKey}"
                   title="${cell.isCurrentMonth ? `Click para agregar reserva manual el ${this.formatDateDMY(cell.dateKey)}` : ''}"
                 >
                   <!-- Header del Día -->
-                  <div class="flex items-center justify-between gap-1 mb-1">
+                  <div class="flex items-center justify-between gap-1 mb-1 shrink-0">
                     <span class="text-xs font-black ${cell.isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs' : (cell.isCurrentMonth ? 'text-slate-800' : 'text-slate-400')}">
                       ${cell.dayNumber}
                     </span>
                     ${count > 0 ? `
-                      <span class="px-1.5 py-0.2 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black" title="${count} reserva${count > 1 ? 's' : ''}">
-                        ${count}
+                      <span class="px-1.5 py-0.5 rounded-md ${isExpanded ? 'bg-indigo-600 text-white' : 'bg-blue-100 text-blue-800'} text-[10px] font-black" title="${count} reserva${count > 1 ? 's' : ''}">
+                        ${count} ${count === 1 ? 'cita' : 'citas'}
                       </span>
                     ` : ''}
                   </div>
 
-                  <!-- Lista de Chips de Citas en el Día -->
-                  <div class="space-y-1 flex-1 overflow-hidden">
-                    ${cell.appointments.slice(0, 3).map(apt => {
+                  <!-- Lista de Chips de Citas con Scroll Interno -->
+                  <div class="space-y-1 flex-1 overflow-y-auto pr-0.5 custom-scrollbar max-h-[110px] sm:max-h-[140px] ${isExpanded ? 'max-h-[260px] sm:max-h-[340px]' : ''}">
+                    ${visibleApts.map(apt => {
                       let chipStyle = 'bg-blue-50 text-blue-900 border-blue-200/90 hover:bg-blue-100';
                       let dotColor = 'bg-blue-500';
                       if (apt.status === 'pending') {
@@ -4252,13 +4256,22 @@ class App {
                         </div>
                       `;
                     }).join('')}
-
-                    ${count > 3 ? `
-                      <div class="text-[9px] font-black text-blue-600 text-center py-0.5 bg-blue-50 rounded-md">
-                        +${count - 3} más
-                      </div>
-                    ` : ''}
                   </div>
+
+                  <!-- Botón de Expansión / Retracción -->
+                  ${count > 3 ? `
+                    <div class="pt-1 shrink-0">
+                      <button 
+                        type="button" 
+                        class="cal-toggle-day-btn w-full py-1 px-1.5 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer ${isExpanded ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-2xs'}"
+                        data-date="${cell.dateKey}"
+                        title="${isExpanded ? 'Contraer citas' : `Ver todas las ${count} citas de este día`}"
+                      >
+                        <span>${isExpanded ? 'Ver menos' : `+${count - 3} más`}</span>
+                        <i class="fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-[8px]"></i>
+                      </button>
+                    </div>
+                  ` : ''}
                 </div>
               `;
             }).join('')}
@@ -6590,6 +6603,35 @@ class App {
         if (dateStr) {
           this.bookingState.selectedDate = dateStr;
           this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
+        }
+      });
+    });
+
+    // Toggle expansión / retracción de citas en un día del calendario (+X más / Ver menos)
+    document.querySelectorAll('.cal-toggle-day-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const dateKey = btn.getAttribute('data-date');
+        if (!this.ownerCalendarExpandedDays) {
+          this.ownerCalendarExpandedDays = new Set();
+        }
+        if (this.ownerCalendarExpandedDays.has(dateKey)) {
+          this.ownerCalendarExpandedDays.delete(dateKey);
+        } else {
+          this.ownerCalendarExpandedDays.add(dateKey);
+        }
+        this.renderCurrentView();
+      });
+    });
+
+    // Retraer automáticamente cuando el cursor sale del día que estaba expandido
+    document.querySelectorAll('.cal-day-cell').forEach(cell => {
+      cell.addEventListener('mouseleave', () => {
+        const dateKey = cell.getAttribute('data-date');
+        if (this.ownerCalendarExpandedDays && this.ownerCalendarExpandedDays.has(dateKey)) {
+          this.ownerCalendarExpandedDays.delete(dateKey);
+          this.renderCurrentView();
         }
       });
     });
