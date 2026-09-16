@@ -2780,16 +2780,24 @@ class App {
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
-
     // Métricas del Plan de Suscripción ($10, $18, $35)
     const currentMonth = new Date().toISOString().slice(0, 7);
     const monthAppointments = appointments.filter(a => (a.date || '').startsWith(currentMonth));
     const currentPlanId = currentBiz.plan || 'basic';
     const planConfig = storage.getPlanById(currentPlanId) || { id: 'basic', name: 'Plan Básico', priceUsd: 10, bookingLimit: 150 };
+    const isBasic = currentPlanId === 'basic';
+    const isPro = currentPlanId === 'pro';
+    const isUnlimited = currentPlanId === 'unlimited';
+
+    // Si está en plan básico y tenía seleccionada la pestaña de reportes, devolver a agenda
+    if (isBasic && this.activeDashboardTab === 'reports') {
+      this.activeDashboardTab = 'appointments';
+    }
+
     const monthlyLimit = (currentBiz.monthlyBookingLimit !== undefined && currentBiz.monthlyBookingLimit !== null) ? currentBiz.monthlyBookingLimit : planConfig.bookingLimit;
-    const isUnlimited = monthlyLimit === null || monthlyLimit === undefined || monthlyLimit < 0;
+    const isUnlimitedLimit = monthlyLimit === null || monthlyLimit === undefined || monthlyLimit < 0;
     const usageCount = monthAppointments.length;
-    const percentUsed = isUnlimited ? 0 : Math.min(100, Math.round((usageCount / (monthlyLimit || 1)) * 100));
+    const percentUsed = isUnlimitedLimit ? 0 : Math.min(100, Math.round((usageCount / (monthlyLimit || 1)) * 100));
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -2940,9 +2948,11 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
             <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
-            <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
-          </button>
+          ${!isBasic ? `
+            <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
+              <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
+            </button>
+          ` : ''}
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
             <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
           </button>
@@ -3050,6 +3060,7 @@ class App {
       const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
 
       const isAutoConfirm = currentBiz.autoConfirmAppointments !== false;
+      const isBizBasic = currentBiz.plan === 'basic';
 
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
@@ -3090,9 +3101,9 @@ class App {
                 </div>
                 <p class="text-xs text-slate-700 leading-relaxed max-w-3xl">
                   ${isAutoConfirm ? `
-                    <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>correo electrónico y WhatsApp</strong>.
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>${isBizBasic ? 'correo electrónico' : 'correo electrónico y WhatsApp'}</strong>.${isBizBasic ? ' <span class="text-slate-500 font-medium">(La confirmación por WhatsApp está disponible a partir del Plan Profesional).</span>' : ''}
                   ` : `
-                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El correo y WhatsApp se enviarán únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El ${isBizBasic ? 'correo electrónico' : 'correo y WhatsApp'} se enviará únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
                   `}
                 </p>
               </div>
@@ -3570,8 +3581,8 @@ class App {
                   </div>
                   <p class="text-xs text-slate-600 leading-relaxed">
                     ${currentBiz.autoConfirmAppointments !== false
-                      ? 'Las reservas se confirman inmediatamente y se envía WhatsApp y correo al cliente al agendar.'
-                      : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo.'}
+                      ? (currentBiz.plan === 'basic' ? 'Las reservas se confirman inmediatamente y se envía correo de confirmación al cliente al agendar.' : 'Las reservas se confirman inmediatamente y se envía confirmación por WhatsApp y correo al cliente al agendar.')
+                      : (currentBiz.plan === 'basic' ? 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar correo al cliente.' : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo al cliente.')}
                   </p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 self-start sm:self-center">

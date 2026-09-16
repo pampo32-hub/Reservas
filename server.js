@@ -1736,8 +1736,9 @@ app.post('/api/appointments', async (req, res) => {
             });
           }
 
-          // 2. Enviar WhatsApp de confirmación (si tiene consentimiento y teléfono)
-          if (optIn && a.clientPhone) {
+          // 2. Enviar WhatsApp de confirmación (incluido exclusivamente a partir del Plan Profesional)
+          const isProOrUnlimited = business && (business.plan === 'pro' || business.plan === 'unlimited');
+          if (isProOrUnlimited && optIn && a.clientPhone) {
             sendBookingConfirmationWhatsApp(createdAppointment, business, pool).catch(waErr => {
               console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
             });
@@ -1974,7 +1975,8 @@ app.put('/api/appointments/:id', async (req, res) => {
         });
       }
 
-      if (aptNotif.whatsappOptIn && aptNotif.clientPhone) {
+      const isProOrUnlimited = business && (business.plan === 'pro' || business.plan === 'unlimited');
+      if (isProOrUnlimited && aptNotif.whatsappOptIn && aptNotif.clientPhone) {
         sendBookingConfirmationWhatsApp(aptNotif, business, pool).catch(err => {
           console.error('⚠️ Error al enviar WhatsApp de confirmación:', err.message);
         });
