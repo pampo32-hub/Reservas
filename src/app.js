@@ -150,6 +150,10 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialHash);
     }
 
+    this.renderHeader();
+    this.renderMobileBottomNav();
+    this.renderCurrentView();
+    this.setupGlobalEvents();
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -2936,6 +2940,9 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
             <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
           </button>
+          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
+            <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
+          </button>
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
             <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
           </button>
@@ -2975,6 +2982,18 @@ class App {
       this.renderSinpePaymentModal({ businessId: currentBiz.id, planId: currentBiz.plan || 'basic' });
     });
 
+    document.getElementById('dash-upgrade-reports-pro-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'basic' });
+    });
+
+    document.getElementById('dash-upgrade-reports-unlimited-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'basic' });
+    });
+
+    document.getElementById('export-reports-csv-btn')?.addEventListener('click', () => {
+      this.exportBusinessReportsCSV(currentBiz, appointments);
+    });
+
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.activeDashboardTab = btn.getAttribute('data-tab');
@@ -2987,6 +3006,10 @@ class App {
 
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
+    if (this.activeDashboardTab === 'reports') {
+      return this.renderReportsTabContent(currentBiz, appointments);
+    }
+
     if (this.activeDashboardTab === 'appointments') {
       const filter = this.ownerAppointmentFilter || 'all';
       const staffFilter = this.ownerStaffFilter || 'all';
@@ -3556,6 +3579,347 @@ class App {
         </div>
       `;
     }
+  }
+
+  // --- SUB-CONTENIDO: REPORTES DE INGRESOS Y ESTADÍSTICAS DE CLIENTES FRECUENTES ---
+  renderReportsTabContent(currentBiz, appointments) {
+    const plan = currentBiz.plan || 'basic';
+    const isBasic = plan === 'basic';
+    const isPro = plan === 'pro';
+    const isUnlimited = plan === 'unlimited';
+
+    if (isBasic) {
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          <div class="max-w-3xl mx-auto text-center py-6">
+            <div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Ilimitado</span>
+            <h2 class="text-2xl font-black text-slate-900 mt-1">Reportes de Ingresos y Clientes Frecuentes</h2>
+            <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
+              El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel/CSV, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-2">
+                  <i class="fas fa-coins"></i>
+                </div>
+                <h4 class="text-xs font-bold text-slate-900">Reporte de Ingresos</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Total recaudado, ingresos mensuales y ticket promedio por reserva.</p>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold mb-2">
+                  <i class="fas fa-user-check"></i>
+                </div>
+                <h4 class="text-xs font-bold text-slate-900">Clientes Frecuentes</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Ranking de fidelidad con historial de visitas y monto total consumido.</p>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-2">
+                  <i class="fas fa-file-excel"></i>
+                </div>
+                <h4 class="text-xs font-bold text-slate-900">Exportación a CSV / Excel</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes e ingresos para tu contabilidad.</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button id="dash-upgrade-reports-pro-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-rocket"></i> Activar Plan Profesional ($18/mes)
+              </button>
+              <button id="dash-upgrade-reports-unlimited-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-crown text-amber-300"></i> Plan Ilimitado ($35/mes)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Cálculos para Plan Profesional e Ilimitado
+    const validAppointments = appointments.filter(a => a.status !== 'cancelled');
+    const completedAppointments = appointments.filter(a => a.status === 'completed');
+    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
+    const revenueAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed');
+
+    const totalRevenue = revenueAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+    const totalAppointmentsCount = appointments.length;
+    const completedCount = completedAppointments.length;
+    const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
+    const attendanceRate = totalAppointmentsCount > 0 ? Math.round(((completedCount + confirmedAppointments.length) / totalAppointmentsCount) * 100) : 100;
+    const avgTicket = revenueAppointments.length > 0 ? Math.round(totalRevenue / revenueAppointments.length) : 0;
+
+    // Ingresos del Mes Actual
+    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+    const monthAppointments = revenueAppointments.filter(a => (a.date || '').startsWith(currentMonthPrefix));
+    const monthRevenue = monthAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+
+    // Agrupación de Clientes Frecuentes
+    const clientMap = new Map();
+    appointments.forEach(apt => {
+      const phone = (apt.clientPhone || '').trim();
+      const name = (apt.clientName || 'Cliente').trim();
+      const key = phone || name.toLowerCase();
+
+      if (!clientMap.has(key)) {
+        clientMap.set(key, {
+          name,
+          phone,
+          totalBookings: 0,
+          completedBookings: 0,
+          cancelledBookings: 0,
+          totalSpent: 0,
+          lastDate: apt.date || '',
+          services: new Set()
+        });
+      }
+
+      const c = clientMap.get(key);
+      c.totalBookings += 1;
+      if (apt.status === 'completed') c.completedBookings += 1;
+      if (apt.status === 'cancelled') c.cancelledBookings += 1;
+      if (apt.status === 'confirmed' || apt.status === 'completed') {
+        c.totalSpent += (Number(apt.servicePrice) || 0);
+      }
+      if (apt.serviceName) c.services.add(apt.serviceName);
+      if (apt.date && (!c.lastDate || apt.date > c.lastDate)) {
+        c.lastDate = apt.date;
+      }
+    });
+
+    const frequentClients = Array.from(clientMap.values()).sort((a, b) => b.totalBookings - a.totalBookings || b.totalSpent - a.totalSpent);
+
+    // Agrupación de Servicios Populares
+    const serviceMap = new Map();
+    validAppointments.forEach(apt => {
+      const sName = apt.serviceName || 'Servicio General';
+      if (!serviceMap.has(sName)) {
+        serviceMap.set(sName, { name: sName, count: 0, revenue: 0 });
+      }
+      const s = serviceMap.get(sName);
+      s.count += 1;
+      if (apt.status === 'confirmed' || apt.status === 'completed') {
+        s.revenue += (Number(apt.servicePrice) || 0);
+      }
+    });
+    const topServices = Array.from(serviceMap.values()).sort((a, b) => b.count - a.count);
+
+    return `
+      <div class="space-y-6">
+        <!-- Encabezado de Reportes -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full ${isUnlimited ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-900'} text-[11px] font-black uppercase tracking-wider">
+                <i class="fas ${isUnlimited ? 'fa-infinity' : 'fa-star'}"></i> ${isUnlimited ? 'Plan Ilimitado' : 'Plan Profesional'}
+              </span>
+              <span class="text-xs text-slate-400 font-semibold">• Módulo de Analítica Oficial</span>
+            </div>
+            <h2 class="text-xl font-black text-slate-900 mt-1">Reportes Financieros y Fidelidad de Clientes</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Estadísticas en tiempo real de ingresos recaudados, clientes recurrentes y demanda de servicios.</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="export-reports-csv-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer">
+              <i class="fas fa-file-excel"></i> Exportar Reporte a Excel (CSV)
+            </button>
+          </div>
+        </div>
+
+        <!-- Tarjetas de Métricas Financieras Clave -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Ingresos Totales -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs relative overflow-hidden">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Ingresos Totales</span>
+              <div class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-black">
+                ₡
+              </div>
+            </div>
+            <span class="text-2xl font-black text-slate-900">${this.formatColones(totalRevenue)}</span>
+            <span class="text-[11px] text-emerald-600 font-bold block mt-1">Reservas confirmadas y completadas</span>
+          </div>
+
+          <!-- Ingresos Mes Actual -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Ingresos Este Mes</span>
+              <i class="fas fa-calendar-check text-blue-600"></i>
+            </div>
+            <span class="text-2xl font-black text-slate-900">${this.formatColones(monthRevenue)}</span>
+            <span class="text-[11px] text-blue-600 font-bold block mt-1">${monthAppointments.length} citas en ${new Date().toLocaleString('es-CR', { month: 'long' })}</span>
+          </div>
+
+          <!-- Ticket Promedio -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Ticket Promedio</span>
+              <i class="fas fa-receipt text-indigo-600"></i>
+            </div>
+            <span class="text-2xl font-black text-slate-900">${this.formatColones(avgTicket)}</span>
+            <span class="text-[11px] text-slate-400 block mt-1">Gasto medio por cliente atendido</span>
+          </div>
+
+          <!-- Tasa de Asistencia / Cumplimiento -->
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider">Tasa de Asistencia</span>
+              <i class="fas fa-user-check text-purple-600"></i>
+            </div>
+            <span class="text-2xl font-black ${attendanceRate >= 80 ? 'text-emerald-600' : 'text-amber-600'}">${attendanceRate}%</span>
+            <span class="text-[11px] text-slate-400 block mt-1">${completedCount} completadas • ${cancelledCount} canceladas</span>
+          </div>
+        </div>
+
+        <!-- Grid 2 Columnas: Clientes Frecuentes & Servicios Más Populares -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Tabla de Clientes Frecuentes (2 Columnas) -->
+          <div class="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+              <div>
+                <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <i class="fas fa-award text-amber-500"></i> Clientes Frecuentes y Fidelidad (${frequentClients.length})
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Tus clientes más recurrentes ordenados por número de visitas y compras.</p>
+              </div>
+            </div>
+
+            ${frequentClients.length === 0 ? `
+              <p class="text-xs text-slate-400 py-8 text-center">Aún no se registran citas para generar el ranking de clientes.</p>
+            ` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead>
+                    <tr class="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-bold">
+                      <th class="py-2.5 px-3">Cliente</th>
+                      <th class="py-2.5 px-3 text-center">Reservas</th>
+                      <th class="py-2.5 px-3 text-right">Total Invertido</th>
+                      <th class="py-2.5 px-3 text-center">Última Visita</th>
+                      <th class="py-2.5 px-3 text-right">Contacto</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${frequentClients.slice(0, 10).map((c, idx) => `
+                      <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="py-3 px-3">
+                          <div class="flex items-center gap-2.5">
+                            <span class="w-6 h-6 rounded-full ${idx === 0 ? 'bg-amber-400 text-slate-950 font-black' : idx === 1 ? 'bg-slate-300 text-slate-900 font-bold' : idx === 2 ? 'bg-amber-700 text-white font-bold' : 'bg-slate-100 text-slate-600'} flex items-center justify-center text-[10px] flex-shrink-0">
+                              ${idx + 1}
+                            </span>
+                            <div>
+                              <strong class="font-bold text-slate-900 block">${this.escapeHtml(c.name)}</strong>
+                              <span class="text-[10px] text-slate-400">${c.phone || 'Sin WhatsApp'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="py-3 px-3 text-center">
+                          <span class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 font-black text-xs">
+                            ${c.totalBookings}
+                          </span>
+                        </td>
+                        <td class="py-3 px-3 text-right font-extrabold text-emerald-700">
+                          ${this.formatColones(c.totalSpent)}
+                        </td>
+                        <td class="py-3 px-3 text-center text-slate-500 font-medium">
+                          ${c.lastDate ? this.formatDateDMY(c.lastDate) : 'Reciente'}
+                        </td>
+                        <td class="py-3 px-3 text-right">
+                          ${c.phone ? `
+                            <a 
+                              href="https://wa.me/506${c.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${c.name}, te saludamos de ${currentBiz.name}. ¡Agradecemos tu preferencia como cliente frecuente!`)}" 
+                              target="_blank" 
+                              class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold transition-all border border-emerald-200"
+                              title="Enviar mensaje por WhatsApp"
+                            >
+                              <i class="fab fa-whatsapp text-emerald-600"></i> WhatsApp
+                            </a>
+                          ` : '<span class="text-slate-400 text-[10px]">-</span>'}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+
+          <!-- Servicios Más Solicitados / Demandados -->
+          <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="mb-4 pb-3 border-b border-slate-100">
+                <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <i class="fas fa-fire text-amber-500"></i> Servicios Populares
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Demanda e ingresos por catálogo.</p>
+              </div>
+
+              ${topServices.length === 0 ? `
+                <p class="text-xs text-slate-400 py-6 text-center">No hay servicios registrados con reservas aún.</p>
+              ` : `
+                <div class="space-y-3.5">
+                  ${topServices.slice(0, 6).map(s => {
+                    const pct = validAppointments.length > 0 ? Math.round((s.count / validAppointments.length) * 100) : 0;
+                    return `
+                      <div class="space-y-1">
+                        <div class="flex items-center justify-between text-xs">
+                          <span class="font-bold text-slate-800 truncate max-w-[150px]">${this.escapeHtml(s.name)}</span>
+                          <span class="font-black text-blue-600">${s.count} citas <span class="text-slate-400 font-normal">(${this.formatColones(s.revenue)})</span></span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `}
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 p-3 bg-slate-50 rounded-2xl text-[11px] text-slate-600 flex items-center gap-2">
+              <i class="fas fa-lightbulb text-amber-500 text-sm flex-shrink-0"></i>
+              <span><strong>Consejo:</strong> Premia a tus clientes del Top 3 con descuentos en sus servicios favoritos para aumentar su retención.</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  exportBusinessReportsCSV(currentBiz, appointments) {
+    if (!appointments || appointments.length === 0) {
+      this.showToast('No hay datos de reservas para exportar.', 'info');
+      return;
+    }
+
+    const headers = ['ID Reserva', 'Cliente', 'Telefono', 'Servicio', 'Precio CRC', 'Fecha', 'Hora', 'Estado', 'Especialista'];
+    const rows = appointments.map(a => [
+      `"${a.id || ''}"`,
+      `"${(a.clientName || '').replace(/"/g, '""')}"`,
+      `"${(a.clientPhone || '').replace(/"/g, '""')}"`,
+      `"${(a.serviceName || '').replace(/"/g, '""')}"`,
+      `"${a.servicePrice || 0}"`,
+      `"${a.date || ''}"`,
+      `"${a.time || ''}"`,
+      `"${a.status || ''}"`,
+      `"${(a.staffName || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `reporte_reservas_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.showToast('¡Reporte exportado exitosamente a CSV!', 'success');
   }
 
   // --- SUB-CONTENIDO: GESTIÓN DE EQUIPO Y ESPECIALISTAS ---
@@ -8665,6 +9029,7 @@ class App {
 
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Correo Electrónico</label>
+                <input type="email" id="edit-biz-email" value="${this.escapeHtml(biz.email || '')}" placeholder="contacto@negocio.cr" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 foc
                 <input type="email" id="edit-biz-email" value="${this.escapeHtml(biz.email || '')}" placeholder="contacto@negocio.cr" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
