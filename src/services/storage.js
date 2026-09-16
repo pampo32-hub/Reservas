@@ -627,14 +627,15 @@ class StorageService {
     
     // Normalizar límites y precios de planes para asegurar coherencia total
     return list.map(b => {
-      if (b.plan === 'pro' && (b.monthlyBookingLimit === 200 || !b.monthlyBookingLimit)) {
-        return { ...b, monthlyBookingLimit: 300, planPriceUsd: 18.00 };
+      const plan = b.plan || 'basic';
+      if (plan === 'pro') {
+        return { ...b, plan: 'pro', monthlyBookingLimit: (b.monthlyBookingLimit && b.monthlyBookingLimit > 300) ? b.monthlyBookingLimit : 300, planPriceUsd: 18.00 };
       }
-      if (b.plan === 'basic' && (b.monthlyBookingLimit === 50 || !b.monthlyBookingLimit)) {
-        return { ...b, monthlyBookingLimit: 150, planPriceUsd: 10.00 };
+      if (plan === 'basic') {
+        return { ...b, plan: 'basic', monthlyBookingLimit: 150, planPriceUsd: 10.00 };
       }
-      if (b.plan === 'unlimited') {
-        return { ...b, monthlyBookingLimit: null, planPriceUsd: 35.00 };
+      if (plan === 'unlimited') {
+        return { ...b, plan: 'unlimited', monthlyBookingLimit: null, planPriceUsd: 35.00 };
       }
       return b;
     });

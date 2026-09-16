@@ -874,7 +874,7 @@ app.get('/api/businesses', async (req, res) => {
       blockReason: b.block_reason || '',
       plan: b.plan || 'pro',
       planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18)),
-      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.plan === 'basic' ? 150 : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows
@@ -930,7 +930,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       blockReason: b.block_reason || '',
       plan: b.plan || 'pro',
       planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18)),
-      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.plan === 'basic' ? 150 : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
@@ -1299,7 +1299,8 @@ app.get('/api/businesses/:id/booking-usage', async (req, res) => {
     }
 
     const biz = bizRes.rows[0];
-    const limit = biz.monthly_booking_limit;
+    const plan = biz.plan || 'basic';
+    const limit = plan === 'unlimited' ? null : (plan === 'pro' ? ((biz.monthly_booking_limit && parseInt(biz.monthly_booking_limit, 10) > 300) ? parseInt(biz.monthly_booking_limit, 10) : 300) : (plan === 'basic' ? 150 : (biz.monthly_booking_limit ? parseInt(biz.monthly_booking_limit, 10) : 150)));
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
