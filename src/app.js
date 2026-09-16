@@ -750,25 +750,51 @@ class App {
           <span class="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
             <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} <span class="text-slate-700 font-normal">(${biz.reviewsCount || 0})</span>
           </span>
+          <!-- Rating Badge -->
+          <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-slate-900 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md">
+            <i class="fas fa-star text-amber-400"></i>
+            <span>${biz.rating || '5.0'}</span>
+            <span class="text-slate-500 font-normal">(${biz.reviewsCount || 0})</span>
+          </div>
 
           <div class="absolute bottom-3 left-3 right-3 text-white">
             <span class="text-xs font-semibold text-slate-200 flex items-center gap-1">
               <i class="fas fa-map-marker-alt text-rose-400"></i> ${this.escapeHtml(biz.city || 'Costa Rica')}
             </span>
+          <!-- Ubicación sobre la imagen -->
+          <div class="absolute bottom-3 left-3 text-white text-xs font-semibold flex items-center gap-1.5 drop-shadow-md">
+            <i class="fas fa-map-marker-alt text-rose-400"></i>
+            <span class="truncate max-w-[200px]">${this.escapeHtml(biz.city || 'Costa Rica')}</span>
           </div>
         </div>
 
         <!-- Content Body -->
         <div class="p-5 flex-1 flex flex-col justify-between">
+        <!-- Content -->
+        <div class="p-6 flex-1 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between gap-2">
               <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                 ${this.escapeHtml(biz.name)}
               </h3>
               ${isUnlimited ? `<span class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md flex-shrink-0">Preferencial</span>` : ''}
+            <!-- Category Tag -->
+            <div class="mb-2.5">
+              <span class="text-[11px] font-bold tracking-wider uppercase text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100/80">
+                ${this.escapeHtml(biz.categoryLabel || biz.category || 'General')}
+              </span>
             </div>
             <p class="text-xs text-slate-500 mt-1 line-clamp-2">
               ${this.escapeHtml(biz.description || '')}
+
+            <!-- Name -->
+            <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+              ${this.escapeHtml(biz.name)}
+            </h3>
+
+            <!-- Description -->
+            <p class="text-slate-600 text-xs mt-2 line-clamp-2 leading-relaxed">
+              ${this.escapeHtml(biz.description || 'Servicios profesionales y atención personalizada.')}
             </p>
 
             <!-- Key Services Preview -->
@@ -780,14 +806,32 @@ class App {
                     <span class="font-extrabold text-blue-600 flex-shrink-0">${this.formatColones(srv.price)}</span>
                   </div>
                 `).join('')}
+            <!-- Previsualización de Servicios Destacados -->
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <div class="space-y-1.5">
+                ${biz.services && biz.services.length > 0 
+                  ? biz.services.slice(0, 2).map(s => `
+                    <div class="flex justify-between items-center text-xs py-0.5">
+                      <span class="text-slate-600 truncate mr-2">${this.escapeHtml(s.name)}</span>
+                      <span class="font-bold text-blue-600 shrink-0">₡${(s.price || 0).toLocaleString()}</span>
+                    </div>
+                  `).join('')
+                  : '<span class="text-xs text-slate-500">Consultar catálogo</span>'
+                }
               </div>
             ` : ''}
+            </div>
 
             <!-- Schedule info -->
             <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
               <span class="flex items-center gap-1.5 font-medium">
                 <i class="far fa-clock text-blue-600"></i> 
                 ${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}
+            <!-- Schedule & Count -->
+            <div class="mt-4 flex items-center justify-between text-xs text-slate-600 pt-3 border-t border-slate-50">
+              <span class="flex items-center gap-1.5">
+                <i class="far fa-clock text-blue-500"></i>
+                ${biz.schedule ? `${this.formatTime(biz.schedule.openTime)} - ${this.formatTime(biz.schedule.closeTime)}` : 'Horario flexible'}
               </span>
               <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
                 ${biz.services ? biz.services.length : 0} servicios
@@ -806,6 +850,20 @@ class App {
               <i class="fas ${isBlocked ? 'fa-lock' : 'fa-arrow-right'} text-xs"></i>
             </button>
 
+            <!-- Barra de Administración Rápida de Negocios (Bloquear, Modificar, Eliminar) -->
+            <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
+              <!-- 1. Bloquear / Desbloquear -->
+              <button 
+                type="button"
+                class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
+                data-biz-id="${biz.id}"
+                data-biz-name="${this.escapeHtml(biz.name)}"
+                data-is-blocked="${isBlocked}"
+                title="${isBlocked ? 'Desbloquear negocio' : 'Bloquear negocio'}"
+              >
+                <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'} text-xs"></i>
+                <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
+              </button>
             <!-- Barra de Administración Rápida de Negocios (Solo visible para Developer / SuperAdmin) -->
             ${isDev ? `
               <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
@@ -822,6 +880,16 @@ class App {
                   <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
                 </button>
 
+              <!-- 2. Modificar -->
+              <button 
+                type="button"
+                class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                data-biz-id="${biz.id}"
+                title="Modificar y editar información del negocio"
+              >
+                <i class="fas fa-edit text-xs"></i>
+                <span>Modificar</span>
+              </button>
                 <!-- 2. Modificar -->
                 <button 
                   type="button"
@@ -833,6 +901,18 @@ class App {
                   <span>Modificar</span>
                 </button>
 
+              <!-- 3. Eliminar -->
+              <button 
+                type="button"
+                class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                data-biz-id="${biz.id}"
+                data-biz-name="${this.escapeHtml(biz.name)}"
+                title="Eliminar este negocio permanentemente"
+              >
+                <i class="fas fa-trash-alt text-xs"></i>
+                <span>Eliminar</span>
+              </button>
+            </div>
                 <!-- 3. Eliminar -->
                 <button 
                   type="button"
@@ -2912,11 +2992,11 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
             <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
-            <i class="fas fa-image mr-1.5"></i> Perfil, Fotos & Banner
-          </button>
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
             <i class="fas fa-clock mr-1.5"></i> Horarios de Atención
+          </button>
+          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
+            <i class="fas fa-sliders-h mr-1.5 text-indigo-500"></i> Configurar Negocio
           </button>
         </div>
 
@@ -3248,11 +3328,18 @@ class App {
         'Café de Cortesía', 'Sala de Espera', 'Atención Personalizada', 'Garantía por Escrito'
       ];
       const currentFeatures = currentBiz.features || [];
+      const categories = storage.getCategories();
 
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-3xl">
-          <h2 class="text-lg font-bold text-slate-900 mb-1">Editar Perfil, Fotos & Banner</h2>
-          <p class="text-xs text-slate-500 mb-6">Personaliza la imagen y los datos de contacto que ven tus clientes en el directorio.</p>
+          <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                <i class="fas fa-sliders-h text-indigo-600"></i> Configurar Negocio
+              </h2>
+              <p class="text-xs text-slate-500">Personaliza la imagen, ubicación, datos de contacto, categoría y fotos que ven tus clientes en el directorio.</p>
+            </div>
+          </div>
 
           <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
             <!-- Sección Fotos con Guía de Medidas -->
@@ -3297,34 +3384,42 @@ class App {
             <!-- Datos Generales -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Nombre del Negocio *</label>
-                <input type="text" id="edit-biz-name" value="${currentBiz.name}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+                <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
+                <input type="text" id="edit-biz-name" value="${this.escapeHtml(currentBiz.name)}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
               </div>
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Ciudad / Cantón *</label>
-                <input type="text" id="edit-biz-city" value="${currentBiz.city}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
+                <select id="edit-biz-category" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  ${categories.map(c => `<option value="${c.id}" ${currentBiz.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                </select>
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp *</label>
-                <input type="tel" id="edit-biz-phone" value="${currentBiz.phone}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
+                <input type="text" id="edit-biz-city" value="${this.escapeHtml(currentBiz.city || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
               <div>
-                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico</label>
-                <input type="email" id="edit-biz-email" value="${currentBiz.email || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                <input type="tel" id="edit-biz-phone" value="${this.escapeHtml(currentBiz.phone || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
               </div>
             </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-              <input type="text" id="edit-biz-address" value="${currentBiz.address || ''}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico de Contacto</label>
+                <input type="email" id="edit-biz-email" value="${this.escapeHtml(currentBiz.email || '')}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              </div>
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
+                <input type="text" id="edit-biz-address" value="${this.escapeHtml(currentBiz.address || '')}" placeholder="100m Norte de..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              </div>
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 mb-1">Descripción del Negocio</label>
-              <textarea id="edit-biz-desc" rows="3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">${currentBiz.description || ''}</textarea>
+              <textarea id="edit-biz-desc" rows="3" placeholder="Describe tus especialidades y experiencia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">${this.escapeHtml(currentBiz.description || '')}</textarea>
             </div>
 
             <!-- Redes Sociales y Enlaces Web -->
@@ -3380,8 +3475,9 @@ class App {
               </div>
             </div>
 
-            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/25 transition-all text-sm">
-              <i class="fas fa-save mr-1.5"></i> Guardar Cambios de Perfil
+            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fas fa-save mr-1.5"></i>
+              <span>Guardar Configuración del Negocio</span>
             </button>
           </form>
         </div>
@@ -4587,6 +4683,9 @@ class App {
     profileForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('edit-biz-name').value;
+      const categoryId = document.getElementById('edit-biz-category')?.value || currentBiz.category;
+      const catObj = storage.getCategories().find(c => c.id === categoryId);
+      const categoryLabel = catObj ? catObj.name : (currentBiz.categoryLabel || categoryId);
       const city = document.getElementById('edit-biz-city').value;
       const phone = document.getElementById('edit-biz-phone').value;
       const email = document.getElementById('edit-biz-email').value;
@@ -4604,6 +4703,8 @@ class App {
       await storage.saveBusiness({
         ...currentBiz,
         name,
+        category: categoryId,
+        categoryLabel,
         city,
         phone,
         email,
@@ -4615,7 +4716,7 @@ class App {
         socialLinks
       });
 
-      this.showToast('¡Perfil del negocio actualizado con éxito!', 'success');
+      this.showToast('¡Configuración del negocio guardada con éxito!', 'success');
       this.renderCurrentView();
     });
 
@@ -7163,7 +7264,7 @@ class App {
             ` : ''}
 
             ${mode === 'register' && role === 'business' ? `
-              <!-- FORM 4: REGISTRO NUEVO NEGOCIO -->
+              <!-- FORM 4: REGISTRO NUEVO NEGOCIO (RÁPIDO Y SENCILLO) -->
               <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
                 
                 <!-- 1. SELECCIÓN DE PLAN DE SUSCRIPCIÓN -->
@@ -7274,11 +7375,11 @@ class App {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
-                      <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                      <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                     <div>
                       <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
-                      <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
+                      <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                   </div>
 
@@ -7297,129 +7398,46 @@ class App {
                   <div id="biz-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
                 </div>
 
-                <!-- 3. Datos Comerciales -->
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-                  <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <!-- 3. Datos Básicos del Negocio -->
+                <div class="space-y-3">
                   <div>
-                    <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
-                    <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                      ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                      <option value="otra" class="font-bold text-blue-600">➕ Otra Categoría (Personalizada)</option>
-                    </select>
+                    <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
+                    <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   </div>
 
-                  <div>
-                    <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
-                    <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  </div>
-                </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
+                      <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        <option value="otra" class="font-bold text-blue-600">➕ Otra Categoría (Personalizada)</option>
+                      </select>
+                    </div>
 
-                <!-- Caja para Categoría Personalizada (Aparece al seleccionar 'Otra Categoría') -->
-                <div id="new-biz-custom-cat-box" class="hidden p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl animate-fade-in space-y-1">
-                  <div class="flex items-center justify-between">
-                    <label class="block text-xs font-bold text-blue-900">Escribe el Nombre de tu Nueva Categoría *</label>
-                    <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Notificará al Developer</span>
+                    <div>
+                      <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
+                      <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
                   </div>
-                  <input type="text" id="new-biz-custom-cat" placeholder="Ej. Jardinería, Clases de Música, Lavado de Muebles..." class="w-full px-3.5 py-2 bg-white border border-blue-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- Caja para Categoría Personalizada (Aparece al seleccionar 'Otra Categoría') -->
+                  <div id="new-biz-custom-cat-box" class="hidden p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl animate-fade-in space-y-1">
+                    <div class="flex items-center justify-between">
+                      <label class="block text-xs font-bold text-blue-900">Escribe el Nombre de tu Nueva Categoría *</label>
+                      <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Notificará al Developer</span>
+                    </div>
+                    <input type="text" id="new-biz-custom-cat" placeholder="Ej. Jardinería, Clases de Música, Lavado de Muebles..." class="w-full px-3.5 py-2 bg-white border border-blue-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  </div>
+
                   <div>
                     <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
                     <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   </div>
-                  <div>
-                    <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-                    <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  </div>
                 </div>
 
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Descripción</label>
-                  <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-                </div>
-
-                <!-- Fotos con Guía de Medidas -->
-                <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
-                  <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
-                    <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
-                  </span>
-
-                  <div>
-                    <div class="flex items-center justify-between mb-1">
-                      <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
-                      <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
-                    </div>
-                    <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-                  </div>
-
-                  <div>
-                    <div class="flex items-center justify-between mb-1">
-                      <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
-                      <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
-                    </div>
-                    <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-                  </div>
-                </div>
-
-                <!-- Redes Sociales y Enlaces Web (Opcional) -->
-                <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                      <i class="fas fa-share-alt mr-1 text-blue-600"></i> Redes Sociales y Web (Opcional)
-                    </span>
-                    <span class="text-[10px] text-slate-400 font-medium">Se mostrarán en tu perfil</span>
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-pink-600 text-xs">
-                        <i class="fab fa-instagram"></i>
-                      </div>
-                      <input type="text" id="new-biz-instagram" placeholder="Instagram (ej. @minegocio)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-pink-400 focus:outline-none">
-                    </div>
-
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-600 text-xs">
-                        <i class="fab fa-facebook"></i>
-                      </div>
-                      <input type="text" id="new-biz-facebook" placeholder="Facebook (ej. facebook.com/minegocio)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                    </div>
-
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-900 text-xs">
-                        <i class="fab fa-tiktok"></i>
-                      </div>
-                      <input type="text" id="new-biz-tiktok" placeholder="TikTok (ej. @minegocio)" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none">
-                    </div>
-
-                    <div class="relative">
-                      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-600 text-xs">
-                        <i class="fas fa-globe"></i>
-                      </div>
-                      <input type="text" id="new-biz-website" placeholder="Sitio Web / Menú Digital" class="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Primer Servicio -->
-                <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                  <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                    <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
-                  </span>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div class="sm:col-span-2">
-                      <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-                    </div>
-                    <div>
-                      <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
-                    </div>
-                  </div>
+                <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
+                  <i class="fas fa-info-circle text-blue-600 mt-0.5 flex-shrink-0 text-sm"></i>
+                  <span><strong>¡Registro rápido!</strong> Tus fotos, servicios, horarios, redes sociales y ubicación exacta los podrás personalizar dentro de tu panel en la pestaña <strong>"Configurar Negocio"</strong>.</span>
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
@@ -7760,13 +7778,13 @@ class App {
       const name = document.getElementById('new-biz-name').value;
       const catSelectVal = document.getElementById('new-biz-cat').value;
       const city = document.getElementById('new-biz-city').value;
-      const phone = document.getElementById('new-biz-phone').value;
-      const address = document.getElementById('new-biz-address').value;
-      const description = document.getElementById('new-biz-desc').value;
-      const image = document.getElementById('new-biz-image').value;
-      const coverImage = document.getElementById('new-biz-cover').value;
-      const firstSrvName = document.getElementById('first-srv-name').value;
-      const firstSrvPrice = document.getElementById('first-srv-price').value;
+      const phone = document.getElementById('new-biz-phone')?.value.trim() || '';
+      const address = document.getElementById('new-biz-address')?.value.trim() || city || 'Costa Rica';
+      const description = document.getElementById('new-biz-desc')?.value.trim() || 'Servicios profesionales y atención personalizada.';
+      const image = document.getElementById('new-biz-image')?.value.trim() || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80';
+      const coverImage = document.getElementById('new-biz-cover')?.value.trim() || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80';
+      const firstSrvName = document.getElementById('first-srv-name')?.value.trim() || 'Servicio General';
+      const firstSrvPrice = document.getElementById('first-srv-price')?.value || 10000;
       const instagram = document.getElementById('new-biz-instagram')?.value.trim() || '';
       const facebook = document.getElementById('new-biz-facebook')?.value.trim() || '';
       const tiktok = document.getElementById('new-biz-tiktok')?.value.trim() || '';
@@ -7844,8 +7862,8 @@ class App {
           email,
           address,
           description,
-          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+          image,
+          coverImage,
           isDemo: false,
           features: ['Sinpe Móvil', 'Atención Personalizada'],
           socialLinks,
