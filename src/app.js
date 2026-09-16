@@ -968,22 +968,9 @@ class App {
               <span class="bg-rose-600 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-rose-400 animate-pulse">
                 <i class="fas fa-ban"></i> Negocio Bloqueado
               </span>
-            ` : isUnlimited ? `
-              <span class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-purple-400/40 animate-pulse">
-                <i class="fas fa-crown text-amber-300"></i> Top Destacado
-              </span>
-            ` : isPro ? `
-              <span class="bg-amber-500 text-slate-950 backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-md border border-amber-300">
-                <i class="fas fa-check-circle text-slate-950"></i> Negocio Verificado
-              </span>
-            ` : biz.isDemo ? `
             ` : `
               <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
                 <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
-              </span>
-            ` : `
-              <span class="bg-emerald-600/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md">
-                <i class="fas fa-store text-emerald-200"></i> Negocio Registrado
               </span>
             `}
             <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
@@ -1674,14 +1661,9 @@ class App {
                   <span class="px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
-                ` : biz.isDemo ? `
                 ` : `
                   <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-flask mr-1"></i> Comercio de Muestra
-                  </span>
-                ` : `
-                  <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
-                    <i class="fas fa-check-circle mr-1"></i> Comercio Registrado
                   </span>
                 `}
                 <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider">
