@@ -8660,29 +8660,6 @@ class App {
                   <span>Ingresar al Panel de Negocio</span>
                 </button>
               </form>
-
-              <!-- Acceso Rápido Demo -->
-              <div class="pt-4 border-t border-slate-100">
-                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
-                <div class="grid grid-cols-2 gap-2">
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="barberia@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Barbería Vintage</span>
-                    <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="dental@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Clínica Dental</span>
-                    <span class="text-[10px] text-slate-400">dental@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="spa@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">Serenity Spa</span>
-                    <span class="text-[10px] text-slate-400">spa@demo.cr</span>
-                  </button>
-                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="taller@demo.cr" data-pass="123">
-                    <span class="font-bold block truncate">AutoCheck Taller</span>
-                    <span class="text-[10px] text-slate-400">taller@demo.cr</span>
-                  </button>
-                </div>
-              </div>
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
@@ -8740,6 +8717,10 @@ class App {
                   <i class="fas fa-user-plus"></i>
                   <span>Crear Cuenta de Cliente</span>
                 </button>
+
+                <p class="text-[11px] text-slate-500 text-center leading-tight pt-1">
+                  Al registrarte aceptas nuestros <button type="button" class="open-terms-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Términos</button> y la <button type="button" class="open-privacy-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button>.
+                </p>
               </form>
             ` : ''}
 
@@ -8927,6 +8908,10 @@ class App {
                   <i class="fas fa-check-circle"></i>
                   <span>Crear Cuenta y Registrar Negocio</span>
                 </button>
+
+                <p class="text-[11px] text-slate-500 text-center leading-tight pt-1">
+                  Al registrar tu negocio aceptas nuestros <button type="button" class="open-terms-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Términos</button> y la <button type="button" class="open-privacy-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button>.
+                </p>
               </form>
             ` : ''}
           </div>
@@ -9483,7 +9468,7 @@ class App {
             </button>
             
             <p class="text-[10px] text-slate-400 text-center leading-tight">
-              🔒 Tus datos son confidenciales y solo se usarán para coordinar tu acceso prioritario en Costa Rica.
+              🔒 Al pre-registrarte aceptas nuestros <button type="button" class="open-terms-modal text-blue-600 underline font-bold hover:text-blue-700 inline cursor-pointer">Términos</button> y la <button type="button" class="open-privacy-modal text-blue-600 underline font-bold hover:text-blue-700 inline cursor-pointer">Política de Privacidad</button>. Tus datos están protegidos bajo la Ley N° 8968 de Costa Rica.
             </p>
           </form>
         </div>
@@ -11263,11 +11248,234 @@ class App {
       });
     });
 
-    window.addEventListener('appinstalled', () => {
-      this.isPwaInstalled = true;
-      this.deferredPwaPrompt = null;
-      console.log('✅ [PWA] App instalada con éxito en el dispositivo.');
+    // Global listener for terms and privacy modal triggers
+    document.addEventListener('click', (e) => {
+      const termsTarget = e.target.closest('.open-terms-modal');
+      if (termsTarget) {
+        e.preventDefault();
+        this.renderLegalModal('terms');
+        return;
+      }
+      const privacyTarget = e.target.closest('.open-privacy-modal');
+      if (privacyTarget) {
+        e.preventDefault();
+        this.renderLegalModal('privacy');
+        return;
+      }
     });
+  }
+
+  // --- MODAL DE TÉRMINOS, CONDICIONES Y PRIVACIDAD ---
+  renderLegalModal(initialTab = 'terms') {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    let currentTab = initialTab;
+
+    const renderContent = () => {
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+            
+            <!-- Header -->
+            <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative shrink-0 border-b border-slate-800">
+              <button id="close-legal-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+                <i class="fas fa-times text-xs"></i>
+              </button>
+              
+              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
+                  <i class="fas fa-shield-alt"></i> Marco Legal & Confidencialidad
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
+                  <i class="fas fa-certificate text-[9px]"></i> Ley N° 8968 Costa Rica 🇨🇷
+                </span>
+              </div>
+
+              <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Términos de Servicio & Política de Privacidad</h2>
+              <p class="text-xs text-slate-300 mt-1">Transparencia, seguridad y protección de datos para comercios y clientes en Costa Rica.</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex border-b border-slate-200 bg-slate-50 px-4 sm:px-6 pt-3 gap-2 shrink-0">
+              <button id="tab-btn-terms" class="px-4 py-2.5 rounded-t-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer ${currentTab === 'terms' ? 'bg-white text-blue-700 border-t-2 border-l border-r border-slate-200 -mb-px shadow-2xs' : 'text-slate-500 hover:text-slate-800'}">
+                <i class="fas fa-file-contract"></i>
+                <span>Términos y Condiciones</span>
+              </button>
+              <button id="tab-btn-privacy" class="px-4 py-2.5 rounded-t-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer ${currentTab === 'privacy' ? 'bg-white text-blue-700 border-t-2 border-l border-r border-slate-200 -mb-px shadow-2xs' : 'text-slate-500 hover:text-slate-800'}">
+                <i class="fas fa-user-shield"></i>
+                <span>Privacidad & Tratamiento de Datos</span>
+              </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-6 overflow-y-auto space-y-6 text-xs sm:text-sm text-slate-700 leading-relaxed flex-1 bg-white">
+              ${currentTab === 'terms' ? `
+                <!-- TÉRMINOS Y CONDICIONES -->
+                <div class="space-y-4 animate-fade-in">
+                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-950">
+                    <h3 class="font-black text-sm mb-1 flex items-center gap-2 text-blue-900">
+                      <i class="fas fa-info-circle text-blue-600"></i> Resumen de Términos
+                    </h3>
+                    <p class="text-xs text-blue-800">
+                      Reservas CR es una plataforma de software en la nube que conecta comercios locales con sus clientes para la gestión digital de reservas. Al utilizar nuestros servicios, aceptas las condiciones aquí detalladas.
+                    </p>
+                  </div>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">1</span>
+                      Naturaleza del Servicio e Intermediación Tecnológica
+                    </h4>
+                    <p>
+                      Reservas CR opera como un directorio comercial y herramienta SaaS (Software as a Service) de agendamiento. Reservas CR <strong>no presta ni ejecuta directamente los servicios físicos</strong> (cortes de cabello, servicios médicos, tratamientos estéticos, talleres mecánicos, entre otros) ofertados por los comercios independientes. La calidad, puntualidad, precios, facturación y ejecución de cada servicio recaen bajo la responsabilidad exclusiva del comercio prestador.
+                    </p>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">2</span>
+                      Periodo de Prueba de Lanzamiento (15 Días Gratis) y Suscripciones
+                    </h4>
+                    <p>
+                      Los comercios que se pre-registren o se registren durante el lanzamiento disfrutan de un periodo de <strong>15 días naturales de prueba 100% gratuita</strong> sin costo alguno ni obligación de ingresar tarjetas de crédito.
+                    </p>
+                    <p>
+                      Al culminar el periodo de prueba, el comercio podrá optar voluntariamente por suscribirse a uno de los planes mensuales oficiales (Básico $10/mes, Profesional $18/mes o Ilimitado $35/mes) pagaderos mediante SINPE Móvil o plataformas de pago habilitadas. El comercio podrá cancelar su plan en cualquier momento sin cláusulas de permanencia forzosa ni penalizaciones.
+                    </p>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">3</span>
+                      Compromisos de los Usuarios y Clientes
+                    </h4>
+                    <p>
+                      Los usuarios finales se comprometen a suministrar información verídica (nombre y número telefónico) y a presentarse puntualmente a las citas agendadas o bien cancelarlas con la anticipación debida a través de la plataforma para permitir que otros clientes aprovechen los horarios disponibles.
+                    </p>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">4</span>
+                      Notificaciones y Canales de Comunicación
+                    </h4>
+                    <p>
+                      Al solicitar una reserva o registrarse, el usuario autoriza el envío de notificaciones transaccionales necesarias (confirmaciones de cita, recordatorios previos al turno y solicitudes de calificación del servicio) a través de la API oficial de WhatsApp Cloud de Meta y/o correo electrónico.
+                    </p>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">5</span>
+                      Legislación Aplicable y Jurisdicción
+                    </h4>
+                    <p>
+                      Estos términos se rigen e interpretan de acuerdo con las leyes vigentes de la <strong>República de Costa Rica</strong>. Cualquier controversia será dirimida ante los tribunales competentes de San José, Costa Rica.
+                    </p>
+                  </section>
+                </div>
+              ` : `
+                <!-- POLÍTICA DE PRIVACIDAD Y TRATAMIENTO DE DATOS -->
+                <div class="space-y-4 animate-fade-in">
+                  <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950">
+                    <h3 class="font-black text-sm mb-1 flex items-center gap-2 text-emerald-900">
+                      <i class="fas fa-user-lock text-emerald-600"></i> Cumplimiento con Ley N° 8968 (Costa Rica)
+                    </h3>
+                    <p class="text-xs text-emerald-800 leading-relaxed">
+                      Garantizamos la privacidad y seguridad de los datos personales recopilados, respetando el derecho a la autodeterminación informativa de todos nuestros usuarios.
+                    </p>
+                  </div>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">1</span>
+                      Datos Recopilados
+                    </h4>
+                    <p>
+                      Recopilamos únicamente los datos indispensables para coordinar y confirmar los servicios: nombre del cliente, número de teléfono/WhatsApp, correo electrónico, cantón o provincia, y el historial de citas agendadas con los comercios.
+                    </p>
+                  </section>
+
+                  <!-- CLÁUSULA DESTACADA DE TITULARIDAD EXCLUSIVA DEL COMERCIO -->
+                  <section class="p-4.5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 space-y-2 text-amber-950 shadow-xs">
+                    <h4 class="font-black text-amber-900 text-sm flex items-center gap-2">
+                      <i class="fas fa-store-alt text-amber-600"></i>
+                      2. Titularidad, Uso y Descarga Exclusiva de Datos por el Comercio
+                    </h4>
+                    <p class="text-xs sm:text-sm font-medium leading-relaxed">
+                      <strong>Los únicos autorizados y con derecho legal a acceder, registrar, consultar y descargar los datos de los clientes son exclusivamente los propios comercios</strong> con los que el usuario ha solicitado un servicio o cita.
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-amber-900 pt-1 font-semibold">
+                      <li><strong>Registro y control de ventas:</strong> Los comercios utilizan la información de sus clientes para llevar su control administrativo, historial de atención y facturación.</li>
+                      <li><strong>Programas de cliente frecuente y promociones:</strong> El comercio puede contactar a sus propios clientes con descuentos, promociones directas o fidelización por frecuencia.</li>
+                      <li><strong>Exportación y descarga de reportes:</strong> El comercio es el único facultado para descargar sus listados de clientes y reportes de citas en formato digital (Excel / CSV) para su gestión contable y operativa interna.</li>
+                    </ul>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">3</span>
+                      No Comercialización a Terceros
+                    </h4>
+                    <p>
+                      Reservas CR <strong>no vende, no alquila ni comercializa bases de datos</strong> de clientes ni de comercios a empresas externas, agencias de publicidad de terceros ni entidades ajenas a la relación directa entre el comercio y su cliente.
+                    </p>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">4</span>
+                      Seguridad y Almacenamiento en la Nube
+                    </h4>
+                    <p>
+                      La información se almacena en bases de datos PostgreSQL de última generación con conexiones cifradas SSL/TLS y copias de seguridad continuas, garantizando altos estándares de integridad y confidencialidad.
+                    </p>
+                  </section>
+
+                  <section class="space-y-2">
+                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">5</span>
+                      Derechos de los Titulares (Acceso, Rectificación y Supresión)
+                    </h4>
+                    <p>
+                      Cualquier usuario puede solicitar en cualquier momento la actualización o eliminación definitiva de su perfil y registros contactando directamente al comercio o al canal de soporte oficial de Reservas CR a través de <strong class="text-blue-600">pampo32@gmail.com</strong>.
+                    </p>
+                  </section>
+                </div>
+              `}
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                <i class="fas fa-lock text-emerald-600"></i>
+                <span>Última actualización: Septiembre 2026 • Reservas CR</span>
+              </div>
+              <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
+                Entendido y de Acuerdo
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Event listeners
+      document.getElementById('close-legal-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+      document.getElementById('accept-legal-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+
+      document.getElementById('tab-btn-terms')?.addEventListener('click', () => {
+        currentTab = 'terms';
+        renderContent();
+      });
+
+      document.getElementById('tab-btn-privacy')?.addEventListener('click', () => {
+        currentTab = 'privacy';
+        renderContent();
+      });
+    };
+
+    renderContent();
   }
 }
 

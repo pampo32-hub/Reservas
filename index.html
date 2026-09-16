@@ -57,15 +57,23 @@
 
   <!-- Footer -->
   <footer class="bg-white border-t border-slate-200/80 py-8 px-4 text-center text-xs text-slate-500 mb-16 md:mb-0">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-xl overflow-hidden shadow-xs border border-slate-200/60 flex items-center justify-center bg-white">
           <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Reservas CR Logo" class="w-full h-full object-cover">
         </div>
         <span class="font-extrabold text-slate-900 text-sm">Reservas <span class="text-blue-600">CR</span></span> &copy; 2026. Todos los derechos reservados.
       </div>
+
+      <!-- Enlaces Legales -->
+      <div class="flex items-center gap-3 text-xs font-semibold text-slate-600">
+        <button type="button" class="open-terms-modal hover:text-blue-600 transition-colors cursor-pointer">Términos y Condiciones</button>
+        <span class="text-slate-300">•</span>
+        <button type="button" class="open-privacy-modal hover:text-blue-600 transition-colors cursor-pointer">Privacidad & Tratamiento de Datos</button>
+      </div>
+
       <div class="flex flex-col sm:flex-row items-center gap-3">
-        <p class="text-slate-400">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
+        <p class="text-slate-400">Directorio digital & agendamiento en Costa Rica 🇨🇷.</p>
         <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-slate-100 text-[11px] font-bold shadow-xs border border-slate-800">
           <span class="text-slate-400 font-medium">Powered by</span>
           <span class="text-blue-400 font-extrabold tracking-wide flex items-center gap-1">
@@ -86,7 +94,7 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
 
   <!-- App Script (ES Module) con versión para invalidar caché -->
-  <script type="module" src="./src/app.js?v=5.2"></script>
+  <script type="module" src="./src/app.js?v=5.3"></script>
 
   <!-- PWA Service Worker Registration -->
   <script>
