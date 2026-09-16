@@ -1281,7 +1281,7 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: `Plan del comercio actualizado a "${plan === 'basic' ? 'Plan Básico ($8)' : (plan === 'pro' ? 'Plan Profesional ($15)' : 'Plan Ilimitado ($25)')}".`,
+      message: `Plan del comercio actualizado a "${plan === 'basic' ? 'Plan Básico ($10)' : (plan === 'pro' ? 'Plan Profesional ($18)' : 'Plan Ilimitado ($35)')}".`,
       plan,
       planPriceUsd,
       monthlyBookingLimit
@@ -1298,10 +1298,11 @@ app.get('/api/businesses/:id/booking-usage', async (req, res) => {
     const { id } = req.params;
     const bizRes = await pool.query('SELECT name, plan, plan_price_usd, monthly_booking_limit FROM reservas_businesses WHERE id = $1', [id]);
     if (bizRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Comercio no encontrado' });
+      return res.status(404).json({ error: 'Comercio no encontrado.' });
     }
 
     const biz = bizRes.rows[0];
+    const limit = biz.monthly_booking_limit;
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -1312,23 +1313,22 @@ app.get('/api/businesses/:id/booking-usage', async (req, res) => {
     `, [id, startOfMonth]);
 
     const used = parseInt(countRes.rows[0].total, 10) || 0;
-    const limit = biz.monthly_booking_limit;
     const remaining = limit ? Math.max(0, limit - used) : null;
-    const percent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    const usagePercent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
 
     res.json({
       plan: biz.plan || 'basic',
-      planPriceUsd: parseFloat(biz.plan_price_usd) || 8.00,
+      planPriceUsd: parseFloat(biz.plan_price_usd) || 10.00,
       monthlyBookingLimit: limit,
       usedThisMonth: used,
       remainingThisMonth: remaining,
-      usagePercent: percent,
+      usagePercent,
       isUnlimited: !limit,
       isLimitReached: limit ? used >= limit : false
     });
   } catch (error) {
-    console.error('Error consultando uso de reservas:', error);
-    res.status(500).json({ error: 'Error al consultar uso de reservas' });
+    console.error('Error consultando uso mensual:', error);
+    res.status(500).json({ error: 'Error al consultar uso mensual de citas.' });
   }
 });
 
@@ -2904,9 +2904,9 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
     // Mapeo de límites y precios por plan
     const planConfigMap = {
       'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
-      'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
-      'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
-      'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+      'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
+      'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
+      'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -2953,9 +2953,9 @@ app.post('/api/paypal/create-order', async (req, res) => {
 
     const planConfigMap = {
       'test': { price: '0.10', name: 'Plan Prueba 24 Horas', limit: 10 },
-      'basic': { price: '8.00', name: 'Plan Básico', limit: 50 },
-      'pro': { price: '15.00', name: 'Plan Profesional', limit: 200 },
-      'unlimited': { price: '25.00', name: 'Plan Ilimitado', limit: 999999 }
+      'basic': { price: '10.00', name: 'Plan Básico', limit: 150 },
+      'pro': { price: '18.00', name: 'Plan Profesional', limit: 300 },
+      'unlimited': { price: '35.00', name: 'Plan Ilimitado', limit: 999999 }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -3032,9 +3032,9 @@ app.post('/api/paypal/capture-order', async (req, res) => {
 
     const planConfigMap = {
       'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
-      'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
-      'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
-      'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+      'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
+      'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
+      'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -3132,9 +3132,9 @@ app.post('/api/developer/activate-business-plan', async (req, res) => {
 
     const planConfigMap = {
       'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
-      'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
-      'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
-      'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+      'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
+      'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
+      'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -3278,9 +3278,9 @@ app.post('/api/developer/paypal-sync-plans', async (req, res) => {
 
     // 2. Crear los 3 planes
     const plansToCreate = [
-      { idKey: 'paypal_plan_basic_id', name: 'Plan Básico Reservas CR', price: '8.00', desc: 'Hasta 50 reservas mensuales' },
-      { idKey: 'paypal_plan_pro_id', name: 'Plan Profesional Reservas CR', price: '15.00', desc: 'Hasta 200 reservas mensuales y WhatsApp' },
-      { idKey: 'paypal_plan_unlimited_id', name: 'Plan Ilimitado Reservas CR', price: '25.00', desc: 'Reservas ilimitadas y soporte prioritario' }
+      { idKey: 'paypal_plan_basic_id', name: 'Plan Básico Reservas CR', price: '10.00', desc: 'Hasta 150 reservas mensuales' },
+      { idKey: 'paypal_plan_pro_id', name: 'Plan Profesional Reservas CR', price: '18.00', desc: 'Hasta 300 reservas mensuales y WhatsApp' },
+      { idKey: 'paypal_plan_unlimited_id', name: 'Plan Ilimitado Reservas CR', price: '35.00', desc: 'Reservas ilimitadas y soporte prioritario' }
     ];
 
     const createdPlans = {};

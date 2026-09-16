@@ -301,9 +301,9 @@ class StorageService {
     if (idx >= 0) {
       const planConfigMap = {
         'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
-        'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
-        'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
-        'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+        'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
+        'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
+        'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
       };
       const p = planConfigMap[planId] || planConfigMap['pro'];
       businesses[idx].plan = planId;

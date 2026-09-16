@@ -4420,7 +4420,7 @@ class App {
                                 </td>
                                 <td class="p-3">
                                   <span class="px-2.5 py-1 rounded-lg text-xs font-black ${pr.planInterest === 'unlimited' ? 'bg-purple-100 text-purple-800' : (pr.planInterest === 'pro' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')}">
-                                    ${pr.planInterest === 'unlimited' ? 'Plan ∞ ($25)' : (pr.planInterest === 'pro' ? 'Plan Pro ($15)' : 'Plan Básico ($8)')}
+                                    ${pr.planInterest === 'unlimited' ? 'Plan ∞ ($35)' : (pr.planInterest === 'pro' ? 'Plan Pro ($18)' : 'Plan Básico ($10)')}
                                   </span>
                                 </td>
                                 <td class="p-3 text-[11px] text-slate-500">
@@ -4555,15 +4555,15 @@ class App {
                                 </td>
                                 <td class="p-3">
                                   <span class="px-2.5 py-1 rounded-lg text-xs font-black ${currentPlan === 'unlimited' ? 'bg-purple-100 text-purple-800' : (currentPlan === 'pro' ? 'bg-amber-100 text-amber-800' : (currentPlan === 'test' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'))}">
-                                    ${currentPlan === 'unlimited' ? 'Ilimitado ($25)' : (currentPlan === 'pro' ? 'Profesional ($15)' : (currentPlan === 'test' ? 'Test 24h ($0.10)' : 'Básico ($8)'))}
+                                    ${currentPlan === 'unlimited' ? 'Ilimitado ($35)' : (currentPlan === 'pro' ? 'Profesional ($18)' : (currentPlan === 'test' ? 'Test 24h ($0.10)' : 'Básico ($10)'))}
                                   </span>
                                 </td>
                                 <td class="p-3">
                                   <select id="dev-sinpe-plan-select-${biz.id}" class="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                                     <option value="test" ${currentPlan === 'test' ? 'selected' : ''}>Plan Prueba ($0.10 - 24 Horas)</option>
-                                    <option value="basic" ${currentPlan === 'basic' ? 'selected' : ''}>Plan Básico ($8/mes - 50 reservas)</option>
-                                    <option value="pro" ${currentPlan === 'pro' ? 'selected' : ''}>Plan Profesional ($15/mes - 200 reservas)</option>
-                                    <option value="unlimited" ${currentPlan === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($25/mes - ∞ reservas)</option>
+                                    <option value="basic" ${currentPlan === 'basic' ? 'selected' : ''}>Plan Básico ($10/mes - 150 reservas)</option>
+                                    <option value="pro" ${currentPlan === 'pro' ? 'selected' : ''}>Plan Profesional ($18/mes - 300 reservas)</option>
+                                    <option value="unlimited" ${currentPlan === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($35/mes - ∞ reservas)</option>
                                   </select>
                                 </td>
                                 <td class="p-3 text-right">
@@ -5197,29 +5197,29 @@ class App {
                     <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Básico</span>
-                        <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black">$8 USD / mes</span>
+                        <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black">$10 USD / mes</span>
                       </div>
                       <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.basic || ''}">
                         ID: ${paypalConfig.plans?.basic || 'Sin ID'}
                       </span>
-                      <span class="text-[11px] text-slate-500 block">Hasta 50 reservas mensuales</span>
+                      <span class="text-[11px] text-slate-500 block">Hasta 150 reservas mensuales</span>
                     </div>
 
                     <div class="p-4 bg-white border-2 border-amber-400 rounded-2xl shadow-xs space-y-2 ring-2 ring-amber-400/20">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-black text-amber-900 uppercase tracking-wider">Plan Profesional ⭐</span>
-                        <span class="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">$15 USD / mes</span>
+                        <span class="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">$18 USD / mes</span>
                       </div>
                       <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.pro || ''}">
                         ID: ${paypalConfig.plans?.pro || 'Sin ID'}
                       </span>
-                      <span class="text-[11px] text-slate-500 block">Hasta 200 reservas y WhatsApp</span>
+                      <span class="text-[11px] text-slate-500 block">Hasta 300 reservas y WhatsApp</span>
                     </div>
 
                     <div class="p-4 bg-white border border-purple-200 rounded-2xl shadow-xs space-y-2 bg-purple-50/20">
                       <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Plan Ilimitado</span>
-                        <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black">$25 USD / mes</span>
+                        <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black">$35 USD / mes</span>
                       </div>
                       <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.unlimited || ''}">
                         ID: ${paypalConfig.plans?.unlimited || 'Sin ID'}
@@ -5257,15 +5257,15 @@ class App {
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100">
                           <div>
-                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Básico ($8)</label>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Básico ($10)</label>
                             <input type="text" id="dev-paypal-plan-basic" value="${this.escapeHtml(paypalConfig.plans?.basic || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
                           </div>
                           <div>
-                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Pro ($15)</label>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Pro ($18)</label>
                             <input type="text" id="dev-paypal-plan-pro" value="${this.escapeHtml(paypalConfig.plans?.pro || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
                           </div>
                           <div>
-                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan ∞ ($25)</label>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan ∞ ($35)</label>
                             <input type="text" id="dev-paypal-plan-unlimited" value="${this.escapeHtml(paypalConfig.plans?.unlimited || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
                           </div>
                         </div>
@@ -6043,9 +6043,9 @@ class App {
           const bizName = e.target.getAttribute('data-name');
           const newPlan = e.target.value;
           const planNames = {
-            basic: 'Plan Básico ($8 • 150 reservas)',
-            pro: 'Plan Profesional ($15 • 300 reservas)',
-            unlimited: 'Plan Ilimitado ($25 • Reservas Ilimitadas)'
+            basic: 'Plan Básico ($10 • 150 reservas)',
+            pro: 'Plan Profesional ($18 • 300 reservas)',
+            unlimited: 'Plan Ilimitado ($35 • Reservas Ilimitadas)'
           };
 
           try {
@@ -6506,30 +6506,30 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-white">Básico</span>
-                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">50 reservas</span>
+                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 reservas</span>
                         </div>
-                        <div class="text-base font-black text-white">$8 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡4,200 CRC / mes</p>
+                        <div class="text-base font-black text-white">$10 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡5,200 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 50 reservas/mes
+                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 150 reservas/mes
                       </div>
                     </label>
 
                     <!-- Plan Profesional -->
                     <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'pro' ? 'bg-indigo-950 border-amber-400 ring-2 ring-amber-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <span class="absolute -top-2.5 right-2 px-2 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider">Popular</span>
+                      <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider z-10 pointer-events-none">Popular</span>
                       <input type="radio" name="new-biz-plan" value="pro" ${selectedPlanId === 'pro' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-amber-300">Profesional</span>
-                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">200 reservas</span>
+                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 reservas</span>
                         </div>
-                        <div class="text-base font-black text-amber-300">$15 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡7,900 CRC / mes</p>
+                        <div class="text-base font-black text-amber-300">$18 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡9,400 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 200 reservas/mes
+                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 300 reservas/mes
                       </div>
                     </label>
 
@@ -6541,8 +6541,8 @@ class App {
                           <span class="font-black text-xs text-purple-300">Ilimitado</span>
                           <span class="text-[9px] font-bold text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded">Ilimitado</span>
                         </div>
-                        <div class="text-base font-black text-purple-300">$25 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡13,000 CRC / mes</p>
+                        <div class="text-base font-black text-purple-300">$35 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡18,200 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
                         <i class="fas fa-infinity text-purple-400 text-[9px]"></i> Reservas sin límite
@@ -7576,7 +7576,7 @@ class App {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const plan = storage.getPlanById(planId) || { name: 'Plan Básico', priceUsd: 8, priceCrc: 4200, bookingLimitLabel: 'Hasta 50 reservas/mes' };
+    const plan = storage.getPlanById(planId) || { name: 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' };
     const biz = businessId ? storage.getBusinessById(businessId) : null;
     const bizName = biz ? biz.name : 'Mi Negocio';
     const sinpePhoneFormatted = '7143-3852';
@@ -7723,7 +7723,7 @@ class App {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const plan = storage.getPlanById(planId) || { name: 'Plan Profesional', priceUsd: 15, bookingLimitLabel: 'Hasta 200 reservas/mes' };
+    const plan = storage.getPlanById(planId) || { name: 'Plan Profesional', priceUsd: 18, priceCrc: 9400, bookingLimitLabel: 'Hasta 300 reservas/mes' };
     const biz = businessId ? storage.getBusinessById(businessId) : null;
     const isTestPlan = plan.id === 'test';
     const durationLabel = isTestPlan ? '24 Horas' : '30 Días';
@@ -8242,9 +8242,9 @@ class App {
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Plan de Interés</label>
                 <select id="edit-prereg-plan" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                  <option value="basic" ${pr.planInterest === 'basic' ? 'selected' : ''}>Plan Básico ($8)</option>
-                  <option value="pro" ${pr.planInterest === 'pro' || !pr.planInterest ? 'selected' : ''}>Plan Pro ($15)</option>
-                  <option value="unlimited" ${pr.planInterest === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($25)</option>
+                  <option value="basic" ${pr.planInterest === 'basic' ? 'selected' : ''}>Plan Básico ($10)</option>
+                  <option value="pro" ${pr.planInterest === 'pro' || !pr.planInterest ? 'selected' : ''}>Plan Pro ($18)</option>
+                  <option value="unlimited" ${pr.planInterest === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($35)</option>
                 </select>
               </div>
             </div>
