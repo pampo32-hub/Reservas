@@ -13,8 +13,6 @@ class App {
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
     this.searchQuery = '';
-    this.logoClickCount = 0;
-    this.logoClickTimer = null;
     
     // Filtros de citas
     this.ownerAppointmentFilter = 'all'; // 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'
@@ -333,8 +331,8 @@ class App {
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
-          <!-- Logo (con acceso secreto 3 clics para Developer) -->
-          <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn" id="nav-logo-btn" title="Reservas CR (Triple clic: Acceso Developer)">
+          <!-- Logo -->
+          <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn" id="nav-logo-btn" title="Reservas CR">
             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
               <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
@@ -465,17 +463,6 @@ class App {
 
     // Eventos de Navegación y Auth
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => {
-      this.logoClickCount++;
-      clearTimeout(this.logoClickTimer);
-      this.logoClickTimer = setTimeout(() => {
-        this.logoClickCount = 0;
-      }, 700);
-
-      if (this.logoClickCount >= 3) {
-        this.logoClickCount = 0;
-        this.renderDeveloperQuickLoginModal();
-        return;
-      }
       this.navigateTo('directory');
     });
 
@@ -4392,6 +4379,7 @@ class App {
                             <th class="p-3">Categoría & Cantón</th>
                             <th class="p-3">Plan de Interés</th>
                             <th class="p-3">Fecha</th>
+                            <th class="p-3 text-right">Contacto Directo</th>
                             <th class="p-3">Estado</th>
                             <th class="p-3 text-right">Acciones Developer</th>
                           </tr>
@@ -4402,6 +4390,7 @@ class App {
                             const waUrl = `https://wa.me/506${waClean}?text=${encodeURIComponent('Hola ' + (pr.contactName || '') + ', te saludamos de Reservas CR respecto al pre-registro de tu negocio ' + (pr.businessName || '') + '.')}`;
                             const isPrBlocked = Boolean(pr.isBlocked);
                             return `
+                              <tr class="hover:bg-slate-50/80 transition-colors">
                               <tr class="hover:bg-slate-50/80 transition-colors ${isPrBlocked ? 'bg-rose-50/30' : ''}">
                                 <td class="p-3">
                                   <strong class="text-slate-900 block font-bold text-sm">${this.escapeHtml(pr.businessName)}</strong>
@@ -4430,6 +4419,10 @@ class App {
                                 <td class="p-3 text-[11px] text-slate-500">
                                   ${new Date(pr.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </td>
+                                <td class="p-3 text-right">
+                                  <a href="${waUrl}" target="_blank" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all">
+                                    <i class="fab fa-whatsapp"></i> Chatear
+                                  </a>
                                 <td class="p-3 whitespace-nowrap">
                                   ${isPrBlocked ? `
                                     <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Descartado/Bloqueado: ${this.escapeHtml(pr.blockReason || 'Sin motivo')}">
@@ -4941,8 +4934,8 @@ class App {
                                 </div>
                               </td>
                             </tr>
-                          `;
-                        }).join('')}
+                            `;
+                          }).join('')}
                         </tbody>
                       </table>
                     </div>
@@ -6301,13 +6294,6 @@ class App {
                 </button>
               </form>
             ` : ''}
-
-            <!-- Enlace sutil para Developer -->
-            <div class="pt-3 text-center border-t border-slate-100">
-              <button type="button" id="modal-dev-link-btn" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer">
-                <i class="fas fa-terminal text-[10px] mr-1"></i> Acceso Developer (Ctrl+Shift+D)
-              </button>
-            </div>
           </div>
         </div>
       </div>
@@ -6316,11 +6302,6 @@ class App {
     // Cerrar modal
     document.getElementById('close-auth-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
-    });
-
-    // Enlace Developer en el pie del modal
-    document.getElementById('modal-dev-link-btn')?.addEventListener('click', () => {
-      this.renderDeveloperQuickLoginModal();
     });
 
     // Pestañas de Modo (Login / Register)
@@ -7996,78 +7977,6 @@ class App {
     });
   }
 
-  // --- MODAL RÁPIDO DE ACCESO DEVELOPER ---
-  renderDeveloperQuickLoginModal() {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-        <div class="bg-slate-950 text-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-800 my-8">
-          <div class="p-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shadow-md">
-                <i class="fas fa-shield-alt"></i>
-              </div>
-              <div>
-                <span class="text-[10px] uppercase tracking-wider text-amber-400 font-bold">Consola Maestra</span>
-                <h3 class="text-base font-bold text-white">Acceso Developer</h3>
-              </div>
-            </div>
-            <button id="close-dev-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
-              <i class="fas fa-times text-xs"></i>
-            </button>
-          </div>
-
-          <form id="dev-quick-login-form" class="p-6 space-y-4 text-xs">
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">Correo de Desarrollador</label>
-              <input type="text" id="dev-log-email" value="admin@reservas.cr" required class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono focus:border-amber-500 focus:outline-none">
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-300 mb-1">Contraseña Maestra</label>
-              <input type="password" id="dev-log-pass" value="admin123" required class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white font-mono focus:border-amber-500 focus:outline-none">
-            </div>
-
-            <div id="dev-quick-log-error" class="hidden p-3 bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl"></div>
-
-            <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-sm">
-              <i class="fas fa-key"></i>
-              <span>INGRESAR COMO DEVELOPER</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('close-dev-modal-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
-
-    document.getElementById('dev-quick-login-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('dev-log-email').value;
-      const pass = document.getElementById('dev-log-pass').value;
-      const errBox = document.getElementById('dev-quick-log-error');
-
-      try {
-        await storage.loginDeveloper(email, pass);
-        this.showToast('¡Consola SuperAdmin Developer Conectada!', 'success');
-        modalContainer.innerHTML = '';
-        this.renderHeader();
-        this.navigateTo('developer-dashboard');
-      } catch (err) {
-        if (errBox) {
-          errBox.classList.remove('hidden');
-          errBox.textContent = err.message || 'Credenciales incorrectas.';
-        } else {
-          this.showToast(err.message || 'Credenciales incorrectas.', 'error');
-        }
-      }
-    });
-  }
-
   // Métodos de conveniencia
   renderBusinessAuthModal() {
     this.renderAuthModal({ mode: 'login', role: 'business' });
@@ -8418,12 +8327,6 @@ class App {
         this.closeBookingModal();
         const modalContainer = document.getElementById('modal-container');
         if (modalContainer) modalContainer.innerHTML = '';
-      }
-
-      // Atajo Secreto de Developer: Ctrl + Shift + D (o Cmd + Shift + D en Mac)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-        e.preventDefault();
-        this.renderDeveloperQuickLoginModal();
       }
     });
   }
