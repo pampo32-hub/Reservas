@@ -958,17 +958,14 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
     let priceUsd = 8;
     let limit = 50;
     if (plan === 'unlimited') {
-      priceUsd = 25;
+      priceUsd = 35;
       limit = null;
     } else if (plan === 'pro') {
-      priceUsd = 15;
-      limit = 200;
-    } else if (plan === 'test') {
-      priceUsd = 0.10;
-      limit = 10;
+      priceUsd = 18;
+      limit = 300;
     } else {
-      priceUsd = 8;
-      limit = 50;
+      priceUsd = 10;
+      limit = 150;
     }
 
     await pool.query(`
@@ -3087,7 +3084,6 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
 
     // Mapeo de límites y precios por plan
     const planConfigMap = {
-      'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
       'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
@@ -3136,7 +3132,6 @@ app.post('/api/paypal/create-order', async (req, res) => {
     }
 
     const planConfigMap = {
-      'test': { price: '0.10', name: 'Plan Prueba 24 Horas', limit: 10 },
       'basic': { price: '10.00', name: 'Plan Básico', limit: 150 },
       'pro': { price: '18.00', name: 'Plan Profesional', limit: 300 },
       'unlimited': { price: '35.00', name: 'Plan Ilimitado', limit: 999999 }
@@ -3215,7 +3210,6 @@ app.post('/api/paypal/capture-order', async (req, res) => {
     }
 
     const planConfigMap = {
-      'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
       'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
@@ -3315,7 +3309,6 @@ app.post('/api/developer/activate-business-plan', async (req, res) => {
     }
 
     const planConfigMap = {
-      'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
       'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }

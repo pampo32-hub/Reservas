@@ -300,7 +300,6 @@ class StorageService {
     const idx = businesses.findIndex(b => b.id === businessId);
     if (idx >= 0) {
       const planConfigMap = {
-        'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
         'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
         'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
         'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
