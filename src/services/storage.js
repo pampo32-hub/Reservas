@@ -517,6 +517,46 @@ class StorageService {
     return client;
   }
 
+  // ==========================================
+  // RECUPERACIÓN DE CONTRASEÑA (RESEND EMAIL)
+  // ==========================================
+  async requestPasswordReset(email, role = 'any') {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al solicitar código de recuperación.');
+      return data;
+    }
+
+    return {
+      success: true,
+      email,
+      message: 'Modo local: Código de prueba enviado.'
+    };
+  }
+
+  async resetPasswordWithCode(email, code, newPassword) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, newPassword })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al restablecer la contraseña.');
+      return data;
+    }
+
+    return {
+      success: true,
+      message: 'Contraseña actualizada en modo local.'
+    };
+  }
+
   // --- CATEGORÍAS (INCLUYE CATEGORÍAS PERSONALIZADAS DINÁMICAS) ---
   getCategories() {
     const list = [...INITIAL_CATEGORIES];

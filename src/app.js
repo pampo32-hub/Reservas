@@ -5912,7 +5912,12 @@ class App {
                 </div>
 
                 <div>
-                  <label class="block font-bold text-slate-700 mb-1">Contraseña *</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block font-bold text-slate-700">Contraseña *</label>
+                    <button type="button" class="btn-forgot-password text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer" data-role="client">
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
                   <input type="password" id="cli-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
@@ -5936,7 +5941,12 @@ class App {
                 </div>
 
                 <div>
-                  <label class="block font-bold text-slate-700 mb-1">Contraseña *</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block font-bold text-slate-700">Contraseña *</label>
+                    <button type="button" class="btn-forgot-password text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer" data-role="business">
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
                   <input type="password" id="biz-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
@@ -6302,6 +6312,16 @@ class App {
     // Cerrar modal
     document.getElementById('close-auth-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    // Enlaces de Olvidé mi Contraseña
+    document.querySelectorAll('.btn-forgot-password').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const btnRole = btn.getAttribute('data-role') || role;
+        const currentEmailInput = btnRole === 'business' ? document.getElementById('biz-log-email') : document.getElementById('cli-log-identifier');
+        const prefilledEmail = currentEmailInput ? currentEmailInput.value.trim() : '';
+        this.renderForgotPasswordModal({ role: btnRole, email: prefilledEmail });
+      });
     });
 
     // Pestañas de Modo (Login / Register)
@@ -7975,6 +7995,282 @@ class App {
         }
       }
     });
+  }
+
+  // --- MODAL DE RECUPERACIÓN DE CONTRASEÑA (VÍA CORREO RESEND) ---
+  renderForgotPasswordModal({ role = 'client', step = 'request', email = '' } = {}) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const accentColor = role === 'business' ? 'indigo' : 'blue';
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200/90 my-8">
+          
+          <!-- Encabezado del Modal -->
+          <div class="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-base font-bold shadow-md shadow-blue-500/20">
+                <i class="fas ${step === 'request' ? 'fa-key' : 'fa-shield-alt'}"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-white">
+                  ${step === 'request' ? 'Recuperar Contraseña' : 'Crear Nueva Contraseña'}
+                </h3>
+                <span class="text-[11px] text-slate-400 font-medium block">
+                  ${role === 'business' ? 'Cuenta de Comercio / Dueño' : 'Cuenta de Cliente'}
+                </span>
+              </div>
+            </div>
+            <button id="close-forgot-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Cuerpo del Modal -->
+          <div class="p-6 space-y-4">
+            ${step === 'request' ? `
+              <!-- PASO 1: SOLICITAR CÓDIGO POR CORREO -->
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Ingresa el correo electrónico asociado a tu cuenta. Te enviaremos un <strong>código de seguridad de 6 dígitos</strong> para que puedas restablecer tu contraseña.
+              </p>
+
+              <div id="forgot-req-error" class="hidden p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in"></div>
+
+              <form id="forgot-request-form" class="space-y-4 text-xs sm:text-sm">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico Registrado *</label>
+                  <input type="email" id="forgot-req-email" value="${this.escapeHtml(email)}" required placeholder="tu-correo@ejemplo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <button type="submit" id="forgot-req-submit-btn" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                  <i class="fas fa-paper-plane"></i>
+                  <span>Enviar Código de Recuperación</span>
+                </button>
+              </form>
+
+              <div class="pt-3 border-t border-slate-100 text-center">
+                <button type="button" id="back-to-login-btn" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5 mx-auto">
+                  <i class="fas fa-arrow-left text-[10px]"></i>
+                  <span>Volver a Iniciar Sesión</span>
+                </button>
+              </div>
+            ` : `
+              <!-- PASO 2: INGRESAR CÓDIGO Y NUEVA CONTRASEÑA -->
+              <div class="p-3 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-start gap-2.5">
+                <i class="fas fa-envelope-open-text text-blue-600 text-sm mt-0.5 flex-shrink-0"></i>
+                <div class="text-xs text-blue-900 leading-snug">
+                  Código enviado a <strong>${this.escapeHtml(email)}</strong>. Revisa tu bandeja de entrada o spam.
+                </div>
+              </div>
+
+              <div id="forgot-reset-error" class="hidden p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in"></div>
+
+              <form id="forgot-reset-form" class="space-y-4 text-xs sm:text-sm">
+                <!-- Código de 6 dígitos -->
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1 text-center">Código de Verificación (6 dígitos) *</label>
+                  <input type="text" id="forgot-reset-code" required maxlength="6" placeholder="• • • • • •" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-center text-xl font-black tracking-widest text-slate-900 focus:border-blue-600 focus:outline-none focus:bg-white transition-all">
+                </div>
+
+                <!-- Nueva Contraseña -->
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Nueva Contraseña (mínimo 6 caracteres) *</label>
+                  <input type="password" id="forgot-new-pass" required minlength="6" placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Confirmar Nueva Contraseña -->
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Confirmar Nueva Contraseña *</label>
+                  <input type="password" id="forgot-new-pass-conf" required minlength="6" placeholder="Repite tu nueva contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!-- Validación inline -->
+                <div id="forgot-inline-pass-error" class="hidden p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
+
+                <button type="submit" id="forgot-reset-submit-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                  <i class="fas fa-check-circle"></i>
+                  <span>Guardar y Restablecer Contraseña</span>
+                </button>
+              </form>
+
+              <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <button type="button" id="resend-code-btn" class="font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer flex items-center gap-1">
+                  <i class="fas fa-redo text-[10px]"></i> Reenviar código
+                </button>
+                <button type="button" id="back-to-step1-btn" class="font-bold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer flex items-center gap-1">
+                  <i class="fas fa-edit text-[10px]"></i> Cambiar correo
+                </button>
+              </div>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Cerrar modal
+    document.getElementById('close-forgot-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    // Volver a login
+    document.getElementById('back-to-login-btn')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'login', role });
+    });
+
+    if (step === 'request') {
+      // Manejar envío de solicitud de código
+      const reqForm = document.getElementById('forgot-request-form');
+      reqForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById('forgot-req-email');
+        const submitBtn = document.getElementById('forgot-req-submit-btn');
+        const errBox = document.getElementById('forgot-req-error');
+        const cleanEmail = emailInput?.value.trim().toLowerCase();
+
+        if (!cleanEmail) return;
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Enviando código...</span>';
+        }
+        if (errBox) errBox.className = 'hidden';
+
+        try {
+          const res = await storage.requestPasswordReset(cleanEmail, role);
+          this.showToast(res.message || 'Código enviado exitosamente a tu correo.', 'success');
+          this.renderForgotPasswordModal({ role, step: 'reset', email: cleanEmail });
+        } catch (err) {
+          if (errBox) {
+            errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+            errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al solicitar código.'}</span>`;
+          } else {
+            this.showToast(err.message || 'Error al solicitar código.', 'error');
+          }
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Enviar Código de Recuperación</span>';
+          }
+        }
+      });
+    } else {
+      // Validación en vivo de contraseñas en paso 2
+      const pass1 = document.getElementById('forgot-new-pass');
+      const pass2 = document.getElementById('forgot-new-pass-conf');
+      const inlineBox = document.getElementById('forgot-inline-pass-error');
+
+      const checkMatch = () => {
+        if (!pass1 || !pass2 || !inlineBox) return true;
+        const v1 = pass1.value;
+        const v2 = pass2.value;
+
+        if (!v1 && !v2) {
+          inlineBox.className = 'hidden';
+          return true;
+        }
+
+        if (v2.length > 0 && v1 !== v2) {
+          inlineBox.className = 'p-2.5 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          inlineBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden.</span>';
+          return false;
+        } else if (v1.length >= 6 && v1 === v2) {
+          inlineBox.className = 'p-2 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          inlineBox.innerHTML = '<i class="fas fa-check-circle text-emerald-600 text-sm flex-shrink-0"></i> <span>¡Las contraseñas coinciden!</span>';
+          return true;
+        } else if (v1.length > 0 && v1.length < 6) {
+          inlineBox.className = 'p-2 bg-amber-50 border border-amber-300 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          inlineBox.innerHTML = '<i class="fas fa-info-circle text-amber-600 text-sm flex-shrink-0"></i> <span>Mínimo 6 caracteres.</span>';
+          return false;
+        } else {
+          inlineBox.className = 'hidden';
+          return true;
+        }
+      };
+
+      pass1?.addEventListener('input', checkMatch);
+      pass2?.addEventListener('input', checkMatch);
+
+      // Reenviar código
+      document.getElementById('resend-code-btn')?.addEventListener('click', async () => {
+        try {
+          this.showToast('Reenviando nuevo código a tu correo...', 'info');
+          await storage.requestPasswordReset(email, role);
+          this.showToast('¡Nuevo código enviado! Revisa tu bandeja de entrada.', 'success');
+        } catch (err) {
+          this.showToast(err.message || 'Error al reenviar código.', 'error');
+        }
+      });
+
+      // Cambiar correo (volver a paso 1)
+      document.getElementById('back-to-step1-btn')?.addEventListener('click', () => {
+        this.renderForgotPasswordModal({ role, step: 'request', email });
+      });
+
+      // Manejar envío de restablecimiento de contraseña
+      const resetForm = document.getElementById('forgot-reset-form');
+      resetForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const codeInput = document.getElementById('forgot-reset-code');
+        const passInput = document.getElementById('forgot-new-pass');
+        const passConfInput = document.getElementById('forgot-new-pass-conf');
+        const submitBtn = document.getElementById('forgot-reset-submit-btn');
+        const errBox = document.getElementById('forgot-reset-error');
+
+        const codeVal = codeInput?.value.trim();
+        const passVal = passInput?.value;
+        const passConfVal = passConfInput?.value;
+
+        if (!codeVal || codeVal.length < 4) {
+          this.showToast('Ingresa el código de 6 dígitos que te enviamos.', 'warning');
+          codeInput?.focus();
+          return;
+        }
+
+        if (passVal !== passConfVal) {
+          this.showToast('Las contraseñas no coinciden.', 'error');
+          passConfInput?.focus();
+          return;
+        }
+
+        if (passVal.length < 6) {
+          this.showToast('La nueva contraseña debe tener al menos 6 caracteres.', 'warning');
+          passInput?.focus();
+          return;
+        }
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Actualizando contraseña...</span>';
+        }
+        if (errBox) errBox.className = 'hidden';
+
+        try {
+          const res = await storage.resetPasswordWithCode(email, codeVal, passVal);
+          this.showToast('¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.', 'success');
+          
+          // Abrir automáticamente el modal de login con el correo prellenado
+          this.renderAuthModal({ mode: 'login', role });
+          setTimeout(() => {
+            const loginEmailInput = role === 'business' ? document.getElementById('biz-log-email') : document.getElementById('cli-log-identifier');
+            const passTarget = role === 'business' ? document.getElementById('biz-log-password') : document.getElementById('cli-log-password');
+            if (loginEmailInput) loginEmailInput.value = email;
+            if (passTarget) passTarget.focus();
+          }, 100);
+        } catch (err) {
+          if (errBox) {
+            errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+            errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al restablecer contraseña.'}</span>`;
+          } else {
+            this.showToast(err.message || 'Error al restablecer contraseña.', 'error');
+          }
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Guardar y Restablecer Contraseña</span>';
+          }
+        }
+      });
+    }
   }
 
   // Métodos de conveniencia

@@ -331,4 +331,197 @@ export async function sendReviewRequestEmail(appointment, business) {
   }
 }
 
+/**
+ * Envía correo con código de recuperación de contraseña
+ */
+export async function sendPasswordResetEmail({ to, code, name = 'Usuario', userType = 'client' }) {
+  if (!to || !to.includes('@')) {
+    console.log(`ℹ️ No se envió correo de restablecimiento: email inválido (${to || 'vacío'}).`);
+    return { success: false, reason: 'invalid_email' };
+  }
+
+  if (!resend) {
+    console.warn('⚠️ No se ha configurado RESEND_API_KEY en las variables de entorno.');
+    return { success: false, reason: 'resend_not_configured' };
+  }
+
+  const roleLabel = userType === 'business' ? 'tu cuenta de Negocio' : 'tu cuenta de Cliente';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Código de Recuperación de Contraseña</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 24px 12px;
+    }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #ffffff;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: #3b82f6;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-size: 22px;
+      font-weight: 900;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .content {
+      padding: 32px 24px;
+    }
+    .greeting {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+    .message {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #475569;
+      margin-bottom: 24px;
+    }
+    .code-box {
+      background: #f1f5f9;
+      border: 2px dashed #94a3b8;
+      border-radius: 18px;
+      padding: 24px 16px;
+      text-align: center;
+      margin: 24px 0;
+    }
+    .code-label {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .code-digits {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 8px;
+      color: #0f172a;
+      font-family: 'Courier New', Courier, monospace;
+      display: inline-block;
+    }
+    .code-expiry {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ef4444;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .security-notice {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #991b1b;
+      line-height: 1.5;
+      margin-top: 24px;
+    }
+    .footer {
+      background: #f8fafc;
+      padding: 20px 24px;
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Seguridad Reservas CR</div>
+      <h1 class="title">Recuperación de Contraseña</h1>
+    </div>
+
+    <div class="content">
+      <div class="greeting">¡Hola, ${name}! 👋</div>
+      <div class="message">
+        Recibimos una solicitud para restablecer la contraseña de ${roleLabel} en <strong>Reservas Costa Rica 🇨🇷</strong>.
+      </div>
+
+      <div class="code-box">
+        <div class="code-label">Tu Código de Verificación</div>
+        <div class="code-digits">${code}</div>
+        <div class="code-expiry">⏱️ Este código vence en 15 minutos</div>
+      </div>
+
+      <p style="font-size: 13px; color: #64748b; line-height: 1.5;">
+        Ingresa este código de 6 dígitos en la pantalla de recuperación de la plataforma para crear tu nueva contraseña.
+      </p>
+
+      <div class="security-notice">
+        <strong>¿No solicitaste este cambio?</strong> Si no realizaste esta solicitud, puedes ignorar este correo con tranquilidad. Tu contraseña actual sigue estando protegida.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 4px 0;">Plataforma de Reservas de Costa Rica 🇨🇷</p>
+      <p style="margin: 0;">Este es un mensaje automático de seguridad. Por favor no respondas a este correo.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`🔐 Enviando correo de restablecimiento de contraseña a: ${to}...`);
+    const { data, error } = await resend.emails.send({
+      from: DEFAULT_FROM,
+      to: [to.trim()],
+      subject: `🔐 ${code} es tu código de recuperación de contraseña - Reservas CR`,
+      html: htmlContent
+    });
+
+    if (error) {
+      console.warn('⚠️ Resend reportó un aviso al enviar correo de recuperación:', error.message || error);
+      return { success: false, error };
+    }
+
+    console.log(`✅ Correo de recuperación de contraseña enviado exitosamente (ID: ${data?.id})`);
+    return { success: true, data };
+  } catch (err) {
+    console.error('❌ Error enviando correo de recuperación:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+
 

@@ -223,6 +223,20 @@ export async function initDatabase() {
       ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'pending';
     `);
 
+    // 11. Crear tabla de códigos de restablecimiento de contraseña
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_password_resets (
+        id VARCHAR(64) PRIMARY KEY,
+        email VARCHAR(150) NOT NULL,
+        code VARCHAR(10) NOT NULL,
+        user_type VARCHAR(50) NOT NULL,
+        user_id VARCHAR(50),
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';

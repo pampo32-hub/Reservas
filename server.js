@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pool, initDatabase } from './db.js';
-import { sendBookingConfirmationEmail, sendReviewRequestEmail } from './emailService.js';
+import { sendBookingConfirmationEmail, sendReviewRequestEmail, sendPasswordResetEmail } from './emailService.js';
 import { 
   sendBookingConfirmationWhatsApp, 
   getActiveMetaCredentials, 
@@ -478,6 +478,164 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
   } catch (error) {
     console.error('Error en login/registro cliente:', error);
     res.status(500).json({ error: 'Error al procesar acceso de cliente.' });
+  }
+});
+
+// 6. Solicitar Código de Recuperación de Contraseña (Envío por Resend)
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const rawEmail = req.body.email;
+    const requestedRole = req.body.role || 'any';
+
+    if (!rawEmail || !rawEmail.includes('@')) {
+      return res.status(400).json({ error: 'Por favor ingresa un correo electrónico válido.' });
+    }
+
+    const cleanEmail = rawEmail.trim().toLowerCase();
+
+    // 1. Buscar en Negocios
+    let foundUser = null;
+    let userType = null;
+
+    const bizRes = await pool.query(
+      'SELECT id, name, email FROM reservas_business_users WHERE LOWER(email) = LOWER($1)',
+      [cleanEmail]
+    );
+
+    if (bizRes.rows.length > 0) {
+      foundUser = bizRes.rows[0];
+      userType = 'business';
+    } else {
+      // 2. Buscar en Clientes
+      const cliRes = await pool.query(
+        'SELECT id, name, email FROM reservas_clients WHERE LOWER(email) = LOWER($1)',
+        [cleanEmail]
+      );
+
+      if (cliRes.rows.length > 0) {
+        foundUser = cliRes.rows[0];
+        userType = 'client';
+      }
+    }
+
+    if (!foundUser) {
+      return res.status(404).json({
+        error: 'No encontramos ninguna cuenta de cliente o comercio registrada con este correo electrónico.'
+      });
+    }
+
+    // 3. Generar código de 6 dígitos
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const resetId = `rst-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+
+    // 4. Invalidar códigos anteriores no usados para este correo
+    await pool.query(
+      'UPDATE reservas_password_resets SET used = TRUE WHERE LOWER(email) = LOWER($1)',
+      [cleanEmail]
+    );
+
+    // 5. Guardar nuevo código con expiración de 15 minutos
+    await pool.query(`
+      INSERT INTO reservas_password_resets (id, email, code, user_type, user_id, expires_at)
+      VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '15 minutes')
+    `, [resetId, cleanEmail, code, userType, foundUser.id]);
+
+    // 6. Enviar correo vía Resend
+    const emailResult = await sendPasswordResetEmail({
+      to: cleanEmail,
+      code,
+      name: foundUser.name || 'Usuario',
+      userType
+    });
+
+    console.log(`🔐 Código de recuperación [${code}] generado para: ${cleanEmail} (${userType})`);
+
+    res.json({
+      success: true,
+      email: cleanEmail,
+      userType,
+      message: `Hemos enviado un código de recuperación de 6 dígitos a ${cleanEmail}.`
+    });
+  } catch (error) {
+    console.error('Error en /api/auth/forgot-password:', error);
+    res.status(500).json({ error: 'Error al procesar la solicitud de recuperación.' });
+  }
+});
+
+// 7. Validar Código y Restablecer Contraseña
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios (correo, código y nueva contraseña).' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanCode = code.trim();
+    const cleanPass = newPassword.trim();
+
+    // 1. Buscar código activo
+    const resetRes = await pool.query(`
+      SELECT * FROM reservas_password_resets
+      WHERE LOWER(email) = LOWER($1)
+        AND code = $2
+        AND used = FALSE
+        AND expires_at > NOW()
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [cleanEmail, cleanCode]);
+
+    if (resetRes.rows.length === 0) {
+      return res.status(400).json({
+        error: 'El código de verificación es inválido o ha expirado. Por favor solicita uno nuevo.'
+      });
+    }
+
+    const resetRecord = resetRes.rows[0];
+
+    // 2. Actualizar contraseña en la tabla correspondiente
+    let updated = false;
+
+    if (resetRecord.user_type === 'business') {
+      const uRes = await pool.query(
+        'UPDATE reservas_business_users SET password = $1 WHERE LOWER(email) = LOWER($2)',
+        [cleanPass, cleanEmail]
+      );
+      if (uRes.rowCount > 0) updated = true;
+    } else {
+      const uRes = await pool.query(
+        'UPDATE reservas_clients SET password = $1 WHERE LOWER(email) = LOWER($2)',
+        [cleanPass, cleanEmail]
+      );
+      if (uRes.rowCount > 0) updated = true;
+    }
+
+    // Fallback: Si no se actualizó por tipo, intentar actualizar en ambas
+    if (!updated) {
+      await pool.query('UPDATE reservas_business_users SET password = $1 WHERE LOWER(email) = LOWER($2)', [cleanPass, cleanEmail]);
+      await pool.query('UPDATE reservas_clients SET password = $1 WHERE LOWER(email) = LOWER($2)', [cleanPass, cleanEmail]);
+    }
+
+    // 3. Marcar código como usado
+    await pool.query(
+      'UPDATE reservas_password_resets SET used = TRUE WHERE id = $1',
+      [resetRecord.id]
+    );
+
+    console.log(`✅ Contraseña actualizada con éxito para el usuario: ${cleanEmail}`);
+
+    res.json({
+      success: true,
+      message: '¡Contraseña actualizada exitosamente! Ya puedes iniciar sesión con tu nueva contraseña.'
+    });
+  } catch (error) {
+    console.error('Error en /api/auth/reset-password:', error);
+    res.status(500).json({ error: 'Error al restablecer la contraseña.' });
   }
 });
 
