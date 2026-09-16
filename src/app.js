@@ -51,6 +51,10 @@ class App {
     return '₡' + num.toLocaleString('es-CR', { maximumFractionDigits: 0 });
   }
 
+  formatTime(timeStr) {
+    return this.formatTime12h(timeStr);
+  }
+
   formatTime12h(timeStr) {
     if (!timeStr) return '';
     const clean = String(timeStr).trim();
@@ -146,6 +150,10 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialHash);
     }
 
+    this.renderHeader();
+    this.renderMobileBottomNav();
+    this.renderCurrentView();
+    this.setupGlobalEvents();
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -1006,6 +1014,7 @@ class App {
 
                 <!-- Propuesta de Valor -->
                 <p class="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed max-w-2xl">
+                  Planes mensuales fijos <strong class="text-amber-300 font-black">($8, $15, $25/mes)</strong>. <span class="text-emerald-300 font-black underline decoration-emerald-400/50 underline-offset-2">Cero comisiones por reserva</span>. Recibe turnos directos por WhatsApp y ten tu enlace web propio con catálogo profesional listo para compartir.
                   Planes mensuales fijos <strong class="text-amber-300 font-black">($10, $18, $35/mes)</strong>. <span class="text-emerald-300 font-black underline decoration-emerald-400/50 underline-offset-2">Cero comisiones por reserva</span>. Recibe turnos directos por WhatsApp y ten tu enlace web propio con catálogo profesional listo para compartir.
                 </p>
 
@@ -8445,7 +8454,7 @@ class App {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Duración activa:</span>
-              <span class="text-slate-900 font-bold">${durationLabel} <span class="text-slate-400 font-normal">(renovación manual mes a mes)</span></span>
+              <span class="text-slate-900 font-bold">Mensual (30 Días) <span class="text-slate-400 font-normal">(renovación mes a mes)</span></span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Límite:</span>
@@ -8732,6 +8741,7 @@ class App {
             <!-- Descripción -->
             <div>
               <label class="block font-bold text-slate-700 mb-1 text-xs">Descripción del Comercio</label>
+              <textarea id="edit-biz-desc" rows="2" class="w-full px-3.5 py-2.5 bg-slate
               <textarea id="edit-biz-desc" rows="2" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">${this.escapeHtml(biz.description || '')}</textarea>
             </div>
 

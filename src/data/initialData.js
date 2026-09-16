@@ -49,6 +49,7 @@ export const SUBSCRIPTION_PLANS = [
   {
     id: 'unlimited',
     name: 'Plan Ilimitado',
+    badge: 'Máxima Potencia',
     badge: 'Sin Límites',
     priceUsd: 35,
     priceCrc: 18200,
