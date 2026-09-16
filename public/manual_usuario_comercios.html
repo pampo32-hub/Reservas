@@ -3,18 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manual Oficial de Usuario para Comercios - Reservas CR</title>
+  <title>Manual de Usuario para Comercios - Reservas CR</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      color: #1e293b;
+      color: #0f172a;
       background-color: #f8fafc;
       -webkit-font-smoothing: antialiased;
+    }
+    .badge-plan {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.025em;
     }
     @media print {
       body {
@@ -34,13 +47,13 @@
         break-inside: avoid;
       }
       @page {
-        margin: 1.2cm;
+        margin: 1cm;
         size: letter portrait;
       }
     }
   </style>
 </head>
-<body class="p-4 sm:p-8 md:p-12 max-w-5xl mx-auto">
+<body class="p-3 sm:p-6 md:p-10 max-w-4xl mx-auto">
 
   <!-- Botón flotante para imprimir / guardar como PDF -->
   <div class="no-print fixed bottom-6 right-6 z-50 flex items-center gap-3">
@@ -51,248 +64,212 @@
   </div>
 
   <!-- PORTADA / ENCABEZADO -->
-  <header class="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-8 sm:p-12 rounded-3xl shadow-2xl border border-slate-800 relative overflow-hidden mb-10">
-    <div class="absolute -right-12 -top-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -left-12 -bottom-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-    <div class="relative z-10">
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-blue-500/30 border border-blue-400/30">
-            <i class="fas fa-calendar-check"></i>
-          </div>
-          <div>
-            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Reservas CR</h1>
-            <p class="text-xs text-blue-300 font-bold tracking-wider uppercase">Directorio Digital & Sistema de Agendamiento</p>
-          </div>
+  <header class="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-6 sm:p-10 rounded-3xl shadow-xl border border-slate-800 mb-8 page-break-inside-avoid">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-2xl font-black shadow-md shadow-blue-500/30">
+          <i class="fas fa-calendar-check"></i>
         </div>
-        <span class="px-4 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-black flex items-center gap-1.5">
-          <i class="fas fa-check-circle"></i> Versión Oficial 2026 • Costa Rica 🇨🇷
-        </span>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white">Reservas CR</h1>
+          <p class="text-xs text-blue-300 font-bold uppercase tracking-wider">Directorio Digital & Sistema de Agendamiento</p>
+        </div>
       </div>
+      <span class="px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-black flex items-center gap-1.5">
+        <i class="fas fa-check-circle"></i> Versión Oficial 2026 • Costa Rica 🇨🇷
+      </span>
+    </div>
 
-      <div class="mt-8 border-t border-slate-800 pt-8">
-        <span class="inline-block px-3 py-1 bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-lg mb-3">Guía Práctica Paso a Paso</span>
-        <h2 class="text-3xl sm:text-4xl font-black text-white leading-tight">Manual de Usuario para Comercios y Profesionales</h2>
-        <p class="text-sm sm:text-base text-slate-300 mt-3 max-w-3xl leading-relaxed">
-          Aprende a configurar tu negocio, gestionar tu equipo, organizar horarios y almuerzos, controlar tu agenda en tiempo real, automatizar confirmaciones y descargar tus reportes contables según tu plan.
-        </p>
+    <div class="border-t border-slate-800 pt-6">
+      <span class="inline-block px-3 py-1 bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider rounded-lg mb-2.5">
+        Guía Práctica Paso a Paso
+      </span>
+      <h2 class="text-2xl sm:text-3xl font-black text-white leading-tight">
+        Manual de Usuario para Comercios y Profesionales
+      </h2>
+      <p class="text-xs sm:text-sm text-slate-300 mt-2.5 max-w-2xl leading-relaxed">
+        Aprende a configurar tu negocio, gestionar tu equipo, organizar horarios y almuerzos, controlar tu agenda en tiempo real, automatizar confirmaciones y descargar tus reportes contables según tu plan.
+      </p>
+    </div>
+
+    <!-- 4 Tarjetas Informativas Simétricas -->
+    <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+      <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex flex-col justify-center">
+        <span class="text-slate-400 text-[10px] uppercase font-bold">Portal Web:</span>
+        <strong class="text-blue-400 font-bold text-xs mt-0.5 truncate">reservascr.app</strong>
       </div>
-
-      <div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-        <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <span class="text-slate-400 block text-[10px]">Portal Web:</span>
-          <strong class="text-blue-400 font-bold">reservascr.app</strong>
-        </div>
-        <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <span class="text-slate-400 block text-[10px]">Dispositivos:</span>
-          <strong class="text-white font-bold">Celular, Tablet y PC</strong>
-        </div>
-        <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <span class="text-slate-400 block text-[10px]">Planes Disponibles:</span>
-          <strong class="text-emerald-400 font-bold">Básico, Pro e Ilimitado</strong>
-        </div>
-        <div class="p-3 rounded-xl bg-slate-800/60 border border-slate-700/60">
-          <span class="text-slate-400 block text-[10px]">Soporte Oficial:</span>
-          <strong class="text-amber-400 font-bold">soporte@reservascr.app</strong>
-        </div>
+      <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex flex-col justify-center">
+        <span class="text-slate-400 text-[10px] uppercase font-bold">Dispositivos:</span>
+        <strong class="text-white font-bold text-xs mt-0.5 truncate">Celular, Tablet y PC</strong>
+      </div>
+      <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex flex-col justify-center">
+        <span class="text-slate-400 text-[10px] uppercase font-bold">Planes:</span>
+        <strong class="text-emerald-400 font-bold text-xs mt-0.5 truncate">Básico, Pro e Ilimitado</strong>
+      </div>
+      <div class="p-3 rounded-xl bg-slate-800/80 border border-slate-700 flex flex-col justify-center">
+        <span class="text-slate-400 text-[10px] uppercase font-bold">Soporte Oficial:</span>
+        <strong class="text-amber-400 font-bold text-xs mt-0.5 truncate">soporte@reservascr.app</strong>
       </div>
     </div>
   </header>
 
-  <!-- TABLA DE CONTENIDOS RÁPIDA -->
-  <section class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm mb-10 page-break-inside-avoid">
-    <h3 class="text-lg font-black text-slate-900 mb-4 flex items-center gap-2">
-      <i class="fas fa-list-ol text-blue-600"></i> Tabla de Contenidos del Manual
+  <!-- TABLA DE CONTENIDOS -->
+  <section class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm mb-8 page-break-inside-avoid">
+    <h3 class="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
+      <i class="fas fa-list-ol text-blue-600"></i> Tabla de Contenidos
     </h3>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm font-semibold text-slate-700">
-      <a href="#modulo-1" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">1</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold text-slate-700">
+      <a href="#modulo-1" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">1</span>
         <span>Acceso e Inicio de Sesión al Panel</span>
       </a>
-      <a href="#modulo-2" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">2</span>
+      <a href="#modulo-2" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">2</span>
         <span>Perfil del Negocio, Logo y Portada</span>
       </a>
-      <a href="#modulo-3" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">3</span>
+      <a href="#modulo-3" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">3</span>
         <span>Servicios, Precios en Colones y Duración</span>
       </a>
-      <a href="#modulo-4" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">4</span>
+      <a href="#modulo-4" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">4</span>
         <span>Equipo de Trabajo y Especialistas</span>
       </a>
-      <a href="#modulo-5" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">5</span>
+      <a href="#modulo-5" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">5</span>
         <span>Horarios de Atención y Hora de Almuerzo</span>
       </a>
-      <a href="#modulo-6" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">6</span>
+      <a href="#modulo-6" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">6</span>
         <span>Bloqueo de Tiempos e Imprevistos</span>
       </a>
-      <a href="#modulo-7" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">7</span>
+      <a href="#modulo-7" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">7</span>
         <span>Auto-confirmación vs Aprobación Manual</span>
       </a>
-      <a href="#modulo-8" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">8</span>
+      <a href="#modulo-8" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">8</span>
         <span>Gestión del Calendario y Citas Diarias</span>
       </a>
-      <a href="#modulo-9" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">9</span>
+      <a href="#modulo-9" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">9</span>
         <span>Reportes de Ventas y Descarga a Excel</span>
       </a>
-      <a href="#modulo-10" class="p-2.5 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
-        <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">10</span>
+      <a href="#modulo-10" class="p-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors">
+        <span class="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-[10px]">10</span>
         <span>Consejos para Compartir tu Link y Vender Más</span>
       </a>
     </div>
   </section>
 
-  <!-- MÓDULOS DEL MANUAL -->
-  <main class="space-y-8">
+  <!-- MÓDULOS -->
+  <main class="space-y-6">
 
     <!-- MÓDULO 1 -->
-    <section id="modulo-1" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg font-black shadow-md shadow-blue-500/20">1</div>
-          <div>
-            <span class="text-xs font-black text-blue-600 uppercase tracking-wider">Módulo 1</span>
-            <h3 class="text-xl font-black text-slate-900">Acceso e Inicio de Sesión al Panel de Negocio</h3>
-          </div>
+    <section id="modulo-1" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm font-black">1</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Acceso e Inicio de Sesión al Panel</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-blue-50 text-blue-700 border border-blue-200">
+          <i class="fas fa-check"></i> Todos los Planes (Básico, Pro, Ilimitado)
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          Para administrar tu negocio, puedes ingresar desde cualquier navegador web (Chrome, Safari, Edge) en tu teléfono o computadora:
-        </p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-            <h4 class="font-black text-slate-900 mb-1 flex items-center gap-2">
-              <i class="fas fa-sign-in-alt text-blue-600"></i> 1. Pasos para Iniciar Sesión
-            </h4>
-            <ol class="list-decimal list-inside space-y-1.5 text-xs text-slate-700 pt-1">
-              <li>Ingresa a <strong>https://reservascr.app</strong></li>
-              <li>Haz clic en el botón superior <strong>"Iniciar Sesión"</strong>.</li>
-              <li>Selecciona la pestaña <strong>"Soy un Negocio"</strong>.</li>
-              <li>Ingresa tu correo electrónico registrado y tu contraseña.</li>
-              <li>Presiona <strong>"Ingresar al Panel de Negocio"</strong>.</li>
-            </ol>
-          </div>
+      <p class="text-xs text-slate-600 mb-3">
+        Ingresa a tu cuenta comercial desde cualquier celular, tablet o computadora con conexión a internet:
+      </p>
 
-          <div class="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100">
-            <h4 class="font-black text-indigo-950 mb-1 flex items-center gap-2">
-              <i class="fas fa-mobile-alt text-indigo-600"></i> 2. Instalar como App en tu Celular
-            </h4>
-            <p class="text-xs text-indigo-900 leading-relaxed">
-              Reservas CR es una <strong>PWA (Aplicación Web Progresiva)</strong>. Puedes tocar en el menú de tu navegador <em>"Agregar a la pantalla principal"</em> o <em>"Instalar Aplicación"</em> para tener el ícono directo de Reservas CR en tu teléfono y abrirlo como una app nativa en 1 segundo.
-            </p>
-          </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <h4 class="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+            <i class="fas fa-sign-in-alt text-blue-600"></i> Pasos para Iniciar Sesión:
+          </h4>
+          <ol class="list-decimal list-inside space-y-1 text-slate-700">
+            <li>Abre <strong>https://reservascr.app</strong></li>
+            <li>Haz clic en <strong>"Iniciar Sesión"</strong>.</li>
+            <li>Selecciona la pestaña <strong>"Soy un Negocio"</strong>.</li>
+            <li>Ingresa tu correo y contraseña registrada.</li>
+            <li>Haz clic en <strong>"Ingresar al Panel"</strong>.</li>
+          </ol>
+        </div>
+
+        <div class="p-3.5 bg-indigo-50/70 rounded-2xl border border-indigo-100">
+          <h4 class="font-bold text-indigo-950 mb-1 flex items-center gap-1.5">
+            <i class="fas fa-mobile-alt text-indigo-600"></i> Instalar como App en tu Celular:
+          </h4>
+          <p class="text-indigo-900 leading-relaxed">
+            Puedes tocar en el menú de tu navegador <em>"Agregar a la pantalla de inicio"</em> o <em>"Instalar App"</em> para tener el acceso directo en tu teléfono como una aplicación nativa.
+          </p>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 2 -->
-    <section id="modulo-2" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg font-black shadow-md shadow-indigo-500/20">2</div>
-          <div>
-            <span class="text-xs font-black text-indigo-600 uppercase tracking-wider">Módulo 2</span>
-            <h3 class="text-xl font-black text-slate-900">Configuración del Perfil: Fotos, Ubicación y Contacto</h3>
-          </div>
+    <section id="modulo-2" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm font-black">2</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Perfil del Negocio, Logo y Portada</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-blue-50 text-blue-700 border border-blue-200">
+          <i class="fas fa-check"></i> Todos los Planes (Básico, Pro, Ilimitado)
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          Dentro de tu panel, haz clic en la pestaña <strong>"Configurar Negocio"</strong> para editar la carta de presentación que verán todos los clientes:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        En la pestaña <strong>"Configurar Negocio"</strong> personalizas la carta de presentación de tu local:
+      </p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm mb-1">
-              <i class="fas fa-camera"></i>
-            </div>
-            <strong class="block text-slate-900 font-extrabold text-xs">Fotos de Portada y Logo</strong>
-            <p class="text-[11px] text-slate-600">
-              Sube enlaces o imágenes nítidas de tu local y tu logotipo. Las fotos atractivas multiplican por 3 las reservas de nuevos clientes.
-            </p>
-          </div>
-
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm mb-1">
-              <i class="fab fa-whatsapp"></i>
-            </div>
-            <strong class="block text-slate-900 font-extrabold text-xs">WhatsApp de Atención</strong>
-            <p class="text-[11px] text-slate-600">
-              Coloca tu número oficial de 8 dígitos (+506). Es el número al que los clientes podrán escribirte directamente ante consultas.
-            </p>
-          </div>
-
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5">
-            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm mb-1">
-              <i class="fas fa-map-marker-alt"></i>
-            </div>
-            <strong class="block text-slate-900 font-extrabold text-xs">Ubicación y Provincia</strong>
-            <p class="text-[11px] text-slate-600">
-              Selecciona tu Provincia y Cantón en Costa Rica. Agrega la dirección física y tu enlace de Waze o Google Maps.
-            </p>
-          </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+          <strong class="block text-slate-900 font-bold mb-0.5"><i class="fas fa-camera text-blue-600 mr-1"></i> Fotos y Logotipo:</strong>
+          <p class="text-slate-600">Sube fotos atractivas de tu local o trabajos realizados para inspirar confianza a nuevos clientes.</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+          <strong class="block text-slate-900 font-bold mb-0.5"><i class="fab fa-whatsapp text-emerald-600 mr-1"></i> WhatsApp Oficial:</strong>
+          <p class="text-slate-600">Ingresa tu número costarricense de 8 dígitos para contacto directo con los clientes.</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+          <strong class="block text-slate-900 font-bold mb-0.5"><i class="fas fa-map-marker-alt text-rose-600 mr-1"></i> Ubicación:</strong>
+          <p class="text-slate-600">Selecciona tu Provincia y Cantón en Costa Rica y pega tu dirección de Google Maps o Waze.</p>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 3 -->
-    <section id="modulo-3" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-lg font-black shadow-md shadow-emerald-500/20">3</div>
-          <div>
-            <span class="text-xs font-black text-emerald-600 uppercase tracking-wider">Módulo 3</span>
-            <h3 class="text-xl font-black text-slate-900">Gestión del Menú de Servicios y Precios en Colones</h3>
-          </div>
+    <section id="modulo-3" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm font-black">3</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Servicios, Precios en Colones y Duración</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-layer-group text-blue-600"></i> Capacidad de Citas: Básico (150/mes) • Pro (300/mes) • Ilimitado (Sin Límite)
+        <span class="badge-plan bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <i class="fas fa-layer-group"></i> Capacidad: Básico 150 res/mes • Pro 300 res/mes • Ilimitado ∞
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          En la pestaña <strong>"Servicios"</strong> puedes crear tu catálogo completo de servicios o productos que los clientes pueden agendar:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        En la pestaña <strong>"Servicios"</strong> armas tu catálogo de opciones disponibles para agendar:
+      </p>
 
-        <div class="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-3">
-          <h4 class="font-extrabold text-emerald-950 text-xs sm:text-sm flex items-center gap-2">
-            <i class="fas fa-plus-circle text-emerald-600"></i> ¿Cómo añadir un nuevo servicio?
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-700">
-            <div class="p-3 bg-white rounded-xl border border-emerald-100">
-              <span class="font-black text-emerald-800 block mb-0.5">1. Nombre y Descripción:</span>
-              <span>Ej. <em>"Corte de Cabello + Barba"</em> o <em>"Limpieza Facial Profunda"</em>.</span>
-            </div>
-            <div class="p-3 bg-white rounded-xl border border-emerald-100">
-              <span class="font-black text-emerald-800 block mb-0.5">2. Precio en Colones (₡):</span>
-              <span>Ingresa el monto exacto (ej. ₡8,000). El sistema formateará los precios automáticamente.</span>
-            </div>
-            <div class="p-3 bg-white rounded-xl border border-emerald-100">
-              <span class="font-black text-emerald-800 block mb-0.5">3. Duración del Turno:</span>
-              <span>Selecciona la duración (30 min, 45 min, 60 min). Esto calcula los espacios exactos en el calendario.</span>
-            </div>
-            <div class="p-3 bg-white rounded-xl border border-emerald-100">
-              <span class="font-black text-emerald-800 block mb-0.5">4. Foto del Servicio:</span>
-              <span>Sube una foto ilustrativa del resultado para darle mayor valor visual a tu servicio.</span>
-            </div>
+      <div class="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-2 text-xs">
+        <h4 class="font-bold text-emerald-950 flex items-center gap-1.5">
+          <i class="fas fa-plus-circle text-emerald-600"></i> ¿Cómo añadir un nuevo servicio?
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <strong>1. Nombre y Descripción:</strong> Ej. <em>"Corte de Cabello + Barba"</em>.
+          </div>
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <strong>2. Precio en Colones (₡):</strong> El monto exacto (ej. ₡8,000 CRC).
+          </div>
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <strong>3. Duración del Turno:</strong> En minutos (30m, 45m, 60m) para calcular los espacios del calendario.
+          </div>
+          <div class="p-2.5 bg-white rounded-xl border border-emerald-100">
+            <strong>4. Foto Ilustrativa:</strong> Agrega una foto del servicio para destacar visualmente.
           </div>
         </div>
       </div>
@@ -300,324 +277,248 @@
 
     <!-- MÓDULO 4 -->
     <div class="page-break"></div>
-    <section id="modulo-4" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-lg font-black shadow-md shadow-amber-500/20">4</div>
-          <div>
-            <span class="text-xs font-black text-amber-600 uppercase tracking-wider">Módulo 4</span>
-            <h3 class="text-xl font-black text-slate-900">Equipo de Trabajo, Colaboradores y Especialistas</h3>
-          </div>
+    <section id="modulo-4" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-sm font-black">4</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Equipo de Trabajo y Especialistas</h3>
         </div>
-        <div class="flex flex-wrap gap-1.5">
-          <span class="px-2.5 py-0.5 bg-blue-100 text-blue-800 border border-blue-200 rounded-full text-[10px] font-extrabold">Básico: 1 Especialista</span>
-          <span class="px-2.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-[10px] font-extrabold">Pro: Hasta 5 Especialistas</span>
-          <span class="px-2.5 py-0.5 bg-purple-100 text-purple-900 border border-purple-300 rounded-full text-[10px] font-extrabold">Ilimitado: Especialistas Ilimitados</span>
-        </div>
+        <span class="badge-plan bg-amber-50 text-amber-900 border border-amber-300">
+          <i class="fas fa-users"></i> Básico: 1 Especialista • Pro: Hasta 5 • Ilimitado: Sin Límite
+        </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          En la pestaña <strong>"Equipo"</strong> puedes registrar a todos los integrantes de tu negocio (barberos, estilistas, odontólogos, mecánicos, masajistas, etc.):
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        En la pestaña <strong>"Equipo"</strong> administras a los colaboradores que prestan atención en tu negocio:
+      </p>
 
-        <div class="space-y-3">
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
-            <div class="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">A</div>
-            <div>
-              <strong class="text-slate-900 font-bold block text-xs">Asignación de Servicios Específicos:</strong>
-              <p class="text-xs text-slate-600 mt-0.5">
-                Puedes indicar si un colaborador realiza <strong>todos los servicios</strong> o solo ciertos tratamientos especializados.
-              </p>
-            </div>
+      <div class="space-y-2 text-xs">
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-md bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">A</span>
+          <div>
+            <strong class="text-slate-900">Servicios Asignados:</strong> Indica si el profesional realiza todos los servicios del catálogo o solo tratamientos específicos.
           </div>
-
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
-            <div class="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">B</div>
-            <div>
-              <strong class="text-slate-900 font-bold block text-xs">Horarios y Descansos Individuales:</strong>
-              <p class="text-xs text-slate-600 mt-0.5">
-                Cada especialista puede tener su propio horario de entrada, salida y su hora particular de descanso / almuerzo.
-              </p>
-            </div>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-md bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">B</span>
+          <div>
+            <strong class="text-slate-900">Horarios Individuales:</strong> Cada profesional puede tener su propia hora de entrada, salida y descanso de almuerzo.
           </div>
-
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
-            <div class="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">C</div>
-            <div>
-              <strong class="text-slate-900 font-bold block text-xs">Asignación Automática Inteligente:</strong>
-              <p class="text-xs text-slate-600 mt-0.5">
-                Si el cliente elige la opción <em>"Cualquier especialista disponible"</em>, el sistema asigna automáticamente al profesional libre en esa hora, optimizando la ocupación del local.
-              </p>
-            </div>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-2.5">
+          <span class="w-5 h-5 rounded-md bg-amber-500 text-slate-950 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">C</span>
+          <div>
+            <strong class="text-slate-900">Asignación Automática:</strong> Si el cliente selecciona <em>"Cualquiera disponible"</em>, el sistema agenda con el especialista libre.
           </div>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 5 -->
-    <section id="modulo-5" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-lg font-black shadow-md shadow-purple-500/20">5</div>
-          <div>
-            <span class="text-xs font-black text-purple-600 uppercase tracking-wider">Módulo 5</span>
-            <h3 class="text-xl font-black text-slate-900">Horario de Atención Semanal y Hora de Almuerzo</h3>
-          </div>
+    <section id="modulo-5" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm font-black">5</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Horarios de Atención y Hora de Almuerzo</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-blue-50 text-blue-700 border border-blue-200">
+          <i class="fas fa-check"></i> Todos los Planes (Básico, Pro, Ilimitado)
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          En la pestaña <strong>"Horarios"</strong> configuras la disponibilidad general de tu establecimiento:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        En la pestaña <strong>"Horarios"</strong> estableces cuándo está abierto tu negocio y cuándo toma descanso tu personal:
+      </p>
 
-        <div class="p-4 bg-purple-50/70 rounded-2xl border border-purple-200 space-y-3">
-          <div class="flex items-center gap-2 font-bold text-purple-950 text-xs sm:text-sm">
-            <i class="fas fa-utensils text-purple-600"></i>
-            <span>Configuración de Descansos / Hora de Almuerzo</span>
+      <div class="p-3.5 bg-purple-50/70 rounded-2xl border border-purple-200 space-y-2 text-xs">
+        <div class="font-bold text-purple-950 flex items-center gap-1.5">
+          <i class="fas fa-utensils text-purple-600"></i> Descanso / Hora de Almuerzo Automática:
+        </div>
+        <p class="text-purple-900 leading-relaxed">
+          Define tu franja de almuerzo (ej. <strong>12:00 PM a 1:00 PM</strong>). El sistema bloqueará de inmediato esas horas para que ningún cliente pueda agendar turnos durante el almuerzo de tu personal.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-slate-700">
+          <div class="p-2 bg-white rounded-xl border border-purple-100">
+            <strong>Días Laborales:</strong> Marca los días que abres (ej. Lunes a Sábado) y los días cerrados (ej. Domingo).
           </div>
-          <p class="text-xs text-purple-900 leading-relaxed">
-            Puedes definir una franja de descanso (ejemplo: <strong>12:00 PM a 1:00 PM</strong>). El sistema bloqueará automáticamente esas horas en el selector de reservas para que ningún cliente pueda agendar citas durante el almuerzo de tu personal.
-          </p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-            <div class="p-2.5 bg-white rounded-xl border border-purple-100 text-slate-700">
-              <strong>Días de Apertura:</strong> Marca con un clic qué días abre tu local (ej. Lunes a Sábado) y qué días permanece cerrado (ej. Domingo).
-            </div>
-            <div class="p-2.5 bg-white rounded-xl border border-purple-100 text-slate-700">
-              <strong>Horas de Entrada y Salida:</strong> Define la hora de apertura (ej. 08:00 AM) y hora de cierre (ej. 07:00 PM).
-            </div>
+          <div class="p-2 bg-white rounded-xl border border-purple-100">
+            <strong>Horas de Atención:</strong> Establece la hora de inicio (ej. 08:00 AM) y fin de jornada (ej. 07:00 PM).
           </div>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 6 -->
-    <section id="modulo-6" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-lg font-black shadow-md shadow-rose-500/20">6</div>
-          <div>
-            <span class="text-xs font-black text-rose-600 uppercase tracking-wider">Módulo 6</span>
-            <h3 class="text-xl font-black text-slate-900">Bloqueo de Tiempos e Imprevistos en la Agenda</h3>
-          </div>
+    <section id="modulo-6" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-sm font-black">6</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Bloqueo de Tiempos e Imprevistos</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-blue-50 text-blue-700 border border-blue-200">
+          <i class="fas fa-check"></i> Todos los Planes (Básico, Pro, Ilimitado)
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          Si necesitas ausentarte unas horas, cerrar por feriado o atender una emergencia, puedes usar la pestaña <strong>"Bloquear Horarios"</strong>:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        Si requieres cerrar unas horas por emergencia, vacaciones o feriado, ve a la pestaña <strong>"Bloquear Horarios"</strong>:
+      </p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="p-4 bg-rose-50/80 rounded-2xl border border-rose-200 space-y-1.5 text-xs text-rose-950">
-            <strong class="font-black flex items-center gap-1.5 text-rose-900">
-              <i class="fas fa-lock text-rose-600"></i> ¿Cómo bloquear un espacio?
-            </strong>
-            <p>1. Selecciona la <strong>Fecha</strong> que deseas bloquear en el calendario.</p>
-            <p>2. Elige la <strong>Hora o Franja</strong> específica (o marca el día completo).</p>
-            <p>3. Presiona el botón <strong>"Bloquear Horario"</strong>.</p>
-            <p>4. El turno quedará inhabilitado de inmediato para que ningún cliente pueda reservarlo.</p>
-          </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+        <div class="p-3.5 bg-rose-50/80 rounded-2xl border border-rose-200 space-y-1.5 text-rose-950">
+          <strong class="font-bold text-rose-900 flex items-center gap-1">
+            <i class="fas fa-lock text-rose-600"></i> Pasos para Bloquear un Espacio:
+          </strong>
+          <p>1. Selecciona la <strong>Fecha</strong> a bloquear en el calendario.</p>
+          <p>2. Selecciona la <strong>Hora o Franja</strong> (o el día entero).</p>
+          <p>3. Presiona el botón <strong>"Bloquear Horario"</strong>.</p>
+          <p>4. El turno quedará cerrado de inmediato a los clientes.</p>
+        </div>
 
-          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs text-slate-700">
-            <strong class="font-black flex items-center gap-1.5 text-slate-900">
-              <i class="fas fa-unlock text-emerald-600"></i> Desbloqueo Inmediato
-            </strong>
-            <p class="leading-relaxed">
-              En cualquier momento puedes consultar tu lista de bloqueos activos en esa misma pantalla y eliminarlos con un clic en el botón de papelera para volver a habilitar los turnos a tus clientes.
-            </p>
-          </div>
+        <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1 text-slate-700">
+          <strong class="font-bold text-slate-900 flex items-center gap-1">
+            <i class="fas fa-unlock text-emerald-600"></i> Desbloqueo Inmediato:
+          </strong>
+          <p class="leading-relaxed">
+            En esa misma pantalla verás tu listado de bloqueos activos. Haz clic en el ícono rojo de papelera para eliminar el bloqueo y habilitar de nuevo las horas a tus clientes.
+          </p>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 7 -->
     <div class="page-break"></div>
-    <section id="modulo-7" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-blue-700 text-white flex items-center justify-center text-lg font-black shadow-md shadow-blue-600/20">7</div>
-          <div>
-            <span class="text-xs font-black text-blue-700 uppercase tracking-wider">Módulo 7</span>
-            <h3 class="text-xl font-black text-slate-900">Modalidades de Reserva: Auto-Confirmación vs Aprobación Manual</h3>
-          </div>
+    <section id="modulo-7" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-700 text-white flex items-center justify-center text-sm font-black">7</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Modalidades de Reserva: Auto-Confirmación vs Manual</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-blue-50 text-blue-700 border border-blue-200">
+          <i class="fas fa-check"></i> Todos los Planes (Básico, Pro, Ilimitado)
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          En <strong>"Configurar Negocio"</strong>, puedes elegir cómo quieres que ingresen las citas a tu agenda:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        En <strong>"Configurar Negocio"</strong> eliges cómo deseas recibir las reservas de tus clientes:
+      </p>
 
-        <!-- Cajas estilizadas con h-auto y padding seguro para que el texto nunca desborde -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="h-auto p-5 rounded-2xl bg-emerald-50/90 border-2 border-emerald-300 flex flex-col justify-between text-emerald-950 shadow-2xs">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-black text-[10px] uppercase tracking-wider">Recomendado</span>
-                <i class="fas fa-bolt text-emerald-600 text-base"></i>
-              </div>
-              <h4 class="font-black text-sm text-emerald-950 mb-2">1. Auto-Confirmación Inmediata</h4>
-              <p class="text-xs text-emerald-900 leading-relaxed">
-                Cuando el cliente reserva, la cita queda <strong>confirmada al instante</strong>. El cliente y el comercio reciben su comprobante de inmediato por WhatsApp y correo. Ahorra tiempo y no requiere que estés pendiente de aprobarla manualmente.
-              </p>
-            </div>
-            <div class="pt-3 mt-3 border-t border-emerald-200 text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
-              <i class="fas fa-check-circle text-emerald-600"></i> Ideal para agilizar turnos sin demoras
-            </div>
+      <!-- Layout Simétrico con amplio padding y texto 100% dentro de las cajas -->
+      <div class="space-y-3 text-xs">
+        <div class="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-extrabold text-[10px] uppercase">Opción 1 • Recomendada</span>
+            <i class="fas fa-bolt text-emerald-600"></i>
           </div>
+          <h4 class="font-bold text-sm text-emerald-950 mb-1">Auto-Confirmación Inmediata</h4>
+          <p class="text-emerald-900 leading-relaxed">
+            La cita queda <strong>confirmada al instante</strong> sin requerir tu aprobación manual. El cliente y el comercio reciben su comprobante de inmediato por WhatsApp y correo electrónico, agilizando la atención.
+          </p>
+        </div>
 
-          <div class="h-auto p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 flex flex-col justify-between text-amber-950 shadow-2xs">
-            <div>
-              <div class="flex items-center justify-between mb-2">
-                <span class="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 font-black text-[10px] uppercase tracking-wider">Control Manual</span>
-                <i class="fas fa-hourglass-half text-amber-600 text-base"></i>
-              </div>
-              <h4 class="font-black text-sm text-amber-950 mb-2">2. Aprobación Manual Previa</h4>
-              <p class="text-xs text-amber-900 leading-relaxed">
-                La cita entra en estado <strong>"Pendiente"</strong>. Como dueño, debes ingresar a tu panel y hacer clic en <strong>"Aprobar Cita"</strong>. Una vez aprobada, el sistema despacha la confirmación final al cliente por WhatsApp y correo.
-              </p>
-            </div>
-            <div class="pt-3 mt-3 border-t border-amber-200 text-[11px] font-bold text-amber-800 flex items-center gap-1.5">
-              <i class="fas fa-user-check text-amber-600"></i> Ideal si requieres validar antes cada turno
-            </div>
+        <div class="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[10px] uppercase">Opción 2 • Control Manual</span>
+            <i class="fas fa-hourglass-half text-amber-600"></i>
           </div>
+          <h4 class="font-bold text-sm text-amber-950 mb-1">Aprobación Manual Previa</h4>
+          <p class="text-amber-900 leading-relaxed">
+            La cita entra en estado <strong>"Pendiente"</strong>. El dueño o encargado debe ingresar al panel y presionar <strong>"Aprobar Cita"</strong>. Una vez aprobada, el sistema envía la confirmación oficial al cliente.
+          </p>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 8 -->
-    <section id="modulo-8" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center text-lg font-black shadow-md">8</div>
-          <div>
-            <span class="text-xs font-black text-slate-500 uppercase tracking-wider">Módulo 8</span>
-            <h3 class="text-xl font-black text-slate-900">Control del Calendario Diario y Gestión de Citas</h3>
-          </div>
+    <section id="modulo-8" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-sm font-black">8</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Control del Calendario Diario y Gestión de Citas</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-blue-50 text-blue-700 border border-blue-200">
+          <i class="fas fa-check"></i> Todos los Planes (Básico, Pro, Ilimitado)
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          En la pestaña principal <strong>"Citas / Agenda"</strong> tienes el control total de tu flujo de clientes:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        En la pestaña principal <strong>"Citas / Agenda"</strong> administras el día a día de tu negocio:
+      </p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-            <span class="font-black text-slate-900 block text-xs mb-1">🔍 Filtros Rápidos</span>
-            <p class="text-[11px] text-slate-600">Filtra tus citas por estado: <em>Todas, Pendientes, Confirmadas, Completadas o Canceladas</em>, y por especialista.</p>
-          </div>
-          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-            <span class="font-black text-slate-900 block text-xs mb-1">✅ Marcar Completada</span>
-            <p class="text-[11px] text-slate-600">Al atender al cliente, marca la cita como <em>Completada</em> para sumar el ingreso a tus reportes y solicitar la valoración del cliente.</p>
-          </div>
-          <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
-            <span class="font-black text-slate-900 block text-xs mb-1">📅 Vista Calendario</span>
-            <p class="text-[11px] text-slate-600">Visualiza tu semana o mes completo con códigos de color para identificar rápidamente horas libres y horas llenas.</p>
-          </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+          <strong class="text-slate-900 block font-bold mb-0.5">🔍 Filtros Rápidos:</strong>
+          <p class="text-slate-600">Filtra por estado (Pendientes, Confirmadas, Completadas o Canceladas) y por especialista.</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+          <strong class="text-slate-900 block font-bold mb-0.5">✅ Marcar Completada:</strong>
+          <p class="text-slate-600">Al atender al cliente, marca la cita completada para sumar los ingresos a tus reportes.</p>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+          <strong class="text-slate-900 block font-bold mb-0.5">📅 Vista Calendario:</strong>
+          <p class="text-slate-600">Visualiza turnos por día o semana con códigos de color para identificar horas libres.</p>
         </div>
       </div>
     </section>
 
     <!-- MÓDULO 9 -->
-    <section id="modulo-9" class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-emerald-700 text-white flex items-center justify-center text-lg font-black shadow-md shadow-emerald-600/20">9</div>
-          <div>
-            <span class="text-xs font-black text-emerald-700 uppercase tracking-wider">Módulo 9</span>
-            <h3 class="text-xl font-black text-slate-900">Reportes de Ventas, Clientes y Descarga a Excel</h3>
-          </div>
+    <section id="modulo-9" class="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200 shadow-sm page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-sm font-black">9</div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">Reportes de Ventas, Clientes y Descarga a Excel</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-100 text-slate-700 border border-slate-300 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
-          <i class="fas fa-check-double text-emerald-600"></i> Aplica para: Todos los Planes (Básico, Pro, Ilimitado)
+        <span class="badge-plan bg-emerald-50 text-emerald-800 border border-emerald-200">
+          <i class="fas fa-file-excel"></i> Descarga Excel / CSV Incluida
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-600 leading-relaxed">
-        <p>
-          Tu negocio tiene derecho exclusivo a su información de clientes y ventas bajo el marco de la <strong>Ley N° 8968</strong> de Costa Rica:
-        </p>
+      <p class="text-xs text-slate-600 mb-3">
+        Tu comercio es el titular exclusivo de su información de ventas y base de clientes (Ley N° 8968):
+      </p>
 
-        <div class="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="font-black text-emerald-950 text-xs sm:text-sm flex items-center gap-2">
-              <i class="fas fa-file-excel text-emerald-600 text-base"></i> Exportación y Descarga Digital
-            </span>
-            <span class="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 font-bold text-[10px]">Excel / CSV</span>
-          </div>
-          <ul class="list-disc list-inside space-y-1.5 text-xs text-emerald-900 font-medium">
-            <li><strong>Control de Ventas e Ingresos:</strong> Consulta el monto total facturado por día, semana o mes en colones costarricenses (₡).</li>
-            <li><strong>Historial de Clientes Frecuentes:</strong> Conoce qué clientes te visitan con mayor frecuencia para ofrecerles promociones y descuentos.</li>
-            <li><strong>Descarga en 1 Clic:</strong> Presiona el botón <strong>"Exportar a Excel"</strong> en tu panel para descargar tu archivo de hoja de cálculo listo para tu contador o administración.</li>
-          </ul>
-        </div>
+      <div class="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-1.5 text-xs text-emerald-950">
+        <ul class="list-disc list-inside space-y-1">
+          <li><strong>Reportes de Ingresos:</strong> Consulta el total facturado por día, semana o mes en Colones costarricenses (₡).</li>
+          <li><strong>Historial de Clientes:</strong> Conoce a tus clientes frecuentes para aplicar programas de fidelización y promociones.</li>
+          <li><strong>Exportación a Excel / CSV:</strong> Descarga tus listas de clientes y citas con 1 clic para tu contabilidad interna.</li>
+        </ul>
       </div>
     </section>
 
     <!-- MÓDULO 10 -->
     <div class="page-break"></div>
-    <section id="modulo-10" class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl page-break-inside-avoid">
-      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-lg font-black shadow-md">10</div>
-          <div>
-            <span class="text-xs font-black text-amber-300 uppercase tracking-wider">Módulo 10</span>
-            <h3 class="text-xl font-black text-white">Consejos para Compartir tu Enlace y Multiplicar Reservas</h3>
-          </div>
+    <section id="modulo-10" class="bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-5 sm:p-7 rounded-3xl border border-slate-800 shadow-lg page-break-inside-avoid">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center text-sm font-black">10</div>
+          <h3 class="text-base sm:text-lg font-black text-white">Consejos para Compartir tu Link y Vender Más</h3>
         </div>
-        <span class="px-3 py-1 bg-slate-800 text-amber-300 border border-slate-700 rounded-full text-[11px] font-extrabold flex items-center gap-1.5">
+        <span class="badge-plan bg-slate-800 text-amber-300 border border-slate-700">
           <i class="fas fa-bullhorn"></i> Para Todos los Comercios
         </span>
       </div>
 
-      <div class="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
-        <p>
-          Tu negocio cuenta con un enlace directo único (ej. <strong>https://reservascr.app?negocio=tu-comercio</strong>). Sigue estas recomendaciones para llenarte de citas:
-        </p>
+      <p class="text-xs text-slate-300 mb-3">
+        Comparte tu enlace de reservas directo (ej. <strong>https://reservascr.app?negocio=tu-comercio</strong>) en tus canales:
+      </p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div class="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
-            <strong class="text-amber-300 font-bold flex items-center gap-1.5">
-              <i class="fab fa-instagram text-rose-400"></i> Enlace en la Biografía de Instagram / TikTok
-            </strong>
-            <p class="text-slate-300">Pega tu link en tu perfil de Instagram para que tus seguidores agenden solos las 24 horas del día.</p>
-          </div>
-
-          <div class="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
-            <strong class="text-emerald-300 font-bold flex items-center gap-1.5">
-              <i class="fab fa-whatsapp text-emerald-400"></i> Respuesta Automática en WhatsApp Business
-            </strong>
-            <p class="text-slate-300">Configura tu mensaje de bienvenida: <em>"¡Hola! Puedes ver nuestros servicios y agendar tu turno aquí: https://reservascr.app"</em>.</p>
-          </div>
-
-          <div class="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
-            <strong class="text-blue-300 font-bold flex items-center gap-1.5">
-              <i class="fas fa-qrcode text-blue-400"></i> Código QR en tu Mostrador Físico
-            </strong>
-            <p class="text-slate-300">Imprime el código QR de tu local para que los clientes que te visitan agenden su próxima cita antes de salir.</p>
-          </div>
-
-          <div class="p-3.5 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-1">
-            <strong class="text-purple-300 font-bold flex items-center gap-1.5">
-              <i class="fas fa-bullhorn text-purple-400"></i> Publicaciones e Historias Semanales
-            </strong>
-            <p class="text-slate-300">Sube historias recordando los días libres o promociones de la semana acompañadas de tu link de reserva.</p>
-          </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+        <div class="p-3 bg-slate-800/80 rounded-2xl border border-slate-700">
+          <strong class="text-amber-300 block font-bold mb-0.5"><i class="fab fa-instagram text-rose-400 mr-1"></i> Biografía de Instagram / TikTok:</strong>
+          <p class="text-slate-300">Pega tu link en tu perfil para que tus clientes agenden 24/7 sin esperar respuesta.</p>
+        </div>
+        <div class="p-3 bg-slate-800/80 rounded-2xl border border-slate-700">
+          <strong class="text-emerald-300 block font-bold mb-0.5"><i class="fab fa-whatsapp text-emerald-400 mr-1"></i> Respuesta en WhatsApp Business:</strong>
+          <p class="text-slate-300">Configura un mensaje automático: <em>"¡Agenda tu cita en línea en segundos aquí: reservascr.app!"</em>.</p>
+        </div>
+        <div class="p-3 bg-slate-800/80 rounded-2xl border border-slate-700">
+          <strong class="text-blue-300 block font-bold mb-0.5"><i class="fas fa-qrcode text-blue-400 mr-1"></i> Código QR en tu Mostrador:</strong>
+          <p class="text-slate-300">Imprime tu código QR para que los clientes que te visitan agenden su próximo turno antes de salir.</p>
+        </div>
+        <div class="p-3 bg-slate-800/80 rounded-2xl border border-slate-700">
+          <strong class="text-purple-300 block font-bold mb-0.5"><i class="fas fa-bullhorn text-purple-400 mr-1"></i> Publicaciones Semanales:</strong>
+          <p class="text-slate-300">Publica historias con tus horarios disponibles de la semana invitando a reservar con tu link.</p>
         </div>
       </div>
     </section>
@@ -625,7 +526,7 @@
   </main>
 
   <!-- PIE DE PÁGINA DEL MANUAL -->
-  <footer class="mt-12 p-6 sm:p-8 bg-white rounded-3xl border border-slate-200 text-center text-xs text-slate-500 space-y-3 page-break-inside-avoid">
+  <footer class="mt-8 p-5 sm:p-7 bg-white rounded-3xl border border-slate-200 text-center text-xs text-slate-500 space-y-2 page-break-inside-avoid">
     <div class="flex flex-wrap items-center justify-center gap-2 font-bold text-slate-800">
       <span>Reservas CR 🇨🇷</span>
       <span>•</span>
@@ -633,11 +534,11 @@
       <span>•</span>
       <span>GeoSoft Costa Rica</span>
     </div>
-    <p class="text-[11px] text-slate-400 max-w-xl mx-auto">
-      ¿Tienes dudas o necesitas ayuda personalizada para configurar tu negocio? Escríbenos a nuestro correo oficial: <a href="mailto:soporte@reservascr.app" class="text-blue-600 underline font-bold">soporte@reservascr.app</a>
+    <p class="text-[11px] text-slate-400 max-w-lg mx-auto">
+      ¿Tienes dudas o necesitas asistencia para configurar tu negocio? Escríbenos a nuestro canal oficial: <a href="mailto:soporte@reservascr.app" class="text-blue-600 underline font-bold">soporte@reservascr.app</a>
     </p>
-    <div class="text-[10px] text-slate-400 pt-2 border-t border-slate-100">
-      Documento confidencial para uso exclusivo de comercios registrados en Reservas CR. Prohibida su reproducción total o parcial sin autorización.
+    <div class="text-[10px] text-slate-400 pt-1.5 border-t border-slate-100">
+      Documento para uso exclusivo de comercios registrados en Reservas CR.
     </div>
   </footer>
 
