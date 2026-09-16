@@ -34,7 +34,9 @@ class App {
     };
 
     // Estado del panel de dueño
-    this.activeDashboardTab = 'appointments'; // 'appointments' | 'blocked-slots' | 'services' | 'team' | 'profile' | 'schedule'
+    this.activeDashboardTab = 'appointments'; // 'appointments' | 'blocked-slots' | 'services' | 'team' | 'profile' | 'schedule' | 'manual'
+    this.ownerAgendaViewMode = 'list'; // 'list' | 'calendar'
+    this.ownerCalendarCurrentMonth = new Date();
 
     // Estado del panel de developer
     this.activeDevTab = 'alerts'; // 'alerts' | 'businesses' | 'clients' | 'appointments'
@@ -726,6 +728,57 @@ class App {
       this.renderMobileBottomNav();
       if (this.currentView === 'owner-dashboard') this.navigateTo('directory');
     });
+
+    // Actualizar footer dinámico según estado de sesión
+    this.renderFooter();
+  }
+
+  // --- FOOTER DINÁMICO (MANUAL VISIBLE SOLO PARA COMERCIOS LOGUEADOS) ---
+  renderFooter() {
+    const footer = document.getElementById('app-footer');
+    if (!footer) return;
+
+    const bizUser = storage.getBusinessUser();
+
+    footer.innerHTML = `
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-xl overflow-hidden shadow-xs border border-slate-200/60 flex items-center justify-center bg-white">
+            <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Reservas CR Logo" class="w-full h-full object-cover">
+          </div>
+          <span class="font-extrabold text-slate-900 text-sm">Reservas <span class="text-blue-600">CR</span></span> &copy; 2026. Todos los derechos reservados.
+        </div>
+
+        <!-- Enlaces y Botones del Footer -->
+        <div class="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-xs font-semibold text-slate-600">
+          <button type="button" class="open-faq-modal px-3.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 transition-all cursor-pointer flex items-center gap-1.5 font-bold shadow-2xs">
+            <i class="fas fa-circle-question text-blue-600"></i>
+            <span>Preguntas Frecuentes</span>
+          </button>
+          <span class="text-slate-300 hidden sm:inline">•</span>
+          <button type="button" class="open-terms-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Términos y Condiciones</button>
+          <span class="text-slate-300">•</span>
+          <button type="button" class="open-privacy-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Privacidad</button>
+          ${bizUser ? `
+            <span class="text-slate-300">•</span>
+            <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer flex items-center gap-1.5 font-bold shadow-2xs animate-fade-in" title="Abrir y descargar Manual de Usuario en PDF">
+              <i class="fas fa-book-open text-indigo-600"></i>
+              <span>Manual Comercios (PDF)</span>
+            </a>
+          ` : ''}
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <p class="text-slate-400">Directorio digital & agendamiento en Costa Rica 🇨🇷.</p>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-slate-100 text-[11px] font-bold shadow-xs border border-slate-800">
+            <span class="text-slate-400 font-medium">Powered by</span>
+            <span class="text-blue-400 font-extrabold tracking-wide flex items-center gap-1">
+              <i class="fas fa-cube text-[10px] text-blue-400"></i> GeoSoft
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   // --- BARRA DE NAVEGACIÓN MÓVIL INFERIOR (ESTILO APP NATIVA - EXCLUSIVO CELULARES Y TABLETS) ---
@@ -776,22 +829,6 @@ class App {
           </button>
           ` : ''}
 
-          <!-- 4. Cuenta / Dev -->
-          ${devUser ? `
-            <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-500 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-              <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDev ? 'bg-amber-100 text-amber-600' : ''}">
-                <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
-              </div>
-              <span class="text-[10px] mt-0.5 tracking-tight">Developer</span>
-            </button>
-          ` : `
-            <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-              <div class="w-8 h-8 flex items-center justify-center rounded-xl ${clientUser || bizUser ? 'bg-blue-50 text-blue-600' : ''}">
-                <i class="fas fa-user-circle text-base"></i>
-              </div>
-              <span class="text-[10px] mt-0.5 tracking-tight">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
-            </button>
-          `}
           <!-- 4. Cuenta / Dev (solo si hay sesión iniciada o si SHOW_LOGIN_BUTTON está activo) -->
           ${showAccountTab ? `
             ${devUser ? `
@@ -3538,9 +3575,21 @@ class App {
             </div>
           </div>
 
-          <!-- Filtros de Estado, Especialista y Botón de Bloqueo Rápido -->
+          <!-- Filtros de Estado, Selector de Vista (Lista / Calendario), Especialista y Botón de Bloqueo Rápido -->
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
             <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap">
+              <!-- Switcher Vista Lista vs Calendario -->
+              <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0 mr-1">
+                <button id="view-mode-list-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.ownerAgendaViewMode === 'list' ? 'bg-white text-blue-700 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}" title="Ver agenda en formato lista/tabla">
+                  <i class="fas fa-list-ul"></i>
+                  <span>Lista</span>
+                </button>
+                <button id="view-mode-calendar-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.ownerAgendaViewMode === 'calendar' ? 'bg-white text-blue-700 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}" title="Ver agenda en cuadrícula de calendario">
+                  <i class="fas fa-calendar-alt"></i>
+                  <span>Calendario</span>
+                </button>
+              </div>
+
               <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
                 Todas (${appointments.length})
               </button>
@@ -3578,112 +3627,118 @@ class App {
             </div>
           </div>
 
-          ${filteredAppointments.length === 0 ? `
-            <div class="text-center py-12 text-slate-400">
-              <i class="far fa-calendar-times text-4xl mb-2"></i>
-              <p class="text-sm font-semibold">No hay reservas en esta categoría o filtro de especialista.</p>
-            </div>
+          ${this.ownerAgendaViewMode === 'calendar' ? `
+            <!-- VISTA DE CALENDARIO -->
+            ${this.renderOwnerCalendarView(currentBiz, appointments, filteredAppointments, businessStaff)}
           ` : `
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs text-slate-700">
-                <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                  <tr>
-                    <th class="py-3 px-4">Fecha / Hora</th>
-                    <th class="py-3 px-4">Cliente</th>
-                    <th class="py-3 px-4">Especialista</th>
-                    <th class="py-3 px-4">Servicio</th>
-                    <th class="py-3 px-4">Monto</th>
-                    <th class="py-3 px-4">Estado</th>
-                    <th class="py-3 px-4 text-right whitespace-nowrap min-w-[280px]">Acciones de Gestión</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  ${filteredAppointments.map(apt => `
-                    <tr class="hover:bg-slate-50/80 transition-colors">
-                      <td class="py-3.5 px-4 font-bold text-slate-900">
-                        <div>${this.formatDateDMY(apt.date)}</div>
-                        <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
-                      </td>
-                      <td class="py-3.5 px-4">
-                        <div class="font-bold text-slate-800">${apt.clientName}</div>
-                        <div class="text-slate-400 text-[11px]">${apt.clientPhone}</div>
-                      </td>
-                      <td class="py-3.5 px-4">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold">
-                          <i class="fas fa-user-tag text-blue-500 text-[10px]"></i>
-                          <span>${apt.staffName || 'Sin asignar / General'}</span>
-                        </span>
-                      </td>
-                      <td class="py-3.5 px-4 font-medium text-slate-700">
-                        <div class="font-semibold text-slate-800">${apt.serviceName}</div>
-                        ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
-                      </td>
-                      <td class="py-3.5 px-4 font-extrabold text-slate-900">
-                        ${this.formatColones(apt.servicePrice)}
-                      </td>
-                      <td class="py-3.5 px-4">
-                        <span class="badge-status badge-status-${apt.status}">
-                          ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
-                        </span>
-                      </td>
-                      <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
-                          <!-- Sincronización Calendario (Google Cal & .ICS) -->
-                          <a 
-                            href="${this.generateGoogleCalendarUrl(apt, currentBiz)}" 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-all inline-flex items-center justify-center shadow-2xs border border-slate-200" 
-                            title="Añadir cita a Google Calendar"
-                          >
-                            <i class="fab fa-google text-xs"></i>
-                          </a>
-                          <button 
-                            type="button" 
-                            class="owner-download-ics-btn p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs border border-slate-200" 
-                            data-apt-id="${apt.id}" 
-                            title="Descargar archivo de calendario (.ics)"
-                          >
-                            <i class="fas fa-calendar-plus text-xs"></i>
-                          </button>
-
-                          <!-- Aceptar / Confirmar -->
-                          ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
-                            <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
-                              <i class="fas fa-check-circle"></i> Aceptar
-                            </button>
-                          ` : ''}
-
-                          <!-- Marcar como Completada -->
-                          ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
-                            <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
-                              <i class="fas fa-clipboard-check"></i> Completar
-                            </button>
-                          ` : ''}
-
-                          <!-- Reprogramar / Modificar -->
-                          <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
-                            <i class="fas fa-calendar-alt"></i> Modificar
-                          </button>
-
-                          <!-- Cancelar -->
-                          ${apt.status !== 'cancelled' ? `
-                            <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
-                              <i class="fas fa-ban"></i> Cancelar
-                            </button>
-                          ` : ''}
-
-                          <!-- Eliminar -->
-                          <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
-                            <i class="fas fa-trash-alt"></i>
-                          </button>
-                        </div>
-                      </td>
+            <!-- VISTA DE LISTA / TABLA -->
+            ${filteredAppointments.length === 0 ? `
+              <div class="text-center py-12 text-slate-400">
+                <i class="far fa-calendar-times text-4xl mb-2"></i>
+                <p class="text-sm font-semibold">No hay reservas en esta categoría o filtro de especialista.</p>
+              </div>
+            ` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-slate-700">
+                  <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th class="py-3 px-4">Fecha / Hora</th>
+                      <th class="py-3 px-4">Cliente</th>
+                      <th class="py-3 px-4">Especialista</th>
+                      <th class="py-3 px-4">Servicio</th>
+                      <th class="py-3 px-4">Monto</th>
+                      <th class="py-3 px-4">Estado</th>
+                      <th class="py-3 px-4 text-right whitespace-nowrap min-w-[280px]">Acciones de Gestión</th>
                     </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    ${filteredAppointments.map(apt => `
+                      <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="py-3.5 px-4 font-bold text-slate-900">
+                          <div>${this.formatDateDMY(apt.date)}</div>
+                          <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                          <div class="font-bold text-slate-800">${apt.clientName}</div>
+                          <div class="text-slate-400 text-[11px]">${apt.clientPhone}</div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold">
+                            <i class="fas fa-user-tag text-blue-500 text-[10px]"></i>
+                            <span>${apt.staffName || 'Sin asignar / General'}</span>
+                          </span>
+                        </td>
+                        <td class="py-3.5 px-4 font-medium text-slate-700">
+                          <div class="font-semibold text-slate-800">${apt.serviceName}</div>
+                          ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
+                        </td>
+                        <td class="py-3.5 px-4 font-extrabold text-slate-900">
+                          ${this.formatColones(apt.servicePrice)}
+                        </td>
+                        <td class="py-3.5 px-4">
+                          <span class="badge-status badge-status-${apt.status}">
+                            ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
+                          </span>
+                        </td>
+                        <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
+                            <!-- Sincronización Calendario (Google Cal & .ICS) -->
+                            <a 
+                              href="${this.generateGoogleCalendarUrl(apt, currentBiz)}" 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-all inline-flex items-center justify-center shadow-2xs border border-slate-200" 
+                              title="Añadir cita a Google Calendar"
+                            >
+                              <i class="fab fa-google text-xs"></i>
+                            </a>
+                            <button 
+                              type="button" 
+                              class="owner-download-ics-btn p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs border border-slate-200" 
+                              data-apt-id="${apt.id}" 
+                              title="Descargar archivo de calendario (.ics)"
+                            >
+                              <i class="fas fa-calendar-plus text-xs"></i>
+                            </button>
+
+                            <!-- Aceptar / Confirmar -->
+                            ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                              <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
+                                <i class="fas fa-check-circle"></i> Aceptar
+                              </button>
+                            ` : ''}
+
+                            <!-- Marcar como Completada -->
+                            ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
+                              <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
+                                <i class="fas fa-clipboard-check"></i> Completar
+                              </button>
+                            ` : ''}
+
+                            <!-- Reprogramar / Modificar -->
+                            <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
+                              <i class="fas fa-calendar-alt"></i> Modificar
+                            </button>
+
+                            <!-- Cancelar -->
+                            ${apt.status !== 'cancelled' ? `
+                              <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
+                                <i class="fas fa-ban"></i> Cancelar
+                              </button>
+                            ` : ''}
+
+                            <!-- Eliminar -->
+                            <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
+                              <i class="fas fa-trash-alt"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
           `}
         </div>
       `;
@@ -3706,9 +3761,6 @@ class App {
               <p class="text-xs text-slate-500">Agrega, modifica precios en colones (₡) o duraciones de tus servicios.</p>
             </div>
 
-            <button id="add-new-service-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all">
-              <i class="fas fa-plus"></i> Agregar Servicio
-            </button>
             <div class="flex items-center gap-2">
               <button id="quick-manage-slots-from-services-btn" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
                 <i class="fas fa-calendar-times"></i> Gestionar Horas
@@ -4032,6 +4084,357 @@ class App {
         </div>
       `;
     }
+  }
+
+  // --- VISTA CALENDARIO DE AGENDA DE COMERCIO ---
+  renderOwnerCalendarView(currentBiz, allAppointments, filteredAppointments, businessStaff) {
+    const calDate = this.ownerCalendarCurrentMonth || new Date();
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    const monthTitle = `${monthNames[month]} ${year}`;
+
+    const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
+    // Días del mes actual
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    // Primer día de la semana (Lunes = 0 ... Domingo = 6)
+    let firstDayIndex = new Date(year, month, 1).getDay();
+    firstDayIndex = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
+
+    const todayStr = this.getTodayDateString();
+
+    // Celdas del calendario
+    const cells = [];
+
+    // 1. Días del mes previo
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const d = daysInPrevMonth - i;
+      const prevM = month === 0 ? 12 : month;
+      const prevY = month === 0 ? year - 1 : year;
+      const dateKey = `${prevY}-${String(prevM).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      cells.push({
+        dayNumber: d,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        appointments: []
+      });
+    }
+
+    // 2. Días del mes actual
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dayApts = filteredAppointments
+        .filter(a => a.date === dateKey)
+        .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+      cells.push({
+        dayNumber: d,
+        dateKey,
+        isCurrentMonth: true,
+        isToday: dateKey === todayStr,
+        appointments: dayApts
+      });
+    }
+
+    // 3. Días del mes siguiente para completar la cuadrícula (múltiplo de 7)
+    const remaining = (7 - (cells.length % 7)) % 7;
+    for (let d = 1; d <= remaining; d++) {
+      const nextM = month === 11 ? 1 : month + 2;
+      const nextY = month === 11 ? year + 1 : year;
+      const dateKey = `${nextY}-${String(nextM).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      cells.push({
+        dayNumber: d,
+        dateKey,
+        isCurrentMonth: false,
+        isToday: dateKey === todayStr,
+        appointments: []
+      });
+    }
+
+    return `
+      <div class="calendar-view-container space-y-4 animate-fade-in">
+        <!-- Barra de Navegación de Mes y Leyenda -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+          <div class="flex items-center gap-2">
+            <button id="cal-prev-month-btn" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+              <i class="fas fa-chevron-left text-[10px]"></i>
+              <span class="hidden sm:inline">Anterior</span>
+            </button>
+            <button id="cal-today-btn" class="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-extrabold transition-all shadow-2xs cursor-pointer">
+              Hoy
+            </button>
+            <button id="cal-next-month-btn" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+              <span class="hidden sm:inline">Siguiente</span>
+              <i class="fas fa-chevron-right text-[10px]"></i>
+            </button>
+            <h3 class="text-base sm:text-lg font-black text-slate-900 ml-2 tracking-tight flex items-center gap-2">
+              <i class="fas fa-calendar-days text-blue-600 text-sm"></i>
+              <span>${monthTitle}</span>
+            </h3>
+          </div>
+
+          <!-- Leyenda de Estados -->
+          <div class="flex items-center gap-3 text-[11px] font-semibold text-slate-600 flex-wrap">
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Confirmada</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Pendiente</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Completada</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Cancelada</span>
+          </div>
+        </div>
+
+        <!-- Cuadrícula del Calendario -->
+        <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+          <!-- Cabecera de Días de la Semana -->
+          <div class="grid grid-cols-7 bg-slate-100/80 border-b border-slate-200 text-center text-[11px] font-black text-slate-600 uppercase tracking-wider py-2.5">
+            ${daysOfWeek.map((d, idx) => `
+              <div class="${idx >= 5 ? 'text-blue-600' : ''}">${d}</div>
+            `).join('')}
+          </div>
+
+          <!-- Días / Celdas -->
+          <div class="grid grid-cols-7 divide-x divide-y divide-slate-100 bg-slate-50/30">
+            ${cells.map(cell => {
+              const count = cell.appointments.length;
+              return `
+                <div 
+                  class="cal-day-cell min-h-[105px] sm:min-h-[125px] p-1.5 sm:p-2 flex flex-col justify-between transition-colors ${cell.isCurrentMonth ? 'bg-white hover:bg-blue-50/30 cursor-pointer' : 'bg-slate-50/50 opacity-40'} ${cell.isToday ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/20' : ''}" 
+                  data-date="${cell.dateKey}"
+                  title="${cell.isCurrentMonth ? `Click para agregar reserva manual el ${this.formatDateDMY(cell.dateKey)}` : ''}"
+                >
+                  <!-- Header del Día -->
+                  <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="text-xs font-black ${cell.isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs' : (cell.isCurrentMonth ? 'text-slate-800' : 'text-slate-400')}">
+                      ${cell.dayNumber}
+                    </span>
+                    ${count > 0 ? `
+                      <span class="px-1.5 py-0.2 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black" title="${count} reserva${count > 1 ? 's' : ''}">
+                        ${count}
+                      </span>
+                    ` : ''}
+                  </div>
+
+                  <!-- Lista de Chips de Citas en el Día -->
+                  <div class="space-y-1 flex-1 overflow-hidden">
+                    ${cell.appointments.slice(0, 3).map(apt => {
+                      let chipStyle = 'bg-blue-50 text-blue-900 border-blue-200/90 hover:bg-blue-100';
+                      let dotColor = 'bg-blue-500';
+                      if (apt.status === 'pending') {
+                        chipStyle = 'bg-amber-50 text-amber-950 border-amber-200 hover:bg-amber-100';
+                        dotColor = 'bg-amber-500';
+                      } else if (apt.status === 'completed') {
+                        chipStyle = 'bg-emerald-50 text-emerald-950 border-emerald-200 hover:bg-emerald-100';
+                        dotColor = 'bg-emerald-500';
+                      } else if (apt.status === 'cancelled') {
+                        chipStyle = 'bg-rose-50 text-rose-950 border-rose-200 hover:bg-rose-100 opacity-60 line-through';
+                        dotColor = 'bg-rose-500';
+                      }
+
+                      return `
+                        <div 
+                          class="cal-apt-chip p-1 sm:p-1.5 rounded-lg border ${chipStyle} text-[10px] font-semibold transition-all shadow-2xs hover:scale-[1.02] cursor-pointer"
+                          data-apt-id="${apt.id}"
+                          title="Click para ver detalle y gestionar cita de ${this.escapeHtml(apt.clientName)}"
+                        >
+                          <div class="flex items-center justify-between gap-1">
+                            <span class="font-bold font-mono text-[9px] sm:text-[10px]">${this.formatTime12h(apt.time)}</span>
+                            <span class="w-1.5 h-1.5 rounded-full ${dotColor} shrink-0"></span>
+                          </div>
+                          <div class="truncate font-extrabold text-[10px] sm:text-[11px] leading-tight text-slate-900">${this.escapeHtml(apt.clientName)}</div>
+                          <div class="truncate text-[9px] text-slate-500 hidden sm:block">${this.escapeHtml(apt.serviceName)}</div>
+                        </div>
+                      `;
+                    }).join('')}
+
+                    ${count > 3 ? `
+                      <div class="text-[9px] font-black text-blue-600 text-center py-0.5 bg-blue-50 rounded-md">
+                        +${count - 3} más
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="text-[11px] text-slate-500 flex items-center justify-between flex-wrap gap-2 px-1">
+          <span>💡 <strong>Consejo:</strong> Haz clic sobre cualquier cita para ver sus detalles completos, aceptar, completar o reprogramar. Haz clic en un día vacío para agendar una reserva manual.</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- MODAL DE DETALLE Y GESTIÓN DE CITA (DESDE CALENDARIO) ---
+  renderAppointmentDetailModal(apt, currentBiz) {
+    if (!apt) return;
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const biz = currentBiz || storage.getBusinessById(apt.businessId) || { name: 'Comercio' };
+    const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '');
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+          
+          <!-- Header -->
+          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative shrink-0 border-b border-slate-800">
+            <button id="close-apt-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
+                <i class="fas fa-ticket-alt"></i> #${(apt.id || '').toUpperCase()}
+              </span>
+              <span class="badge-status badge-status-${apt.status} text-[10px]">
+                ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
+              </span>
+            </div>
+
+            <h2 class="text-xl font-black text-white tracking-tight">${this.escapeHtml(apt.serviceName)}</h2>
+            <p class="text-xs text-slate-300 mt-0.5">${this.formatDateFullSpanish(apt.date)} • ${this.formatTime12h(apt.time)}</p>
+          </div>
+
+          <!-- Contenido -->
+          <div class="p-5 sm:p-6 space-y-4 overflow-y-auto text-xs sm:text-sm text-slate-700 leading-relaxed bg-white flex-1">
+            
+            <!-- Datos del Cliente -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Información del Cliente</span>
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div>
+                  <h4 class="font-extrabold text-slate-900 text-sm">${this.escapeHtml(apt.clientName)}</h4>
+                  <p class="text-xs text-slate-500">${this.escapeHtml(apt.clientPhone || 'Sin teléfono')}</p>
+                </div>
+                ${cleanPhone ? `
+                  <a href="https://wa.me/506${cleanPhone}?text=${encodeURIComponent(`¡Hola ${apt.clientName}! Te saludamos de ${biz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
+                    <i class="fab fa-whatsapp text-sm"></i>
+                    <span>WhatsApp</span>
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+
+            <!-- Detalles del Servicio & Especialista -->
+            <div class="grid grid-cols-2 gap-3">
+              <div class="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100">
+                <span class="text-[10px] font-bold text-blue-700 uppercase block">Especialista</span>
+                <span class="font-extrabold text-slate-900 text-xs sm:text-sm block mt-0.5">
+                  <i class="fas fa-user-tag text-blue-600 text-xs mr-1"></i>
+                  ${this.escapeHtml(apt.staffName || 'Sin Asignar / General')}
+                </span>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+                <span class="text-[10px] font-bold text-emerald-700 uppercase block">Monto Total</span>
+                <span class="font-extrabold text-slate-900 text-xs sm:text-sm block mt-0.5">
+                  ${this.formatColones(apt.servicePrice)}
+                </span>
+              </div>
+            </div>
+
+            ${apt.notes ? `
+              <div class="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80">
+                <span class="text-[10px] font-bold text-amber-800 uppercase block mb-0.5">Notas del Cliente</span>
+                <p class="text-xs text-slate-700 italic">"${this.escapeHtml(apt.notes)}"</p>
+              </div>
+            ` : ''}
+
+            <!-- Exportar a Calendarios -->
+            <div class="flex items-center gap-2 pt-1">
+              <a 
+                href="${this.generateGoogleCalendarUrl(apt, biz)}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200"
+              >
+                <i class="fab fa-google text-xs text-rose-500"></i> Google Calendar
+              </a>
+              <button 
+                type="button" 
+                id="modal-download-ics-btn"
+                class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200 cursor-pointer"
+              >
+                <i class="fas fa-calendar-plus text-xs text-blue-600"></i> Descargar .ICS
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer / Acciones de Gestión -->
+          <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                <button id="modal-confirm-apt-btn" class="px-3.5 py-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                  <i class="fas fa-check-circle"></i> Aceptar
+                </button>
+              ` : ''}
+
+              ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
+                <button id="modal-complete-apt-btn" class="px-3.5 py-2 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                  <i class="fas fa-clipboard-check"></i> Completar
+                </button>
+              ` : ''}
+
+              <button id="modal-reschedule-apt-btn" class="px-3.5 py-2 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                <i class="fas fa-calendar-alt"></i> Modificar
+              </button>
+
+              ${apt.status !== 'cancelled' ? `
+                <button id="modal-cancel-apt-btn" class="px-3.5 py-2 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                  <i class="fas fa-ban"></i> Cancelar
+                </button>
+              ` : ''}
+            </div>
+
+            <button id="modal-close-bottom-btn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Event listeners del modal de detalle
+    document.getElementById('close-apt-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+    document.getElementById('modal-close-bottom-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+
+    document.getElementById('modal-download-ics-btn')?.addEventListener('click', () => {
+      this.downloadIcsFile(apt, biz);
+    });
+
+    document.getElementById('modal-confirm-apt-btn')?.addEventListener('click', async () => {
+      await storage.updateAppointmentStatus(apt.id, 'confirmed');
+      this.showToast('✅ ¡Reserva confirmada exitosamente!', 'success');
+      modalContainer.innerHTML = '';
+      this.renderCurrentView();
+    });
+
+    document.getElementById('modal-complete-apt-btn')?.addEventListener('click', async () => {
+      await storage.updateAppointmentStatus(apt.id, 'completed');
+      this.showToast('🎉 ¡Reserva completada! Se envió solicitud de calificación.', 'success');
+      modalContainer.innerHTML = '';
+      this.renderCurrentView();
+    });
+
+    document.getElementById('modal-reschedule-apt-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.renderRescheduleModal(apt, true);
+    });
+
+    document.getElementById('modal-cancel-apt-btn')?.addEventListener('click', async () => {
+      await storage.updateAppointmentStatus(apt.id, 'cancelled');
+      this.showToast('❌ Reserva cancelada.', 'info');
+      modalContainer.innerHTML = '';
+      this.renderCurrentView();
+    });
   }
 
   // --- SUB-CONTENIDO: REPORTES DE INGRESOS Y ESTADÍSTICAS DE CLIENTES FRECUENTES ---
@@ -6133,6 +6536,60 @@ class App {
           await storage.deleteAppointment(aptId);
           this.showToast('Reserva eliminada.', 'info');
           this.renderCurrentView();
+        }
+      });
+    });
+
+    // Switcher de Vista Lista / Calendario
+    document.getElementById('view-mode-list-btn')?.addEventListener('click', () => {
+      this.ownerAgendaViewMode = 'list';
+      this.renderCurrentView();
+    });
+
+    document.getElementById('view-mode-calendar-btn')?.addEventListener('click', () => {
+      this.ownerAgendaViewMode = 'calendar';
+      this.renderCurrentView();
+    });
+
+    // Navegación de Meses en Calendario
+    document.getElementById('cal-prev-month-btn')?.addEventListener('click', () => {
+      const current = this.ownerCalendarCurrentMonth || new Date();
+      this.ownerCalendarCurrentMonth = new Date(current.getFullYear(), current.getMonth() - 1, 1);
+      this.renderCurrentView();
+    });
+
+    document.getElementById('cal-next-month-btn')?.addEventListener('click', () => {
+      const current = this.ownerCalendarCurrentMonth || new Date();
+      this.ownerCalendarCurrentMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+      this.renderCurrentView();
+    });
+
+    document.getElementById('cal-today-btn')?.addEventListener('click', () => {
+      this.ownerCalendarCurrentMonth = new Date();
+      this.renderCurrentView();
+    });
+
+    // Click en chip de cita en calendario para abrir modal de detalle
+    document.querySelectorAll('.cal-apt-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const aptId = chip.getAttribute('data-apt-id');
+        const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+        const apt = appointments.find(a => a.id === aptId);
+        if (apt) {
+          this.renderAppointmentDetailModal(apt, currentBiz);
+        }
+      });
+    });
+
+    // Click en celda de día para crear cita rápida en esa fecha
+    document.querySelectorAll('.cal-day-cell').forEach(cell => {
+      cell.addEventListener('click', (e) => {
+        if (e.target.closest('.cal-apt-chip') || e.target.closest('button')) return;
+        const dateStr = cell.getAttribute('data-date');
+        if (dateStr) {
+          this.bookingState.selectedDate = dateStr;
+          this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
         }
       });
     });
@@ -11365,8 +11822,14 @@ class App {
       });
     });
 
-    // Global listener for terms and privacy modal triggers
+    // Global listener for terms, privacy and FAQ modal triggers
     document.addEventListener('click', (e) => {
+      const faqTarget = e.target.closest('.open-faq-modal');
+      if (faqTarget) {
+        e.preventDefault();
+        this.renderFaqModal();
+        return;
+      }
       const termsTarget = e.target.closest('.open-terms-modal');
       if (termsTarget) {
         e.preventDefault();
@@ -11380,6 +11843,113 @@ class App {
         return;
       }
     });
+  }
+
+  // --- MODAL DE PREGUNTAS FRECUENTES (FAQ) ---
+  renderFaqModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const faqs = [
+      {
+        q: '1. ¿Qué es Reservas CR y cómo funciona?',
+        a: 'Reservas CR es la plataforma integral de directorio comercial y agendamiento digital en Costa Rica 🇨🇷. Permite a los clientes descubrir negocios locales (barberías, salones de belleza, spas, talleres mecánicos, clínicas estéticas y profesionales), seleccionar el servicio, el especialista deseado y la fecha/hora en tiempo real sin llamadas telefónicas ni tiempos de espera.'
+      },
+      {
+        q: '2. ¿Cómo me registro y cómo reservo una cita como cliente?',
+        a: 'Para agendar, simplemente explora el directorio o busca el negocio de tu preferencia, elige el servicio y el horario deseado. Podrás crear tu cuenta o ingresar de forma segura indicando tu nombre completo, número de teléfono (WhatsApp) y correo electrónico. Tu cuenta te permitirá consultar y administrar todas tus citas en la sección "Mis Reservas".'
+      },
+      {
+        q: '3. ¿Cómo recibo la confirmación de mis reservas?',
+        a: 'Una vez agendada la cita, recibirás una confirmación inmediata por correo electrónico y notificaciones automáticas (incluyendo WhatsApp si el comercio tiene activo dicho canal). Además, puedes consultar en todo momento tus citas activas e históricas en "Mis Reservas".'
+      },
+      {
+        q: '4. ¿Puedo reprogramar o cancelar una cita ya agendada?',
+        a: 'Sí. Puedes ingresar a "Mis Reservas" en la barra de navegación o comunicarte directamente con el comercio para solicitar una reprogramación de fecha/hora o la cancelación de tu turno con la debida anticipación.'
+      },
+      {
+        q: '5. ¿Puedo sincronizar mi cita con Google Calendar o el calendario de mi celular?',
+        a: '¡Por supuesto! Al completar una reserva o al consultar tus turnos en "Mis Reservas", dispones de botones directos para agregar el evento a Google Calendar o descargar el archivo estándar .ICS compatible con Apple Calendar, iPhone, Android y Outlook.'
+      },
+      {
+        q: '6. ¿Cómo registro mi negocio o comercio en Reservas CR?',
+        a: 'Presiona el botón "Registrarse" o "🎁 Pre-Registro 15 Días Gratis" en la parte superior, completa los datos básicos de tu negocio (nombre, categoría comercial, provincia, cantón y datos de contacto). Obtendrás de inmediato 15 días de prueba 100% gratuita con acceso total a tu panel de administración.'
+      },
+      {
+        q: '7. ¿Cuáles son los planes de suscripción para comercios y cómo se pagan?',
+        a: 'Disponemos de 3 planes adaptados a cada etapa: Básico ($10 / ~₡5.300 mes), Profesional ($18 / ~₡9.500 mes) e Ilimitado ($35 / ~₡18.500 mes). Los pagos se realizan cómodamente mediante SINPE Móvil al 7143-3852 (Juan Jose Jiménez) o pasarelas digitales seguras, sin contratos de permanencia ni cláusulas forzosas.'
+      },
+      {
+        q: '8. ¿Puedo gestionar especialistas y bloquear horarios o días libres?',
+        a: 'Sí. Como dueño de negocio puedes agregar a todo tu equipo de especialistas con sus fotos y especialidades. Además, dispones de una herramienta rápida para bloquear franjas de descanso, días festivos o ausencias en un solo clic.'
+      },
+      {
+        q: '9. ¿Dónde consulto el Manual de Usuario para administrar mi comercio?',
+        a: 'El Manual de Usuario oficial en PDF está disponible de manera exclusiva para comercios registrados con sesión iniciada. Puedes abrirlo y descargarlo en cualquier momento desde el botón superior en tu Panel de Control o desde el enlace "Manual Comercios (PDF)" en el pie de página.'
+      },
+      {
+        q: '10. ¿Cómo contacto al equipo de soporte técnico?',
+        a: 'Puedes escribirnos directamente a nuestro correo oficial soporte@reservascr.app o comunicarte vía WhatsApp con nuestro canal de atención técnica y soporte al cliente en Costa Rica.'
+      }
+    ];
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+          
+          <!-- Header -->
+          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white relative shrink-0 border-b border-slate-800">
+            <button id="close-faq-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
+                <i class="fas fa-circle-question"></i> Centro de Ayuda
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
+                <i class="fas fa-check-circle text-[9px]"></i> 10 Preguntas Frecuentes
+              </span>
+            </div>
+
+            <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Preguntas Frecuentes</h2>
+            <p class="text-xs text-slate-300 mt-1">Respuestas claras y rápidas sobre el funcionamiento de Reservas CR.</p>
+          </div>
+
+          <!-- Scrollable Content -->
+          <div class="p-5 sm:p-6 overflow-y-auto space-y-3.5 text-xs sm:text-sm text-slate-700 leading-relaxed flex-1 bg-slate-50/50">
+            ${faqs.map((faq, idx) => `
+              <details class="group bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all duration-200" ${idx === 0 ? 'open' : ''}>
+                <summary class="flex items-center justify-between gap-3 p-4 cursor-pointer font-bold text-slate-900 hover:text-blue-600 transition-colors select-none">
+                  <span class="text-xs sm:text-sm font-extrabold flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center text-[11px] font-black shrink-0 border border-blue-100">${idx + 1}</span>
+                    <span>${faq.q.replace(/^\d+\.\s*/, '')}</span>
+                  </span>
+                  <i class="fas fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition-transform duration-200 shrink-0"></i>
+                </summary>
+                <div class="px-4 pb-4 pt-1 text-xs sm:text-sm text-slate-600 border-t border-slate-100 bg-slate-50/40">
+                  <p class="leading-relaxed">${faq.a}</p>
+                </div>
+              </details>
+            `).join('')}
+          </div>
+
+          <!-- Footer Modal -->
+          <div class="p-4 sm:p-5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+              <i class="fas fa-headset text-blue-600"></i>
+              <span>¿Tienes otra consulta? Escríbenos a <a href="mailto:soporte@reservascr.app" class="text-blue-600 font-bold hover:underline">soporte@reservascr.app</a></span>
+            </div>
+            <button id="close-faq-bottom-btn" class="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-faq-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+    document.getElementById('close-faq-bottom-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
   }
 
   // --- MODAL DE TÉRMINOS, CONDICIONES Y PRIVACIDAD ---
