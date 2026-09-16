@@ -2990,8 +2990,16 @@ class App {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'basic' });
     });
 
+    document.getElementById('export-reports-excel-btn')?.addEventListener('click', () => {
+      this.exportBusinessReportsExcel(currentBiz, appointments);
+    });
+
+    document.getElementById('export-reports-pdf-btn')?.addEventListener('click', () => {
+      this.exportBusinessReportsPDF(currentBiz, appointments);
+    });
+
     document.getElementById('export-reports-csv-btn')?.addEventListener('click', () => {
-      this.exportBusinessReportsCSV(currentBiz, appointments);
+      this.exportBusinessReportsExcel(currentBiz, appointments);
     });
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
@@ -3723,9 +3731,12 @@ class App {
             <p class="text-xs text-slate-500 mt-0.5">Estadísticas en tiempo real de ingresos recaudados, clientes recurrentes y demanda de servicios.</p>
           </div>
 
-          <div class="flex items-center gap-2">
-            <button id="export-reports-csv-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer">
-              <i class="fas fa-file-excel"></i> Exportar Reporte a Excel (CSV)
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <button id="export-reports-excel-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer">
+              <i class="fas fa-file-excel text-emerald-100 text-sm"></i> Exportar a Excel (.xls)
+            </button>
+            <button id="export-reports-pdf-btn" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-rose-600/20 flex items-center gap-2 cursor-pointer">
+              <i class="fas fa-file-pdf text-rose-100 text-sm"></i> Descargar Reporte PDF
             </button>
           </div>
         </div>
@@ -3891,35 +3902,832 @@ class App {
     `;
   }
 
-  exportBusinessReportsCSV(currentBiz, appointments) {
+  // --- EXPORTACIÓN PROFESIONAL A EXCEL (.XLS CON FORMATO ESTRUCTURADO) ---
+  exportBusinessReportsExcel(currentBiz, appointments) {
     if (!appointments || appointments.length === 0) {
       this.showToast('No hay datos de reservas para exportar.', 'info');
       return;
     }
 
-    const headers = ['ID Reserva', 'Cliente', 'Telefono', 'Servicio', 'Precio CRC', 'Fecha', 'Hora', 'Estado', 'Especialista'];
-    const rows = appointments.map(a => [
-      `"${a.id || ''}"`,
-      `"${(a.clientName || '').replace(/"/g, '""')}"`,
-      `"${(a.clientPhone || '').replace(/"/g, '""')}"`,
-      `"${(a.serviceName || '').replace(/"/g, '""')}"`,
-      `"${a.servicePrice || 0}"`,
-      `"${a.date || ''}"`,
-      `"${a.time || ''}"`,
-      `"${a.status || ''}"`,
-      `"${(a.staffName || '').replace(/"/g, '""')}"`
-    ]);
+    // Cálculos de métricas
+    const validAppointments = appointments.filter(a => a.status !== 'cancelled');
+    const completedAppointments = appointments.filter(a => a.status === 'completed');
+    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
+    const revenueAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed');
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const totalRevenue = revenueAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+    const totalAppointmentsCount = appointments.length;
+    const completedCount = completedAppointments.length;
+    const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
+    const attendanceRate = totalAppointmentsCount > 0 ? Math.round(((completedCount + confirmedAppointments.length) / totalAppointmentsCount) * 100) : 100;
+    const avgTicket = revenueAppointments.length > 0 ? Math.round(totalRevenue / revenueAppointments.length) : 0;
+
+    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+    const monthAppointments = revenueAppointments.filter(a => (a.date || '').startsWith(currentMonthPrefix));
+    const monthRevenue = monthAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+
+    // Clientes Frecuentes
+    const clientMap = new Map();
+    appointments.forEach(apt => {
+      const phone = (apt.clientPhone || '').trim();
+      const name = (apt.clientName || 'Cliente').trim();
+      const key = phone || name.toLowerCase();
+
+      if (!clientMap.has(key)) {
+        clientMap.set(key, {
+          name,
+          phone,
+          totalBookings: 0,
+          completedBookings: 0,
+          cancelledBookings: 0,
+          totalSpent: 0,
+          lastDate: apt.date || ''
+        });
+      }
+
+      const c = clientMap.get(key);
+      c.totalBookings += 1;
+      if (apt.status === 'completed') c.completedBookings += 1;
+      if (apt.status === 'cancelled') c.cancelledBookings += 1;
+      if (apt.status === 'confirmed' || apt.status === 'completed') {
+        c.totalSpent += (Number(apt.servicePrice) || 0);
+      }
+      if (apt.date && (!c.lastDate || apt.date > c.lastDate)) {
+        c.lastDate = apt.date;
+      }
+    });
+    const frequentClients = Array.from(clientMap.values()).sort((a, b) => b.totalBookings - a.totalBookings || b.totalSpent - a.totalSpent);
+
+    // Servicios Populares
+    const serviceMap = new Map();
+    validAppointments.forEach(apt => {
+      const sName = apt.serviceName || 'Servicio General';
+      if (!serviceMap.has(sName)) {
+        serviceMap.set(sName, { name: sName, count: 0, revenue: 0 });
+      }
+      const s = serviceMap.get(sName);
+      s.count += 1;
+      if (apt.status === 'confirmed' || apt.status === 'completed') {
+        s.revenue += (Number(apt.servicePrice) || 0);
+      }
+    });
+    const topServices = Array.from(serviceMap.values()).sort((a, b) => b.count - a.count);
+
+    const escapeXml = (str) => {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    };
+
+    const excelHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <style>
+          body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+          .main-header { background-color: #0F172A; color: #FFFFFF; font-size: 15pt; font-weight: bold; padding: 12px; }
+          .sub-header { background-color: #1E293B; color: #94A3B8; font-size: 9pt; padding: 6px 12px; }
+          .section-banner { background-color: #2563EB; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
+          .section-subbanner { background-color: #059669; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
+          .section-purple { background-color: #7C3AED; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
+          .section-dark { background-color: #334155; color: #FFFFFF; font-size: 11pt; font-weight: bold; padding: 8px 10px; }
+          .th-cell { background-color: #F1F5F9; color: #1E293B; font-weight: bold; border: 1px solid #CBD5E1; padding: 8px; font-size: 9.5pt; }
+          .td-cell { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 9.5pt; color: #334155; vertical-align: middle; }
+          .td-num { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 9.5pt; text-align: right; color: #0F172A; }
+          .td-center { border: 1px solid #E2E8F0; padding: 6px 8px; font-size: 9.5pt; text-align: center; color: #334155; }
+          .kpi-label { background-color: #F8FAFC; font-weight: bold; color: #475569; border: 1px solid #CBD5E1; padding: 8px; font-size: 9.5pt; }
+          .kpi-value { font-weight: bold; font-size: 11pt; color: #0F172A; border: 1px solid #CBD5E1; text-align: right; padding: 8px; background-color: #FFFFFF; }
+          .status-badge { font-weight: bold; padding: 3px 6px; border-radius: 4px; text-align: center; }
+          .status-confirmed { color: #1D4ED8; font-weight: bold; }
+          .status-completed { color: #047857; font-weight: bold; }
+          .status-pending { color: #B45309; font-weight: bold; }
+          .status-cancelled { color: #B91C1C; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <table>
+          <!-- ENCABEZADO COMERCIAL -->
+          <tr>
+            <td colspan="8" class="main-header">${escapeXml(currentBiz.name).toUpperCase()} - REPORTE EJECUTIVO Y FINANCIERO</td>
+          </tr>
+          <tr>
+            <td colspan="8" class="sub-header">Fecha de Generación: ${new Date().toLocaleString('es-CR')} | Plan Activo: ${(currentBiz.plan || 'pro').toUpperCase()} | Teléfono: ${escapeXml(currentBiz.phone || '')} | Ubicación: ${escapeXml(currentBiz.city || 'Costa Rica')}</td>
+          </tr>
+          <tr><td colspan="8" style="height: 12px;"></td></tr>
+
+          <!-- 1. RESUMEN FINANCIERO Y OPERATIVO -->
+          <tr>
+            <td colspan="8" class="section-banner">1. RESUMEN EJECUTIVO FINANCIERO Y OPERATIVO</td>
+          </tr>
+          <tr>
+            <td class="kpi-label" colspan="2">Ingresos Totales Recaudados (₡)</td>
+            <td class="kpi-value" colspan="2">₡${totalRevenue.toLocaleString('es-CR')}</td>
+            <td class="kpi-label" colspan="2">Tasa de Asistencia / Cumplimiento</td>
+            <td class="kpi-value" colspan="2">${attendanceRate}%</td>
+          </tr>
+          <tr>
+            <td class="kpi-label" colspan="2">Ingresos del Mes Actual (₡)</td>
+            <td class="kpi-value" colspan="2">₡${monthRevenue.toLocaleString('es-CR')}</td>
+            <td class="kpi-label" colspan="2">Total de Reservas Registradas</td>
+            <td class="kpi-value" colspan="2">${totalAppointmentsCount} citas</td>
+          </tr>
+          <tr>
+            <td class="kpi-label" colspan="2">Ticket Promedio por Servicio (₡)</td>
+            <td class="kpi-value" colspan="2">₡${avgTicket.toLocaleString('es-CR')}</td>
+            <td class="kpi-label" colspan="2">Citas Atendidas vs Canceladas</td>
+            <td class="kpi-value" colspan="2">${completedCount} completadas / ${cancelledCount} canceladas</td>
+          </tr>
+          <tr><td colspan="8" style="height: 16px;"></td></tr>
+
+          <!-- 2. RANKING DE CLIENTES FRECUENTES -->
+          <tr>
+            <td colspan="8" class="section-subbanner">2. RANKING DE CLIENTES FRECUENTES Y FIDELIDAD (${frequentClients.length} Clientes Únicos)</td>
+          </tr>
+          <tr>
+            <th class="th-cell" style="width: 40px;">#</th>
+            <th class="th-cell" colspan="2">Nombre del Cliente</th>
+            <th class="th-cell">Teléfono / WhatsApp</th>
+            <th class="th-cell" style="text-align: center;">Total Visitas</th>
+            <th class="th-cell" style="text-align: center;">Completadas</th>
+            <th class="th-cell" style="text-align: right;">Total Invertido (₡)</th>
+            <th class="th-cell" style="text-align: center;">Última Visita</th>
+          </tr>
+          ${frequentClients.length === 0 ? `
+            <tr><td colspan="8" class="td-center">No hay clientes con reservas registradas aún.</td></tr>
+          ` : frequentClients.map((c, idx) => `
+            <tr>
+              <td class="td-center"><strong>${idx + 1}</strong></td>
+              <td class="td-cell" colspan="2"><strong>${escapeXml(c.name)}</strong></td>
+              <td class="td-cell">${escapeXml(c.phone || 'Sin número')}</td>
+              <td class="td-center"><strong>${c.totalBookings}</strong></td>
+              <td class="td-center">${c.completedBookings}</td>
+              <td class="td-num" style="font-weight: bold; color: #047857;">₡${c.totalSpent.toLocaleString('es-CR')}</td>
+              <td class="td-center">${c.lastDate || 'N/A'}</td>
+            </tr>
+          `).join('')}
+          <tr><td colspan="8" style="height: 16px;"></td></tr>
+
+          <!-- 3. DEMANDA Y RENDIMIENTO POR SERVICIO -->
+          <tr>
+            <td colspan="8" class="section-purple">3. RENDIMIENTO Y DEMANDA POR CATÁLOGO DE SERVICIOS</td>
+          </tr>
+          <tr>
+            <th class="th-cell" colspan="3">Servicio</th>
+            <th class="th-cell" style="text-align: center;">Citas Totales</th>
+            <th class="th-cell" style="text-align: center;">% Demanda</th>
+            <th class="th-cell" colspan="3" style="text-align: right;">Total Recaudado (₡)</th>
+          </tr>
+          ${topServices.length === 0 ? `
+            <tr><td colspan="8" class="td-center">No hay servicios con reservas registradas.</td></tr>
+          ` : topServices.map(s => {
+            const pct = validAppointments.length > 0 ? Math.round((s.count / validAppointments.length) * 100) : 0;
+            return `
+              <tr>
+                <td class="td-cell" colspan="3"><strong>${escapeXml(s.name)}</strong></td>
+                <td class="td-center"><strong>${s.count}</strong></td>
+                <td class="td-center">${pct}%</td>
+                <td class="td-num" colspan="3" style="font-weight: bold; color: #1D4ED8;">₡${s.revenue.toLocaleString('es-CR')}</td>
+              </tr>
+            `;
+          }).join('')}
+          <tr><td colspan="8" style="height: 16px;"></td></tr>
+
+          <!-- 4. HISTORIAL COMPLETO DE RESERVAS -->
+          <tr>
+            <td colspan="8" class="section-dark">4. HISTORIAL COMPLETO DE RESERVAS Y AUDITORÍA (${appointments.length} Registros)</td>
+          </tr>
+          <tr>
+            <th class="th-cell">ID Cita</th>
+            <th class="th-cell">Fecha</th>
+            <th class="th-cell">Hora</th>
+            <th class="th-cell">Cliente</th>
+            <th class="th-cell">Teléfono</th>
+            <th class="th-cell">Servicio</th>
+            <th class="th-cell">Especialista</th>
+            <th class="th-cell" style="text-align: right;">Precio (₡)</th>
+            <th class="th-cell" style="text-align: center;">Estado</th>
+          </tr>
+          ${appointments.map(a => {
+            const statusLabel = a.status === 'confirmed' ? 'Confirmada' : a.status === 'completed' ? 'Completada' : a.status === 'pending' ? 'Pendiente' : 'Cancelada';
+            const statusClass = a.status === 'confirmed' ? 'status-confirmed' : a.status === 'completed' ? 'status-completed' : a.status === 'pending' ? 'status-pending' : 'status-cancelled';
+            return `
+              <tr>
+                <td class="td-cell"><small>${escapeXml(a.id || '')}</small></td>
+                <td class="td-cell">${escapeXml(a.date || '')}</td>
+                <td class="td-cell">${escapeXml(a.time || '')}</td>
+                <td class="td-cell"><strong>${escapeXml(a.clientName || 'Cliente')}</strong></td>
+                <td class="td-cell">${escapeXml(a.clientPhone || '')}</td>
+                <td class="td-cell">${escapeXml(a.serviceName || '')}</td>
+                <td class="td-cell">${escapeXml(a.staffName || 'General')}</td>
+                <td class="td-num">₡${(Number(a.servicePrice) || 0).toLocaleString('es-CR')}</td>
+                <td class="td-center ${statusClass}">${statusLabel}</td>
+              </tr>
+            `;
+          }).join('')}
+        </table>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `reporte_reservas_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.csv`);
+    link.setAttribute('download', `reporte_financiero_${(currentBiz.name || 'negocio').toLowerCase().replace(/\s+/g, '_')}_${this.getTodayDateString()}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    this.showToast('¡Reporte exportado exitosamente a CSV!', 'success');
+    this.showToast('¡Reporte ordenado y formateado descargado en Excel (.xls)!', 'success');
+  }
+
+  // --- EXPORTACIÓN Y VISUALIZACIÓN ELEGANTE EN PDF ---
+  exportBusinessReportsPDF(currentBiz, appointments) {
+    if (!appointments || appointments.length === 0) {
+      this.showToast('No hay datos de reservas para generar el PDF.', 'info');
+      return;
+    }
+
+    // Cálculos de métricas
+    const validAppointments = appointments.filter(a => a.status !== 'cancelled');
+    const completedAppointments = appointments.filter(a => a.status === 'completed');
+    const confirmedAppointments = appointments.filter(a => a.status === 'confirmed');
+    const revenueAppointments = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed');
+
+    const totalRevenue = revenueAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+    const totalAppointmentsCount = appointments.length;
+    const completedCount = completedAppointments.length;
+    const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
+    const attendanceRate = totalAppointmentsCount > 0 ? Math.round(((completedCount + confirmedAppointments.length) / totalAppointmentsCount) * 100) : 100;
+    const avgTicket = revenueAppointments.length > 0 ? Math.round(totalRevenue / revenueAppointments.length) : 0;
+
+    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
+    const monthAppointments = revenueAppointments.filter(a => (a.date || '').startsWith(currentMonthPrefix));
+    const monthRevenue = monthAppointments.reduce((sum, a) => sum + (Number(a.servicePrice) || 0), 0);
+
+    // Clientes Frecuentes
+    const clientMap = new Map();
+    appointments.forEach(apt => {
+      const phone = (apt.clientPhone || '').trim();
+      const name = (apt.clientName || 'Cliente').trim();
+      const key = phone || name.toLowerCase();
+
+      if (!clientMap.has(key)) {
+        clientMap.set(key, {
+          name,
+          phone,
+          totalBookings: 0,
+          completedBookings: 0,
+          cancelledBookings: 0,
+          totalSpent: 0,
+          lastDate: apt.date || ''
+        });
+      }
+
+      const c = clientMap.get(key);
+      c.totalBookings += 1;
+      if (apt.status === 'completed') c.completedBookings += 1;
+      if (apt.status === 'cancelled') c.cancelledBookings += 1;
+      if (apt.status === 'confirmed' || apt.status === 'completed') {
+        c.totalSpent += (Number(apt.servicePrice) || 0);
+      }
+      if (apt.date && (!c.lastDate || apt.date > c.lastDate)) {
+        c.lastDate = apt.date;
+      }
+    });
+    const frequentClients = Array.from(clientMap.values()).sort((a, b) => b.totalBookings - a.totalBookings || b.totalSpent - a.totalSpent);
+
+    // Servicios Populares
+    const serviceMap = new Map();
+    validAppointments.forEach(apt => {
+      const sName = apt.serviceName || 'Servicio General';
+      if (!serviceMap.has(sName)) {
+        serviceMap.set(sName, { name: sName, count: 0, revenue: 0 });
+      }
+      const s = serviceMap.get(sName);
+      s.count += 1;
+      if (apt.status === 'confirmed' || apt.status === 'completed') {
+        s.revenue += (Number(apt.servicePrice) || 0);
+      }
+    });
+    const topServices = Array.from(serviceMap.values()).sort((a, b) => b.count - a.count);
+
+    const pdfWindow = window.open('', '_blank');
+    if (!pdfWindow) {
+      this.showToast('Por favor permite las ventanas emergentes (pop-ups) para ver y descargar el PDF.', 'error');
+      return;
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Informe Ejecutivo - ${this.escapeHtml(currentBiz.name)}</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+          * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+          }
+
+          body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            padding: 24px;
+            font-size: 12px;
+            line-height: 1.5;
+          }
+
+          .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border-radius: 20px;
+            border: 1px solid #E2E8F0;
+            padding: 32px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+          }
+
+          .no-print-bar {
+            position: sticky;
+            top: 12px;
+            z-index: 100;
+            max-width: 960px;
+            margin: 0 auto 20px auto;
+            background: #0F172A;
+            color: #FFFFFF;
+            padding: 14px 24px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.3);
+          }
+
+          .btn-print {
+            background: linear-gradient(135deg, #2563EB, #1D4ED8);
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s;
+          }
+          .btn-print:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+          }
+
+          .btn-close {
+            background: rgba(255, 255, 255, 0.15);
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .btn-close:hover {
+            background: rgba(255, 255, 255, 0.25);
+          }
+
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #F1F5F9;
+            padding-bottom: 24px;
+            margin-bottom: 24px;
+          }
+
+          .biz-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+          }
+
+          .biz-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            object-cover: cover;
+            border: 1px solid #E2E8F0;
+          }
+
+          .biz-logo-placeholder {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #2563EB, #4F46E5);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 900;
+          }
+
+          .biz-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: #0F172A;
+            line-height: 1.2;
+          }
+
+          .biz-sub {
+            font-size: 11px;
+            color: #64748B;
+            margin-top: 4px;
+          }
+
+          .report-meta {
+            text-align: right;
+          }
+
+          .badge-plan {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-block;
+            margin-bottom: 6px;
+          }
+
+          .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 28px;
+          }
+
+          .kpi-card {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 16px;
+          }
+
+          .kpi-title {
+            font-size: 10px;
+            font-weight: 800;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+          }
+
+          .kpi-amount {
+            font-size: 18px;
+            font-weight: 900;
+            color: #0F172A;
+          }
+
+          .kpi-desc {
+            font-size: 10px;
+            color: #059669;
+            font-weight: 700;
+            margin-top: 2px;
+          }
+
+          .section-heading {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0F172A;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+          }
+
+          .grid-2 {
+            display: grid;
+            grid-template-columns: 3fr 2fr;
+            gap: 20px;
+            margin-bottom: 28px;
+          }
+
+          .table-box {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+          }
+
+          th {
+            background: #F8FAFC;
+            color: #64748B;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 9.5px;
+            letter-spacing: 0.05em;
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #E2E8F0;
+          }
+
+          td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #F1F5F9;
+            color: #334155;
+            vertical-align: middle;
+          }
+
+          tr:last-child td {
+            border-bottom: none;
+          }
+
+          .rank-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+          }
+          .rank-1 { background: #FEF08A; color: #854D0E; }
+          .rank-2 { background: #E2E8F0; color: #334155; }
+          .rank-3 { background: #FED7AA; color: #9A3412; }
+          .rank-other { background: #F1F5F9; color: #64748B; }
+
+          .badge-status {
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            display: inline-block;
+          }
+          .status-completed { background: #ECFDF5; color: #047857; }
+          .status-confirmed { background: #EFF6FF; color: #1D4ED8; }
+          .status-pending { background: #FFFBEB; color: #B45309; }
+          .status-cancelled { background: #FEF2F2; color: #B91C1C; }
+
+          .footer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #94A3B8;
+          }
+
+          @media print {
+            body {
+              background: #FFFFFF;
+              padding: 0;
+            }
+            .container {
+              border: none;
+              box-shadow: none;
+              padding: 0;
+              max-width: 100%;
+            }
+            .no-print-bar {
+              display: none !important;
+            }
+            .kpi-card, .table-box {
+              break-inside: avoid;
+            }
+            tr {
+              break-inside: avoid;
+            }
+          }
+        </style>
+      </head>
+      <body>
+
+        <div class="no-print-bar">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fas fa-file-pdf" style="color: #F87171; font-size: 18px;"></i>
+            <div>
+              <strong style="font-size: 13px; display: block;">Vista Previa de Reporte PDF</strong>
+              <span style="font-size: 11px; color: #94A3B8;">Listo para imprimir o guardar como documento oficial</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button class="btn-print" onclick="window.print()">
+              <i class="fas fa-print"></i> Imprimir / Guardar como PDF
+            </button>
+            <button class="btn-close" onclick="window.close()">
+              <i class="fas fa-times"></i> Cerrar
+            </button>
+          </div>
+        </div>
+
+        <div class="container">
+          <!-- Encabezado Principal -->
+          <div class="header">
+            <div class="biz-info">
+              ${currentBiz.image ? `
+                <img src="${currentBiz.image}" alt="${this.escapeHtml(currentBiz.name)}" class="biz-logo" onerror="this.style.display='none'">
+              ` : `
+                <div class="biz-logo-placeholder">${(currentBiz.name || 'N').charAt(0).toUpperCase()}</div>
+              `}
+              <div>
+                <h1 class="biz-title">${this.escapeHtml(currentBiz.name)}</h1>
+                <p class="biz-sub">
+                  <i class="fas fa-map-marker-alt"></i> ${this.escapeHtml(currentBiz.city || 'Costa Rica')} • 
+                  <i class="fas fa-phone"></i> ${this.escapeHtml(currentBiz.phone || 'N/A')} • 
+                  ${this.escapeHtml(currentBiz.email || '')}
+                </p>
+              </div>
+            </div>
+
+            <div class="report-meta">
+              <span class="badge-plan">${(currentBiz.plan || 'pro').toUpperCase()} PLAN</span>
+              <div style="font-size: 12px; font-weight: 700; color: #0F172A;">INFORME FINANCIERO EJECUTIVO</div>
+              <div style="font-size: 10px; color: #64748B; margin-top: 2px;">Generado: ${new Date().toLocaleString('es-CR')}</div>
+            </div>
+          </div>
+
+          <!-- 4 Tarjetas de Métricas Clave -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-title">Ingresos Totales</div>
+              <div class="kpi-amount" style="color: #047857;">${this.formatColones(totalRevenue)}</div>
+              <div class="kpi-desc">₡ Confirmadas & Completadas</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Ingresos Mes Actual</div>
+              <div class="kpi-amount" style="color: #2563EB;">${this.formatColones(monthRevenue)}</div>
+              <div class="kpi-desc" style="color: #2563EB;">${monthAppointments.length} citas este mes</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Ticket Promedio</div>
+              <div class="kpi-amount" style="color: #4F46E5;">${this.formatColones(avgTicket)}</div>
+              <div class="kpi-desc" style="color: #64748B;">Por cliente atendido</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-title">Tasa de Asistencia</div>
+              <div class="kpi-amount" style="color: #7C3AED;">${attendanceRate}%</div>
+              <div class="kpi-desc" style="color: #64748B;">${completedCount} de ${totalAppointmentsCount} citas</div>
+            </div>
+          </div>
+
+          <!-- Grid 2 Columnas: Clientes Frecuentes & Servicios -->
+          <div class="grid-2">
+            <!-- Ranking de Clientes Frecuentes -->
+            <div class="table-box">
+              <h2 class="section-heading">
+                <i class="fas fa-crown" style="color: #F59E0B;"></i> Top Clientes Frecuentes (${frequentClients.length})
+              </h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 25px;">#</th>
+                    <th>Cliente</th>
+                    <th style="text-align: center;">Citas</th>
+                    <th style="text-align: right;">Total (₡)</th>
+                    <th style="text-align: center;">Última</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${frequentClients.length === 0 ? `
+                    <tr><td colspan="5" style="text-align: center; color: #94A3B8; padding: 16px;">Sin historial de clientes registrado.</td></tr>
+                  ` : frequentClients.slice(0, 8).map((c, idx) => `
+                    <tr>
+                      <td>
+                        <span class="rank-badge ${idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-other'}">
+                          ${idx + 1}
+                        </span>
+                      </td>
+                      <td>
+                        <strong>${this.escapeHtml(c.name)}</strong>
+                        <div style="font-size: 9.5px; color: #94A3B8;">${this.escapeHtml(c.phone || '')}</div>
+                      </td>
+                      <td style="text-align: center; font-weight: 800; color: #2563EB;">${c.totalBookings}</td>
+                      <td style="text-align: right; font-weight: 800; color: #047857;">${this.formatColones(c.totalSpent)}</td>
+                      <td style="text-align: center; font-size: 10px; color: #64748B;">${c.lastDate ? this.formatDateDMY(c.lastDate) : '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Demanda por Servicio -->
+            <div class="table-box">
+              <h2 class="section-heading">
+                <i class="fas fa-fire" style="color: #EA580C;"></i> Servicios Populares
+              </h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Servicio</th>
+                    <th style="text-align: center;">Citas</th>
+                    <th style="text-align: right;">Total (₡)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${topServices.length === 0 ? `
+                    <tr><td colspan="3" style="text-align: center; color: #94A3B8; padding: 16px;">Sin servicios registrados.</td></tr>
+                  ` : topServices.slice(0, 8).map(s => `
+                    <tr>
+                      <td><strong>${this.escapeHtml(s.name)}</strong></td>
+                      <td style="text-align: center; font-weight: 800; color: #2563EB;">${s.count}</td>
+                      <td style="text-align: right; font-weight: 800; color: #047857;">${this.formatColones(s.revenue)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Historial de Citas -->
+          <div class="table-box">
+            <h2 class="section-heading">
+              <i class="fas fa-list-alt" style="color: #2563EB;"></i> Detalle de Citas Recientes (${appointments.length})
+            </h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha / Hora</th>
+                  <th>Cliente</th>
+                  <th>Servicio</th>
+                  <th>Especialista</th>
+                  <th style="text-align: right;">Monto</th>
+                  <th style="text-align: center;">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${appointments.slice(0, 50).map(a => {
+                  const statusLabel = a.status === 'confirmed' ? 'Confirmada' : a.status === 'completed' ? 'Completada' : a.status === 'pending' ? 'Pendiente' : 'Cancelada';
+                  const statusClass = a.status === 'confirmed' ? 'status-confirmed' : a.status === 'completed' ? 'status-completed' : a.status === 'pending' ? 'status-pending' : 'status-cancelled';
+                  return `
+                    <tr>
+                      <td>
+                        <strong>${this.formatDateDMY(a.date)}</strong>
+                        <div style="font-size: 9.5px; color: #64748B;">${this.formatTime12h(a.time)}</div>
+                      </td>
+                      <td>
+                        <strong>${this.escapeHtml(a.clientName || 'Cliente')}</strong>
+                        <div style="font-size: 9.5px; color: #94A3B8;">${this.escapeHtml(a.clientPhone || '')}</div>
+                      </td>
+                      <td>${this.escapeHtml(a.serviceName || '')}</td>
+                      <td>${this.escapeHtml(a.staffName || 'General')}</td>
+                      <td style="text-align: right; font-weight: 800; color: #0F172A;">${this.formatColones(a.servicePrice)}</td>
+                      <td style="text-align: center;">
+                        <span class="badge-status ${statusClass}">${statusLabel}</span>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Footer del Documento -->
+          <div class="footer">
+            <span>Directorio & Reservas Costa Rica • Sistema de Gestión Comercial</span>
+            <span>Documento confidencial para uso administrativo de ${this.escapeHtml(currentBiz.name)}</span>
+          </div>
+        </div>
+
+        <script>
+          // Opcional: invocar diálogo de impresión al cargar
+          window.onload = function() {
+            // El usuario puede presionar directamente el botón de imprimir
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    pdfWindow.document.open();
+    pdfWindow.document.write(htmlContent);
+    pdfWindow.document.close();
+    this.showToast('¡Vista previa de reporte PDF generada exitosamente!', 'success');
   }
 
   // --- SUB-CONTENIDO: GESTIÓN DE EQUIPO Y ESPECIALISTAS ---
