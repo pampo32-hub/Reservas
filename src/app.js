@@ -6977,6 +6977,19 @@ class App {
               </label>
             </div>
 
+            <!-- Guía Rápida: Pagar con Tarjeta de Débito o Crédito -->
+            <div class="p-3.5 bg-blue-50/90 border border-blue-200 rounded-2xl text-[11px] text-blue-950 flex items-start gap-2.5">
+              <div class="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5 shadow-xs">
+                <i class="fas fa-credit-card"></i>
+              </div>
+              <div class="space-y-0.5">
+                <strong class="block text-blue-950 font-bold text-xs">¿Cómo pagar con Tarjeta (Visa / Mastercard / AMEX)?</strong>
+                <p class="text-slate-600 leading-tight">
+                  Haz clic en el botón amarillo de <strong>PayPal</strong>. Dentro de la ventana segura, selecciona la opción <strong>"Pagar con tarjeta de débito o crédito"</strong> para ingresar tu tarjeta sin necesidad de cuenta.
+                </p>
+              </div>
+            </div>
+
             <!-- Aviso previo a marcar el checkbox -->
             <div id="paypal-check-notice" class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold text-center flex items-center justify-center gap-2 animate-fade-in">
               <i class="fas fa-hand-point-up text-amber-600 animate-bounce"></i>
@@ -6994,7 +7007,20 @@ class App {
 
             <div id="paypal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
-            <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
+            <!-- Alternativa Local: SINPE Móvil -->
+            <div class="pt-3 border-t border-slate-200 text-center space-y-2">
+              <span class="text-[11px] text-slate-500 block font-medium">¿Prefieres pagar por transferencia local en Costa Rica?</span>
+              <button 
+                type="button" 
+                id="paypal-switch-to-sinpe-btn" 
+                class="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                <i class="fas fa-mobile-alt text-emerald-600"></i>
+                <span>Pagar con SINPE Móvil (~${this.formatColones(plan.priceCrc)} CRC)</span>
+              </button>
+            </div>
+
+            <div class="pt-1 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
               <i class="fas fa-shield-alt text-emerald-600"></i>
               <span>Procesado de forma 100% segura por PayPal. Cancela cuando quieras sin penalización.</span>
             </div>
@@ -7006,6 +7032,11 @@ class App {
 
     document.getElementById('close-paypal-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('paypal-switch-to-sinpe-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.renderSinpePaymentModal({ businessId, planId });
     });
 
     // Control del Checkbox de Autorización Recurrente
@@ -7132,7 +7163,7 @@ class App {
 
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}&locale=es_CR`;
       script.onload = () => resolve(window.paypal);
       script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
       document.head.appendChild(script);
