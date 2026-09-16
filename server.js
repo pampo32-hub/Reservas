@@ -2383,6 +2383,7 @@ app.post('/api/paypal/create-order', async (req, res) => {
     }
 
     const planConfigMap = {
+      'test': { price: '0.10', name: 'Plan Prueba 24 Horas', limit: 10 },
       'basic': { price: '8.00', name: 'Plan Básico', limit: 50 },
       'pro': { price: '15.00', name: 'Plan Profesional', limit: 200 },
       'unlimited': { price: '25.00', name: 'Plan Ilimitado', limit: 999999 }
@@ -2396,7 +2397,7 @@ app.post('/api/paypal/create-order', async (req, res) => {
       purchase_units: [
         {
           reference_id: `${businessId}_${planId}`,
-          description: `Suscripción Mensual - ${targetPlan.name} (Reservas CR)`,
+          description: `Activación 30 Días - ${targetPlan.name} (Reservas CR)`,
           custom_id: JSON.stringify({ businessId, planId }),
           amount: {
             currency_code: 'USD',
@@ -2461,6 +2462,7 @@ app.post('/api/paypal/capture-order', async (req, res) => {
     }
 
     const planConfigMap = {
+      'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
       'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
       'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
       'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
@@ -2476,6 +2478,7 @@ app.post('/api/paypal/capture-order', async (req, res) => {
           monthly_booking_limit = $3,
           paypal_subscription_id = $4,
           subscription_status = 'active',
+          payment_method = 'card_paypal',
           subscription_updated_at = NOW()
       WHERE id = $5
       RETURNING *

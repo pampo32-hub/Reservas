@@ -6932,7 +6932,7 @@ class App {
   }
 
   // ==========================================
-  // MODAL DE PAGO / SUSCRIPCIÓN CON PAYPAL
+  // MODAL DE PAGO / ACTIVACIÓN CON PAYPAL Y TARJETA
   // ==========================================
   async renderPayPalCheckoutModal({ businessId, planId = 'pro' }) {
     const modalContainer = document.getElementById('modal-container');
@@ -6940,6 +6940,9 @@ class App {
 
     const plan = storage.getPlanById(planId) || { name: 'Plan Profesional', priceUsd: 15, bookingLimitLabel: 'Hasta 200 reservas/mes' };
     const biz = businessId ? storage.getBusinessById(businessId) : null;
+    const isTestPlan = plan.id === 'test';
+    const durationLabel = isTestPlan ? '24 Horas' : '30 Días';
+    const amountCrc = this.formatColones(plan.priceCrc || (plan.priceUsd * 530));
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -6951,13 +6954,13 @@ class App {
               <i class="fas fa-times text-xs"></i>
             </button>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-400/30">
-              <i class="fab fa-paypal"></i> Pasarela de Suscripción Oficial
+              <i class="fab fa-paypal"></i> Pasarela de Pago Seguro
             </div>
             <h3 class="text-xl font-black text-white">Activar ${plan.name}</h3>
-            <p class="text-xs text-slate-300 mt-0.5">Suscripción ${plan.interval === 'cada 24 horas' ? 'diaria' : 'mensual'} de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC) &bull; Renovación automática ${plan.interval || 'mensual'}</p>
+            <p class="text-xs text-slate-300 mt-0.5">Pago por período de <strong>${durationLabel}</strong> &bull; <strong>$${plan.priceUsd} USD</strong> (~${amountCrc} CRC)</p>
           </div>
 
-          <!-- Resumen del Comercio -->
+          <!-- Resumen del Comercio y Plan -->
           <div class="p-5 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Comercio:</span>
@@ -6965,7 +6968,11 @@ class App {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Plan seleccionado:</span>
-              <span class="px-2.5 py-0.5 rounded-md ${plan.id === 'test' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'} font-bold">${plan.name} ($${plan.priceUsd}/${plan.interval === 'cada 24 horas' ? '24h' : 'mes'})</span>
+              <span class="px-2.5 py-0.5 rounded-md ${isTestPlan ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'} font-bold">${plan.name} ($${plan.priceUsd})</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">Duración activa:</span>
+              <span class="text-slate-900 font-bold">${durationLabel} <span class="text-slate-400 font-normal">(renovación manual mes a mes)</span></span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Límite:</span>
@@ -6973,55 +6980,33 @@ class App {
             </div>
           </div>
 
-          <!-- Contenedor de Botones Inteligentes de PayPal -->
+          <!-- Contenedor de Botones de PayPal / Tarjeta -->
           <div class="p-6 space-y-4">
             
-            <!-- Checkbox Obligatorio de Confirmación de Suscripción Recurrente -->
-            <div class="p-3.5 bg-amber-50/90 border border-amber-200 rounded-2xl">
-              <label class="flex items-start gap-3 cursor-pointer select-none">
-                <input type="checkbox" id="paypal-recurring-agree-check" class="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-amber-300 cursor-pointer">
-                <div class="text-xs text-slate-800 leading-relaxed">
-                  <span class="font-bold text-amber-950 block mb-0.5 flex items-center gap-1.5">
-                    <i class="fas fa-sync-alt text-amber-600"></i> Autorización de Suscripción Recurrente
-                  </span>
-                  <p class="text-slate-600 text-[11px]">
-                    Entiendo que es una suscripción recurrente de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC) cobrada de forma automática <strong>${plan.interval || 'cada 30 días'}</strong>. Puedo pausar o cancelar en cualquier momento.
-                  </p>
-                </div>
-              </label>
-            </div>
-
-            <!-- Guía Rápida: Pagar con Tarjeta de Débito o Crédito -->
+            <!-- Guía Rápida: Pagar con Tarjeta -->
             <div class="p-3.5 bg-blue-50/90 border border-blue-200 rounded-2xl text-[11px] text-blue-950 flex items-start gap-2.5">
               <div class="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs flex-shrink-0 mt-0.5 shadow-xs">
                 <i class="fas fa-credit-card"></i>
               </div>
               <div class="space-y-0.5">
-                <strong class="block text-blue-950 font-bold text-xs">¿Cómo pagar con Tarjeta (Visa / Mastercard / AMEX)?</strong>
+                <strong class="block text-blue-950 font-bold text-xs">Pago Rápido con Tarjeta o PayPal</strong>
                 <p class="text-slate-600 leading-tight">
-                  Haz clic en el botón amarillo de <strong>PayPal</strong>. Dentro de la ventana segura, selecciona la opción <strong>"Pagar con tarjeta de débito o crédito"</strong> para ingresar tu tarjeta sin necesidad de cuenta.
+                  Paga directamente con tu tarjeta de débito/crédito (Visa, Mastercard, AMEX) o con tu cuenta PayPal. Sin cobros automáticos imprevistos.
                 </p>
               </div>
             </div>
 
-            <!-- Aviso previo a marcar el checkbox -->
-            <div id="paypal-check-notice" class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold text-center flex items-center justify-center gap-2 animate-fade-in">
-              <i class="fas fa-hand-point-up text-amber-600 animate-bounce"></i>
-              <span>Marca la casilla de arriba para habilitar los botones de pago seguro.</span>
-            </div>
-
             <div id="paypal-loading-spinner" class="py-8 flex flex-col items-center justify-center text-slate-500 gap-2">
               <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
-              <span class="text-xs font-semibold">Cargando pasarela de suscripción PayPal...</span>
+              <span class="text-xs font-semibold">Cargando pasarela de pago seguro...</span>
             </div>
 
-            <div id="paypal-button-wrapper" class="opacity-30 pointer-events-none filter grayscale transition-all duration-300">
+            <div id="paypal-button-wrapper" class="transition-all duration-300">
               <div id="paypal-button-container" class="min-h-[120px]"></div>
             </div>
 
             <div id="paypal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
-            <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
             <!-- Alternativa Local: SINPE Móvil -->
             <div class="pt-3 border-t border-slate-200 text-center space-y-2">
               <span class="text-[11px] text-slate-500 block font-medium">¿Prefieres pagar por transferencia local en Costa Rica?</span>
@@ -7031,13 +7016,13 @@ class App {
                 class="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <i class="fas fa-mobile-alt text-emerald-600"></i>
-                <span>Pagar con SINPE Móvil (~${this.formatColones(plan.priceCrc)} CRC)</span>
+                <span>Pagar con SINPE Móvil (~${amountCrc} CRC)</span>
               </button>
             </div>
 
             <div class="pt-1 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
               <i class="fas fa-shield-alt text-emerald-600"></i>
-              <span>Procesado de forma 100% segura por PayPal. Cancela cuando quieras sin penalización.</span>
+              <span>Procesado de forma 100% segura por PayPal. Pago único sin cargos automáticos.</span>
             </div>
           </div>
 
@@ -7054,26 +7039,10 @@ class App {
       this.renderSinpePaymentModal({ businessId, planId });
     });
 
-    // Control del Checkbox de Autorización Recurrente
-    const agreeCheck = document.getElementById('paypal-recurring-agree-check');
-    const buttonWrapper = document.getElementById('paypal-button-wrapper');
-    const checkNotice = document.getElementById('paypal-check-notice');
-
-    agreeCheck?.addEventListener('change', () => {
-      if (agreeCheck.checked) {
-        buttonWrapper?.classList.remove('opacity-30', 'pointer-events-none', 'filter', 'grayscale');
-        checkNotice?.classList.add('hidden');
-      } else {
-        buttonWrapper?.classList.add('opacity-30', 'pointer-events-none', 'filter', 'grayscale');
-        checkNotice?.classList.remove('hidden');
-      }
-    });
-
     try {
       const config = await storage.getPayPalConfig();
-      const targetPlanId = config.plans[planId] || config.plans.pro;
 
-      // Cargar SDK dinámico con suscripciones recurrentes
+      // Cargar SDK dinámico en modo órdenes estándar (pago directo / sin vault recurrente)
       await this.loadPayPalSDK(config.clientId, config.currency || 'USD');
 
       const spinner = document.getElementById('paypal-loading-spinner');
@@ -7088,15 +7057,26 @@ class App {
           shape: 'rect',
           color: 'gold',
           layout: 'vertical',
-          label: 'subscribe'
+          label: 'pay',
+          tagline: false
         },
-        createSubscription: (data, actions) => {
-          if (!agreeCheck?.checked) {
-            this.showToast('Debes autorizar la suscripción marcando la casilla.', 'warning');
-            throw new Error('Debes aceptar la casilla de suscripción recurrente.');
+        createOrder: async (data, actions) => {
+          try {
+            const res = await storage.createPayPalOrder(businessId, planId);
+            if (res && res.orderId) {
+              return res.orderId;
+            }
+          } catch (e) {
+            console.warn('Fallback a client-side createOrder:', e);
           }
-          return actions.subscription.create({
-            plan_id: targetPlanId
+          return actions.order.create({
+            purchase_units: [{
+              amount: {
+                value: plan.priceUsd.toString(),
+                currency_code: 'USD'
+              },
+              description: `Activación ${plan.name} - ${durationLabel} (Reservas CR)`
+            }]
           });
         },
         onApprove: async (data, actions) => {
@@ -7105,14 +7085,14 @@ class App {
             btnContainer.innerHTML = `
               <div class="py-8 text-center space-y-2">
                 <i class="fas fa-circle-notch fa-spin text-2xl text-emerald-600"></i>
-                <p class="text-xs font-bold text-slate-800">Verificando y activando tu suscripción recurrente...</p>
+                <p class="text-xs font-bold text-slate-800">Verificando y activando tu plan...</p>
               </div>
             `;
           }
 
           try {
-            await storage.verifyPayPalSubscription(data.subscriptionID, businessId, planId);
-            this.showToast(`¡Suscripción al ${plan.name} activada con éxito!`, 'success');
+            await storage.capturePayPalOrder(data.orderID, businessId, planId);
+            this.showToast(`¡Plan ${plan.name} activado con éxito!`, 'success');
 
             modalContainer.innerHTML = `
               <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
@@ -7120,11 +7100,11 @@ class App {
                   <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20 animate-bounce">
                     <i class="fas fa-check-circle"></i>
                   </div>
-                  <h3 class="text-xl font-black text-slate-900">¡Suscripción Confirmada!</h3>
+                  <h3 class="text-xl font-black text-slate-900">¡Plan Activado!</h3>
                   <p class="text-xs text-slate-600">
-                    Tu suscripción al <strong>${plan.name} ($${plan.priceUsd})</strong> ha sido activada correctamente con renovación automática. ID de suscripción: <code>${data.subscriptionID}</code>.
+                    Tu <strong>${plan.name} ($${plan.priceUsd})</strong> está activo por <strong>${durationLabel}</strong>. Puedes usar todas sus funciones de inmediato. ID de orden: <code>${data.orderID}</code>.
                   </p>
-                  <button id="close-paypal-success-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all">
+                  <button id="close-paypal-success-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all cursor-pointer">
                     Continuar a mi Panel
                   </button>
                 </div>
@@ -7139,7 +7119,7 @@ class App {
             const errBox = document.getElementById('paypal-error-box');
             if (errBox) {
               errBox.classList.remove('hidden');
-              errBox.textContent = err.message || 'Error verificando suscripción.';
+              errBox.textContent = err.message || 'Error confirmando el pago.';
             }
           }
         },
@@ -7148,7 +7128,7 @@ class App {
           const errBox = document.getElementById('paypal-error-box');
           if (errBox) {
             errBox.classList.remove('hidden');
-            errBox.textContent = 'Hubo un inconveniente al procesar con PayPal. Por favor intenta de nuevo.';
+            errBox.textContent = 'Hubo un inconveniente al procesar con PayPal o Tarjeta. Por favor intenta de nuevo.';
           }
         }
       }).render('#paypal-button-container');
@@ -7167,19 +7147,20 @@ class App {
     }
   }
 
-  // Helper para cargar SDK de PayPal dinámicamente con suscripciones
+  // Helper para cargar SDK de PayPal dinámicamente para órdenes directas
   loadPayPalSDK(clientId, currency = 'USD') {
     return new Promise((resolve, reject) => {
       const existingScript = document.getElementById('paypal-sdk-script');
-      if (existingScript && window.paypal) {
+      // If previous script was subscription/vault, replace it with clean direct order SDK
+      if (existingScript && window.paypal && !existingScript.src.includes('vault=true')) {
         return resolve(window.paypal);
       }
       if (existingScript) existingScript.remove();
+      if (window.paypal) delete window.paypal;
 
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}`;
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}&locale=es_CR`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&locale=es_CR&components=buttons`;
       script.onload = () => resolve(window.paypal);
       script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
       document.head.appendChild(script);
