@@ -2540,11 +2540,7 @@ class App {
 
       this.closeBookingModal();
       this.renderSuccessBookingModal(newAppointment, biz);
-      if (newAppointment.status === 'pending') {
-        this.showToast('¡Solicitud enviada! En unos minutos recibirás la confirmación del negocio.', 'info');
-      } else {
-        this.showToast('¡Reserva confirmada con éxito!', 'success');
-      }
+      this.showToast('¡Prueba de reserva completada con éxito!', 'info');
     });
   }
 
@@ -2558,32 +2554,48 @@ class App {
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
-          <div class="w-16 h-16 ${isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center text-3xl mx-auto mb-4 ${isPending ? 'animate-pulse' : 'animate-bounce'}">
-            <i class="fas ${isPending ? 'fa-hourglass-half' : 'fa-check'}"></i>
+          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
+            <i class="fas fa-check-circle"></i>
           </div>
 
-          <span class="text-xs uppercase font-extrabold ${isPending ? 'text-amber-600' : 'text-emerald-600'} tracking-wider">
-            ${isPending ? '¡Solicitud de Reserva Recibida!' : '¡Turno Agendado!'}
+          <span class="text-xs uppercase font-extrabold text-blue-600 tracking-wider">
+            ¡Simulación de Reserva Exitosa!
           </span>
           <h3 class="text-2xl font-black text-slate-900 mt-1">
-            ${isPending ? 'Reserva en Proceso de Confirmación' : 'Reserva Confirmada'}
+            Demostración de Agendamiento
           </h3>
-          <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
+          <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
 
-          ${isPending ? `
-            <!-- Aviso Informativo para Reserva Pendiente -->
-            <div class="mt-4 p-4 bg-amber-50/90 rounded-2xl border border-amber-200 text-left text-xs text-amber-900 space-y-1.5 animate-fade-in">
-              <div class="flex items-center gap-2 font-bold text-amber-950">
-                <i class="fas fa-clock text-amber-600 text-sm"></i>
-                <span>En unos minutos te llegará la confirmación</span>
+          <!-- Aviso Informativo de Prelanzamiento -->
+          <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
+            <div class="flex items-center gap-2 font-black text-blue-950 text-xs sm:text-sm">
+              <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shadow-2xs">
+                <i class="fas fa-bullhorn"></i>
               </div>
-              <p class="text-amber-800 text-[11px] leading-relaxed">
-                Tu solicitud ha sido enviada al comercio <strong>${business.name}</strong>. En unos minutos te llegará la confirmación por parte del negocio vía correo y WhatsApp una vez sea revisada y aprobada.
-              </p>
+              <span>Aviso Informativo • Modo Prelanzamiento</span>
             </div>
-          ` : ''}
+            
+            <p class="text-xs text-slate-700 leading-relaxed font-medium">
+              ¡Has completado con éxito esta prueba de reserva en <strong>Reservas CR</strong>!
+            </p>
 
-          <div class="mt-5 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
+            <div class="p-3.5 bg-white/95 rounded-xl border border-blue-100 text-slate-800 text-[11px] leading-relaxed space-y-2 shadow-2xs">
+              <div class="font-extrabold text-blue-900 flex items-center gap-1.5 text-xs">
+                <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
+                <i class="fas fa-envelope text-blue-600 text-sm"></i>
+                <span>¿Qué sucede cuando la plataforma esté 100% activa?</span>
+              </div>
+              <p class="text-slate-600">
+                Al confirmar una reserva con la página activa, <strong>en ese momento recibirías automáticamente un mensaje de texto por WhatsApp y un correo electrónico</strong> confirmando la cita, tu cita quedaría activada en tiempo real en la agenda del comercio y recibirías recordatorios previos a tu turno.
+              </p>
+              <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
+                <i class="fas fa-check text-emerald-600"></i>
+                <span>No se ha realizado ningún cobro ni envío de mensajes reales durante esta prueba.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
             <div class="flex justify-between">
               <span class="text-slate-500">Establecimiento:</span>
               <span class="font-bold text-slate-800">${business.name}</span>
@@ -2606,10 +2618,10 @@ class App {
               <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-500">Estado:</span>
-              <span class="font-bold ${isPending ? 'text-amber-600' : 'text-emerald-600'} flex items-center gap-1">
-                <i class="fas ${isPending ? 'fa-clock' : 'fa-check-circle'} text-[11px]"></i>
-                ${isPending ? 'Pendiente de aprobación' : 'Confirmada al instante'}
+              <span class="text-slate-500">Estado de prueba:</span>
+              <span class="font-bold text-blue-700 flex items-center gap-1">
+                <i class="fas fa-flask text-[11px]"></i>
+                Simulación Prelanzamiento
               </span>
             </div>
             <div class="flex justify-between">
@@ -2617,22 +2629,10 @@ class App {
               <span class="font-bold text-slate-800">${appointment.clientName}</span>
             </div>
             <div class="flex justify-between pt-2 border-t border-slate-200">
-              <span class="text-slate-500 font-medium">Total a pagar en local:</span>
+              <span class="text-slate-500 font-medium">Precio del servicio:</span>
               <span class="font-black text-sm text-slate-900">${this.formatColones(appointment.servicePrice)}</span>
             </div>
           </div>
-
-          ${!isPending && appointment.whatsappOptIn !== false ? `
-            <div class="mt-4 p-3 bg-emerald-50/90 rounded-2xl border border-emerald-200 flex items-center gap-3 text-xs text-emerald-800 font-medium text-left animate-fade-in">
-              <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 text-base shadow-sm">
-                <i class="fab fa-whatsapp"></i>
-              </div>
-              <div>
-                <strong class="block text-emerald-950 font-bold text-[11px] uppercase tracking-wider">Confirmación WhatsApp enviada</strong>
-                <span class="text-[11px] text-emerald-700">Se enviará el comprobante y recordatorios a tu número <strong>${appointment.clientPhone}</strong>.</span>
-              </div>
-            </div>
-          ` : ''}
 
           <!-- Sincronización con Calendario Personal -->
           <div class="mt-4 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-left space-y-2 animate-fade-in">

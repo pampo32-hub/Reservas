@@ -1765,8 +1765,10 @@ app.post('/api/appointments', async (req, res) => {
       autoConfirmed: isAutoConfirm
     };
 
-    // Si está autoconfirmada y confirmada, enviar notificaciones inmediatamente
-    if (isAutoConfirm && initialStatus === 'confirmed') {
+    // Notificaciones de citas (Deshabilitadas temporalmente durante prelanzamiento/publicidad)
+    const ENABLE_BOOKING_NOTIFICATIONS = process.env.ENABLE_BOOKING_NOTIFICATIONS === 'true';
+
+    if (ENABLE_BOOKING_NOTIFICATIONS && isAutoConfirm && initialStatus === 'confirmed') {
       pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
         .then(bizRes => {
           const business = bizRes.rows[0] || null;
@@ -1792,6 +1794,8 @@ app.post('/api/appointments', async (req, res) => {
         .catch(err => {
           console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
         });
+    } else {
+      console.log(`ℹ️ [Notificaciones Citas] Deshabilitadas temporalmente para cita ${createdAppointment.id} (Modo Prelanzamiento)`);
     }
 
     res.status(201).json(createdAppointment);
