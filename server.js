@@ -3379,6 +3379,42 @@ app.post('/api/webhooks/paypal', async (req, res) => {
   }
 });
 
+// 4.1 Webhook Oficial de WhatsApp Cloud API (Verificación y Eventos)
+app.get('/api/webhooks/whatsapp', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || 'reservas_cr_webhook_token_2026';
+
+  if (mode && token) {
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+      console.log('✅ Webhook de WhatsApp verificado exitosamente con Meta.');
+      res.status(200).send(challenge);
+    } else {
+      console.warn('⚠️ Fallo en token de verificación de webhook WhatsApp');
+      res.sendStatus(403);
+    }
+  } else {
+    res.sendStatus(400);
+  }
+});
+
+app.post('/api/webhooks/whatsapp', (req, res) => {
+  try {
+    const body = req.body;
+    if (body.object) {
+      console.log('🔔 Evento Webhook WhatsApp recibido:', JSON.stringify(body, null, 2));
+      res.status(200).send('EVENT_RECEIVED');
+    } else {
+      res.sendStatus(404);
+    }
+  } catch (err) {
+    console.error('Error procesando webhook WhatsApp:', err);
+    res.status(200).send('ERROR_HANDLED');
+  }
+});
+
 // 5. Guardar Configuración de PayPal desde el Panel Developer
 app.post('/api/developer/paypal-settings', async (req, res) => {
   try {
