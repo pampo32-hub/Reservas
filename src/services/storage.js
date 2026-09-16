@@ -1291,6 +1291,58 @@ class StorageService {
       return { success: false, error: e.message };
     }
   }
+
+  // --- PRE-REGISTRO DE COMERCIOS (LEADS DE PRELANZAMIENTO) ---
+  async savePreRegistration(leadData) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/pre-registrations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al guardar pre-registro.');
+        
+        // Guardar copia de seguridad en localStorage
+        const stored = JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
+        stored.unshift(data.lead || { ...leadData, id: data.id, createdAt: new Date().toISOString() });
+        localStorage.setItem('reservas_pre_registrations', JSON.stringify(stored));
+        
+        return data;
+      } catch (e) {
+        console.warn('Fallback local para pre-registro:', e);
+      }
+    }
+
+    const fallbackLead = {
+      id: `prereg-${Date.now()}`,
+      ...leadData,
+      createdAt: new Date().toISOString()
+    };
+    const stored = JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
+    stored.unshift(fallbackLead);
+    localStorage.setItem('reservas_pre_registrations', JSON.stringify(stored));
+    return { success: true, message: '¡Pre-registro guardado con éxito!', lead: fallbackLead };
+  }
+
+  async getPreRegistrations() {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/pre-registrations`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.leads) {
+            localStorage.setItem('reservas_pre_registrations', JSON.stringify(data.leads));
+            return data.leads;
+          }
+        }
+      } catch (e) {
+        console.warn('Error consultando pre-registros del servidor:', e);
+      }
+    }
+    return JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
+  }
 }
 
 export const storage = new StorageService();

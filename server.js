@@ -482,7 +482,71 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
 });
 
 // ==========================================
-// ENDPOINTS DE NEGOCIOS Y SERVICIOS
+// ENDPOINTS DE PRE-REGISTRO (LEADS DE PRELANZAMIENTO)
+// ==========================================
+app.post('/api/pre-registrations', async (req, res) => {
+  try {
+    const { businessName, contactName, phone, category, city, planInterest = 'pro', notes = '' } = req.body;
+    if (!businessName || !phone || !contactName) {
+      return res.status(400).json({ error: 'Nombre del negocio, persona de contacto y número de WhatsApp son obligatorios.' });
+    }
+
+    const id = `prereg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const cleanBizName = (businessName || '').trim();
+    const cleanContact = (contactName || '').trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanCat = (category || 'Servicios Generales').trim();
+    const cleanCity = (city || '').trim();
+    const cleanPlan = (planInterest || 'pro').trim();
+    const cleanNotes = (notes || '').trim();
+
+    await pool.query(`
+      INSERT INTO reservas_pre_registrations (id, business_name, contact_name, phone, category, city, plan_interest, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [id, cleanBizName, cleanContact, cleanPhone, cleanCat, cleanCity, cleanPlan, cleanNotes]);
+
+    res.json({
+      success: true,
+      id,
+      message: '¡Pre-registro completado con éxito! Tus 15 días gratis y beneficios de lanzamiento han sido reservados.',
+      lead: {
+        id,
+        businessName: cleanBizName,
+        contactName: cleanContact,
+        phone: cleanPhone,
+        category: cleanCat,
+        city: cleanCity,
+        planInterest: cleanPlan,
+        createdAt: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error guardando pre-registro:', error);
+    res.status(500).json({ error: 'Error al registrar comercio. Intenta de nuevo.' });
+  }
+});
+
+app.get('/api/pre-registrations', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reservas_pre_registrations ORDER BY created_at DESC');
+    const leads = result.rows.map(r => ({
+      id: r.id,
+      businessName: r.business_name,
+      contactName: r.contact_name,
+      phone: r.phone,
+      category: r.category,
+      city: r.city,
+      planInterest: r.plan_interest,
+      notes: r.notes,
+      createdAt: r.created_at
+    }));
+    res.json({ success: true, leads });
+  } catch (error) {
+    console.error('Error obteniendo pre-registros:', error);
+    res.status(500).json({ error: 'Error al consultar pre-registros' });
+  }
+});
+
 // ==========================================
 // ENDPOINTS DE NEGOCIOS, CATEGORÍAS Y SERVICIOS
 // ==========================================

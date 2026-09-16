@@ -193,6 +193,21 @@ export async function initDatabase() {
       );
     `);
 
+    // 10. Crear tabla de pre-registros de comercios (Leads de prelanzamiento)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_pre_registrations (
+        id VARCHAR(64) PRIMARY KEY,
+        business_name VARCHAR(255) NOT NULL,
+        contact_name VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        city VARCHAR(100),
+        plan_interest VARCHAR(50) DEFAULT 'pro',
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';
