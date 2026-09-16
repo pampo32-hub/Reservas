@@ -8189,28 +8189,19 @@ class App {
                       </ul>
                     </div>
 
-                    <!-- Botones de Acción: Suscribirme (Tarjeta/PayPal) y Pagar con SINPE Móvil -->
-                    <div class="mt-6 pt-4 border-t border-slate-100 space-y-2">
+                    <!-- Botón de Acción: Seleccionar Plan -->
+                    <div class="mt-6 pt-4 border-t border-slate-100">
                       ${isCurrent ? `
                         <button disabled class="w-full py-3.5 bg-emerald-100 text-emerald-800 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
                           <i class="fas fa-check-circle"></i> Tu Plan Actual
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-paypal-btn w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer app-touch-btn"
+                          class="select-plan-btn w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer app-touch-btn"
                           data-plan-id="${plan.id}"
                         >
-                          <i class="fas fa-credit-card text-xs"></i>
-                          <span>Suscribirme ($${plan.priceUsd}${plan.interval === 'cada 24 horas' ? '/24h' : '/mes'})</span>
+                          <span>Elegir ${plan.name} ($${plan.priceUsd}/mes)</span>
                           <i class="fas fa-arrow-right text-xs"></i>
-                        </button>
-
-                        <button 
-                          class="select-plan-sinpe-btn w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer app-touch-btn"
-                          data-plan-id="${plan.id}"
-                        >
-                          <i class="fas fa-mobile-alt text-sm"></i>
-                          <span>Pagar con SINPE Móvil (~${this.formatColones(plan.priceCrc)})</span>
                         </button>
                       `}
                     </div>
@@ -8236,8 +8227,8 @@ class App {
       modalContainer.innerHTML = '';
     });
 
-    // Acción: Suscribirse con Tarjeta / PayPal
-    document.querySelectorAll('.select-plan-paypal-btn').forEach(btn => {
+    // Acción: Seleccionar Plan
+    document.querySelectorAll('.select-plan-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const planId = btn.getAttribute('data-plan-id');
         const bizUser = storage.getBusinessUser();
@@ -8247,24 +8238,6 @@ class App {
         if (activeBizId) {
           this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
         } else {
-          this.showToast('Primero crea la cuenta de tu negocio para asociarle tu plan.', 'info');
-          this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
-        }
-      });
-    });
-
-    // Acción: Pagar con SINPE Móvil
-    document.querySelectorAll('.select-plan-sinpe-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const planId = btn.getAttribute('data-plan-id');
-        const bizUser = storage.getBusinessUser();
-        const activeBizId = businessId || (bizUser ? bizUser.businessId : null);
-        modalContainer.innerHTML = '';
-
-        if (activeBizId) {
-          this.renderSinpePaymentModal({ businessId: activeBizId, planId });
-        } else {
-          this.showToast('Primero crea la cuenta de tu negocio para asociarle tu plan.', 'info');
           this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
         }
       });
