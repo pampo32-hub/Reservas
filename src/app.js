@@ -3182,7 +3182,7 @@ class App {
                     <th class="py-3 px-4">Servicio</th>
                     <th class="py-3 px-4">Monto</th>
                     <th class="py-3 px-4">Estado</th>
-                    <th class="py-3 px-4 text-right">Acciones de Gestión</th>
+                    <th class="py-3 px-4 text-right whitespace-nowrap min-w-[280px]">Acciones de Gestión</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -3214,37 +3214,39 @@ class App {
                           ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
                         </span>
                       </td>
-                      <td class="py-3.5 px-4 text-right space-x-1">
-                        <!-- Aceptar / Confirmar -->
-                        ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
-                            <i class="fas fa-check-circle"></i> Aceptar
+                      <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
+                          <!-- Aceptar / Confirmar -->
+                          ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                            <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
+                              <i class="fas fa-check-circle"></i> Aceptar
+                            </button>
+                          ` : ''}
+
+                          <!-- Marcar como Completada -->
+                          ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
+                            <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
+                              <i class="fas fa-clipboard-check"></i> Completar
+                            </button>
+                          ` : ''}
+
+                          <!-- Reprogramar / Modificar -->
+                          <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
+                            <i class="fas fa-calendar-alt"></i> Modificar
                           </button>
-                        ` : ''}
 
-                        <!-- Marcar como Completada -->
-                        ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
-                            <i class="fas fa-clipboard-check"></i> Completar
+                          <!-- Cancelar -->
+                          ${apt.status !== 'cancelled' ? `
+                            <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
+                              <i class="fas fa-ban"></i> Cancelar
+                            </button>
+                          ` : ''}
+
+                          <!-- Eliminar -->
+                          <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
+                            <i class="fas fa-trash-alt"></i>
                           </button>
-                        ` : ''}
-
-                        <!-- Reprogramar / Modificar -->
-                        <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
-                          <i class="fas fa-calendar-alt"></i> Modificar
-                        </button>
-
-                        <!-- Cancelar -->
-                        ${apt.status !== 'cancelled' ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
-                            <i class="fas fa-ban"></i> Cancelar
-                          </button>
-                        ` : ''}
-
-                        <!-- Eliminar -->
-                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
-                          <i class="fas fa-trash-alt"></i>
-                        </button>
+                        </div>
                       </td>
                     </tr>
                   `).join('')}
