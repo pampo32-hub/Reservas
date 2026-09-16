@@ -1719,12 +1719,15 @@ app.post('/api/appointments', async (req, res) => {
             });
           }
 
-          // 2. Enviar WhatsApp de confirmación (incluido exclusivamente a partir del Plan Profesional)
-          const isProOrUnlimited = business && (business.plan === 'pro' || business.plan === 'unlimited');
-          if (isProOrUnlimited && optIn && a.clientPhone) {
-            sendBookingConfirmationWhatsApp(createdAppointment, business, pool).catch(waErr => {
-              console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
-            });
+          // 2. Enviar WhatsApp de confirmación proactivo (Plantilla oficial Meta Cloud API)
+          if (optIn && a.clientPhone) {
+            sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
+              .then(waRes => {
+                console.log(`📲 [WhatsApp Auto] Resultado envío cita ${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No enviado (${waRes?.reason || waRes?.error})`);
+              })
+              .catch(waErr => {
+                console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
+              });
           }
         })
         .catch(err => {
