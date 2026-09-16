@@ -58,6 +58,9 @@ export async function initDatabase() {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS monthly_booking_limit INT DEFAULT 150;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS social_links JSONB DEFAULT '{}';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS auto_confirm_appointments BOOLEAN DEFAULT TRUE;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS paypal_subscription_id VARCHAR(100) DEFAULT NULL;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'trial';
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS subscription_updated_at TIMESTAMP DEFAULT NOW();
     `);
 
     // 2. Crear tabla de servicios
@@ -217,7 +220,24 @@ export async function initDatabase() {
       ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password
     `, ['dev-master', 'Master Developer', devEmail, devPassword, 'developer']);
 
-    console.log('✅ Tablas y cuenta Developer verificadas/creadas en Neon PostgreSQL.');
+    // Sembrar configuraciones iniciales de PayPal
+    const initialPayPalSettings = [
+      ['paypal_client_id', process.env.PAYPAL_CLIENT_ID || 'BAAAlUaiVs_WHAYUvyr-dQjoW6umQpPKSL5UhhUVxLrLRtXSs3KloYFxV8u-UijYJvylfFsr06KlrwCW6c'],
+      ['paypal_client_secret', process.env.PAYPAL_CLIENT_SECRET || 'EA9WRXaxhPFwdhIaPkyE2BUflM7JgdwfcjRgHz8hfAv8QYTAhnOCPJkSrWGsl5fL_uzF63t0p0aK9pUP'],
+      ['paypal_env', process.env.PAYPAL_ENV || 'sandbox'],
+      ['paypal_plan_basic_id', 'P-91741099FP9750211NKU7KDY'],
+      ['paypal_plan_pro_id', 'P-92V739915R025452UNKU7KDY'],
+      ['paypal_plan_unlimited_id', 'P-7KJ77800M6332750RNKU7KEA']
+    ];
+    for (const [key, val] of initialPayPalSettings) {
+      await client.query(`
+        INSERT INTO reservas_system_settings (key, value, updated_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (key) DO NOTHING
+      `, [key, val]);
+    }
+
+    console.log('✅ Tablas, cuenta Developer y ajustes de PayPal verificados en Neon PostgreSQL.');
 
     // Sembrar o actualizar todos los comercios demo (32 negocios en 16 categorías)
     console.log('🌱 Verificando/sembrando catálogo completo de comercios iniciales...');

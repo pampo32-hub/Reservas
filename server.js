@@ -2180,38 +2180,381 @@ app.get('/api/businesses/:id/reviews', async (req, res) => {
   }
 });
 
-// 4. Endpoint de prueba para enviar correo de calificación a cualquier dirección
-app.post('/api/test-review-email', async (req, res) => {
+// ==========================================
+// INTEGRACIÓN DE PAGOS Y SUSCRIPCIONES PAYPAL
+// ==========================================
+
+// Helper para obtener ajustes de PayPal desde la BD o variables de entorno
+async function getPayPalSettings() {
+  const defaults = {
+    clientId: process.env.PAYPAL_CLIENT_ID || 'BAAAlUaiVs_WHAYUvyr-dQjoW6umQpPKSL5UhhUVxLrLRtXSs3KloYFxV8u-UijYJvylfFsr06KlrwCW6c',
+    clientSecret: process.env.PAYPAL_CLIENT_SECRET || 'EA9WRXaxhPFwdhIaPkyE2BUflM7JgdwfcjRgHz8hfAv8QYTAhnOCPJkSrWGsl5fL_uzF63t0p0aK9pUP',
+    env: process.env.PAYPAL_ENV || 'sandbox',
+    planBasic: 'P-91741099FP9750211NKU7KDY',
+    planPro: 'P-92V739915R025452UNKU7KDY',
+    planUnlimited: 'P-7KJ77800M6332750RNKU7KEA'
+  };
+
   try {
-    const { email } = req.body;
-    if (!email || !email.includes('@')) {
-      return res.status(400).json({ error: 'Debes proporcionar un correo electrónico válido.' });
+    const res = await pool.query("SELECT key, value FROM reservas_system_settings WHERE key LIKE 'paypal_%'");
+    for (const row of res.rows) {
+      if (row.key === 'paypal_client_id' && row.value) defaults.clientId = row.value;
+      if (row.key === 'paypal_client_secret' && row.value) defaults.clientSecret = row.value;
+      if (row.key === 'paypal_env' && row.value) defaults.env = row.value;
+      if (row.key === 'paypal_plan_basic_id' && row.value) defaults.planBasic = row.value;
+      if (row.key === 'paypal_plan_pro_id' && row.value) defaults.planPro = row.value;
+      if (row.key === 'paypal_plan_unlimited_id' && row.value) defaults.planUnlimited = row.value;
+    }
+  } catch (err) {
+    console.warn('Advertencia obteniendo ajustes de PayPal:', err.message);
+  }
+
+  return defaults;
+}
+
+// Helper para obtener token de acceso OAuth2 de PayPal
+async function getPayPalAccessToken() {
+  const settings = await getPayPalSettings();
+  const host = settings.env === 'live' ? 'api-m.paypal.com' : 'api-m.sandbox.paypal.com';
+  const auth = Buffer.from(`${settings.clientId}:${settings.clientSecret}`).toString('base64');
+
+  const res = await fetch(`https://${host}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: 'grant_type=client_credentials'
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error_description || errData.error || `Error ${res.status} al autenticar con PayPal`);
+  }
+
+  const data = await res.json();
+  return { token: data.access_token, host, settings };
+}
+
+// 1. Obtener Configuración Pública de PayPal para el Frontend
+app.get('/api/paypal/config', async (req, res) => {
+  try {
+    const settings = await getPayPalSettings();
+    res.json({
+      success: true,
+      clientId: settings.clientId,
+      env: settings.env,
+      currency: 'USD',
+      plans: {
+        basic: settings.planBasic,
+        pro: settings.planPro,
+        unlimited: settings.planUnlimited
+      }
+    });
+  } catch (error) {
+    console.error('Error en GET /api/paypal/config:', error);
+    res.status(500).json({ error: 'Error al obtener configuración de PayPal' });
+  }
+});
+
+// 2. Verificar y Activar Suscripción tras aprobación de PayPal
+app.post('/api/paypal/verify-subscription', async (req, res) => {
+  try {
+    const { subscriptionId, businessId, planId } = req.body;
+
+    if (!subscriptionId || !businessId || !planId) {
+      return res.status(400).json({ error: 'Faltan parámetros requeridos (subscriptionId, businessId, planId).' });
     }
 
-    const testAppointment = {
-      id: `apt-${Date.now().toString().slice(-6)}`,
-      clientName: 'Cliente VIP de Prueba',
-      clientEmail: email.trim(),
-      clientPhone: '+506 8888 7777',
-      serviceName: 'Corte de Cabello Clásico & Barba',
-      serviceDuration: 45,
-      servicePrice: 10000,
-      date: '2026-09-15',
-      time: '10:00 AM'
+    const { token, host } = await getPayPalAccessToken();
+
+    // Consultar detalles de la suscripción en la API de PayPal
+    const payPalRes = await fetch(`https://${host}/v1/billing/subscriptions/${subscriptionId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!payPalRes.ok) {
+      const errData = await payPalRes.json().catch(() => ({}));
+      return res.status(400).json({
+        error: 'No se pudo verificar la suscripción con PayPal.',
+        details: errData
+      });
+    }
+
+    const subData = await payPalRes.json();
+    const status = subData.status; // 'ACTIVE', 'APPROVED'
+
+    if (status !== 'ACTIVE' && status !== 'APPROVED') {
+      return res.status(400).json({
+        error: `La suscripción en PayPal tiene un estado no activo: ${status}`
+      });
+    }
+
+    // Mapeo de límites y precios por plan
+    const planConfigMap = {
+      'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
+      'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
+      'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
     };
 
-    const testBusiness = {
-      name: 'Barbería & Estilo Vintage',
-      address: 'Av. Escazú, Local 12',
-      city: 'San José, Escazú',
-      phone: '+506 8899 1122'
-    };
+    const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
 
-    const result = await sendReviewRequestEmail(testAppointment, testBusiness);
-    res.json({ success: true, message: 'Correo de valoración de prueba enviado exitosamente.', result });
+    // Actualizar comercio en la Base de Datos PostgreSQL
+    const updateRes = await pool.query(`
+      UPDATE reservas_businesses
+      SET plan = $1,
+          plan_price_usd = $2,
+          monthly_booking_limit = $3,
+          paypal_subscription_id = $4,
+          subscription_status = 'active',
+          subscription_updated_at = NOW()
+      WHERE id = $5
+      RETURNING *
+    `, [planId, targetPlan.price, targetPlan.limit, subscriptionId, businessId]);
+
+    if (updateRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado en la base de datos.' });
+    }
+
+    console.log(`✅ Suscripción PayPal activada con éxito para comercio [${businessId}] -> Plan: ${planId} (${subscriptionId})`);
+
+    res.json({
+      success: true,
+      message: `¡Suscripción al ${targetPlan.name} activada con éxito!`,
+      subscriptionId,
+      status,
+      business: updateRes.rows[0]
+    });
   } catch (error) {
-    console.error('Error en /api/test-review-email:', error);
-    res.status(500).json({ error: error.message || 'Error enviando correo de prueba de valoración.' });
+    console.error('Error en /api/paypal/verify-subscription:', error);
+    res.status(500).json({ error: error.message || 'Error al procesar suscripción de PayPal.' });
+  }
+});
+
+// 3. Cancelar Suscripción de PayPal
+app.post('/api/paypal/cancel-subscription', async (req, res) => {
+  try {
+    const { businessId, reason = 'Cancelado por el usuario' } = req.body;
+    if (!businessId) {
+      return res.status(400).json({ error: 'ID de comercio requerido.' });
+    }
+
+    const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [businessId]);
+    if (bizRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado.' });
+    }
+
+    const biz = bizRes.rows[0];
+    const subId = biz.paypal_subscription_id;
+
+    if (subId) {
+      try {
+        const { token, host } = await getPayPalAccessToken();
+        await fetch(`https://${host}/v1/billing/subscriptions/${subId}/cancel`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ reason })
+        });
+      } catch (err) {
+        console.warn('Aviso cancelando en PayPal API:', err.message);
+      }
+    }
+
+    // Actualizar estado en BD
+    await pool.query(`
+      UPDATE reservas_businesses
+      SET subscription_status = 'cancelled',
+          subscription_updated_at = NOW()
+      WHERE id = $1
+    `, [businessId]);
+
+    res.json({
+      success: true,
+      message: 'Suscripción cancelada correctamente.'
+    });
+  } catch (error) {
+    console.error('Error en /api/paypal/cancel-subscription:', error);
+    res.status(500).json({ error: error.message || 'Error al cancelar suscripción.' });
+  }
+});
+
+// 4. Webhook Oficial de PayPal (Eventos en tiempo real)
+app.post('/api/webhooks/paypal', async (req, res) => {
+  try {
+    const event = req.body;
+    const eventType = event.event_type;
+    const resource = event.resource || {};
+
+    console.log(`🔔 Webhook PayPal recibido: [${eventType}] - ID: ${resource.id || 'N/A'}`);
+
+    // Manejar eventos clave de Suscripciones
+    if (eventType === 'BILLING.SUBSCRIPTION.ACTIVATED' || eventType === 'PAYMENT.SALE.COMPLETED') {
+      const subId = resource.billing_agreement_id || resource.id;
+      if (subId) {
+        await pool.query(`
+          UPDATE reservas_businesses
+          SET subscription_status = 'active',
+              subscription_updated_at = NOW()
+          WHERE paypal_subscription_id = $1
+        `, [subId]);
+      }
+    } else if (eventType === 'BILLING.SUBSCRIPTION.CANCELLED' || eventType === 'BILLING.SUBSCRIPTION.EXPIRED') {
+      const subId = resource.id;
+      if (subId) {
+        await pool.query(`
+          UPDATE reservas_businesses
+          SET subscription_status = 'cancelled',
+              subscription_updated_at = NOW()
+          WHERE paypal_subscription_id = $1
+        `, [subId]);
+      }
+    } else if (eventType === 'BILLING.SUBSCRIPTION.SUSPENDED' || eventType === 'BILLING.SUBSCRIPTION.PAYMENT.FAILED') {
+      const subId = resource.id;
+      if (subId) {
+        await pool.query(`
+          UPDATE reservas_businesses
+          SET subscription_status = 'past_due',
+              subscription_updated_at = NOW()
+          WHERE paypal_subscription_id = $1
+        `, [subId]);
+      }
+    }
+
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Error procesando webhook de PayPal:', error);
+    res.status(200).send('ERROR_HANDLED');
+  }
+});
+
+// 5. Guardar Configuración de PayPal desde el Panel Developer
+app.post('/api/developer/paypal-settings', async (req, res) => {
+  try {
+    const { clientId, clientSecret, env, planBasic, planPro, planUnlimited } = req.body;
+
+    const updates = [
+      ['paypal_client_id', clientId?.trim()],
+      ['paypal_client_secret', clientSecret?.trim()],
+      ['paypal_env', env === 'live' ? 'live' : 'sandbox'],
+      ['paypal_plan_basic_id', planBasic?.trim()],
+      ['paypal_plan_pro_id', planPro?.trim()],
+      ['paypal_plan_unlimited_id', planUnlimited?.trim()]
+    ];
+
+    for (const [key, val] of updates) {
+      if (val !== undefined && val !== null) {
+        await pool.query(`
+          INSERT INTO reservas_system_settings (key, value, updated_at)
+          VALUES ($1, $2, NOW())
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        `, [key, val]);
+      }
+    }
+
+    res.json({ success: true, message: 'Configuración de PayPal guardada exitosamente.' });
+  } catch (error) {
+    console.error('Error en /api/developer/paypal-settings:', error);
+    res.status(500).json({ error: 'Error guardando ajustes de PayPal.' });
+  }
+});
+
+// 6. Sincronizar y Crear Planes Automáticamente en PayPal desde el Panel Dev
+app.post('/api/developer/paypal-sync-plans', async (req, res) => {
+  try {
+    const { token, host } = await getPayPalAccessToken();
+
+    // 1. Crear o recuperar Producto en PayPal
+    const prodRes = await fetch(`https://${host}/v1/catalogs/products`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        name: 'Reservas CR - Suscripciones',
+        description: 'Planes de suscripcion mensual para comercios en Reservas CR',
+        type: 'SERVICE',
+        category: 'SOFTWARE'
+      })
+    });
+
+    const prodData = await prodRes.json();
+    const productId = prodData.id;
+
+    if (!productId) {
+      return res.status(400).json({ error: 'No se pudo crear el producto en PayPal.', details: prodData });
+    }
+
+    // 2. Crear los 3 planes
+    const plansToCreate = [
+      { idKey: 'paypal_plan_basic_id', name: 'Plan Básico Reservas CR', price: '8.00', desc: 'Hasta 50 reservas mensuales' },
+      { idKey: 'paypal_plan_pro_id', name: 'Plan Profesional Reservas CR', price: '15.00', desc: 'Hasta 200 reservas mensuales y WhatsApp' },
+      { idKey: 'paypal_plan_unlimited_id', name: 'Plan Ilimitado Reservas CR', price: '25.00', desc: 'Reservas ilimitadas y soporte prioritario' }
+    ];
+
+    const createdPlans = {};
+
+    for (const p of plansToCreate) {
+      const planRes = await fetch(`https://${host}/v1/billing/plans`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          product_id: productId,
+          name: p.name,
+          description: p.desc,
+          status: 'ACTIVE',
+          billing_cycles: [
+            {
+              frequency: { interval_unit: 'MONTH', interval_count: 1 },
+              tenure_type: 'REGULAR',
+              sequence: 1,
+              total_cycles: 0,
+              pricing_scheme: {
+                fixed_price: { value: p.price, currency_code: 'USD' }
+              }
+            }
+          ],
+          payment_preferences: {
+            auto_bill_outstanding: true,
+            setup_fee: { value: '0', currency_code: 'USD' },
+            setup_fee_failure_action: 'CONTINUE',
+            payment_failure_threshold: 3
+          }
+        })
+      });
+
+      const planData = await planRes.json();
+      if (planData.id) {
+        createdPlans[p.idKey] = planData.id;
+        await pool.query(`
+          INSERT INTO reservas_system_settings (key, value, updated_at)
+          VALUES ($1, $2, NOW())
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+        `, [p.idKey, planData.id]);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Planes sincronizados y creados con éxito en PayPal.',
+      productId,
+      plans: createdPlans
+    });
+  } catch (error) {
+    console.error('Error en /api/developer/paypal-sync-plans:', error);
+    res.status(500).json({ error: error.message || 'Error al sincronizar planes con PayPal.' });
   }
 });
 

@@ -3994,14 +3994,15 @@ class App {
     `;
 
     try {
-      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations] = await Promise.all([
+      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig] = await Promise.all([
         storage.getDeveloperStats(),
         storage.getDeveloperBusinesses(),
         storage.getDeveloperClients(),
         storage.getDeveloperAppointments(),
         storage.getDeveloperCategoryAlerts(),
         storage.getWhatsAppSettings(),
-        storage.getPreRegistrations()
+        storage.getPreRegistrations(),
+        storage.getPayPalConfig()
       ]);
 
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
@@ -4170,8 +4171,14 @@ class App {
 
                 <button id="dev-tab-whatsapp" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
                   <i class="fab fa-whatsapp ${this.activeDevTab === 'whatsapp' ? 'text-white' : 'text-emerald-600'}"></i>
-                  <span>WhatsApp & Meta API</span>
+                  <span>WhatsApp & Meta</span>
                   ${waSettings.configured ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded font-bold">Por Configurar</span>'}
+                </button>
+
+                <button id="dev-tab-paypal" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'paypal' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fab fa-paypal text-blue-600"></i>
+                  <span>PayPal & Suscripciones</span>
+                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">Activo</span>
                 </button>
               </div>
 
@@ -4806,6 +4813,149 @@ class App {
                 </div>
               ` : ''}
 
+              <!-- PESTAÑA 6: PAYPAL & PAGOS DE SUSCRIPCIÓN -->
+              ${this.activeDevTab === 'paypal' ? `
+                <div class="space-y-6">
+                  <!-- Header de la Pestaña -->
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl border border-indigo-900/50">
+                    <div>
+                      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-2 border border-amber-400/30">
+                        <i class="fab fa-paypal text-blue-400"></i> Pasarela de Suscripciones Mensuales
+                      </div>
+                      <h3 class="text-lg font-black">Configuración de PayPal API & Planes</h3>
+                      <p class="text-xs text-slate-300 mt-0.5">Control de cobros recurrentes de $8, $15 y $25 para los comercios de Costa Rica.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <span class="px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-xs ${paypalConfig.env === 'live' ? 'bg-emerald-500 text-slate-950' : 'bg-amber-400 text-slate-950'}">
+                        <i class="fas ${paypalConfig.env === 'live' ? 'fa-check-circle' : 'fa-flask'}"></i>
+                        <span>Modo: ${paypalConfig.env === 'live' ? 'PRODUCCIÓN (LIVE)' : 'PRUEBAS (SANDBOX)'}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Resumen de los 3 Planes Activos en PayPal -->
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Plan Básico</span>
+                        <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black">$8 USD / mes</span>
+                      </div>
+                      <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.basic || ''}">
+                        ID: ${paypalConfig.plans?.basic || 'Sin ID'}
+                      </span>
+                      <span class="text-[11px] text-slate-500 block">Hasta 50 reservas mensuales</span>
+                    </div>
+
+                    <div class="p-4 bg-white border-2 border-amber-400 rounded-2xl shadow-xs space-y-2 ring-2 ring-amber-400/20">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-black text-amber-900 uppercase tracking-wider">Plan Profesional ⭐</span>
+                        <span class="px-2 py-0.5 rounded-md bg-amber-400 text-slate-950 text-[10px] font-black">$15 USD / mes</span>
+                      </div>
+                      <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.pro || ''}">
+                        ID: ${paypalConfig.plans?.pro || 'Sin ID'}
+                      </span>
+                      <span class="text-[11px] text-slate-500 block">Hasta 200 reservas y WhatsApp</span>
+                    </div>
+
+                    <div class="p-4 bg-white border border-purple-200 rounded-2xl shadow-xs space-y-2 bg-purple-50/20">
+                      <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Plan Ilimitado</span>
+                        <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black">$25 USD / mes</span>
+                      </div>
+                      <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.unlimited || ''}">
+                        ID: ${paypalConfig.plans?.unlimited || 'Sin ID'}
+                      </span>
+                      <span class="text-[11px] text-slate-500 block">Reservas ilimitadas</span>
+                    </div>
+                  </div>
+
+                  <!-- Formulario de Configuración y Diagnóstico -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Formulario de Credenciales -->
+                    <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4">
+                      <h4 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                        <i class="fas fa-key text-amber-500"></i> Credenciales de la API de PayPal
+                      </h4>
+
+                      <form id="dev-paypal-settings-form" class="space-y-3.5 text-xs">
+                        <div>
+                          <label class="block font-bold text-slate-700 mb-1">Entorno de Operación</label>
+                          <select id="dev-paypal-env" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="sandbox" ${paypalConfig.env === 'sandbox' ? 'selected' : ''}>Sandbox (Pruebas con dinero ficticio)</option>
+                            <option value="live" ${paypalConfig.env === 'live' ? 'selected' : ''}>Live (Producción con dinero real)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label class="block font-bold text-slate-700 mb-1">Client ID</label>
+                          <input type="text" id="dev-paypal-client-id" value="${this.escapeHtml(paypalConfig.clientId || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+
+                        <div>
+                          <label class="block font-bold text-slate-700 mb-1">Client Secret</label>
+                          <input type="password" id="dev-paypal-client-secret" placeholder="••••••••••••••••••••••••••••••••" value="EA9WRXaxhPFwdhIaPkyE2BUflM7JgdwfcjRgHz8hfAv8QYTAhnOCPJkSrWGsl5fL_uzF63t0p0aK9pUP" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100">
+                          <div>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Básico ($8)</label>
+                            <input type="text" id="dev-paypal-plan-basic" value="${this.escapeHtml(paypalConfig.plans?.basic || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
+                          </div>
+                          <div>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Pro ($15)</label>
+                            <input type="text" id="dev-paypal-plan-pro" value="${this.escapeHtml(paypalConfig.plans?.pro || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
+                          </div>
+                          <div>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan ∞ ($25)</label>
+                            <input type="text" id="dev-paypal-plan-unlimited" value="${this.escapeHtml(paypalConfig.plans?.unlimited || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
+                          </div>
+                        </div>
+
+                        <div id="dev-paypal-save-msg" class="hidden p-3 rounded-xl text-xs font-semibold"></div>
+
+                        <button type="submit" id="dev-save-paypal-btn" class="w-full py-3 bg-slate-900 hover:bg-blue-600 text-white font-black rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer">
+                          <i class="fas fa-save"></i>
+                          <span>Guardar Ajustes de PayPal</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Diagnóstico y Sincronización Automática -->
+                    <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-4 flex flex-col justify-between">
+                      <div class="space-y-3">
+                        <h4 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                          <i class="fas fa-sync-alt text-blue-600"></i> Auto-Crear / Sincronizar Planes en PayPal
+                        </h4>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                          Si cambiaste de cuenta de PayPal o de Sandbox a Live, este botón crea automáticamente el catálogo de producto y los 3 planes mensuales en la API de PayPal y guarda los IDs en tu base de datos al instante.
+                        </p>
+
+                        <button type="button" id="dev-sync-paypal-plans-btn" class="w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                          <i class="fas fa-magic"></i>
+                          <span>Sincronizar y Crear Planes en PayPal</span>
+                        </button>
+
+                        <!-- Consola de Resultados -->
+                        <div id="dev-paypal-sync-console" class="p-3.5 bg-slate-950 rounded-xl text-slate-200 font-mono text-[11px] min-h-[110px] max-h-[180px] overflow-y-auto space-y-1">
+                          <span class="text-slate-400 block text-[10px]">// Consola de Diagnóstico PayPal:</span>
+                          <span id="dev-paypal-console-text" class="text-slate-400">Listo para operar. Planes activos: Básico ($8), Pro ($15), Ilimitado ($25).</span>
+                        </div>
+                      </div>
+
+                      <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-950 space-y-1">
+                        <span class="font-bold flex items-center gap-1">
+                          <i class="fas fa-shield-alt text-emerald-600"></i> Webhook de PayPal URL:
+                        </span>
+                        <code class="text-[10px] bg-white px-2 py-0.5 rounded border border-emerald-300 block font-mono text-emerald-900 break-all">
+                          https://tu-dominio.com/api/webhooks/paypal
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
             </div>
           </div>
         </div>
@@ -4843,6 +4993,86 @@ class App {
       document.getElementById('dev-tab-preregistrations')?.addEventListener('click', () => {
         this.activeDevTab = 'preregistrations';
         this.renderDeveloperDashboardView(container);
+      });
+      document.getElementById('dev-tab-paypal')?.addEventListener('click', () => {
+        this.activeDevTab = 'paypal';
+        this.renderDeveloperDashboardView(container);
+      });
+
+      // Guardar Configuración de PayPal
+      document.getElementById('dev-paypal-settings-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const saveBtn = document.getElementById('dev-save-paypal-btn');
+        const msgBox = document.getElementById('dev-paypal-save-msg');
+        const clientId = document.getElementById('dev-paypal-client-id')?.value;
+        const clientSecret = document.getElementById('dev-paypal-client-secret')?.value;
+        const env = document.getElementById('dev-paypal-env')?.value;
+        const planBasic = document.getElementById('dev-paypal-plan-basic')?.value;
+        const planPro = document.getElementById('dev-paypal-plan-pro')?.value;
+        const planUnlimited = document.getElementById('dev-paypal-plan-unlimited')?.value;
+
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+        }
+
+        try {
+          await storage.savePayPalSettings({ clientId, clientSecret, env, planBasic, planPro, planUnlimited });
+          if (msgBox) {
+            msgBox.className = 'p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold block';
+            msgBox.textContent = '¡Ajustes de PayPal guardados con éxito!';
+          }
+          this.showToast('Ajustes de PayPal guardados.', 'success');
+        } catch (err) {
+          if (msgBox) {
+            msgBox.className = 'p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-800 text-xs font-bold block';
+            msgBox.textContent = err.message || 'Error guardando ajustes.';
+          }
+        } finally {
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Ajustes de PayPal';
+          }
+        }
+      });
+
+      // Sincronizar Planes en PayPal
+      document.getElementById('dev-sync-paypal-plans-btn')?.addEventListener('click', async () => {
+        const syncBtn = document.getElementById('dev-sync-paypal-plans-btn');
+        const consoleText = document.getElementById('dev-paypal-console-text');
+
+        if (syncBtn) {
+          syncBtn.disabled = true;
+          syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Conectando con PayPal API...';
+        }
+        if (consoleText) {
+          consoleText.innerHTML = '<span class="text-amber-400">⏳ Conectando con API de PayPal y generando planes ($8, $15, $25)...</span>';
+        }
+
+        try {
+          const res = await storage.syncPayPalPlans();
+          if (consoleText) {
+            consoleText.innerHTML = `
+              <span class="text-emerald-400">✅ ¡Planes creados y sincronizados exitosamente!</span><br>
+              <span class="text-slate-300">📦 Producto ID: ${res.productId}</span><br>
+              <span class="text-slate-300">🔹 Plan Básico: ${res.plans.paypal_plan_basic_id}</span><br>
+              <span class="text-amber-300">⭐ Plan Pro: ${res.plans.paypal_plan_pro_id}</span><br>
+              <span class="text-purple-300">👑 Plan Ilimitado: ${res.plans.paypal_plan_unlimited_id}</span>
+            `;
+          }
+          this.showToast('¡Planes sincronizados con PayPal!', 'success');
+          setTimeout(() => this.renderDeveloperDashboardView(container), 2000);
+        } catch (err) {
+          if (consoleText) {
+            consoleText.innerHTML = `<span class="text-rose-400">❌ Error: ${err.message}</span>`;
+          }
+          this.showToast(err.message || 'Error al sincronizar planes.', 'error');
+        } finally {
+          if (syncBtn) {
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = '<i class="fas fa-magic mr-1"></i> Sincronizar y Crear Planes en PayPal';
+          }
+        }
       });
 
       // Guardar Configuración de WhatsApp
@@ -6262,15 +6492,8 @@ class App {
       btn.addEventListener('click', async () => {
         const planId = btn.getAttribute('data-plan-id');
         if (isOwnerContext && businessId) {
-          try {
-            await storage.updateBusinessPlan(businessId, planId);
-            const chosenPlan = storage.getPlanById(planId);
-            this.showToast(`¡Plan actualizado a ${chosenPlan.name} ($${chosenPlan.priceUsd}/mes)!`, 'success');
-            modalContainer.innerHTML = '';
-            this.renderCurrentView();
-          } catch (err) {
-            this.showToast(err.message || 'Error al actualizar plan.', 'error');
-          }
+          modalContainer.innerHTML = '';
+          this.renderPayPalCheckoutModal({ businessId, planId });
         } else {
           modalContainer.innerHTML = '';
           if (REGISTRATION_ENABLED) {
@@ -6280,6 +6503,185 @@ class App {
           }
         }
       });
+    });
+  }
+
+  // ==========================================
+  // MODAL DE PAGO / SUSCRIPCIÓN CON PAYPAL
+  // ==========================================
+  async renderPayPalCheckoutModal({ businessId, planId = 'pro' }) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const plan = storage.getPlanById(planId) || { name: 'Plan Profesional', priceUsd: 15, bookingLimitLabel: 'Hasta 200 reservas/mes' };
+    const biz = businessId ? storage.getBusinessById(businessId) : null;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col">
+          
+          <!-- Header -->
+          <div class="p-6 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white relative border-b border-indigo-900/50">
+            <button id="close-paypal-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-400/30">
+              <i class="fab fa-paypal"></i> Pasarela de Suscripción Oficial
+            </div>
+            <h3 class="text-xl font-black text-white">Activar ${plan.name}</h3>
+            <p class="text-xs text-slate-300 mt-0.5">Cobro mensual recurrente de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC).</p>
+          </div>
+
+          <!-- Resumen del Comercio -->
+          <div class="p-5 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">Comercio:</span>
+              <strong class="text-slate-900 font-black">${biz ? this.escapeHtml(biz.name) : 'Tu Comercio'}</strong>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">Plan seleccionado:</span>
+              <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800 font-bold">${plan.name} ($${plan.priceUsd}/mes)</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-500 font-semibold">Límite:</span>
+              <span class="text-emerald-700 font-bold">${plan.bookingLimitLabel}</span>
+            </div>
+          </div>
+
+          <!-- Contenedor de Botones Inteligentes de PayPal -->
+          <div class="p-6 space-y-4">
+            <div id="paypal-loading-spinner" class="py-8 flex flex-col items-center justify-center text-slate-500 gap-2">
+              <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
+              <span class="text-xs font-semibold">Cargando pasarela segura de PayPal...</span>
+            </div>
+
+            <div id="paypal-button-container" class="min-h-[120px]"></div>
+
+            <div id="paypal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
+
+            <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
+              <i class="fas fa-lock text-emerald-600"></i>
+              <span>Procesado de forma 100% segura por PayPal. Cancela cuando quieras sin penalización.</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-paypal-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    try {
+      const config = await storage.getPayPalConfig();
+      const targetPlanId = config.plans[planId] || config.plans.pro;
+
+      // Cargar SDK dinámico si no está en window
+      await this.loadPayPalSDK(config.clientId, config.currency || 'USD');
+
+      const spinner = document.getElementById('paypal-loading-spinner');
+      if (spinner) spinner.style.display = 'none';
+
+      if (!window.paypal || !window.paypal.Buttons) {
+        throw new Error('No se pudo inicializar los componentes de PayPal.');
+      }
+
+      window.paypal.Buttons({
+        style: {
+          shape: 'rect',
+          color: 'gold',
+          layout: 'vertical',
+          label: 'subscribe'
+        },
+        createSubscription: (data, actions) => {
+          return actions.subscription.create({
+            plan_id: targetPlanId
+          });
+        },
+        onApprove: async (data, actions) => {
+          const btnContainer = document.getElementById('paypal-button-container');
+          if (btnContainer) {
+            btnContainer.innerHTML = `
+              <div class="py-8 text-center space-y-2">
+                <i class="fas fa-circle-notch fa-spin text-2xl text-emerald-600"></i>
+                <p class="text-xs font-bold text-slate-800">Verificando y activando tu suscripción...</p>
+              </div>
+            `;
+          }
+
+          try {
+            await storage.verifyPayPalSubscription(data.subscriptionID, businessId, planId);
+            this.showToast(`¡Suscripción al ${plan.name} activada con éxito!`, 'success');
+
+            modalContainer.innerHTML = `
+              <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 my-6 p-6 text-center space-y-4">
+                  <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20 animate-bounce">
+                    <i class="fas fa-check-circle"></i>
+                  </div>
+                  <h3 class="text-xl font-black text-slate-900">¡Pago Confirmado!</h3>
+                  <p class="text-xs text-slate-600">
+                    Tu suscripción al <strong>${plan.name} ($${plan.priceUsd}/mes)</strong> ha sido activada correctamente con ID de PayPal <code>${data.subscriptionID}</code>.
+                  </p>
+                  <button id="close-paypal-success-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all">
+                    Continuar a mi Panel
+                  </button>
+                </div>
+              </div>
+            `;
+
+            document.getElementById('close-paypal-success-btn')?.addEventListener('click', () => {
+              modalContainer.innerHTML = '';
+              this.renderCurrentView();
+            });
+          } catch (err) {
+            const errBox = document.getElementById('paypal-error-box');
+            if (errBox) {
+              errBox.classList.remove('hidden');
+              errBox.textContent = err.message || 'Error verificando suscripción.';
+            }
+          }
+        },
+        onError: (err) => {
+          console.error('Error en PayPal Buttons:', err);
+          const errBox = document.getElementById('paypal-error-box');
+          if (errBox) {
+            errBox.classList.remove('hidden');
+            errBox.textContent = 'Hubo un inconveniente al procesar con PayPal. Por favor intenta de nuevo.';
+          }
+        }
+      }).render('#paypal-button-container');
+
+    } catch (err) {
+      console.error('Error cargando PayPal:', err);
+      const spinner = document.getElementById('paypal-loading-spinner');
+      if (spinner) {
+        spinner.innerHTML = `
+          <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl text-center">
+            <i class="fas fa-exclamation-triangle text-rose-600 text-lg mb-1 block"></i>
+            <span>${err.message || 'No se pudo cargar la pasarela de PayPal.'}</span>
+          </div>
+        `;
+      }
+    }
+  }
+
+  // Helper para cargar SDK de PayPal dinámicamente
+  loadPayPalSDK(clientId, currency = 'USD') {
+    return new Promise((resolve, reject) => {
+      const existingScript = document.getElementById('paypal-sdk-script');
+      if (existingScript && window.paypal) {
+        return resolve(window.paypal);
+      }
+      if (existingScript) existingScript.remove();
+
+      const script = document.createElement('script');
+      script.id = 'paypal-sdk-script';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons,applepay&currency=${currency}`;
+      script.onload = () => resolve(window.paypal);
+      script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
+      document.head.appendChild(script);
     });
   }
 

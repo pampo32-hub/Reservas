@@ -1343,6 +1343,97 @@ class StorageService {
     }
     return JSON.parse(localStorage.getItem('reservas_pre_registrations') || '[]');
   }
+
+  // --- INTEGRACIÓN PAYPAL ---
+  async getPayPalConfig() {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/paypal/config`);
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {
+        console.warn('Error consultando config de PayPal:', e);
+      }
+    }
+    return {
+      success: true,
+      clientId: 'BAAAlUaiVs_WHAYUvyr-dQjoW6umQpPKSL5UhhUVxLrLRtXSs3KloYFxV8u-UijYJvylfFsr06KlrwCW6c',
+      env: 'sandbox',
+      currency: 'USD',
+      plans: {
+        basic: 'P-91741099FP9750211NKU7KDY',
+        pro: 'P-92V739915R025452UNKU7KDY',
+        unlimited: 'P-7KJ77800M6332750RNKU7KEA'
+      }
+    };
+  }
+
+  async verifyPayPalSubscription(subscriptionId, businessId, planId) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/paypal/verify-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId, businessId, planId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo verificar la suscripción.');
+      await this.loadFromApi();
+      return data;
+    }
+
+    // Fallback local
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      biz.plan = planId;
+      biz.paypalSubscriptionId = subscriptionId;
+      biz.subscriptionStatus = 'active';
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return { success: true, message: 'Plan activado localmente.' };
+  }
+
+  async cancelPayPalSubscription(businessId, reason = 'Cancelado por el usuario') {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/paypal/cancel-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId, reason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo cancelar la suscripción.');
+      await this.loadFromApi();
+      return data;
+    }
+    return { success: true, message: 'Suscripción cancelada localmente.' };
+  }
+
+  async savePayPalSettings(settings) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/developer/paypal-settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+      return await res.json();
+    }
+    return { success: true };
+  }
+
+  async syncPayPalPlans() {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/developer/paypal-sync-plans`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al sincronizar planes con PayPal.');
+      return data;
+    }
+    throw new Error('Servidor offline');
+  }
 }
 
 export const storage = new StorageService();
