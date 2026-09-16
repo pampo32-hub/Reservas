@@ -3076,13 +3076,16 @@ class App {
             </div>
 
             <div class="flex items-center gap-2 flex-wrap">
-              ${currentBiz.plan === 'unlimited' ? `
+              ${(currentBiz.plan === 'pro' || currentBiz.plan === 'unlimited') ? `
+                <button id="dash-export-excel-btn" class="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                  <i class="fas fa-file-excel text-emerald-600"></i> Exportar a Excel (.xlsx)
+                </button>
                 <button id="dash-export-csv-btn" class="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
-                  <i class="fas fa-file-csv text-purple-600"></i> Exportar Clientes (CSV)
+                  <i class="fas fa-file-csv text-purple-600"></i> Exportar (CSV)
                 </button>
               ` : `
-                <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-purple-50 text-slate-600 hover:text-purple-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar base de clientes está incluido en el Plan Ilimitado">
-                  <i class="fas fa-crown text-amber-500"></i> Base de Clientes (Plan ∞)
+                <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar base de datos a Excel está disponible a partir del Plan Profesional">
+                  <i class="fas fa-crown text-amber-500"></i> Exportar a Excel (Plan Pro & ∞)
                 </button>
               `}
               <button id="add-manual-appointment-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 cursor-pointer">
@@ -5679,6 +5682,11 @@ class App {
       this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
     });
 
+    document.getElementById('dash-export-excel-btn')?.addEventListener('click', () => {
+      const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+      this.exportBusinessReportsExcel(currentBiz, appointments);
+    });
+
     document.getElementById('dash-export-csv-btn')?.addEventListener('click', () => {
       const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
       if (appointments.length === 0) {
@@ -5708,7 +5716,7 @@ class App {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      this.showToast('¡Base de datos de clientes exportada exitosamente!', 'success');
+      this.showToast('¡Base de datos de clientes exportada en CSV exitosamente!', 'success');
     });
 
     document.getElementById('dash-upgrade-prompt-btn')?.addEventListener('click', () => {
@@ -6604,9 +6612,9 @@ class App {
                                   data-id="${b.id}" 
                                   data-name="${b.name}"
                                 >
-                                  <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>🔹 Básico ($8 • 150)</option>
-                                  <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>⭐ Pro ($15 • 300)</option>
-                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>🚀 Ilimitado ($25 • ∞)</option>
+                                  <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>🔹 Básico ($10 • 150)</option>
+                                  <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>⭐ Pro ($18 • 300)</option>
+                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>🚀 Ilimitado ($35 • ∞)</option>
                                 </select>
                               </td>
                               <td class="p-3">
@@ -7145,7 +7153,7 @@ class App {
                         <!-- Consola de Resultados -->
                         <div id="dev-paypal-sync-console" class="p-3.5 bg-slate-950 rounded-xl text-slate-200 font-mono text-[11px] min-h-[110px] max-h-[180px] overflow-y-auto space-y-1">
                           <span class="text-slate-400 block text-[10px]">// Consola de Diagnóstico PayPal:</span>
-                          <span id="dev-paypal-console-text" class="text-slate-400">Listo para operar. Planes activos: Básico ($8), Pro ($15), Ilimitado ($25).</span>
+                          <span id="dev-paypal-console-text" class="text-slate-400">Listo para operar. Planes activos: Básico ($10), Pro ($18), Ilimitado ($35).</span>
                         </div>
                       </div>
 

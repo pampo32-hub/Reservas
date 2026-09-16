@@ -953,10 +953,10 @@ app.get('/api/businesses/:id', async (req, res) => {
 app.put('/api/businesses/:id/plan', async (req, res) => {
   try {
     const { id } = req.params;
-    const { plan } = req.body;
+    const { plan, planPriceUsd, monthlyBookingLimit } = req.body;
     
-    let priceUsd = 8;
-    let limit = 50;
+    let priceUsd = 10;
+    let limit = 150;
     if (plan === 'unlimited') {
       priceUsd = 35;
       limit = null;
@@ -968,15 +968,18 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
       limit = 150;
     }
 
+    const finalPrice = planPriceUsd ? parseFloat(planPriceUsd) : priceUsd;
+    const finalLimit = monthlyBookingLimit !== undefined ? monthlyBookingLimit : limit;
+
     await pool.query(`
       UPDATE reservas_businesses SET
         plan = $1,
         plan_price_usd = $2,
         monthly_booking_limit = $3
       WHERE id = $4
-    `, [plan, priceUsd, limit, id]);
+    `, [plan, finalPrice, finalLimit, id]);
 
-    res.json({ success: true, message: 'Plan actualizado correctamente', plan, planPriceUsd: priceUsd, monthlyBookingLimit: limit });
+    res.json({ success: true, message: 'Plan actualizado correctamente', plan, planPriceUsd: finalPrice, monthlyBookingLimit: finalLimit });
   } catch (error) {
     console.error('Error al actualizar plan:', error);
     res.status(500).json({ error: 'Error al actualizar plan del negocio.' });
@@ -1232,27 +1235,6 @@ app.post('/api/businesses/:id/blocked-slots/bulk', async (req, res) => {
   } catch (error) {
     console.error('Error en POST /api/businesses/:id/blocked-slots/bulk:', error);
     res.status(500).json({ error: 'Error en operación masiva de horarios' });
-  }
-});
-
-// Actualizar Plan de Suscripción de un Negocio (Dueño o Developer)
-app.put('/api/businesses/:id/plan', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { plan, planPriceUsd, monthlyBookingLimit } = req.body;
-
-    await pool.query(`
-      UPDATE reservas_businesses SET
-        plan = COALESCE($1, plan),
-        plan_price_usd = COALESCE($2, plan_price_usd),
-        monthly_booking_limit = $3
-      WHERE id = $4
-    `, [plan, planPriceUsd ? parseFloat(planPriceUsd) : 8.00, monthlyBookingLimit !== undefined ? monthlyBookingLimit : (plan === 'unlimited' ? null : (plan === 'pro' ? 300 : 150)), id]);
-
-    res.json({ success: true, message: 'Plan de suscripción actualizado correctamente.', plan, planPriceUsd, monthlyBookingLimit });
-  } catch (error) {
-    console.error('Error actualizando plan:', error);
-    res.status(500).json({ error: 'Error al actualizar plan de suscripción' });
   }
 });
 

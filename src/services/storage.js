@@ -1934,7 +1934,10 @@ class StorageService {
     const businesses = this.getBusinesses();
     const biz = businesses.find(b => b.id === businessId);
     if (biz) {
+      const plan = this.getPlanById(planId);
       biz.plan = planId;
+      biz.planPriceUsd = plan ? plan.priceUsd : 18;
+      biz.monthlyBookingLimit = plan ? plan.bookingLimit : 300;
       biz.paypalSubscriptionId = subscriptionId;
       biz.subscriptionStatus = 'active';
       localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
@@ -1973,7 +1976,10 @@ class StorageService {
     const businesses = this.getBusinesses();
     const biz = businesses.find(b => b.id === businessId);
     if (biz) {
+      const plan = this.getPlanById(planId);
       biz.plan = planId;
+      biz.planPriceUsd = plan ? plan.priceUsd : 18;
+      biz.monthlyBookingLimit = plan ? plan.bookingLimit : 300;
       biz.paypalSubscriptionId = orderId;
       biz.subscriptionStatus = 'active';
       localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
@@ -1995,31 +2001,6 @@ class StorageService {
       return data;
     }
     return { success: true, message: 'Suscripción cancelada localmente.' };
-  }
-
-  async activateBusinessPlan(businessId, planId, daysValid = 30) {
-    if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/developer/activate-business-plan`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessId, planId, daysValid })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo activar el plan del comercio.');
-      await this.loadFromApi();
-      return data;
-    }
-
-    const businesses = this.getBusinesses();
-    const biz = businesses.find(b => b.id === businessId);
-    if (biz) {
-      biz.plan = planId;
-      biz.subscriptionStatus = 'active';
-      biz.paymentMethod = 'sinpe_movil';
-      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
-      this.businessesCache = businesses;
-    }
-    return { success: true, message: 'Plan activado localmente.' };
   }
 
   async savePayPalSettings(settings) {
