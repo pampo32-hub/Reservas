@@ -1362,6 +1362,7 @@ class StorageService {
       env: 'live',
       currency: 'USD',
       plans: {
+        test: 'P-8U675044DY030573GNKVATZQ',
         basic: 'P-2J419336TA519012VNKU75PY',
         pro: 'P-3ER02078XB861273LNKU75QA',
         unlimited: 'P-8VC868094T599031CNKU75QA'

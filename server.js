@@ -2225,6 +2225,7 @@ async function getPayPalSettings() {
     clientId: process.env.PAYPAL_CLIENT_ID || 'BAAsEQDC0BKe7tSW6HzeTRQaXGSaWDvD2WkilEkv31h9Ttq2K2phZ8RGMOp9SyNN-sM0wuAnBVMVPr7YHo',
     clientSecret: process.env.PAYPAL_CLIENT_SECRET || 'ECkYk7RbWEG2ok9w2Kx5SCGPHwnFegU4I8y3Jv-e-YXWR8wx6jYwXFCBSSMeICkmO2rTVFLAwDXmW6P6',
     env: process.env.PAYPAL_ENV || 'live',
+    planTest: 'P-8U675044DY030573GNKVATZQ',
     planBasic: 'P-2J419336TA519012VNKU75PY',
     planPro: 'P-3ER02078XB861273LNKU75QA',
     planUnlimited: 'P-8VC868094T599031CNKU75QA'
@@ -2236,6 +2237,7 @@ async function getPayPalSettings() {
       if (row.key === 'paypal_client_id' && row.value) defaults.clientId = row.value;
       if (row.key === 'paypal_client_secret' && row.value) defaults.clientSecret = row.value;
       if (row.key === 'paypal_env' && row.value) defaults.env = row.value;
+      if (row.key === 'paypal_plan_test_id' && row.value) defaults.planTest = row.value;
       if (row.key === 'paypal_plan_basic_id' && row.value) defaults.planBasic = row.value;
       if (row.key === 'paypal_plan_pro_id' && row.value) defaults.planPro = row.value;
       if (row.key === 'paypal_plan_unlimited_id' && row.value) defaults.planUnlimited = row.value;
@@ -2281,6 +2283,7 @@ app.get('/api/paypal/config', async (req, res) => {
       env: settings.env,
       currency: 'USD',
       plans: {
+        test: settings.planTest,
         basic: settings.planBasic,
         pro: settings.planPro,
         unlimited: settings.planUnlimited
@@ -2331,6 +2334,7 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
 
     // Mapeo de límites y precios por plan
     const planConfigMap = {
+      'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
       'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
       'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
       'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }

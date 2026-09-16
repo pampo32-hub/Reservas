@@ -226,6 +226,7 @@ export async function initDatabase() {
       ['paypal_client_id', process.env.PAYPAL_CLIENT_ID || 'BAAsEQDC0BKe7tSW6HzeTRQaXGSaWDvD2WkilEkv31h9Ttq2K2phZ8RGMOp9SyNN-sM0wuAnBVMVPr7YHo'],
       ['paypal_client_secret', process.env.PAYPAL_CLIENT_SECRET || 'ECkYk7RbWEG2ok9w2Kx5SCGPHwnFegU4I8y3Jv-e-YXWR8wx6jYwXFCBSSMeICkmO2rTVFLAwDXmW6P6'],
       ['paypal_env', process.env.PAYPAL_ENV || 'live'],
+      ['paypal_plan_test_id', 'P-8U675044DY030573GNKVATZQ'],
       ['paypal_plan_basic_id', 'P-2J419336TA519012VNKU75PY'],
       ['paypal_plan_pro_id', 'P-3ER02078XB861273LNKU75QA'],
       ['paypal_plan_unlimited_id', 'P-8VC868094T599031CNKU75QA']

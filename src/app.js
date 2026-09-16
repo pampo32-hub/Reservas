@@ -5452,6 +5452,29 @@ class App {
                   <span>Ingresar al Panel de Negocio</span>
                 </button>
               </form>
+
+              <!-- Acceso Rápido Demo -->
+              <div class="pt-4 border-t border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase block mb-2">⚡ Acceso Rápido a Comercios de Muestra (1-Clic)</span>
+                <div class="grid grid-cols-2 gap-2">
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="barberia@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Barbería Vintage</span>
+                    <span class="text-[10px] text-slate-400">barberia@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="dental@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Clínica Dental</span>
+                    <span class="text-[10px] text-slate-400">dental@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="spa@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">Serenity Spa</span>
+                    <span class="text-[10px] text-slate-400">spa@demo.cr</span>
+                  </button>
+                  <button type="button" class="quick-demo-btn p-2 text-left rounded-xl border border-slate-200 hover:bg-indigo-50 hover:border-indigo-300 text-xs text-slate-700 transition-colors cursor-pointer" data-email="taller@demo.cr" data-pass="123">
+                    <span class="font-bold block truncate">AutoCheck Taller</span>
+                    <span class="text-[10px] text-slate-400">taller@demo.cr</span>
+                  </button>
+                </div>
+              </div>
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
@@ -5532,12 +5555,16 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-white">Básico</span>
+                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 reservas</span>
                           <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">50 reservas</span>
                         </div>
+                        <div class="text-base font-black text-white">$6 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[10px] text-slate-400 mt-0.5">~₡3,200 CRC / mes</p>
                         <div class="text-base font-black text-white">$8 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡4,200 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
+                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 150 reservas/mes
                         <i class="fas fa-check text-emerald-400 text-[9px]"></i> 50 reservas/mes
                       </div>
                     </label>
@@ -5549,12 +5576,14 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-amber-300">Profesional</span>
+                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 reservas</span>
                           <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">200 reservas</span>
                         </div>
                         <div class="text-base font-black text-amber-300">$15 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡7,900 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
+                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 300 reservas/mes
                         <i class="fas fa-check text-amber-400 text-[9px]"></i> 200 reservas/mes
                       </div>
                     </label>
@@ -5740,6 +5769,13 @@ class App {
                 </button>
               </form>
             ` : ''}
+
+            <!-- Enlace sutil para Developer -->
+            <div class="pt-3 text-center border-t border-slate-100">
+              <button type="button" id="modal-dev-link-btn" class="text-[11px] text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer">
+                <i class="fas fa-terminal text-[10px] mr-1"></i> Acceso Developer (Ctrl+Shift+D)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -5748,6 +5784,11 @@ class App {
     // Cerrar modal
     document.getElementById('close-auth-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    // Enlace Developer en el pie del modal
+    document.getElementById('modal-dev-link-btn')?.addEventListener('click', () => {
+      this.renderDeveloperQuickLoginModal();
     });
 
     // Pestañas de Modo (Login / Register)
@@ -5798,6 +5839,18 @@ class App {
       }
     });
 
+    // Demo Buttons (en login de negocio)
+    document.querySelectorAll('.quick-demo-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const emailInput = document.getElementById('biz-log-email');
+        const passInput = document.getElementById('biz-log-password');
+        if (emailInput && passInput) {
+          emailInput.value = btn.getAttribute('data-email');
+          passInput.value = btn.getAttribute('data-pass');
+          document.getElementById('auth-biz-login-form')?.dispatchEvent(new Event('submit'));
+        }
+      });
+    });
 
     // Real-time password validation for Client Registration
     const cliRegPass = document.getElementById('cli-reg-password');
@@ -6118,9 +6171,11 @@ class App {
           ]
         });
 
+        this.showToast(`¡Negocio registrado exitosamente con ${planConfig.name}!`, 'success');
         this.showToast(`¡Negocio creado! Conectando con la pasarela para activar tu ${planConfig.name}...`, 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
+        this.navigateTo('owner-dashboard');
 
         const createdBizId = regData?.user?.businessId || storage.getActiveBusinessId();
         if (createdBizId) {
@@ -6496,7 +6551,7 @@ class App {
               <i class="fab fa-paypal"></i> Pasarela de Suscripción Oficial
             </div>
             <h3 class="text-xl font-black text-white">Activar ${plan.name}</h3>
-            <p class="text-xs text-slate-300 mt-0.5">Mensualidad de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC) &bull; Acceso 30 días</p>
+            <p class="text-xs text-slate-300 mt-0.5">Suscripción ${plan.interval === 'cada 24 horas' ? 'diaria' : 'mensual'} de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC) &bull; Renovación automática ${plan.interval || 'mensual'}</p>
           </div>
 
           <!-- Resumen del Comercio -->
@@ -6507,7 +6562,7 @@ class App {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Plan seleccionado:</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800 font-bold">${plan.name} ($${plan.priceUsd}/mes)</span>
+              <span class="px-2.5 py-0.5 rounded-md ${plan.id === 'test' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'} font-bold">${plan.name} ($${plan.priceUsd}/${plan.interval === 'cada 24 horas' ? '24h' : 'mes'})</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Límite:</span>
@@ -6524,10 +6579,10 @@ class App {
                 <input type="checkbox" id="paypal-recurring-agree-check" class="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-amber-300 cursor-pointer">
                 <div class="text-xs text-slate-800 leading-relaxed">
                   <span class="font-bold text-amber-950 block mb-0.5 flex items-center gap-1.5">
-                    <i class="fas fa-sync-alt text-amber-600"></i> Autorización de Suscripción Mensual
+                    <i class="fas fa-sync-alt text-amber-600"></i> Autorización de Suscripción Recurrente
                   </span>
                   <p class="text-slate-600 text-[11px]">
-                    Entiendo que es una suscripción mensual recurrente de <strong>$${plan.priceUsd} USD/mes</strong> (~${this.formatColones(plan.priceCrc)} CRC) y autorizo el cobro para renovar mi plan cada 30 días.
+                    Entiendo que es una suscripción recurrente de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC) cobrada de forma automática <strong>${plan.interval || 'cada 30 días'}</strong>. Puedo pausar o cancelar en cualquier momento.
                   </p>
                 </div>
               </label>
@@ -6536,12 +6591,12 @@ class App {
             <!-- Aviso previo a marcar el checkbox -->
             <div id="paypal-check-notice" class="p-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold text-center flex items-center justify-center gap-2 animate-fade-in">
               <i class="fas fa-hand-point-up text-amber-600 animate-bounce"></i>
-              <span>Marca la casilla de arriba para habilitar las opciones de pago seguro.</span>
+              <span>Marca la casilla de arriba para habilitar los botones de pago seguro.</span>
             </div>
 
             <div id="paypal-loading-spinner" class="py-8 flex flex-col items-center justify-center text-slate-500 gap-2">
               <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
-              <span class="text-xs font-semibold">Cargando pasarela segura de PayPal...</span>
+              <span class="text-xs font-semibold">Cargando pasarela de suscripción PayPal...</span>
             </div>
 
             <div id="paypal-button-wrapper" class="opacity-30 pointer-events-none filter grayscale transition-all duration-300">
@@ -6552,7 +6607,7 @@ class App {
 
             <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
               <i class="fas fa-shield-alt text-emerald-600"></i>
-              <span>Procesamiento 100% encriptado y seguro. Sin contratos forzosos.</span>
+              <span>Procesado de forma 100% segura por PayPal. Cancela cuando quieras sin penalización.</span>
             </div>
           </div>
 
@@ -6581,8 +6636,9 @@ class App {
 
     try {
       const config = await storage.getPayPalConfig();
+      const targetPlanId = config.plans[planId] || config.plans.pro;
 
-      // Cargar SDK dinámico con soporte de tarjetas e invitado
+      // Cargar SDK dinámico con suscripciones recurrentes
       await this.loadPayPalSDK(config.clientId, config.currency || 'USD');
 
       const spinner = document.getElementById('paypal-loading-spinner');
@@ -6597,15 +6653,16 @@ class App {
           shape: 'rect',
           color: 'gold',
           layout: 'vertical',
-          label: 'pay'
+          label: 'subscribe'
         },
-        createOrder: async (data, actions) => {
+        createSubscription: (data, actions) => {
           if (!agreeCheck?.checked) {
-            this.showToast('Debes autorizar la suscripción mensual marcando la casilla.', 'warning');
+            this.showToast('Debes autorizar la suscripción marcando la casilla.', 'warning');
             throw new Error('Debes aceptar la casilla de suscripción recurrente.');
           }
-          const res = await storage.createPayPalOrder(businessId, planId);
-          return res.orderId;
+          return actions.subscription.create({
+            plan_id: targetPlanId
+          });
         },
         onApprove: async (data, actions) => {
           const btnContainer = document.getElementById('paypal-button-container');
@@ -6613,14 +6670,14 @@ class App {
             btnContainer.innerHTML = `
               <div class="py-8 text-center space-y-2">
                 <i class="fas fa-circle-notch fa-spin text-2xl text-emerald-600"></i>
-                <p class="text-xs font-bold text-slate-800">Verificando y activando tu plan comercial...</p>
+                <p class="text-xs font-bold text-slate-800">Verificando y activando tu suscripción recurrente...</p>
               </div>
             `;
           }
 
           try {
-            const result = await storage.capturePayPalOrder(data.orderID, businessId, planId);
-            this.showToast(`¡Pago del ${plan.name} completado con éxito!`, 'success');
+            await storage.verifyPayPalSubscription(data.subscriptionID, businessId, planId);
+            this.showToast(`¡Suscripción al ${plan.name} activada con éxito!`, 'success');
 
             modalContainer.innerHTML = `
               <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
@@ -6628,9 +6685,9 @@ class App {
                   <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20 animate-bounce">
                     <i class="fas fa-check-circle"></i>
                   </div>
-                  <h3 class="text-xl font-black text-slate-900">¡Pago Confirmado!</h3>
+                  <h3 class="text-xl font-black text-slate-900">¡Suscripción Confirmada!</h3>
                   <p class="text-xs text-slate-600">
-                    Tu mensualidad del <strong>${plan.name} ($${plan.priceUsd}/mes)</strong> ha sido activada correctamente. ID de transacción: <code>${data.orderID}</code>.
+                    Tu suscripción al <strong>${plan.name} ($${plan.priceUsd})</strong> ha sido activada correctamente con renovación automática. ID de suscripción: <code>${data.subscriptionID}</code>.
                   </p>
                   <button id="close-paypal-success-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all">
                     Continuar a mi Panel
@@ -6647,7 +6704,7 @@ class App {
             const errBox = document.getElementById('paypal-error-box');
             if (errBox) {
               errBox.classList.remove('hidden');
-              errBox.textContent = err.message || 'Error confirmando el pago.';
+              errBox.textContent = err.message || 'Error verificando suscripción.';
             }
           }
         },
@@ -6675,7 +6732,7 @@ class App {
     }
   }
 
-  // Helper para cargar SDK de PayPal dinámicamente
+  // Helper para cargar SDK de PayPal dinámicamente con suscripciones
   loadPayPalSDK(clientId, currency = 'USD') {
     return new Promise((resolve, reject) => {
       const existingScript = document.getElementById('paypal-sdk-script');
@@ -6686,7 +6743,7 @@ class App {
 
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&components=buttons,applepay&enable-funding=card`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons&currency=${currency}`;
       script.onload = () => resolve(window.paypal);
       script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
       document.head.appendChild(script);

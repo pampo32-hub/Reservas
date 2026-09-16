@@ -1,15 +1,35 @@
 export const SUBSCRIPTION_PLANS = [
   {
+    id: 'test',
+    name: 'Plan Prueba 24 Horas',
+    badge: 'Test $0.10',
+    priceUsd: 0.10,
+    priceCrc: 55,
+    interval: 'cada 24 horas',
+    bookingLimit: 10,
+    bookingLimitLabel: '10 reservas / 24 hrs',
+    tagline: 'Plan de prueba técnica recurrente de $0.10 USD cobrado cada 24 horas.',
+    features: [
+      'Cobro real de $0.10 USD cada 24 horas',
+      'Renovación automática diaria',
+      'Ideal para probar pasarelas y tarjetas reales',
+      'Acceso completo a todas las funciones'
+    ],
+    popular: false,
+    color: 'emerald'
+  },
+  {
     id: 'basic',
     name: 'Plan Básico',
     badge: 'Emprendedor',
     priceUsd: 8,
     priceCrc: 4200,
-    bookingLimit: 150,
-    bookingLimitLabel: '150 reservas / mes',
+    interval: 'mensual',
+    bookingLimit: 50,
+    bookingLimitLabel: '50 reservas / mes',
     tagline: 'Ideal para independientes y negocios que están comenzando.',
     features: [
-      'Hasta 150 reservas mensuales',
+      'Hasta 50 reservas mensuales',
       'Catálogo con todos tus servicios y precios',
       'Confirmación automática por correo',
       'Enlace directo a tu perfil para Instagram, TikTok y WhatsApp',
