@@ -1,5 +1,5 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS } from '../data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, COSTA_RICA_PROVINCES } from '../data/initialData.js';
 
 const STORAGE_KEYS = {
   BUSINESSES: 'directorio_businesses_v1',
@@ -2065,6 +2065,10 @@ class StorageService {
       return data;
     }
     throw new Error('La depuración solo está disponible en modo servidor conectado a base de datos.');
+  }
+
+  getProvinces() {
+    return COSTA_RICA_PROVINCES;
   }
 
   getExportExcelUrl({ businessId = 'all', status = 'completed', startDate = '', endDate = '' } = {}) {

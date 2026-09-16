@@ -12,7 +12,11 @@ class App {
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
     this.selectedBusinessId = null;
     this.selectedCategory = 'all';
+    this.selectedProvince = 'all';
+    this.selectedCanton = 'all';
     this.searchQuery = '';
+    this.deferredPwaPrompt = null;
+    this.isPwaInstalled = false;
     
     // Filtros de citas
     this.ownerAppointmentFilter = 'all'; // 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'
@@ -115,6 +119,164 @@ class App {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  // --- GENERACIÓN DE ENLACE GOOGLE CALENDAR ---
+  generateGoogleCalendarUrl(appointment, business) {
+    if (!appointment) return '#';
+    const biz = business || storage.getBusinessById(appointment.businessId) || { name: 'Comercio Reservas CR' };
+    const date = appointment.date || this.getTodayDateString(); // YYYY-MM-DD
+    const time = appointment.time || '09:00'; // HH:mm
+    const duration = Number(appointment.serviceDuration) || 30;
+
+    const [y, m, d] = date.split('-').map(Number);
+    const [hh, mm] = time.split(':').map(Number);
+    
+    // Crear fechas
+    const startDt = new Date(y, m - 1, d, hh, mm, 0);
+    const endDt = new Date(startDt.getTime() + duration * 60000);
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const formatCalDate = (dt) => {
+      return `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+    };
+
+    const datesStr = `${formatCalDate(startDt)}/${formatCalDate(endDt)}`;
+    const title = `Cita: ${appointment.serviceName || 'Servicio'} en ${biz.name}`;
+    const location = `${biz.name}, ${biz.address || biz.city || 'Costa Rica'}`;
+    const details = `Turno agendado en ${biz.name}\n` +
+      `Servicio: ${appointment.serviceName || 'General'}\n` +
+      `Especialista: ${appointment.staffName || 'Asignado en local'}\n` +
+      `Cliente: ${appointment.clientName || 'Cliente'}\n` +
+      `Teléfono: ${appointment.clientPhone || biz.phone || ''}\n` +
+      `Precio: ₡${Number(appointment.servicePrice || 0).toLocaleString('es-CR')}\n` +
+      `Código de reserva: #${(appointment.id || '').toUpperCase()}\n` +
+      (appointment.notes ? `Notas: ${appointment.notes}\n` : '') +
+      `Gestionado por Reservas CR (Costa Rica 🇨🇷)`;
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datesStr}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+  }
+
+  // --- DESCARGA DE ARCHIVO .ICS (APPLE CALENDAR / OUTLOOK / ANDROID) ---
+  downloadIcsFile(appointment, business) {
+    if (!appointment) return;
+    const biz = business || storage.getBusinessById(appointment.businessId) || { name: 'Comercio Reservas CR' };
+    const date = appointment.date || this.getTodayDateString();
+    const time = appointment.time || '09:00';
+    const duration = Number(appointment.serviceDuration) || 30;
+
+    const [y, m, d] = date.split('-').map(Number);
+    const [hh, mm] = time.split(':').map(Number);
+    
+    const startDt = new Date(y, m - 1, d, hh, mm, 0);
+    const endDt = new Date(startDt.getTime() + duration * 60000);
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const formatIcsDate = (dt) => {
+      return `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+    };
+
+    const nowUtc = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const title = `Cita: ${appointment.serviceName || 'Servicio'} en ${biz.name}`.replace(/,/g, '\\,');
+    const location = `${biz.name}, ${biz.address || biz.city || 'Costa Rica'}`.replace(/,/g, '\\,');
+    const details = `Turno agendado en ${biz.name}\\n` +
+      `Servicio: ${appointment.serviceName || 'General'}\\n` +
+      `Especialista: ${appointment.staffName || 'Asignado en local'}\\n` +
+      `Cliente: ${appointment.clientName || 'Cliente'}\\n` +
+      `Precio: ₡${Number(appointment.servicePrice || 0).toLocaleString('es-CR')}\\n` +
+      `Código de reserva: #${(appointment.id || '').toUpperCase()}\\n` +
+      `Gestionado por Reservas CR`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Reservas CR//Directorio y Citas Costa Rica//ES',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:reserva-${appointment.id || Date.now()}@reservascr.app`,
+      `DTSTAMP:${nowUtc}`,
+      `DTSTART:${formatIcsDate(startDt)}`,
+      `DTEND:${formatIcsDate(endDt)}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${details}`,
+      `LOCATION:${location}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `cita_${(biz.name || 'reserva').toLowerCase().replace(/\s+/g, '_')}_${date}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.showToast('¡Archivo de calendario (.ics) descargado!', 'success');
+  }
+
+  // --- MODAL GUÍA DE INSTALACIÓN PWA (IOS & NAVEGADORES) ---
+  showPwaInstallModal() {
+    if (this.deferredPwaPrompt) {
+      this.deferredPwaPrompt.prompt();
+      this.deferredPwaPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          this.showToast('¡Gracias por instalar Reservas CR!', 'success');
+          this.isPwaInstalled = true;
+        }
+        this.deferredPwaPrompt = null;
+      });
+      return;
+    }
+
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 text-center p-6 space-y-4">
+          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-md shadow-blue-500/15">
+            <i class="fas fa-mobile-alt"></i>
+          </div>
+          <h3 class="text-xl font-black text-slate-900">Instalar Reservas CR</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Instala la aplicación en tu pantalla de inicio para agendar y gestionar turnos a máxima velocidad, con acceso directo y soporte offline.
+          </p>
+
+          ${isIos ? `
+            <div class="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200 text-left text-xs text-blue-950 space-y-2">
+              <span class="font-bold block text-blue-900">Pasos para iPhone (Safari):</span>
+              <ol class="space-y-1.5 list-decimal list-inside text-[11px] text-blue-900">
+                <li>Presiona el botón <strong>Compartir <i class="fas fa-share-square text-blue-600"></i></strong> en la barra inferior de Safari.</li>
+                <li>Desliza hacia abajo y selecciona <strong>"Agregar a pantalla de inicio" <i class="fas fa-plus-square text-blue-600"></i></strong>.</li>
+                <li>Presiona <strong>"Agregar"</strong> arriba a la derecha. ¡Listo!</li>
+              </ol>
+            </div>
+          ` : `
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs text-slate-800 space-y-2">
+              <span class="font-bold block text-slate-900">Pasos para Android / Chrome:</span>
+              <ol class="space-y-1.5 list-decimal list-inside text-[11px] text-slate-600">
+                <li>Toca el menú de opciones <strong>(tres puntos ⋮)</strong> en tu navegador.</li>
+                <li>Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a pantalla principal"</strong>.</li>
+                <li>Confirma la instalación y ábrela como App nativa.</li>
+              </ol>
+            </div>
+          `}
+
+          <button id="close-pwa-modal-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all cursor-pointer">
+            Entendido
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-pwa-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
   }
 
   async init() {
@@ -391,6 +553,12 @@ class App {
               </button>
             ` : ''}
 
+            <!-- Botón Instalar App PWA (Móvil) -->
+            <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer" title="Instalar App en el Celular">
+              <i class="fas fa-download text-blue-600 text-xs"></i>
+              <span>App</span>
+            </button>
+
             <!-- Botón Planes y Suscripciones (Móvil) -->
             <button id="mobile-top-plans-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center gap-1 app-touch-btn" title="Ver Planes de Suscripción">
               <i class="fas fa-crown text-amber-600 text-xs"></i>
@@ -410,6 +578,12 @@ class App {
             <!-- Explorar -->
             <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
+            </button>
+
+            <!-- Instalar PWA Desktop -->
+            <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
+              <i class="fas fa-mobile-alt text-blue-600 text-xs"></i>
+              <span>Instalar App</span>
             </button>
 
             <!-- Planes y Precios -->
@@ -495,6 +669,8 @@ class App {
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('mobile-top-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
+    document.getElementById('nav-install-pwa-btn')?.addEventListener('click', () => this.showPwaInstallModal());
+    document.getElementById('mobile-top-install-pwa-btn')?.addEventListener('click', () => this.showPwaInstallModal());
 
     // Acciones móviles superiores
     document.getElementById('mobile-top-dev-badge')?.addEventListener('click', () => this.navigateTo('developer-dashboard'));
@@ -689,13 +865,41 @@ class App {
   // ==========================================
   // VISTA 1: DIRECTORIO DE NEGOCIOS (CLIENTE)
   // ==========================================
-  filterBusinessesList(allBusinesses, query, categoryId) {
+  filterBusinessesList(allBusinesses, query, categoryId, provinceId = 'all', cantonName = 'all') {
     let list = allBusinesses.filter(b => !b.isHidden && !b.isBlocked);
     
+    // 1. Filtro por Categoría
     if (categoryId && categoryId !== 'all') {
       list = list.filter(b => b.category === categoryId);
     }
+
+    // 2. Filtro por Provincia de Costa Rica
+    if (provinceId && provinceId !== 'all') {
+      const provObj = storage.getProvinces().find(p => p.id === provinceId);
+      const provName = provObj ? this.normalizeText(provObj.name) : '';
+      const cantonsList = provObj ? provObj.cantons.map(c => this.normalizeText(c)) : [];
+
+      list = list.filter(biz => {
+        if (biz.province === provinceId) return true;
+        const bCity = this.normalizeText(biz.city || '');
+        const bAddr = this.normalizeText(biz.address || '');
+        if (provName && (bCity.includes(provName) || bAddr.includes(provName))) return true;
+        return cantonsList.some(c => bCity.includes(c) || bAddr.includes(c));
+      });
+    }
+
+    // 3. Filtro por Cantón
+    if (cantonName && cantonName !== 'all') {
+      const targetCanton = this.normalizeText(cantonName);
+      list = list.filter(biz => {
+        if (biz.canton && this.normalizeText(biz.canton) === targetCanton) return true;
+        const bCity = this.normalizeText(biz.city || '');
+        const bAddr = this.normalizeText(biz.address || '');
+        return bCity.includes(targetCanton) || bAddr.includes(targetCanton);
+      });
+    }
     
+    // 4. Búsqueda de Texto en Vivo
     if (query && query.trim() !== '') {
       const cleanQ = this.normalizeText(query);
       const words = cleanQ.split(/\s+/).filter(w => w.length > 0);
@@ -707,6 +911,8 @@ class App {
           biz.category,
           biz.description,
           biz.city,
+          biz.canton,
+          biz.province,
           biz.address,
           ...(biz.features || []),
           ...(biz.services ? biz.services.map(s => `${s.name} ${s.description || ''}`) : [])
@@ -914,7 +1120,10 @@ class App {
   renderDirectoryView(container) {
     const categories = storage.getCategories();
     const allBusinesses = storage.getBusinesses();
-    const filteredBusinesses = this.filterBusinessesList(allBusinesses, this.searchQuery, this.selectedCategory);
+    const provinces = storage.getProvinces ? storage.getProvinces() : [];
+    const selectedProvObj = provinces.find(p => p.id === this.selectedProvince);
+    const availableCantons = selectedProvObj ? selectedProvObj.cantons : [];
+    const filteredBusinesses = this.filterBusinessesList(allBusinesses, this.searchQuery, this.selectedCategory, this.selectedProvince, this.selectedCanton);
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
@@ -943,34 +1152,42 @@ class App {
                 <h2 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight">
                   ¿Tienes un negocio o prestas servicios? <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">Dile a tus clientes que pronto podrán reservar 24/7.</span>
                 </h2>
-
-                <!-- Propuesta de Valor -->
-                <p class="text-xs sm:text-sm text-slate-200 font-medium leading-relaxed max-w-2xl">
-                  Planes mensuales fijos <strong class="text-amber-300 font-black">($8, $15, $25/mes)</strong>. <span class="text-emerald-300 font-black underline decoration-emerald-400/50 underline-offset-2">Cero comisiones por reserva</span>. Recibe turnos directos por WhatsApp y ten tu enlace web propio con catálogo profesional listo para compartir.
-                  Planes mensuales fijos <strong class="text-amber-300 font-black">($10, $18, $35/mes)</strong>. <span class="text-emerald-300 font-black underline decoration-emerald-400/50 underline-offset-2">Cero comisiones por reserva</span>. Recibe turnos directos por WhatsApp y ten tu enlace web propio con catálogo profesional listo para compartir.
+                
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
+                  Estamos construyendo la plataforma definitiva de reservas para Costa Rica. <strong class="text-amber-300">Reserva tu cupo de prelanzamiento</strong> y obtén beneficios exclusivos.
                 </p>
 
-                <!-- Gancho / Incentivo de Prelanzamiento (Card Destacada) -->
-                <div class="p-3 sm:p-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-amber-400/40 text-xs text-amber-100 flex items-center gap-3 shadow-inner">
-                  <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center text-lg font-black flex-shrink-0 shadow-md shadow-amber-500/20">
-                    🎁
+                <!-- Beneficios Destacados -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                  <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/20">
+                    <i class="fas fa-gift text-amber-400 text-sm shrink-0"></i>
+                    <span class="text-slate-200"><strong>15 Días Gratis</strong> de bienvenida</span>
                   </div>
-                  <div>
-                    <strong class="text-amber-300 font-black text-xs sm:text-sm block">Beneficio Pre-Registro:</strong>
-                    <span class="text-slate-200 text-xs leading-snug">Los primeros <strong>20 comercios pre-registrados</strong> reciben <strong>15 días Gratis de bienvenida</strong> + <strong>Configuración de su catálogo en la página</strong>.</span>
+                  <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/20">
+                    <i class="fas fa-magic text-blue-400 text-sm shrink-0"></i>
+                    <span class="text-slate-200"><strong>Configuración</strong> asistida</span>
+                  </div>
+                  <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/20">
+                    <i class="fas fa-star text-yellow-400 text-sm shrink-0"></i>
+                    <span class="text-slate-200"><strong>Posición VIP</strong> en el estreno</span>
                   </div>
                 </div>
 
-                <!-- Botones de Acción -->
-                <div class="flex flex-wrap items-center gap-3 pt-1">
-                  <button id="banner-preregister-btn" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
-                    <i class="fas fa-edit text-xs"></i>
-                    <span>✍️ Pre-registrar Mi Negocio (Cupos Limitados)</span>
+                <!-- CTA Principal Pre-Registro -->
+                <div class="pt-2 flex flex-wrap items-center gap-3">
+                  <button 
+                    id="banner-prereg-btn" 
+                    class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                  >
+                    <i class="fas fa-bolt text-slate-950"></i>
+                    <span>¡Reservar mi Cupo de Prelanzamiento!</span>
                   </button>
-                  
-                  <button id="banner-view-plans-btn" class="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white text-xs sm:text-sm font-bold border border-white/15 flex items-center justify-center gap-2 transition-all cursor-pointer app-touch-btn">
-                    <i class="fas fa-tags text-amber-400 text-xs"></i>
-                    <span>🏷️ Ver Planes y Beneficios</span>
+                  <button 
+                    id="banner-view-plans-btn" 
+                    class="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <i class="fas fa-tags text-indigo-300"></i>
+                    <span>Ver Planes & Precios</span>
                   </button>
                 </div>
 
@@ -1025,13 +1242,13 @@ class App {
         <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-10 px-4 sm:px-6 lg:px-8 ${SHOW_BIZ_SHORTCUTS ? 'mt-4' : 'mt-1'}">
           <div class="max-w-4xl mx-auto text-center">
             <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
-              <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
+              <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica 🇨🇷
             </span>
             <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu reserva al instante</span>
             </h1>
             <p class="mt-3 text-slate-600 text-sm sm:text-base max-w-2xl mx-auto">
-              Barberías, spas, dentistas, talleres mecánicos y más. Escribe cualquier servicio o cantón para filtrar en tiempo real.
+              Barberías, spas, dentistas, talleres mecánicos y más. Filtra por provincia, cantón o busca cualquier servicio.
             </p>
 
             <!-- Buscador Inteligente -->
@@ -1043,7 +1260,7 @@ class App {
                 type="text" 
                 id="search-input" 
                 value="${this.searchQuery}" 
-                placeholder="Busca por comercio, servicio ('corte', 'spa', 'frenos') o cantón..." 
+                placeholder="Busca por comercio, servicio ('corte', 'spa', 'frenos')..." 
                 class="w-full px-3.5 py-2.5 text-slate-800 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
                 autocomplete="off"
               />
@@ -1054,6 +1271,42 @@ class App {
                 <i class="fas fa-search text-xs"></i>
                 <span>Buscar</span>
               </button>
+            </div>
+
+            <!-- Filtro Geográfico por Provincia y Cantón de Costa Rica 🇨🇷 -->
+            <div class="mt-3.5 max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
+              <!-- Selector de Provincia -->
+              <div class="relative flex items-center bg-white rounded-2xl border border-slate-200/90 px-3.5 py-2 shadow-xs focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div class="text-blue-600 mr-2.5 text-sm flex items-center shrink-0">
+                  <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label for="province-filter-select" class="block text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-0.5">Provincia (Costa Rica)</label>
+                  <select id="province-filter-select" class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 focus:outline-none cursor-pointer truncate">
+                    <option value="all" ${this.selectedProvince === 'all' ? 'selected' : ''}>🇨🇷 Todas las Provincias</option>
+                    ${provinces.map(p => `<option value="${p.id}" ${this.selectedProvince === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+
+              <!-- Selector de Cantón -->
+              <div class="relative flex items-center bg-white rounded-2xl border border-slate-200/90 px-3.5 py-2 shadow-xs focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-100 transition-all ${this.selectedProvince === 'all' ? 'opacity-85' : ''}">
+                <div class="text-emerald-600 mr-2.5 text-sm flex items-center shrink-0">
+                  <i class="fas fa-location-arrow"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label for="canton-filter-select" class="block text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-0.5">Cantón / Zona</label>
+                  <select id="canton-filter-select" class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 focus:outline-none cursor-pointer truncate">
+                    <option value="all" ${this.selectedCanton === 'all' ? 'selected' : ''}>📍 Todos los Cantones</option>
+                    ${availableCantons.map(c => `<option value="${c}" ${this.selectedCanton === c ? 'selected' : ''}>${c}</option>`).join('')}
+                  </select>
+                </div>
+                ${(this.selectedProvince !== 'all' || this.selectedCanton !== 'all') ? `
+                  <button id="clear-geo-filter-btn" class="text-slate-400 hover:text-rose-500 p-1 text-xs transition-colors shrink-0 ml-1 cursor-pointer" title="Limpiar filtro de provincia y cantón">
+                    <i class="fas fa-times-circle"></i>
+                  </button>
+                ` : ''}
+              </div>
             </div>
 
             ${REGISTRATION_ENABLED && SHOW_BIZ_SHORTCUTS ? `
@@ -1109,6 +1362,9 @@ class App {
     const searchInput = document.getElementById('search-input');
     const doSearchBtn = document.getElementById('do-search-btn');
     const clearSearchBtn = document.getElementById('clear-search-btn');
+    const provinceFilterSelect = document.getElementById('province-filter-select');
+    const cantonFilterSelect = document.getElementById('canton-filter-select');
+    const clearGeoFilterBtn = document.getElementById('clear-geo-filter-btn');
     const catalogGridContainer = document.getElementById('catalog-grid-container');
     const catalogCountText = document.getElementById('catalog-count-text');
 
@@ -1191,7 +1447,13 @@ class App {
       document.getElementById('reset-filter-btn')?.addEventListener('click', () => {
         this.searchQuery = '';
         this.selectedCategory = 'all';
+        this.selectedProvince = 'all';
+        this.selectedCanton = 'all';
         if (searchInput) searchInput.value = '';
+        if (provinceFilterSelect) provinceFilterSelect.value = 'all';
+        if (cantonFilterSelect) {
+          cantonFilterSelect.innerHTML = '<option value="all" selected>📍 Todos los Cantones</option>';
+        }
         updateLiveSearch();
         this.renderCurrentView();
       });
@@ -1206,16 +1468,24 @@ class App {
       }
 
       const allBiz = storage.getBusinesses();
-      const currentList = this.filterBusinessesList(allBiz, q, this.selectedCategory);
+      const currentList = this.filterBusinessesList(allBiz, q, this.selectedCategory, this.selectedProvince, this.selectedCanton);
 
       if (catalogGridContainer) {
         catalogGridContainer.innerHTML = this.renderDirectoryGridContent(currentList);
       }
 
       if (catalogCountText) {
+        let locationLabel = '';
+        if (this.selectedProvince !== 'all') {
+          const provObj = provinces.find(p => p.id === this.selectedProvince);
+          locationLabel = ` en ${provObj ? provObj.name : this.selectedProvince}`;
+          if (this.selectedCanton !== 'all') {
+            locationLabel += `, ${this.selectedCanton}`;
+          }
+        }
         catalogCountText.innerHTML = q.trim() 
-          ? `Mostrando ${currentList.length} resultados para "<strong>${this.escapeHtml(q.trim())}</strong>"`
-          : `${currentList.length} comercios disponibles`;
+          ? `Mostrando ${currentList.length} resultados para "<strong>${this.escapeHtml(q.trim())}</strong>"${locationLabel}`
+          : `${currentList.length} comercios disponibles${locationLabel}`;
       }
 
       attachCardListeners();
@@ -1245,6 +1515,40 @@ class App {
       updateLiveSearch();
     });
 
+    // Selector de Provincia de Costa Rica
+    provinceFilterSelect?.addEventListener('change', (e) => {
+      this.selectedProvince = e.target.value;
+      this.selectedCanton = 'all';
+
+      const curProvs = storage.getProvinces ? storage.getProvinces() : [];
+      const curProvObj = curProvs.find(p => p.id === this.selectedProvince);
+      const curCantons = curProvObj ? curProvObj.cantons : [];
+
+      if (cantonFilterSelect) {
+        cantonFilterSelect.innerHTML = `<option value="all" selected>📍 Todos los Cantones</option>` +
+          curCantons.map(c => `<option value="${c}">${c}</option>`).join('');
+      }
+
+      updateLiveSearch();
+    });
+
+    // Selector de Cantón
+    cantonFilterSelect?.addEventListener('change', (e) => {
+      this.selectedCanton = e.target.value;
+      updateLiveSearch();
+    });
+
+    // Botón Limpiar Filtro Geográfico
+    clearGeoFilterBtn?.addEventListener('click', () => {
+      this.selectedProvince = 'all';
+      this.selectedCanton = 'all';
+      if (provinceFilterSelect) provinceFilterSelect.value = 'all';
+      if (cantonFilterSelect) {
+        cantonFilterSelect.innerHTML = '<option value="all" selected>📍 Todos los Cantones</option>';
+      }
+      updateLiveSearch();
+    });
+
     // Píldoras de Categoría
     document.querySelectorAll('.category-pill-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1256,6 +1560,7 @@ class App {
     attachCardListeners();
 
     // Listeners para Banners de Negocios y Planes
+    document.getElementById('banner-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('banner-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
@@ -2306,6 +2611,35 @@ class App {
             </div>
           ` : ''}
 
+          <!-- Sincronización con Calendario Personal -->
+          <div class="mt-4 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-left space-y-2 animate-fade-in">
+            <div class="flex items-center gap-2">
+              <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
+              <span class="text-xs font-bold text-indigo-950">Añadir a tu Calendario Personal</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <a 
+                href="${this.generateGoogleCalendarUrl(appointment, business)}" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                title="Sincronizar directamente con Google Calendar"
+              >
+                <i class="fab fa-google text-rose-500"></i>
+                <span>Google Calendar</span>
+              </a>
+              <button 
+                type="button" 
+                id="success-download-ics-btn"
+                class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
+                title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
+              >
+                <i class="fas fa-calendar-alt text-blue-600"></i>
+                <span>Apple / Outlook (.ics)</span>
+              </button>
+            </div>
+          </div>
+
           <div class="mt-6 flex flex-col gap-2">
             <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer">
               Ver Mis Reservas
@@ -2317,6 +2651,10 @@ class App {
         </div>
       </div>
     `;
+
+    document.getElementById('success-download-ics-btn')?.addEventListener('click', () => {
+      this.downloadIcsFile(appointment, business);
+    });
 
     document.getElementById('success-view-bookings-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
@@ -2685,6 +3023,24 @@ class App {
                 <!-- Botones de Acción para el Cliente -->
                 <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2">
                   ${(apt.status === 'pending' || apt.status === 'confirmed') ? `
+                    <!-- 1-Click Calendar Sync -->
+                    <a 
+                      href="${this.generateGoogleCalendarUrl(apt, storage.getBusinessById(apt.businessId))}" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                      title="Añadir a Google Calendar"
+                    >
+                      <i class="fab fa-google text-rose-500 text-xs"></i> Google Cal
+                    </a>
+                    <button 
+                      type="button" 
+                      class="client-download-ics-btn px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" 
+                      data-apt-id="${apt.id}"
+                      title="Descargar archivo .ics (Apple Calendar / iPhone / Outlook)"
+                    >
+                      <i class="fas fa-calendar-alt text-blue-600 text-xs"></i> .ICS
+                    </button>
                     <button class="client-reschedule-btn px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" data-apt-id="${apt.id}">
                       <i class="fas fa-calendar-alt"></i> Reprogramar Turno
                     </button>
@@ -2727,6 +3083,17 @@ class App {
       btn.addEventListener('click', () => {
         this.clientAppointmentFilter = btn.getAttribute('data-filter');
         this.renderClientBookingsView(container);
+      });
+    });
+
+    document.querySelectorAll('.client-download-ics-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const apt = allAppointments.find(a => a.id === aptId);
+        if (apt) {
+          const biz = storage.getBusinessById(apt.businessId);
+          this.downloadIcsFile(apt, biz);
+        }
       });
     });
 
@@ -3080,10 +3447,14 @@ class App {
                 <button id="dash-export-excel-btn" class="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-excel text-emerald-600"></i> Exportar a Excel (.xlsx)
                 </button>
+                <button id="dash-export-csv-btn" class="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                  <i class="fas fa-file-csv text-purple-600"></i> Exportar (CSV)
                 <button id="dash-export-pdf-btn" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-pdf text-rose-600"></i> Descargar Reporte PDF
                 </button>
               ` : `
+                <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar base de datos a Excel está disponible a partir del Plan Profesional">
+                  <i class="fas fa-crown text-amber-500"></i> Exportar a Excel (Plan Pro & ∞)
                 <button id="dash-upgrade-prompt-btn" class="px-3.5 py-2.5 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-800 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer" title="Exportar reportes a Excel y PDF está disponible a partir del Plan Profesional">
                   <i class="fas fa-crown text-amber-500"></i> Excel & PDF (Plan Pro & ∞)
                 </button>
@@ -3190,7 +3561,6 @@ class App {
                     <th class="py-3 px-4">Servicio</th>
                     <th class="py-3 px-4">Monto</th>
                     <th class="py-3 px-4">Estado</th>
-                    <th class="py-3 px-4 text-right">Acciones de Gestión</th>
                     <th class="py-3 px-4 text-right whitespace-nowrap min-w-[280px]">Acciones de Gestión</th>
                   </tr>
                 </thead>
@@ -3223,15 +3593,27 @@ class App {
                           ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
                         </span>
                       </td>
-                      <td class="py-3.5 px-4 text-right space-x-1">
-                        <!-- Aceptar / Confirmar -->
-                        ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
-                            <i class="fas fa-check-circle"></i> Aceptar
-                          </button>
-                        ` : ''}
                       <td class="py-3.5 px-4 text-right whitespace-nowrap">
                         <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
+                          <!-- Sincronización Calendario (Google Cal & .ICS) -->
+                          <a 
+                            href="${this.generateGoogleCalendarUrl(apt, currentBiz)}" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-slate-100 rounded-lg transition-all inline-flex items-center justify-center shadow-2xs border border-slate-200" 
+                            title="Añadir cita a Google Calendar"
+                          >
+                            <i class="fab fa-google text-xs"></i>
+                          </a>
+                          <button 
+                            type="button" 
+                            class="owner-download-ics-btn p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs border border-slate-200" 
+                            data-apt-id="${apt.id}" 
+                            title="Descargar archivo de calendario (.ics)"
+                          >
+                            <i class="fas fa-calendar-plus text-xs"></i>
+                          </button>
+
                           <!-- Aceptar / Confirmar -->
                           ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
                             <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
@@ -3636,6 +4018,7 @@ class App {
             <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Ilimitado</span>
             <h2 class="text-2xl font-black text-slate-900 mt-1">Reportes de Ingresos y Clientes Frecuentes</h2>
             <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
+              El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel/CSV, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
               El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
             </p>
 
@@ -3657,9 +4040,12 @@ class App {
               </div>
 
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-2">
                 <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-2">
                   <i class="fas fa-file-excel"></i>
                 </div>
+                <h4 class="text-xs font-bold text-slate-900">Exportación a CSV / Excel</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes e ingresos para tu contabilidad.</p>
                 <h4 class="text-xs font-bold text-slate-900">Exportación a Excel & PDF</h4>
                 <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes, citas e ingresos en hojas de cálculo y PDF.</p>
               </div>
@@ -5689,7 +6075,23 @@ class App {
 
     document.getElementById('dash-export-pdf-btn')?.addEventListener('click', () => {
       const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+      if (appointments.length === 0) {
+        this.showToast('No hay reservas registradas para exportar en PDF.', 'info');
+        return;
+      }
       this.exportBusinessReportsPDF(currentBiz, appointments);
+    });
+
+    // Descarga de archivo de calendario .ics desde agenda de negocio
+    document.querySelectorAll('.owner-download-ics-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+        const apt = appointments.find(a => a.id === aptId);
+        if (apt) {
+          this.downloadIcsFile(apt, currentBiz);
+        }
+      });
     });
 
     document.getElementById('dash-upgrade-prompt-btn')?.addEventListener('click', () => {
@@ -8962,6 +9364,7 @@ class App {
     const plans = storage.getSubscriptionPlans();
 
     modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
           
@@ -10803,6 +11206,22 @@ class App {
         const modalContainer = document.getElementById('modal-container');
         if (modalContainer) modalContainer.innerHTML = '';
       }
+    });
+
+    // PWA Install Prompt Listener
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPwaPrompt = e;
+      const installBtns = document.querySelectorAll('.pwa-install-trigger-btn');
+      installBtns.forEach(btn => {
+        btn.classList.remove('hidden');
+      });
+    });
+
+    window.addEventListener('appinstalled', () => {
+      this.isPwaInstalled = true;
+      this.deferredPwaPrompt = null;
+      console.log('✅ [PWA] App instalada con éxito en el dispositivo.');
     });
   }
 }

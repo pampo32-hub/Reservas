@@ -91,6 +91,68 @@ export const INITIAL_CATEGORIES = [
   { id: 'otros', name: 'Otros Servicios', icon: 'fa-concierge-bell' }
 ];
 
+export const COSTA_RICA_PROVINCES = [
+  {
+    id: 'san_jose',
+    name: 'San José',
+    cantons: [
+      'San José', 'Escazú', 'Desamparados', 'Puriscal', 'Tarrazú', 'Aserrí', 'Mora', 
+      'Goicoechea', 'Santa Ana', 'Alajuelita', 'Vázquez de Coronado', 'Acosta', 
+      'Tibás', 'Moravia', 'Montes de Oca', 'Turrubares', 'Dota', 'Curridabat', 
+      'Pérez Zeledón', 'León Cortés'
+    ]
+  },
+  {
+    id: 'alajuela',
+    name: 'Alajuela',
+    cantons: [
+      'Alajuela', 'San Ramón', 'Grecia', 'San Mateo', 'Atenas', 'Naranjo', 'Palmares', 
+      'Poás', 'Orotina', 'San Carlos', 'Zarcero', 'Sarchí', 'Upala', 'Los Chiles', 
+      'Guatuso', 'Río Cuarto'
+    ]
+  },
+  {
+    id: 'cartago',
+    name: 'Cartago',
+    cantons: [
+      'Cartago', 'Paraíso', 'La Unión', 'Jiménez', 'Turrialba', 'Alvarado', 
+      'Oreamuno', 'El Guarco'
+    ]
+  },
+  {
+    id: 'heredia',
+    name: 'Heredia',
+    cantons: [
+      'Heredia', 'Barva', 'Santo Domingo', 'Santa Bárbara', 'San Rafael', 
+      'San Isidro', 'Belén', 'Flores', 'San Pablo', 'Sarapiquí'
+    ]
+  },
+  {
+    id: 'guanacaste',
+    name: 'Guanacaste',
+    cantons: [
+      'Liberia', 'Nicoya', 'Santa Cruz', 'Bagaces', 'Carrillo', 'Cañas', 
+      'Abangares', 'Tilarán', 'Nandayure', 'La Cruz', 'Hojancha'
+    ]
+  },
+  {
+    id: 'puntarenas',
+    name: 'Puntarenas',
+    cantons: [
+      'Puntarenas', 'Esparza', 'Buenos Aires', 'Montes de Oro', 'Osa', 'Quepos', 
+      'Golfito', 'Coto Brus', 'Parrita', 'Corredores', 'Garabito', 'Monteverde', 
+      'Puerto Jiménez'
+    ]
+  },
+  {
+    id: 'limon',
+    name: 'Limón',
+    cantons: [
+      'Limón', 'Pococí', 'Siquirres', 'Talamanca', 'Matina', 'Guácimo'
+    ]
+  }
+];
+
 export const INITIAL_BUSINESSES = [
   // ==========================================
   // 1. BELLEZA Y BARBERÍA
