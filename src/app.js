@@ -9477,15 +9477,18 @@ class App {
 
             <!-- Selección de Plan de Interés -->
             <div>
-              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (para después de tus 15 días gratis):</label>
+              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (Tarifa congelada tras tus 15 días gratis):</label>
               <div class="grid grid-cols-3 gap-2">
                 ${plans.map(p => `
                   <label class="cursor-pointer">
                     <input type="radio" name="prereg-plan" value="${p.id}" class="sr-only peer" ${p.id === selectedPlanId ? 'checked' : ''}>
                     <div class="p-2.5 rounded-xl border-2 border-slate-200 bg-white peer-checked:border-amber-500 peer-checked:bg-amber-50/50 peer-checked:shadow-sm text-center transition-all flex flex-col items-center justify-between h-full">
                       <span class="font-black text-slate-900 text-[11px] block truncate w-full">${p.name}</span>
-                      <span class="text-amber-600 font-black text-sm my-0.5">$${p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">/mes</span></span>
-                      <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 ? 'Ilimitado' : p.bookingLimit + ' reservas'}</span>
+                      <div class="flex items-center justify-center gap-1 my-0.5 flex-wrap">
+                        ${p.originalPriceUsd ? `<span class="text-[10px] text-slate-400 line-through decoration-rose-500 decoration-1 font-bold">$${p.originalPriceUsd}</span>` : ''}
+                        <span class="text-amber-600 font-black text-sm">$${p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">/mes</span></span>
+                      </div>
+                      <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' reservas'}</span>
                     </div>
                   </label>
                 `).join('')}
@@ -9602,7 +9605,7 @@ class App {
   }
 
   // ==========================================
-  // MODAL DE PLANES DE SUSCRIPCIÓN ($6, $15, $25)
+  // MODAL DE PLANES DE SUSCRIPCIÓN ($10, $18, $35) CON PRECIOS DE PRELANZAMIENTO
   // ==========================================
   renderPlansModal({ businessId = null, currentPlanId = 'basic' } = {}) {
     const modalContainer = document.getElementById('modal-container');
@@ -9618,10 +9621,11 @@ class App {
           <!-- Header Compacto -->
           <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 px-5 py-3.5 sm:px-6 sm:py-4 text-white flex items-center justify-between shrink-0 border-b border-indigo-900/50">
             <div>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-1 border border-amber-400/30">
-                <i class="fas fa-crown text-[10px]"></i> Planes de Suscripción para Negocios
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400/30 via-yellow-400/30 to-amber-400/30 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-1 border border-amber-400/50 shadow-xs">
+                <i class="fas fa-fire text-amber-400 text-[10px]"></i> Precios de Prelanzamiento • Tarifa Congelada
               </div>
               <h3 class="text-base sm:text-xl font-black">Elige el plan ideal para tu comercio</h3>
+              <p class="text-xs text-slate-300 hidden sm:block">Asegura tu precio de preventa con descuento especial y 15 días gratis de bienvenida a partir del lanzamiento.</p>
             </div>
             <button id="close-plans-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-xs"></i>
@@ -9658,12 +9662,16 @@ class App {
 
                       <p class="text-[11px] text-slate-500 leading-tight mb-2.5 line-clamp-2">${plan.tagline}</p>
 
-                      <!-- PRECIO: Visible Inmediatamente en la parte superior -->
+                      <!-- PRECIO CON DESCUENTO DE LANZAMIENTO (PRECIO ANTERIOR TACHADO) -->
                       <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 mb-2.5">
-                        <div class="flex items-baseline justify-between">
-                          <div class="flex items-baseline gap-1">
-                            <span class="text-2xl sm:text-3xl font-black text-slate-900">$${plan.priceUsd}</span>
+                        <div class="flex items-baseline justify-between flex-wrap gap-1">
+                          <div class="flex items-baseline gap-1.5 flex-wrap">
+                            ${plan.originalPriceUsd ? `
+                              <span class="text-xs sm:text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$${plan.originalPriceUsd}</span>
+                            ` : ''}
+                            <span class="text-2xl sm:text-3xl font-black ${isPro ? 'text-amber-600' : isUnlimited ? 'text-purple-600' : 'text-slate-900'}">$${plan.priceUsd}</span>
                             <span class="text-[10px] text-slate-500 font-bold uppercase">USD/mes</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[9px] font-black uppercase tracking-tight">Lanzamiento</span>
                           </div>
                           <span class="text-[11px] text-slate-700 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
                             ~${this.formatColones(plan.priceCrc)} CRC
@@ -9719,8 +9727,8 @@ class App {
           <!-- Footer Seguro Compacto -->
           <div class="px-5 py-2.5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 shrink-0">
             <div class="flex items-center gap-1.5">
-              <i class="fas fa-shield-alt text-emerald-600 text-xs"></i>
-              <span>Sin contratos forzosos. Cancela o cambia de plan en cualquier momento.</span>
+              <i class="fas fa-gift text-amber-500 text-xs"></i>
+              <span class="text-slate-700 font-semibold">15 Días Gratis incluidos al pre-registrarte. Sin contratos forzosos.</span>
             </div>
             <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica 🇨🇷</span>
           </div>
