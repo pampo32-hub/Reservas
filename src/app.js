@@ -5,7 +5,7 @@ import storage from './services/storage.js';
 const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
-const SHOW_PREREGISTER_BANNER = false;
+const SHOW_PREREGISTER_BANNER = true;
 
 class App {
   constructor() {
@@ -559,6 +559,12 @@ class App {
               <span>App</span>
             </button>
 
+            <!-- Botón Pre-Registro 15 Días Gratis (Móvil) -->
+            <button id="mobile-top-prereg-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 border border-amber-300/80 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer animate-pulse" title="Pre-regístrate y obtén 15 Días Gratis">
+              <i class="fas fa-gift text-slate-950 text-xs"></i>
+              <span>15 Días Gratis</span>
+            </button>
+
             <!-- Botón Planes y Suscripciones (Móvil) -->
             <button id="mobile-top-plans-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center gap-1 app-touch-btn" title="Ver Planes de Suscripción">
               <i class="fas fa-crown text-amber-600 text-xs"></i>
@@ -578,6 +584,12 @@ class App {
             <!-- Explorar -->
             <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
+            </button>
+
+            <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
+            <button id="nav-prereg-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 shadow-sm shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
+              <i class="fas fa-gift text-slate-950 text-xs"></i>
+              <span>🎁 Pre-Registro 15 Días Gratis</span>
             </button>
 
             <!-- Instalar PWA Desktop -->
@@ -667,6 +679,8 @@ class App {
     });
 
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('nav-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
+    document.getElementById('mobile-top-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('nav-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('mobile-top-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('nav-install-pwa-btn')?.addEventListener('click', () => this.showPwaInstallModal());
@@ -1129,47 +1143,65 @@ class App {
       <div class="animate-fade-in pb-20">
         <!-- 1. Banner Principal: Acceso Anticipado / Cupos de Prelanzamiento -->
         ${SHOW_PREREGISTER_BANNER ? `
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-1">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-6 px-5 sm:py-8 sm:px-8 shadow-2xl border border-indigo-500/30">
+        <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-amber-500/30">
             <!-- Efectos de Neón y Luces de Fondo -->
-            <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
             <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
               
               <!-- Columna Principal de Texto e Incentivos -->
-              <div class="lg:col-span-8 space-y-3.5 text-left">
+              <div class="lg:col-span-8 space-y-4 text-left">
                 
                 <!-- Badge Animado -->
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/40 shadow-xs shadow-amber-500/10">
-                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-                    <span>🚀 PRÓXIMO LANZAMIENTO • ACCESO ANTICIPADO COSTA RICA 🇨🇷</span>
+                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/50 shadow-sm shadow-amber-500/10">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                    <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                    <i class="fas fa-check-circle text-emerald-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   </span>
                 </div>
 
                 <!-- Titular de Impacto -->
-                <h2 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight leading-tight">
-                  ¿Tienes un negocio o prestas servicios? <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">Dile a tus clientes que pronto podrán reservar 24/7.</span>
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
-                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-                  Estamos construyendo la plataforma definitiva de reservas para Costa Rica. <strong class="text-amber-300">Reserva tu cupo de prelanzamiento</strong> y obtén beneficios exclusivos.
+                <p class="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
+                  <strong>Sin necesidad de tarjeta de crédito y sin pagar nada.</strong> Regístrate hoy y a partir del día del lanzamiento oficial tendrás <strong>15 días totalmente gratis</strong> para probar la plataforma completa de reservas para tu negocio o servicios.
                 </p>
 
                 <!-- Beneficios Destacados -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
-                  <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/20">
-                    <i class="fas fa-gift text-amber-400 text-sm shrink-0"></i>
-                    <span class="text-slate-200"><strong>15 Días Gratis</strong> de bienvenida</span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-amber-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
+                      <i class="fas fa-gift"></i>
+                    </div>
+                    <div>
+                      <span class="text-white font-black block">15 Días Gratis</span>
+                      <span class="text-slate-300 text-[11px]">A partir del día de estreno</span>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/20">
-                    <i class="fas fa-magic text-blue-400 text-sm shrink-0"></i>
-                    <span class="text-slate-200"><strong>Configuración</strong> asistida</span>
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
+                      <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                      <span class="text-white font-black block">Cero Riesgo</span>
+                      <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-indigo-500/20">
-                    <i class="fas fa-star text-yellow-400 text-sm shrink-0"></i>
-                    <span class="text-slate-200"><strong>Posición VIP</strong> en el estreno</span>
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-emerald-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 text-sm">
+                      <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div>
+                      <span class="text-white font-black block">Reservas 24/7</span>
+                      <span class="text-slate-300 text-[11px]">WhatsApp y catálogo listo</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1177,14 +1209,14 @@ class App {
                 <div class="pt-2 flex flex-wrap items-center gap-3">
                   <button 
                     id="banner-prereg-btn" 
-                    class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 hover:to-yellow-600 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer animate-pulse"
                   >
-                    <i class="fas fa-bolt text-slate-950"></i>
-                    <span>¡Reservar mi Cupo de Prelanzamiento!</span>
+                    <i class="fas fa-gift text-slate-950 text-base"></i>
+                    <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
                   <button 
                     id="banner-view-plans-btn" 
-                    class="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+                    class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
                     <i class="fas fa-tags text-indigo-300"></i>
                     <span>Ver Planes & Precios</span>
@@ -1195,40 +1227,47 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
-                <div class="w-full max-w-[280px] bg-slate-900/90 rounded-2xl p-4 border border-indigo-500/30 shadow-xl backdrop-blur-md space-y-3">
-                  <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
-                    <div class="flex items-center gap-2">
-                      <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-xs font-black">
+                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-amber-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-sm font-black shadow-md shadow-amber-500/20">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
                         <h4 class="text-xs font-black text-white leading-none">Tu Negocio Aquí</h4>
-                        <p class="text-[10px] text-slate-400">reservascr.app/#/tu-local</p>
+                        <p class="text-[10px] text-amber-300/90 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[9px] font-black border border-amber-400/30">Pronto</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/40">Preventa</span>
                   </div>
 
                   <div class="space-y-2 text-xs">
-                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
+                    <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
-                        <span class="text-slate-200 font-medium">Reservas 24/7</span>
+                        <span class="text-slate-200 font-medium">Reservas Online</span>
                       </div>
-                      <span class="text-emerald-400 font-bold">Activo</span>
+                      <span class="text-emerald-400 font-bold text-[11px]">24/7</span>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-between">
+                    <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">WhatsApp Auto</span>
                       </div>
                       <span class="text-slate-300 text-[10px]">Instantáneo</span>
                     </div>
+                    <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-ban text-rose-400 text-xs"></i>
+                        <span class="text-slate-200 font-medium">Tarjeta requerida</span>
+                      </div>
+                      <span class="text-emerald-400 font-black text-[11px]">NO (Gratis)</span>
+                    </div>
                   </div>
 
-                  <div class="py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400/30 text-center flex items-center justify-center gap-1.5 text-[11px] font-black text-amber-300">
-                    <i class="fas fa-gift text-xs"></i>
-                    <span>15 Días Gratis Pre-Registro</span>
+                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border border-amber-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-amber-300 shadow-xs">
+                    <i class="fas fa-gift text-sm text-amber-400"></i>
+                    <span>15 DÍAS GRATIS AL ESTRENO</span>
                   </div>
                 </div>
               </div>
@@ -9356,6 +9395,10 @@ class App {
   // ==========================================
   // MODAL DE PRE-REGISTRO DE COMERCIOS (ACCESO ANTICIPADO)
   // ==========================================
+  renderPreRegisterModal(selectedPlanId = 'pro') {
+    return this.renderPreRegistrationModal(selectedPlanId);
+  }
+
   renderPreRegistrationModal(selectedPlanId = 'pro') {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
@@ -9364,7 +9407,6 @@ class App {
     const plans = storage.getSubscriptionPlans();
 
     modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
           
@@ -9374,20 +9416,25 @@ class App {
               <i class="fas fa-times text-xs"></i>
             </button>
             
-            <div class="flex items-center gap-2 mb-1.5">
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider border border-amber-400/40">
-                <i class="fas fa-rocket"></i> Acceso Anticipado Costa Rica 🇨🇷
+                <i class="fas fa-rocket"></i> Preventa & Prelanzamiento Costa Rica 🇨🇷
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
+                <i class="fas fa-check-circle text-[9px]"></i> Sin Tarjeta
               </span>
             </div>
 
-            <h3 class="text-lg sm:text-xl font-black text-white">Pre-registra tu Negocio</h3>
-            <p class="text-xs text-slate-300 mt-1 leading-relaxed">Asegura tu lugar entre los primeros 20 comercios y recibe <strong>15 días gratis de bienvenida</strong> + <strong>configuración de catálogo asistida</strong>.</p>
+            <h3 class="text-lg sm:text-xl font-black text-white">¡Pre-regístrate y obtén 15 Días Gratis!</h3>
+            <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+              A partir del día de lanzamiento tendrás <strong>15 días totalmente gratis</strong> para probar la plataforma con tus clientes. <strong>Sin pagos hoy ni tarjetas requeridas.</strong>
+            </p>
           </div>
 
           <!-- Beneficio Highlight -->
           <div class="bg-amber-50/90 border-b border-amber-200 px-5 py-2.5 flex items-center gap-2.5 text-xs text-amber-950 font-semibold shrink-0">
             <span class="text-base flex-shrink-0">🎁</span>
-            <span><strong>Sin pagos hoy:</strong> Te contactaremos por WhatsApp antes del estreno oficial para activar tu cuenta.</span>
+            <span><strong>0% Pago / 0% Tarjeta hoy:</strong> Te contactaremos por WhatsApp antes del estreno oficial para dejar tu catálogo y horarios listos.</span>
           </div>
 
           <!-- Formulario de Captura -->
@@ -9395,7 +9442,7 @@ class App {
             
             <div>
               <label class="block font-black text-slate-800 mb-1">Nombre Comercial del Negocio o Profesional *</label>
-              <input type="text" id="prereg-biz-name" required placeholder="Ej: Barbería Don Juan, Dra. Andrea Soto..." class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
+              <input type="text" id="prereg-biz-name" required placeholder="Ej: Barbería Don Juan, Dra. Andrea Soto, Nails & Spa..." class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -9430,7 +9477,7 @@ class App {
 
             <!-- Selección de Plan de Interés -->
             <div>
-              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (Suscripción fija mensual):</label>
+              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (para después de tus 15 días gratis):</label>
               <div class="grid grid-cols-3 gap-2">
                 ${plans.map(p => `
                   <label class="cursor-pointer">
@@ -9448,8 +9495,8 @@ class App {
             <div id="prereg-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
             <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
-              <i class="fas fa-check-circle text-sm"></i>
-              <span>Asegurar mis 15 Días Gratis y Pre-registro</span>
+              <i class="fas fa-gift text-sm"></i>
+              <span>¡Asegurar mis 15 Días Gratis y Pre-registro!</span>
             </button>
             
             <p class="text-[10px] text-slate-400 text-center leading-tight">
@@ -9507,17 +9554,17 @@ class App {
             <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 p-6 sm:p-8 text-center space-y-4">
               
               <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20 animate-bounce">
-                <i class="fas fa-check-circle"></i>
+                <i class="fas fa-gift"></i>
               </div>
               
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[11px] font-black uppercase tracking-wider border border-amber-300">
-                🎉 ¡Lugar Reservado con Éxito!
+                🎉 ¡Lugar y 15 Días Gratis Reservados!
               </span>
 
               <h3 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight">¡Bienvenido a Reservas CR,<br>${this.escapeHtml(bizName)}!</h3>
               
               <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Has asegurado tus <strong>15 Días Gratis de bienvenida</strong> + <strong>Configuración de catálogo asistida</strong> para el <strong>${chosenPlanObj.name} ($${chosenPlanObj.priceUsd}/mes)</strong>.
+                Has asegurado tus <strong>15 Días Gratis de prueba completa</strong> a partir del día del lanzamiento oficial + <strong>Configuración asistida de catálogo</strong> para el <strong>${chosenPlanObj.name} ($${chosenPlanObj.priceUsd}/mes)</strong>.
               </p>
 
               <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-left text-xs space-y-1.5 text-emerald-950">
@@ -9525,7 +9572,7 @@ class App {
                   <i class="fab fa-whatsapp text-emerald-600 text-base"></i> ¿Qué sigue ahora?
                 </div>
                 <p class="text-emerald-900 text-[11px] leading-relaxed">
-                  Te escribiremos a tu WhatsApp <strong>+506 ${this.escapeHtml(phone)}</strong> antes del estreno para darte acceso prioritario y ayudarte a cargar tus servicios, fotos y horarios.
+                  Te escribiremos a tu WhatsApp <strong>+506 ${this.escapeHtml(phone)}</strong> antes del estreno para darte acceso prioritario y ayudarte a cargar tus servicios, fotos y horarios sin costo.
                 </p>
               </div>
 
@@ -9544,7 +9591,7 @@ class App {
       } catch (err) {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-check-circle text-sm mr-2"></i> Asegurar mis 15 Días Gratis y Pre-registro';
+          submitBtn.innerHTML = '<i class="fas fa-gift text-sm mr-2"></i> ¡Asegurar mis 15 Días Gratis y Pre-registro!';
         }
         if (errBox) {
           errBox.classList.remove('hidden');
