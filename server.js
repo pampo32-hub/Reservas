@@ -1386,6 +1386,146 @@ app.delete('/api/services/:id', async (req, res) => {
 });
 
 // ==========================================
+// ENDPOINTS DE EQUIPO / ESPECIALISTAS (STAFF)
+// ==========================================
+
+// Obtener lista de especialistas / colaboradores del negocio
+app.get('/api/businesses/:id/staff', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY created_at ASC', [id]);
+    const staff = result.rows.map(s => ({
+      id: s.id,
+      businessId: s.business_id,
+      name: s.name,
+      roleTitle: s.role_title || 'Especialista',
+      avatarUrl: s.avatar_url || '',
+      phone: s.phone || '',
+      services: s.services || ['all'],
+      schedule: s.schedule || null,
+      isActive: s.is_active !== false,
+      createdAt: s.created_at
+    }));
+    res.json(staff);
+  } catch (error) {
+    console.error('Error obteniendo especialistas:', error);
+    res.status(500).json({ error: 'Error al obtener especialistas del negocio.' });
+  }
+});
+
+// Agregar especialista al negocio (Validando límites de plan)
+app.post('/api/businesses/:id/staff', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const s = req.body;
+    if (!s.name || !s.name.trim()) {
+      return res.status(400).json({ error: 'El nombre del especialista es obligatorio.' });
+    }
+
+    // Validar plan del comercio
+    const bizRes = await pool.query('SELECT plan FROM reservas_businesses WHERE id = $1', [businessId]);
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado.' });
+    }
+    const plan = bizRes.rows[0].plan || 'basic';
+    if (plan === 'basic') {
+      return res.status(403).json({ 
+        error: 'La gestión de múltiples especialistas y empleados requiere el Plan Profesional ($18) o Plan Ilimitado ($35).',
+        requiresUpgrade: true
+      });
+    }
+
+    const countRes = await pool.query('SELECT COUNT(*) as total FROM reservas_staff WHERE business_id = $1', [businessId]);
+    const currentStaffCount = parseInt(countRes.rows[0].total, 10) || 0;
+
+    if (plan === 'pro' && currentStaffCount >= 5) {
+      return res.status(403).json({ 
+        error: 'Has alcanzado el límite de 5 especialistas del Plan Profesional. Actualiza al Plan Ilimitado para agregar más colaboradores sin restricciones.',
+        requiresUpgrade: true
+      });
+    }
+
+    const newStaffId = `staff-${Date.now()}`;
+    await pool.query(`
+      INSERT INTO reservas_staff (id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `, [
+      newStaffId, 
+      businessId, 
+      s.name.trim(), 
+      s.roleTitle?.trim() || 'Especialista', 
+      s.avatarUrl?.trim() || '', 
+      s.phone?.trim() || '', 
+      JSON.stringify(s.services || ['all']), 
+      s.schedule ? JSON.stringify(s.schedule) : null, 
+      s.isActive !== false
+    ]);
+
+    res.status(201).json({
+      id: newStaffId,
+      businessId,
+      name: s.name.trim(),
+      roleTitle: s.roleTitle?.trim() || 'Especialista',
+      avatarUrl: s.avatarUrl?.trim() || '',
+      phone: s.phone?.trim() || '',
+      services: s.services || ['all'],
+      schedule: s.schedule || null,
+      isActive: s.isActive !== false
+    });
+  } catch (error) {
+    console.error('Error agregando especialista:', error);
+    res.status(500).json({ error: 'Error al crear especialista.' });
+  }
+});
+
+// Actualizar especialista
+app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
+  try {
+    const { id: businessId, staffId } = req.params;
+    const s = req.body;
+
+    await pool.query(`
+      UPDATE reservas_staff SET
+        name = COALESCE($1, name),
+        role_title = COALESCE($2, role_title),
+        avatar_url = COALESCE($3, avatar_url),
+        phone = COALESCE($4, phone),
+        services = COALESCE($5, services),
+        schedule = $6,
+        is_active = COALESCE($7, is_active)
+      WHERE id = $8 AND business_id = $9
+    `, [
+      s.name ? s.name.trim() : null,
+      s.roleTitle ? s.roleTitle.trim() : null,
+      s.avatarUrl !== undefined ? s.avatarUrl.trim() : null,
+      s.phone !== undefined ? s.phone.trim() : null,
+      s.services ? JSON.stringify(s.services) : null,
+      s.schedule ? JSON.stringify(s.schedule) : null,
+      s.isActive !== undefined ? s.isActive : null,
+      staffId,
+      businessId
+    ]);
+
+    res.json({ success: true, message: 'Especialista actualizado con éxito.' });
+  } catch (error) {
+    console.error('Error actualizando especialista:', error);
+    res.status(500).json({ error: 'Error al actualizar especialista.' });
+  }
+});
+
+// Eliminar especialista
+app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
+  try {
+    const { id: businessId, staffId } = req.params;
+    await pool.query('DELETE FROM reservas_staff WHERE id = $1 AND business_id = $2', [staffId, businessId]);
+    res.json({ success: true, message: 'Especialista eliminado con éxito.' });
+  } catch (error) {
+    console.error('Error eliminando especialista:', error);
+    res.status(500).json({ error: 'Error al eliminar especialista.' });
+  }
+});
+
+// ==========================================
 // ENDPOINTS DE CITAS Y RESERVAS
 // ==========================================
 
@@ -1410,6 +1550,8 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
       notes: a.notes,
       status: a.status,
       whatsappOptIn: a.whatsapp_opt_in !== false,
+      staffId: a.staff_id || null,
+      staffName: a.staff_name || '',
       createdAt: a.created_at
     }));
 
@@ -1452,6 +1594,8 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       notes: a.notes,
       status: a.status,
       whatsappOptIn: a.whatsapp_opt_in !== false,
+      staffId: a.staff_id || null,
+      staffName: a.staff_name || '',
       createdAt: a.created_at
     }));
 
@@ -1462,7 +1606,7 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   }
 });
 
-// Crear nueva reserva (con notificación por correo electrónico)
+// Crear nueva reserva (con notificación por correo electrónico y asignación de especialista)
 app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body;
@@ -1496,7 +1640,7 @@ app.post('/api/appointments', async (req, res) => {
 
       const currentCount = parseInt(countRes.rows[0].total, 10) || 0;
       if (currentCount >= bookingLimit) {
-        const planName = bizData.plan === 'basic' ? 'Plan Básico ($8 / 150 citas)' : (bizData.plan === 'pro' ? 'Plan Profesional ($15 / 300 citas)' : 'su plan actual');
+        const planName = bizData.plan === 'basic' ? 'Plan Básico ($10 / 150 citas)' : (bizData.plan === 'pro' ? 'Plan Profesional ($18 / 300 citas)' : 'su plan actual');
         return res.status(403).json({
           error: `El comercio "${bizData.name}" ha alcanzado el límite de ${bookingLimit} reservas de este mes de su ${planName}. Para recibir más citas este mes, debe actualizar a un plan superior.`,
           limitReached: true,
@@ -1513,16 +1657,54 @@ app.post('/api/appointments', async (req, res) => {
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
+    // 3. Resolver especialista asignado (si se seleccionó uno o es 'any' / asignación automática)
+    let assignedStaffId = a.staffId && a.staffId !== 'any' ? a.staffId : null;
+    let assignedStaffName = a.staffName || null;
+
+    if (assignedStaffId) {
+      const stRes = await pool.query('SELECT name, role_title FROM reservas_staff WHERE id = $1', [assignedStaffId]);
+      if (stRes.rows.length > 0) {
+        assignedStaffName = `${stRes.rows[0].name}${stRes.rows[0].role_title ? ' (' + stRes.rows[0].role_title + ')' : ''}`;
+      }
+    } else {
+      // Asignación automática: buscar especialista disponible para este servicio en la fecha/hora
+      const allStaffRes = await pool.query('SELECT * FROM reservas_staff WHERE business_id = $1 AND is_active = TRUE', [a.businessId]);
+      if (allStaffRes.rows.length > 0) {
+        const eligible = allStaffRes.rows.filter(st => {
+          const svcs = st.services || ['all'];
+          return Array.isArray(svcs) && (svcs.includes('all') || svcs.includes(a.serviceId));
+        });
+
+        if (eligible.length > 0) {
+          const bookedStaffRes = await pool.query(`
+            SELECT staff_id FROM reservas_appointments 
+            WHERE business_id = $1 AND date = $2 AND time = $3 AND status != 'cancelled' AND staff_id IS NOT NULL
+          `, [a.businessId, a.date, a.time]);
+          const bookedIds = new Set(bookedStaffRes.rows.map(r => r.staff_id));
+          const available = eligible.find(st => !bookedIds.has(st.id));
+
+          if (available) {
+            assignedStaffId = available.id;
+            assignedStaffName = `${available.name}${available.role_title ? ' (' + available.role_title + ')' : ''}`;
+          } else {
+            assignedStaffId = eligible[0].id;
+            assignedStaffName = `${eligible[0].name}${eligible[0].role_title ? ' (' + eligible[0].role_title + ')' : ''}`;
+          }
+        }
+      }
+    }
+
     await pool.query(`
       INSERT INTO reservas_appointments (
         id, business_id, service_id, service_name, service_price,
         service_duration, date, time, client_name, client_phone,
-        client_email, notes, status, whatsapp_opt_in
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        client_email, notes, status, whatsapp_opt_in, staff_id, staff_name
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     `, [
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
       a.serviceDuration, a.date, a.time, a.clientName, a.clientPhone,
-      a.clientEmail || '', a.notes || '', initialStatus, optIn
+      a.clientEmail || '', a.notes || '', initialStatus, optIn,
+      assignedStaffId, assignedStaffName
     ]);
 
     // Registrar o actualizar automáticamente el cliente
@@ -1537,6 +1719,8 @@ app.post('/api/appointments', async (req, res) => {
     const createdAppointment = { 
       id: newId, 
       ...a, 
+      staffId: assignedStaffId,
+      staffName: assignedStaffName,
       whatsappOptIn: optIn, 
       status: initialStatus,
       autoConfirmed: isAutoConfirm

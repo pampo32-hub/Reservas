@@ -878,6 +878,110 @@ class StorageService {
     return true;
   }
 
+  // ==========================================
+  // GESTIÓN DE EQUIPO / ESPECIALISTAS (STAFF)
+  // ==========================================
+  async getBusinessStaff(businessId) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff`);
+        if (res.ok) {
+          const staff = await res.json();
+          this.staffCache = this.staffCache || {};
+          this.staffCache[businessId] = staff;
+          localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
+          return staff;
+        }
+      } catch (e) {
+        console.warn('Fallback local para staff:', e);
+      }
+    }
+    const local = localStorage.getItem(`directorio_staff_${businessId}`);
+    return local ? JSON.parse(local) : [];
+  }
+
+  getBusinessStaffSync(businessId) {
+    if (this.staffCache && this.staffCache[businessId]) {
+      return this.staffCache[businessId];
+    }
+    const local = localStorage.getItem(`directorio_staff_${businessId}`);
+    return local ? JSON.parse(local) : [];
+  }
+
+  async createStaffMember(businessId, staffData) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(staffData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al agregar especialista.');
+      await this.getBusinessStaff(businessId);
+      return data;
+    }
+    const staff = this.getBusinessStaffSync(businessId);
+    const newMember = {
+      id: `stf-${Date.now()}`,
+      businessId,
+      name: staffData.name,
+      roleTitle: staffData.roleTitle || 'Especialista',
+      avatarUrl: staffData.avatarUrl || '',
+      phone: staffData.phone || '',
+      services: staffData.services || ['all'],
+      schedule: staffData.schedule || null,
+      isActive: staffData.isActive !== false,
+      createdAt: new Date().toISOString()
+    };
+    staff.push(newMember);
+    this.staffCache = this.staffCache || {};
+    this.staffCache[businessId] = staff;
+    localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
+    return newMember;
+  }
+
+  async updateStaffMember(businessId, staffId, staffData) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff/${staffId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(staffData)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar especialista.');
+      await this.getBusinessStaff(businessId);
+      return data;
+    }
+    const staff = this.getBusinessStaffSync(businessId);
+    const idx = staff.findIndex(s => s.id === staffId);
+    if (idx >= 0) {
+      staff[idx] = { ...staff[idx], ...staffData };
+      this.staffCache = this.staffCache || {};
+      this.staffCache[businessId] = staff;
+      localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
+      return staff[idx];
+    }
+    throw new Error('Especialista no encontrado');
+  }
+
+  async deleteStaffMember(businessId, staffId) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff/${staffId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar especialista.');
+      await this.getBusinessStaff(businessId);
+      return data;
+    }
+    let staff = this.getBusinessStaffSync(businessId);
+    staff = staff.filter(s => s.id !== staffId);
+    this.staffCache = this.staffCache || {};
+    this.staffCache[businessId] = staff;
+    localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
+    return { success: true };
+  }
+
   // --- RESERVAS / CITAS ---
   getAppointments() {
     const data = localStorage.getItem(STORAGE_KEYS.APPOINTMENTS);
@@ -1188,10 +1292,10 @@ class StorageService {
     return { success: true, action, date: dateString };
   }
 
-  // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL ---
-  getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null) {
+  // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL CON MULTI-ESPECIALISTA ---
+  getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null, selectedStaffId = 'any', serviceId = null) {
     const business = this.getBusinessById(businessId);
-    if (!business || !business.schedule) return [];
+    if (!business || !business.schedule) return { isClosed: false, slots: [] };
 
     const [year, month, day] = dateString.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
@@ -1231,15 +1335,19 @@ class StorageService {
     const slotStep = business.schedule.slotDuration || 30;
     const serviceDur = parseInt(serviceDurationMinutes, 10) || 30;
 
+    // Obtener equipo activo
+    const allStaff = (this.getBusinessStaffSync(businessId) || []).filter(s => s.isActive !== false);
+
+    // Filtrar staff calificado para el servicio si se proporcionó serviceId
+    const qualifiedStaff = allStaff.filter(st => {
+      if (!serviceId) return true;
+      if (!st.services || st.services.length === 0 || st.services.includes('all')) return true;
+      return st.services.includes(serviceId);
+    });
+
     const existingAppointments = this.getAppointmentsByBusiness(businessId).filter(
       appt => appt.date === dateString && appt.status !== 'cancelled' && (!excludeAppointmentId || appt.id !== excludeAppointmentId)
     );
-
-    const bookedRanges = existingAppointments.map(appt => {
-      const start = timeToMinutes(appt.time);
-      const duration = appt.serviceDuration || 30;
-      return { start, end: start + duration };
-    });
 
     // Franjas horarias bloqueadas manualmente por el negocio
     const blockedSlots = this.getBlockedSlots(businessId, dateString);
@@ -1252,25 +1360,82 @@ class StorageService {
 
     const availableSlots = [];
 
+    // Helper para verificar si un miembro del personal está disponible en un rango [slotStart, slotEnd]
+    const isStaffMemberAvailable = (st, slotStart, slotEnd) => {
+      const stSchedule = st.schedule || business.schedule;
+      if (stSchedule.days && !stSchedule.days.includes(dayOfWeek)) {
+        return false;
+      }
+      const stOpen = timeToMinutes(stSchedule.openTime || business.schedule.openTime || '09:00');
+      const stClose = timeToMinutes(stSchedule.closeTime || business.schedule.closeTime || '18:00');
+      if (slotStart < stOpen || slotEnd > stClose) {
+        return false;
+      }
+      if (stSchedule.breakStart && stSchedule.breakEnd) {
+        const bStart = timeToMinutes(stSchedule.breakStart);
+        const bEnd = timeToMinutes(stSchedule.breakEnd);
+        if (slotStart < bEnd && slotEnd > bStart) {
+          return false;
+        }
+      }
+      const staffBooked = existingAppointments.filter(appt => appt.staffId === st.id);
+      const hasConflict = staffBooked.some(appt => {
+        const start = timeToMinutes(appt.time);
+        const duration = appt.serviceDuration || 30;
+        return (slotStart < start + duration && slotEnd > start);
+      });
+      return !hasConflict;
+    };
+
     for (let current = openMin; current + serviceDur <= closeMin; current += slotStep) {
       const slotEnd = current + serviceDur;
 
-      if (breakStartMin !== -1 && breakEndMin !== -1) {
-        const overlapsBreak = (current < breakEndMin && slotEnd > breakStartMin);
-        if (overlapsBreak) continue;
-      }
-
-      const hasConflict = bookedRanges.some(booked => {
-        return (current < booked.end && slotEnd > booked.start);
-      });
-      if (hasConflict) continue;
-
+      // Franja de bloqueo manual del negocio
       const hasBlockedConflict = blockedRanges.some(blocked => {
         return (current < blocked.end && slotEnd > blocked.start);
       });
       if (hasBlockedConflict) continue;
 
-      availableSlots.push(minutesToTime(current));
+      // CASO A: Sin especialistas configurados (1 solo operador / dueño)
+      if (allStaff.length === 0) {
+        if (breakStartMin !== -1 && breakEndMin !== -1) {
+          const overlapsBreak = (current < breakEndMin && slotEnd > breakStartMin);
+          if (overlapsBreak) continue;
+        }
+        const hasConflict = existingAppointments.some(appt => {
+          const start = timeToMinutes(appt.time);
+          const duration = appt.serviceDuration || 30;
+          return (current < start + duration && slotEnd > start);
+        });
+        if (hasConflict) continue;
+        availableSlots.push(minutesToTime(current));
+        continue;
+      }
+
+      // CASO B: Especialista Específico seleccionado
+      if (selectedStaffId && selectedStaffId !== 'any') {
+        const targetStaff = qualifiedStaff.find(s => s.id === selectedStaffId);
+        if (!targetStaff) continue;
+        if (isStaffMemberAvailable(targetStaff, current, slotEnd)) {
+          availableSlots.push(minutesToTime(current));
+        }
+        continue;
+      }
+
+      // CASO C: "Cualquiera Disponible" ('any')
+      const freeStaffCount = qualifiedStaff.filter(st => isStaffMemberAvailable(st, current, slotEnd)).length;
+      
+      // Citas sin especialista asignado que ocupan cupo
+      const unassignedCount = existingAppointments.filter(appt => {
+        if (appt.staffId) return false;
+        const start = timeToMinutes(appt.time);
+        const duration = appt.serviceDuration || 30;
+        return (current < start + duration && slotEnd > start);
+      }).length;
+
+      if ((freeStaffCount - unassignedCount) > 0) {
+        availableSlots.push(minutesToTime(current));
+      }
     }
 
     // Filtrar turnos pasados si la fecha seleccionada es hoy (con margen de 15 minutos)

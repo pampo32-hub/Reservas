@@ -94,6 +94,8 @@ export async function initDatabase() {
         notes TEXT,
         status VARCHAR(50) DEFAULT 'confirmed',
         whatsapp_opt_in BOOLEAN DEFAULT TRUE,
+        staff_id VARCHAR(50) DEFAULT NULL,
+        staff_name VARCHAR(255) DEFAULT NULL,
         review_email_sent_at TIMESTAMP DEFAULT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
@@ -102,6 +104,24 @@ export async function initDatabase() {
     await client.query(`
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN DEFAULT TRUE;
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS review_email_sent_at TIMESTAMP DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS staff_id VARCHAR(50) DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS staff_name VARCHAR(255) DEFAULT NULL;
+    `);
+
+    // 3.0. Crear tabla de equipo y colaboradores/especialistas del negocio
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_staff (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        name VARCHAR(255) NOT NULL,
+        role_title VARCHAR(150) DEFAULT 'Especialista',
+        avatar_url TEXT DEFAULT '',
+        phone VARCHAR(50) DEFAULT '',
+        services JSONB DEFAULT '["all"]',
+        schedule JSONB DEFAULT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
     `);
 
     // 3.1. Crear tabla de reseñas y calificaciones verificadas

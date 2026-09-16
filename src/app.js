@@ -16,6 +16,7 @@ class App {
     
     // Filtros de citas
     this.ownerAppointmentFilter = 'all'; // 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'
+    this.ownerStaffFilter = 'all'; // 'all' | 'unassigned' | staffId
     this.clientAppointmentFilter = 'all'; // 'all' | 'active' | 'completed' | 'cancelled'
 
     // Estado del modal de reserva
@@ -23,12 +24,13 @@ class App {
       isOpen: false,
       businessId: null,
       serviceId: null,
+      staffId: 'any',
       selectedDate: this.getTodayDateString(),
       selectedTime: null
     };
 
     // Estado del panel de dueño
-    this.activeDashboardTab = 'appointments'; // 'appointments' | 'services' | 'profile' | 'schedule'
+    this.activeDashboardTab = 'appointments'; // 'appointments' | 'blocked-slots' | 'services' | 'team' | 'profile' | 'schedule'
 
     // Estado del panel de developer
     this.activeDevTab = 'alerts'; // 'alerts' | 'businesses' | 'clients' | 'appointments'
@@ -1836,9 +1838,18 @@ class App {
       isOpen: true,
       businessId,
       serviceId,
+      staffId: 'any',
       selectedDate: this.getTodayDateString(),
       selectedTime: null
     };
+
+    // Asegurar carga fresca de especialistas
+    storage.getBusinessStaff(businessId).then(() => {
+      if (this.bookingState.isOpen && this.bookingState.businessId === businessId) {
+        this.renderBookingModal();
+      }
+    }).catch(() => {});
+
     this.renderBookingModal();
   }
 
@@ -1856,7 +1867,24 @@ class App {
     const service = biz?.services?.find(s => s.id === this.bookingState.serviceId) || biz?.services?.[0];
     if (!biz || !service) return;
 
-    const availability = storage.getAvailableSlots(biz.id, this.bookingState.selectedDate, service.duration);
+    // Obtener especialistas activos calificados para este servicio
+    const allStaff = (storage.getBusinessStaffSync(biz.id) || []).filter(s => s.isActive !== false);
+    const qualifiedStaff = allStaff.filter(st => {
+      if (!st.services || st.services.length === 0 || st.services.includes('all')) return true;
+      return st.services.includes(service.id);
+    });
+
+    const hasMultipleStaff = qualifiedStaff.length >= 2;
+    const selectedStaffId = this.bookingState.staffId || 'any';
+
+    const availability = storage.getAvailableSlots(
+      biz.id, 
+      this.bookingState.selectedDate, 
+      service.duration, 
+      null, 
+      selectedStaffId, 
+      service.id
+    );
     const clientUser = storage.getClientUser();
 
     modalContainer.innerHTML = `
@@ -1887,26 +1915,80 @@ class App {
               </div>
             </div>
 
-            <!-- Paso 1: Seleccionar Fecha -->
+            <!-- Paso 1: Seleccionar Especialista (si hay 2 o más especialistas calificados) -->
+            ${hasMultipleStaff ? `
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    1. ¿Con quién deseas atenderte?
+                  </label>
+                  <span class="text-[11px] text-blue-600 font-bold">${qualifiedStaff.length} especialistas</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <!-- Tarjeta: Cualquiera disponible -->
+                  <button 
+                    type="button" 
+                    class="staff-select-card p-2.5 rounded-2xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${selectedStaffId === 'any' ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-500/20 shadow-xs' : 'bg-slate-50/70 border-slate-200 hover:bg-slate-100/80 text-slate-700'}"
+                    data-staff-id="any"
+                  >
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">
+                      <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-slate-900 truncate">Cualquiera</div>
+                      <div class="text-[10px] text-slate-500 truncate">Más turnos libres</div>
+                    </div>
+                  </button>
+
+                  <!-- Tarjetas de cada Especialista -->
+                  ${qualifiedStaff.map(st => `
+                    <button 
+                      type="button" 
+                      class="staff-select-card p-2.5 rounded-2xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${selectedStaffId === st.id ? 'bg-blue-50 border-blue-600 ring-2 ring-blue-500/20 shadow-xs' : 'bg-slate-50/70 border-slate-200 hover:bg-slate-100/80 text-slate-700'}"
+                      data-staff-id="${st.id}"
+                    >
+                      ${st.avatarUrl ? `
+                        <img src="${st.avatarUrl}" alt="${st.name}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200">
+                      ` : `
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-900 text-white flex items-center justify-center text-xs font-black shrink-0">
+                          ${st.name.charAt(0).toUpperCase()}
+                        </div>
+                      `}
+                      <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-900 truncate">${st.name.split(' ')[0]}</div>
+                        <div class="text-[10px] text-slate-500 truncate">${st.roleTitle || 'Especialista'}</div>
+                      </div>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Paso 2: Seleccionar Fecha -->
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                1. Selecciona la Fecha
+                ${hasMultipleStaff ? '2. Selecciona la Fecha' : '1. Selecciona la Fecha'}
               </label>
               <input 
                 type="date" 
                 id="booking-date-input" 
                 value="${this.bookingState.selectedDate}" 
                 min="${this.getTodayDateString()}" 
-                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
               />
             </div>
 
-            <!-- Paso 2: Horarios Disponibles en Tiempo Real -->
+            <!-- Paso 3: Horarios Disponibles en Tiempo Real -->
             <div>
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  2. Horario Disponible (${availability.slots ? availability.slots.length : 0} libres)
+                  ${hasMultipleStaff ? '3. Horario Disponible' : '2. Horario Disponible'} (${availability.slots ? availability.slots.length : 0} libres)
                 </label>
+                ${this.bookingState.selectedTime ? `
+                  <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
+                    Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}
+                  </span>
+                ` : ''}
               </div>
 
               ${availability.isClosed ? `
@@ -1917,14 +1999,14 @@ class App {
               ` : availability.slots.length === 0 ? `
                 <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
                   <i class="fas fa-info-circle text-base"></i>
-                  <span>No hay turnos disponibles para esta fecha. Intenta con otro día.</span>
+                  <span>No hay turnos disponibles para esta fecha o especialista. Intenta con otro día o especialista.</span>
                 </div>
               ` : `
                 <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
                   ${availability.slots.map(slot => `
                     <button 
                       type="button" 
-                      class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center ${this.bookingState.selectedTime === slot ? 'selected' : ''}"
+                      class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center cursor-pointer transition-all ${this.bookingState.selectedTime === slot ? 'selected bg-blue-600 text-white border-blue-600 shadow-md' : ''}"
                       data-slot="${slot}"
                     >
                       ${this.formatTime12h(slot)}
@@ -1934,11 +2016,11 @@ class App {
               `}
             </div>
 
-            <!-- Paso 3: Identificación / Datos del Cliente (Sencillo) -->
+            <!-- Paso 4: Identificación / Datos del Cliente -->
             <form id="booking-form" class="space-y-3 pt-3 border-t border-slate-100">
               <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  3. Tus Datos para la Reserva
+                  ${hasMultipleStaff ? '4. Tus Datos para la Reserva' : '3. Tus Datos para la Reserva'}
                 </label>
                 ${clientUser ? `
                   <span class="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
@@ -2008,7 +2090,7 @@ class App {
                 type="submit" 
                 id="submit-booking-btn"
                 ${!this.bookingState.selectedTime ? 'disabled' : ''}
-                class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
+                class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <i class="fas fa-check-circle"></i>
                 <span>Confirmar Reserva ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
@@ -2020,6 +2102,16 @@ class App {
     `;
 
     document.getElementById('close-modal-btn')?.addEventListener('click', () => this.closeBookingModal());
+
+    // Selección de Especialista
+    document.querySelectorAll('.staff-select-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const staffId = card.getAttribute('data-staff-id');
+        this.bookingState.staffId = staffId;
+        this.bookingState.selectedTime = null;
+        this.renderBookingModal();
+      });
+    });
 
     const dateInput = document.getElementById('booking-date-input');
     dateInput?.addEventListener('change', (e) => {
@@ -2056,6 +2148,10 @@ class App {
       const isAutoConfirm = biz.autoConfirmAppointments !== false;
       const initialStatus = isAutoConfirm ? 'confirmed' : 'pending';
 
+      const assignedStaffId = this.bookingState.staffId && this.bookingState.staffId !== 'any' ? this.bookingState.staffId : null;
+      const assignedStaffObj = assignedStaffId ? qualifiedStaff.find(s => s.id === assignedStaffId) : null;
+      const assignedStaffName = assignedStaffObj ? `${assignedStaffObj.name}${assignedStaffObj.roleTitle ? ' (' + assignedStaffObj.roleTitle + ')' : ''}` : null;
+
       const newAppointment = await storage.createAppointment({
         businessId: biz.id,
         serviceId: service.id,
@@ -2069,7 +2165,9 @@ class App {
         clientEmail,
         notes: clientNotes,
         whatsappOptIn,
-        status: initialStatus
+        status: initialStatus,
+        staffId: assignedStaffId,
+        staffName: assignedStaffName
       });
 
       this.closeBookingModal();
@@ -2126,6 +2224,15 @@ class App {
               <span class="text-slate-500">Servicio:</span>
               <span class="font-bold text-slate-800">${appointment.serviceName}</span>
             </div>
+            ${appointment.staffName ? `
+              <div class="flex justify-between">
+                <span class="text-slate-500">Especialista:</span>
+                <span class="font-bold text-blue-700 flex items-center gap-1">
+                  <i class="fas fa-user-tag text-blue-500 text-[11px]"></i>
+                  ${appointment.staffName}
+                </span>
+              </div>
+            ` : ''}
             <div class="flex justify-between">
               <span class="text-slate-500">Fecha y Hora:</span>
               <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
@@ -2515,6 +2622,11 @@ class App {
                           <i class="fab fa-whatsapp text-emerald-600"></i> WhatsApp
                         </span>
                       ` : ''}
+                      ${apt.staffName ? `
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                          <i class="fas fa-user-tag text-blue-500"></i> ${apt.staffName}
+                        </span>
+                      ` : ''}
                     </div>
                     <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
@@ -2791,6 +2903,9 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
             <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
           </button>
+          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="team">
+            <i class="fas fa-users-cog mr-1.5 text-indigo-500"></i> Equipo y Especialistas
+          </button>
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
             <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
           </button>
@@ -2838,8 +2953,12 @@ class App {
   renderDashboardTabContent(currentBiz, appointments) {
     if (this.activeDashboardTab === 'appointments') {
       const filter = this.ownerAppointmentFilter || 'all';
+      const staffFilter = this.ownerStaffFilter || 'all';
+      const businessStaff = storage.getBusinessStaffSync(currentBiz.id) || [];
+
       let filteredAppointments = appointments;
 
+      // Filtro por Estado
       if (filter === 'pending') {
         filteredAppointments = appointments.filter(a => a.status === 'pending');
       } else if (filter === 'confirmed') {
@@ -2848,6 +2967,13 @@ class App {
         filteredAppointments = appointments.filter(a => a.status === 'completed');
       } else if (filter === 'cancelled') {
         filteredAppointments = appointments.filter(a => a.status === 'cancelled');
+      }
+
+      // Filtro por Especialista
+      if (staffFilter === 'unassigned') {
+        filteredAppointments = filteredAppointments.filter(a => !a.staffId);
+      } else if (staffFilter && staffFilter !== 'all') {
+        filteredAppointments = filteredAppointments.filter(a => a.staffId === staffFilter);
       }
 
       const pendingCount = appointments.filter(a => a.status === 'pending').length;
@@ -2921,51 +3047,50 @@ class App {
             </div>
           </div>
 
-          <!-- Filtros de Estado para el Dueño -->
-          <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
-              Todas (${appointments.length})
-          <!-- Filtros de Estado y Botón de Bloqueo Rápido -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1">
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
+          <!-- Filtros de Estado, Especialista y Botón de Bloqueo Rápido -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap">
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
                 Todas (${appointments.length})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
                 ⏳ Pendientes (${pendingCount})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
                 ✅ Confirmadas (${confirmedCount})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
                 🎉 Completadas (${completedCount})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
+              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
                 ❌ Canceladas (${cancelledCount})
               </button>
             </div>
 
-            <button id="quick-manage-slots-btn" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
-              <i class="fas fa-calendar-times"></i> Bloquear / Liberar Horas
-            </button>
-            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
-              ⏳ Pendientes (${pendingCount})
-            </button>
-            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
-              ✅ Confirmadas (${confirmedCount})
-            </button>
-            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
-              🎉 Completadas (${completedCount})
-            </button>
-            <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
-              ❌ Canceladas (${cancelledCount})
-            </button>
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+              ${businessStaff.length > 0 ? `
+                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
+                  <i class="fas fa-user-tag text-slate-400 text-xs"></i>
+                  <select id="owner-staff-filter-select" class="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer">
+                    <option value="all" ${staffFilter === 'all' ? 'selected' : ''}>Todos los Especialistas</option>
+                    <option value="unassigned" ${staffFilter === 'unassigned' ? 'selected' : ''}>Sin Asignar / General</option>
+                    ${businessStaff.map(st => `
+                      <option value="${st.id}" ${staffFilter === st.id ? 'selected' : ''}>${st.name} (${st.roleTitle || 'Especialista'})</option>
+                    `).join('')}
+                  </select>
+                </div>
+              ` : ''}
+
+              <button id="quick-manage-slots-btn" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
+                <i class="fas fa-calendar-times"></i> Bloquear / Liberar Horas
+              </button>
+            </div>
           </div>
 
           ${filteredAppointments.length === 0 ? `
             <div class="text-center py-12 text-slate-400">
               <i class="far fa-calendar-times text-4xl mb-2"></i>
-              <p class="text-sm font-semibold">No hay reservas en esta categoría.</p>
+              <p class="text-sm font-semibold">No hay reservas en esta categoría o filtro de especialista.</p>
             </div>
           ` : `
             <div class="overflow-x-auto">
@@ -2974,6 +3099,7 @@ class App {
                   <tr>
                     <th class="py-3 px-4">Fecha / Hora</th>
                     <th class="py-3 px-4">Cliente</th>
+                    <th class="py-3 px-4">Especialista</th>
                     <th class="py-3 px-4">Servicio</th>
                     <th class="py-3 px-4">Monto</th>
                     <th class="py-3 px-4">Estado</th>
@@ -2991,6 +3117,12 @@ class App {
                         <div class="font-bold text-slate-800">${apt.clientName}</div>
                         <div class="text-slate-400 text-[11px]">${apt.clientPhone}</div>
                       </td>
+                      <td class="py-3.5 px-4">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold">
+                          <i class="fas fa-user-tag text-blue-500 text-[10px]"></i>
+                          <span>${apt.staffName || 'Sin asignar / General'}</span>
+                        </span>
+                      </td>
                       <td class="py-3.5 px-4 font-medium text-slate-700">
                         <div class="font-semibold text-slate-800">${apt.serviceName}</div>
                         ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
@@ -3006,32 +3138,32 @@ class App {
                       <td class="py-3.5 px-4 text-right space-x-1">
                         <!-- Aceptar / Confirmar -->
                         ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
+                          <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
                             <i class="fas fa-check-circle"></i> Aceptar
                           </button>
                         ` : ''}
 
                         <!-- Marcar como Completada -->
                         ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
+                          <button class="status-change-btn px-2.5 py-1.5 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="completed" title="Marcar como atendida / completada">
                             <i class="fas fa-clipboard-check"></i> Completar
                           </button>
                         ` : ''}
 
                         <!-- Reprogramar / Modificar -->
-                        <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
+                        <button class="edit-appointment-btn px-2.5 py-1.5 text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" title="Modificar fecha, hora, servicio o datos">
                           <i class="fas fa-calendar-alt"></i> Modificar
                         </button>
 
                         <!-- Cancelar -->
                         ${apt.status !== 'cancelled' ? `
-                          <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
+                          <button class="status-change-btn px-2.5 py-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 cursor-pointer" data-apt-id="${apt.id}" data-status="cancelled" title="Cancelar reserva">
                             <i class="fas fa-ban"></i> Cancelar
                           </button>
                         ` : ''}
 
                         <!-- Eliminar -->
-                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center" data-apt-id="${apt.id}" title="Eliminar registro">
+                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
                           <i class="fas fa-trash-alt"></i>
                         </button>
                       </td>
@@ -3043,6 +3175,10 @@ class App {
           `}
         </div>
       `;
+    }
+
+    if (this.activeDashboardTab === 'team') {
+      return this.renderTeamTabContent(currentBiz);
     }
 
     if (this.activeDashboardTab === 'blocked-slots') {
@@ -3368,6 +3504,482 @@ class App {
         </div>
       `;
     }
+  }
+
+  // --- SUB-CONTENIDO: GESTIÓN DE EQUIPO Y ESPECIALISTAS ---
+  renderTeamTabContent(currentBiz) {
+    const plan = currentBiz.plan || 'basic';
+    const isBasic = plan === 'basic';
+    const isPro = plan === 'pro';
+    const isUnlimited = plan === 'unlimited';
+
+    if (isBasic) {
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          <div class="max-w-3xl mx-auto text-center py-6">
+            <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+              <i class="fas fa-lock"></i>
+            </div>
+            <span class="text-xs uppercase font-extrabold text-amber-600 tracking-wider">Función Premium</span>
+            <h2 class="text-2xl font-black text-slate-900 mt-1">Gestión de Múltiples Especialistas</h2>
+            <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
+              El <strong>Plan Básico ($10/mes)</strong> está optimizado para <strong>1 solo operador (Dueño)</strong>. Si cuentas con un equipo de trabajo (barberos, estilistas, terapeutas, manicuristas o médicos), sube de plan para que cada colaborador tenga su propia agenda y disponibilidad independiente.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold mb-2">
+                  <i class="fas fa-users"></i>
+                </div>
+                <h4 class="text-xs font-bold text-slate-900">Múltiples Colaboradores</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Crea perfiles con fotos, especialidades y teléfonos directos.</p>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-2">
+                  <i class="fas fa-calendar-check"></i>
+                </div>
+                <h4 class="text-xs font-bold text-slate-900">Horarios Independientes</h4>
+                <p class="text-[11px] text-slate-500 mt-1">Cada colaborador tiene sus turnos, días libres y descansos propios.</p>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-2">
+                  <i class="fas fa-filter"></i>
+                </div>
+                <h4 class="text-xs font-bold text-slate-900">Filtro para Clientes</h4>
+                <p class="text-[11px] text-slate-500 mt-1">El cliente puede elegir a su especialista favorito o "Cualquiera disponible".</p>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button id="dash-upgrade-team-pro-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-rocket"></i> Subir a Plan Profesional ($18/mes - Hasta 5 Especialistas)
+              </button>
+              <button id="dash-upgrade-team-unlimited-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-crown text-amber-300"></i> Plan Ilimitado ($35/mes - Especialistas ∞)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const staffList = storage.getBusinessStaffSync(currentBiz.id) || [];
+    const maxAllowed = isPro ? 5 : Infinity;
+    const canAdd = staffList.length < maxAllowed;
+
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-lg font-bold text-slate-900">Equipo de Trabajo y Especialistas</h2>
+              <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full ${isPro ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">
+                ${staffList.length} / ${isPro ? '5' : '∞'} Especialistas (${isPro ? 'Plan Pro' : 'Plan Ilimitado'})
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Configura los integrantes de tu equipo, sus especialidades y sus turnos individuales.</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button 
+              id="add-new-staff-btn" 
+              ${!canAdd ? 'disabled title="Has alcanzado el límite de 5 especialistas del Plan Pro"' : ''}
+              class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 cursor-pointer"
+            >
+              <i class="fas fa-user-plus"></i> Agregar Especialista
+            </button>
+          </div>
+        </div>
+
+        ${staffList.length === 0 ? `
+          <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+            <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-3">
+              <i class="fas fa-users-cog"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800">Aún no has agregado especialistas</h3>
+            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Agrega a los colaboradores de tu local para que tus clientes puedan reservar con ellos específicamente o mediante turno asignado.
+            </p>
+            <button id="add-new-staff-btn" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer">
+              <i class="fas fa-plus"></i> Agregar Primer Especialista
+            </button>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${staffList.map(st => {
+              const svcs = st.services || ['all'];
+              const isAll = svcs.includes('all');
+              const svcNames = isAll 
+                ? 'Todos los servicios del catálogo' 
+                : currentBiz.services?.filter(s => svcs.includes(s.id)).map(s => s.name).join(', ') || 'Sin servicios asignados';
+              
+              const hasCustom = Boolean(st.schedule);
+
+              return `
+                <div class="p-5 rounded-3xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition-all flex flex-col justify-between space-y-4">
+                  <div>
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="flex items-center gap-3">
+                        ${st.avatarUrl ? `
+                          <img src="${st.avatarUrl}" alt="${st.name}" class="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-xs">
+                        ` : `
+                          <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-lg font-black shadow-xs">
+                            ${st.name.charAt(0).toUpperCase()}
+                          </div>
+                        `}
+                        <div>
+                          <h3 class="text-sm font-bold text-slate-900">${st.name}</h3>
+                          <span class="text-xs text-blue-600 font-semibold block">${st.roleTitle || 'Especialista'}</span>
+                          ${st.phone ? `<span class="text-[11px] text-slate-400 font-mono"><i class="fab fa-whatsapp mr-1 text-emerald-500"></i>${st.phone}</span>` : ''}
+                        </div>
+                      </div>
+
+                      <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${st.isActive !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+                        ${st.isActive !== false ? 'Activo' : 'Pausado'}
+                      </span>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-200/70 space-y-2 text-xs">
+                      <div>
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Servicios:</span>
+                        <p class="text-slate-700 text-xs truncate" title="${svcNames}">
+                          <i class="fas fa-check-circle text-blue-500 mr-1 text-[11px]"></i>${svcNames}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Horario:</span>
+                        <p class="text-slate-700 text-xs">
+                          <i class="fas fa-clock text-slate-400 mr-1 text-[11px]"></i>
+                          ${hasCustom ? 'Horario personalizado' : 'Horario general del negocio'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pt-3 border-t border-slate-200 flex items-center justify-between gap-1">
+                    <button 
+                      class="toggle-staff-status-btn text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${st.isActive !== false ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}"
+                      data-staff-id="${st.id}"
+                      data-active="${st.isActive !== false}"
+                    >
+                      <i class="fas ${st.isActive !== false ? 'fa-pause' : 'fa-play'} mr-1"></i>
+                      ${st.isActive !== false ? 'Pausar' : 'Activar'}
+                    </button>
+
+                    <div class="flex items-center gap-1">
+                      <button class="edit-staff-btn text-xs font-bold text-blue-600 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer" data-staff-id="${st.id}">
+                        <i class="fas fa-edit mr-1"></i> Editar
+                      </button>
+                      <button class="delete-staff-btn text-xs font-bold text-rose-600 hover:bg-rose-50 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer" data-staff-id="${st.id}" data-staff-name="${st.name}">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  // --- MODAL: AGREGAR / EDITAR ESPECIALISTA ---
+  renderStaffModal(business, staffMember = null) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const isEdit = Boolean(staffMember);
+    const services = business.services || [];
+    const staffServices = staffMember?.services || ['all'];
+    const isAllServices = staffServices.includes('all');
+
+    const bizSchedule = business.schedule || {
+      days: [1, 2, 3, 4, 5, 6],
+      openTime: '08:00',
+      closeTime: '18:00',
+      breakStart: '12:00',
+      breakEnd: '13:00'
+    };
+
+    const hasCustomSchedule = Boolean(staffMember?.schedule);
+    const stSchedule = staffMember?.schedule || bizSchedule;
+
+    const dayLabels = [
+      { num: 0, label: 'Dom' },
+      { num: 1, label: 'Lun' },
+      { num: 2, label: 'Mar' },
+      { num: 3, label: 'Mié' },
+      { num: 4, label: 'Jue' },
+      { num: 5, label: 'Vie' },
+      { num: 6, label: 'Sáb' }
+    ];
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg">
+                <i class="fas ${isEdit ? 'fa-user-edit' : 'fa-user-plus'}"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-blue-200 font-bold">Gestión de Equipo</span>
+                <h3 class="text-xl font-bold">${isEdit ? 'Editar Especialista' : 'Nuevo Especialista'}</h3>
+              </div>
+            </div>
+            <button id="close-staff-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Form Body -->
+          <form id="staff-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+            <!-- Nombre y Cargo -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Nombre y Apellidos *
+                </label>
+                <input 
+                  type="text" 
+                  id="staff-name-input" 
+                  value="${staffMember?.name || ''}" 
+                  placeholder="Ej: Mario Ruiz" 
+                  required 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Especialidad / Cargo *
+                </label>
+                <input 
+                  type="text" 
+                  id="staff-role-input" 
+                  value="${staffMember?.roleTitle || 'Especialista'}" 
+                  placeholder="Ej: Barbero Senior, Colorista" 
+                  required 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- WhatsApp y Foto URL -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Teléfono / WhatsApp (Opcional)
+                </label>
+                <input 
+                  type="tel" 
+                  id="staff-phone-input" 
+                  value="${staffMember?.phone || ''}" 
+                  placeholder="+506 8888 7777" 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Foto / Avatar URL (Opcional)
+                </label>
+                <input 
+                  type="url" 
+                  id="staff-avatar-input" 
+                  value="${staffMember?.avatarUrl || ''}" 
+                  placeholder="https://ejemplo.com/foto.jpg" 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Servicios que atiende -->
+            <div class="pt-2 border-t border-slate-100">
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Servicios que atiende
+                </label>
+                <label class="flex items-center gap-1.5 text-xs text-blue-600 font-bold cursor-pointer">
+                  <input type="checkbox" id="staff-all-services-checkbox" ${isAllServices ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500">
+                  <span>Todos los servicios</span>
+                </label>
+              </div>
+
+              <div id="staff-services-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 ${isAllServices ? 'opacity-50 pointer-events-none' : ''}">
+                ${services.map(srv => `
+                  <label class="p-2.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-blue-50/50 flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-800">
+                    <input 
+                      type="checkbox" 
+                      class="staff-service-chk rounded text-blue-600 focus:ring-blue-500" 
+                      value="${srv.id}" 
+                      ${(isAllServices || staffServices.includes(srv.id)) ? 'checked' : ''}
+                    >
+                    <span class="truncate">${srv.name}</span>
+                  </label>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Horarios de Atención -->
+            <div class="pt-2 border-t border-slate-100">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Horario de Trabajo
+              </label>
+
+              <div class="space-y-2 mb-3">
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                  <input type="radio" name="staff-schedule-type" value="inherit" ${!hasCustomSchedule ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500">
+                  <span>Heredar horario general del negocio (${bizSchedule.openTime || '08:00'} - ${bizSchedule.closeTime || '18:00'})</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer">
+                  <input type="radio" name="staff-schedule-type" value="custom" ${hasCustomSchedule ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500">
+                  <span>Personalizar días y horas para este especialista</span>
+                </label>
+              </div>
+
+              <div id="staff-custom-schedule-box" class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 ${!hasCustomSchedule ? 'hidden' : ''}">
+                <!-- Días laborables -->
+                <div>
+                  <span class="block text-[11px] font-bold text-slate-600 mb-1.5">Días que labora:</span>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    ${dayLabels.map(d => `
+                      <label class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" class="staff-schedule-day-chk" value="${d.num}" ${(stSchedule.days || [1,2,3,4,5,6]).includes(d.num) ? 'checked' : ''}>
+                        <span>${d.label}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Horas de Apertura y Cierre -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Hora Inicio</label>
+                    <input type="time" id="staff-open-time" value="${stSchedule.openTime || '08:00'}" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Hora Fin</label>
+                    <input type="time" id="staff-close-time" value="${stSchedule.closeTime || '18:00'}" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+                  </div>
+                </div>
+
+                <!-- Descanso / Almuerzo -->
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Inicio Descanso (Opcional)</label>
+                    <input type="time" id="staff-break-start" value="${stSchedule.breakStart || ''}" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+                  </div>
+                  <div>
+                    <label class="block text-[11px] font-bold text-slate-600 mb-1">Fin Descanso (Opcional)</label>
+                    <input type="time" id="staff-break-end" value="${stSchedule.breakEnd || ''}" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="pt-4 border-t border-slate-200 flex items-center justify-end gap-2">
+              <button type="button" id="cancel-staff-btn" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button type="submit" id="save-staff-btn" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer">
+                ${isEdit ? 'Actualizar Especialista' : 'Guardar Especialista'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-staff-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('cancel-staff-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    const allServicesChk = document.getElementById('staff-all-services-checkbox');
+    const servicesListDiv = document.getElementById('staff-services-list');
+    allServicesChk?.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        servicesListDiv.classList.add('opacity-50', 'pointer-events-none');
+        document.querySelectorAll('.staff-service-chk').forEach(c => c.checked = true);
+      } else {
+        servicesListDiv.classList.remove('opacity-50', 'pointer-events-none');
+      }
+    });
+
+    const customScheduleBox = document.getElementById('staff-custom-schedule-box');
+    document.querySelectorAll('input[name="staff-schedule-type"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'custom') {
+          customScheduleBox.classList.remove('hidden');
+        } else {
+          customScheduleBox.classList.add('hidden');
+        }
+      });
+    });
+
+    document.getElementById('staff-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('staff-name-input').value.trim();
+      const roleTitle = document.getElementById('staff-role-input').value.trim();
+      const phone = document.getElementById('staff-phone-input').value.trim();
+      const avatarUrl = document.getElementById('staff-avatar-input').value.trim();
+
+      const isAll = document.getElementById('staff-all-services-checkbox').checked;
+      let selectedServices = ['all'];
+      if (!isAll) {
+        selectedServices = Array.from(document.querySelectorAll('.staff-service-chk:checked')).map(c => c.value);
+        if (selectedServices.length === 0) selectedServices = ['all'];
+      }
+
+      const scheduleType = document.querySelector('input[name="staff-schedule-type"]:checked')?.value || 'inherit';
+      let customSchedule = null;
+      if (scheduleType === 'custom') {
+        const days = Array.from(document.querySelectorAll('.staff-schedule-day-chk:checked')).map(c => parseInt(c.value, 10));
+        const openTime = document.getElementById('staff-open-time').value;
+        const closeTime = document.getElementById('staff-close-time').value;
+        const breakStart = document.getElementById('staff-break-start').value || null;
+        const breakEnd = document.getElementById('staff-break-end').value || null;
+        customSchedule = {
+          days: days.length > 0 ? days : [1, 2, 3, 4, 5, 6],
+          openTime: openTime || '08:00',
+          closeTime: closeTime || '18:00',
+          breakStart,
+          breakEnd
+        };
+      }
+
+      const payload = {
+        name,
+        roleTitle,
+        phone,
+        avatarUrl,
+        services: selectedServices,
+        schedule: customSchedule,
+        isActive: staffMember ? staffMember.isActive : true
+      };
+
+      try {
+        if (isEdit) {
+          await storage.updateStaffMember(business.id, staffMember.id, payload);
+          this.showToast('Especialista actualizado con éxito.', 'success');
+        } else {
+          await storage.createStaffMember(business.id, payload);
+          this.showToast('Especialista agregado con éxito.', 'success');
+        }
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al guardar especialista.', 'error');
+      }
+    });
   }
 
   // --- SUB-CONTENIDO: BLOQUEOS Y GESTIÓN VISUAL DE HORARIOS ---
@@ -3827,6 +4439,67 @@ class App {
           await storage.deleteAppointment(aptId);
           this.showToast('Reserva eliminada.', 'info');
           this.renderCurrentView();
+        }
+      });
+    });
+
+    // Filtro por Especialista en Agenda
+    const staffFilterSelect = document.getElementById('owner-staff-filter-select');
+    staffFilterSelect?.addEventListener('change', (e) => {
+      this.ownerStaffFilter = e.target.value;
+      this.renderCurrentView();
+    });
+
+    // Pestaña de Equipo / Especialistas
+    document.getElementById('add-new-staff-btn')?.addEventListener('click', () => {
+      this.renderStaffModal(currentBiz);
+    });
+
+    document.getElementById('dash-upgrade-team-pro-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+    });
+
+    document.getElementById('dash-upgrade-team-unlimited-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+    });
+
+    document.querySelectorAll('.edit-staff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffList = storage.getBusinessStaffSync(currentBiz.id);
+        const member = staffList.find(s => s.id === staffId);
+        if (member) {
+          this.renderStaffModal(currentBiz, member);
+        }
+      });
+    });
+
+    document.querySelectorAll('.delete-staff-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffName = btn.getAttribute('data-staff-name') || 'este especialista';
+        if (confirm(`¿Estás seguro de que deseas eliminar a ${staffName}? Sus citas históricas se mantendrán registradas.`)) {
+          try {
+            await storage.deleteStaffMember(currentBiz.id, staffId);
+            this.showToast('Especialista eliminado correctamente.', 'success');
+            this.renderCurrentView();
+          } catch (err) {
+            this.showToast(err.message || 'Error al eliminar especialista.', 'error');
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.toggle-staff-status-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const currentActive = btn.getAttribute('data-active') === 'true';
+        try {
+          await storage.updateStaffMember(currentBiz.id, staffId, { isActive: !currentActive });
+          this.showToast(!currentActive ? 'Especialista activado.' : 'Especialista pausado.', 'info');
+          this.renderCurrentView();
+        } catch (err) {
+          this.showToast(err.message || 'Error al cambiar estado.', 'error');
         }
       });
     });
