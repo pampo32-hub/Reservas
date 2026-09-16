@@ -602,12 +602,11 @@ app.get('/api/appointments', async (req, res) => {
   }
 });
 
-// Obtener todos los negocios (Público: solo visibles y no bloqueados)
+// Obtener todos los negocios
 app.get('/api/businesses', async (req, res) => {
   try {
     const bizRes = await pool.query(`
       SELECT * FROM reservas_businesses 
-      WHERE (is_hidden IS NOT TRUE AND is_blocked IS NOT TRUE)
       ORDER BY is_demo DESC, created_at ASC
     `);
     const srvRes = await pool.query('SELECT * FROM reservas_services ORDER BY created_at ASC');
@@ -634,8 +633,8 @@ app.get('/api/businesses', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       plan: b.plan || 'pro',
-      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
-      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
+      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 8 : 15)),
+      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 50 : 200)),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows
@@ -690,8 +689,8 @@ app.get('/api/businesses/:id', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       plan: b.plan || 'pro',
-      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 6 : 15)),
-      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 150 : 300)),
+      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 25 : (b.plan === 'basic' ? 8 : 15)),
+      monthlyBookingLimit: b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : (b.plan === 'unlimited' ? null : (b.plan === 'basic' ? 50 : 200)),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
@@ -716,17 +715,20 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
     const { id } = req.params;
     const { plan } = req.body;
     
-    let priceUsd = 6;
-    let limit = 150;
+    let priceUsd = 8;
+    let limit = 50;
     if (plan === 'unlimited') {
       priceUsd = 25;
       limit = null;
     } else if (plan === 'pro') {
       priceUsd = 15;
-      limit = 300;
+      limit = 200;
+    } else if (plan === 'test') {
+      priceUsd = 0.10;
+      limit = 10;
     } else {
-      priceUsd = 6;
-      limit = 150;
+      priceUsd = 8;
+      limit = 50;
     }
 
     await pool.query(`
@@ -744,7 +746,7 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
   }
 });
 
-// Actualizar negocio completo
+// Actualizar negocio completo (Modificar datos)
 app.put('/api/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -766,19 +768,36 @@ app.put('/api/businesses/:id', async (req, res) => {
         features = COALESCE($12, features),
         schedule = COALESCE($13, schedule),
         social_links = COALESCE($14, social_links),
-        auto_confirm_appointments = COALESCE($15, auto_confirm_appointments)
-      WHERE id = $16
+        auto_confirm_appointments = COALESCE($15, auto_confirm_appointments),
+        plan = COALESCE($16, plan),
+        is_blocked = COALESCE($17, is_blocked),
+        block_reason = COALESCE($18, block_reason),
+        is_hidden = COALESCE($19, is_hidden)
+      WHERE id = $20
     `, [
-      b.name, b.category, b.categoryLabel, b.city, b.address,
-      b.phone, b.email, b.description, b.image, b.coverImage,
-      b.priceRange, b.features ? JSON.stringify(b.features) : null,
+      b.name !== undefined ? b.name : null,
+      b.category !== undefined ? b.category : null,
+      b.categoryLabel !== undefined ? b.categoryLabel : null,
+      b.city !== undefined ? b.city : null,
+      b.address !== undefined ? b.address : null,
+      b.phone !== undefined ? b.phone : null,
+      b.email !== undefined ? b.email : null,
+      b.description !== undefined ? b.description : null,
+      b.image !== undefined ? b.image : null,
+      b.coverImage !== undefined ? b.coverImage : null,
+      b.priceRange !== undefined ? b.priceRange : null,
+      b.features ? JSON.stringify(b.features) : null,
       b.schedule ? JSON.stringify(b.schedule) : null,
       b.socialLinks ? JSON.stringify(b.socialLinks) : (b.social_links ? JSON.stringify(b.social_links) : null),
       b.autoConfirmAppointments !== undefined ? Boolean(b.autoConfirmAppointments) : null,
+      b.plan !== undefined ? b.plan : null,
+      b.isBlocked !== undefined ? Boolean(b.isBlocked) : null,
+      b.blockReason !== undefined ? b.blockReason : null,
+      b.isHidden !== undefined ? Boolean(b.isHidden) : null,
       id
     ]);
 
-    res.json({ success: true, message: 'Perfil del negocio actualizado' });
+    res.json({ success: true, message: 'Perfil del negocio actualizado exitosamente' });
   } catch (error) {
     console.error('Error actualizando negocio:', error);
     res.status(500).json({ error: 'Error al actualizar negocio' });

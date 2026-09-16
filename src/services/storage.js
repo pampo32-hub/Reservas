@@ -590,10 +590,78 @@ class StorageService {
   }
 
   async deleteBusiness(businessId) {
+    if (this.isOnlineApi) {
+      try {
+        await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
+        await this.loadFromApi();
+        return true;
+      } catch (e) {
+        console.error('Error eliminando negocio en API:', e);
+      }
+    }
     const businesses = this.getBusinesses().filter(b => b.id !== businessId);
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
     this.businessesCache = businesses;
     return true;
+  }
+
+  async deleteBusinessByDeveloper(businessId) {
+    return this.deleteBusiness(businessId);
+  }
+
+  async toggleBusinessBlock(businessId, isBlocked, reason = '') {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/block`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isBlocked, reason })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return await res.json();
+        }
+      } catch (e) {
+        console.error('Error bloqueando negocio en API:', e);
+      }
+    }
+
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      biz.isBlocked = Boolean(isBlocked);
+      biz.blockReason = reason;
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return { success: true, isBlocked };
+  }
+
+  async toggleBusinessVisibility(businessId, isHidden) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/visibility`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isHidden })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return await res.json();
+        }
+      } catch (e) {
+        console.error('Error actualizando visibilidad en API:', e);
+      }
+    }
+
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      biz.isHidden = Boolean(isHidden);
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return { success: true, isHidden };
   }
 
   getActiveBusinessId() {

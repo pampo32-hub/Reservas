@@ -719,17 +719,22 @@ class App {
   renderBusinessCard(biz) {
     const isUnlimited = biz.plan === 'unlimited';
     const isPro = biz.plan === 'pro';
+    const isBlocked = Boolean(biz.isBlocked);
 
     return `
-      <div class="bg-white rounded-3xl border ${isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md' : isPro ? 'border-amber-300 shadow-sm' : 'border-slate-200 shadow-xs'} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
+      <div class="bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md' : isPro ? 'border-amber-300 shadow-sm' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
         <!-- Image Header -->
         <div class="relative h-52 overflow-hidden bg-slate-100">
-          <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(biz.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy">
+          <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(biz.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isBlocked ? 'grayscale filter' : ''}" loading="lazy">
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30"></div>
           
           <!-- Badges de Plan y Tipo de Comercio -->
           <div class="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            ${isUnlimited ? `
+            ${isBlocked ? `
+              <span class="bg-rose-600 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-rose-400 animate-pulse">
+                <i class="fas fa-ban"></i> Negocio Bloqueado
+              </span>
+            ` : isUnlimited ? `
               <span class="bg-gradient-to-r from-purple-700 to-indigo-700 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-purple-400/40 animate-pulse">
                 <i class="fas fa-crown text-amber-300"></i> Top Destacado
               </span>
@@ -800,15 +805,55 @@ class App {
             </div>
           </div>
 
-          <!-- Action Button -->
-          <div class="mt-5 pt-3">
+          <!-- Action Buttons -->
+          <div class="mt-5 pt-3 space-y-2.5">
             <button 
-              class="view-biz-btn w-full py-2.5 px-4 ${isUnlimited ? 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800' : 'bg-slate-900 hover:bg-blue-600'} text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+              class="view-biz-btn w-full py-2.5 px-4 ${isBlocked ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (isUnlimited ? 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800' : 'bg-slate-900 hover:bg-blue-600')} text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
               data-business-id="${biz.id}"
+              ${isBlocked ? 'disabled title="Este comercio se encuentra temporalmente suspendido"' : ''}
             >
-              <span>Ver Servicios & Reservar</span>
-              <i class="fas fa-arrow-right text-xs"></i>
+              <span>${isBlocked ? 'Comercio Bloqueado / Suspendido' : 'Ver Servicios & Reservar'}</span>
+              <i class="fas ${isBlocked ? 'fa-lock' : 'fa-arrow-right'} text-xs"></i>
             </button>
+
+            <!-- Barra de Administración Rápida de Negocios (Bloquear, Modificar, Eliminar) -->
+            <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
+              <!-- 1. Bloquear / Desbloquear -->
+              <button 
+                type="button"
+                class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
+                data-biz-id="${biz.id}"
+                data-biz-name="${this.escapeHtml(biz.name)}"
+                data-is-blocked="${isBlocked}"
+                title="${isBlocked ? 'Desbloquear negocio' : 'Bloquear negocio'}"
+              >
+                <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'} text-xs"></i>
+                <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
+              </button>
+
+              <!-- 2. Modificar -->
+              <button 
+                type="button"
+                class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                data-biz-id="${biz.id}"
+                title="Modificar y editar información del negocio"
+              >
+                <i class="fas fa-edit text-xs"></i>
+                <span>Modificar</span>
+              </button>
+
+              <!-- 3. Eliminar -->
+              <button 
+                type="button"
+                class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                data-biz-id="${biz.id}"
+                data-biz-name="${this.escapeHtml(biz.name)}"
+                title="Eliminar este negocio permanentemente"
+              >
+                <i class="fas fa-trash-alt text-xs"></i>
+                <span>Eliminar</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1043,6 +1088,74 @@ class App {
         btn.addEventListener('click', () => {
           const bId = btn.getAttribute('data-business-id');
           this.navigateTo('business-detail', { businessId: bId });
+        });
+      });
+
+      // 1. Bloquear / Desbloquear negocio desde la tarjeta
+      document.querySelectorAll('.card-toggle-block-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const bizId = btn.getAttribute('data-biz-id');
+          const bizName = btn.getAttribute('data-biz-name');
+          const isCurrentlyBlocked = btn.getAttribute('data-is-blocked') === 'true';
+
+          if (isCurrentlyBlocked) {
+            if (confirm(`¿Deseas DESBLOQUEAR el negocio "${bizName}" para que vuelva a recibir reservas?`)) {
+              try {
+                btn.disabled = true;
+                await storage.toggleBusinessBlock(bizId, false, '');
+                this.showToast(`El negocio "${bizName}" ha sido DESBLOQUEADO exitosamente.`, 'success');
+                updateLiveSearch();
+              } catch (err) {
+                this.showToast(err.message || 'Error al desbloquear.', 'error');
+                btn.disabled = false;
+              }
+            }
+          } else {
+            const reason = prompt(`¿Motivo de suspensión/bloqueo para "${bizName}"? (opcional):`, 'Suspensión administrativa temporal');
+            if (reason !== null) {
+              try {
+                btn.disabled = true;
+                await storage.toggleBusinessBlock(bizId, true, reason);
+                this.showToast(`El negocio "${bizName}" ha sido BLOQUEADO/SUSPENDIDO.`, 'warning');
+                updateLiveSearch();
+              } catch (err) {
+                this.showToast(err.message || 'Error al bloquear.', 'error');
+                btn.disabled = false;
+              }
+            }
+          }
+        });
+      });
+
+      // 2. Modificar negocio desde la tarjeta
+      document.querySelectorAll('.card-edit-biz-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const bizId = btn.getAttribute('data-biz-id');
+          if (bizId) {
+            this.renderEditBusinessModal(bizId);
+          }
+        });
+      });
+
+      // 3. Eliminar negocio desde la tarjeta
+      document.querySelectorAll('.card-delete-biz-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const bizId = btn.getAttribute('data-biz-id');
+          const bizName = btn.getAttribute('data-biz-name');
+          if (confirm(`⚠️ ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará el comercio, sus servicios y reservas asociadas en la base de datos.`)) {
+            try {
+              btn.disabled = true;
+              await storage.deleteBusiness(bizId);
+              this.showToast(`Negocio "${bizName}" eliminado definitivamente.`, 'success');
+              updateLiveSearch();
+            } catch (err) {
+              this.showToast(err.message || 'Error al eliminar negocio.', 'error');
+              btn.disabled = false;
+            }
+          }
         });
       });
 
@@ -4641,6 +4754,12 @@ class App {
                                     <i class="fas fa-external-link-alt text-xs"></i>
                                   </button>
 
+                                  <!-- Modificar / Editar Negocio -->
+                                  <button class="dev-edit-biz-btn px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${b.id}" data-name="${b.name}" title="Modificar datos completos del negocio">
+                                    <i class="fas fa-edit text-xs"></i>
+                                    <span>Modificar</span>
+                                  </button>
+
                                   <!-- Ocultar / Mostrar en Inicio -->
                                   ${b.isHidden ? `
                                     <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="show" data-name="${b.name}" title="Hacer visible en la página principal">
@@ -5384,6 +5503,16 @@ class App {
           const bizId = e.currentTarget.getAttribute('data-id');
           if (bizId) {
             this.navigateTo('business-detail', { businessId: bizId });
+          }
+        });
+      });
+
+      // Modificar / Editar negocio
+      document.querySelectorAll('.dev-edit-biz-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const bizId = e.currentTarget.getAttribute('data-id');
+          if (bizId) {
+            this.renderEditBusinessModal(bizId);
           }
         });
       });
@@ -7164,6 +7293,229 @@ class App {
       script.onload = () => resolve(window.paypal);
       script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
       document.head.appendChild(script);
+    });
+  }
+
+  // ==========================================
+  // MODAL DE MODIFICACIÓN / EDICIÓN DE NEGOCIO
+  // ==========================================
+  renderEditBusinessModal(businessId) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const biz = storage.getBusinessById(businessId);
+    if (!biz) {
+      this.showToast('No se encontró el negocio a modificar.', 'error');
+      return;
+    }
+
+    const categories = storage.getCategories().filter(c => c.id !== 'all');
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+          
+          <!-- Header -->
+          <div class="p-5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative border-b border-slate-800 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-md flex-shrink-0">
+                <i class="fas fa-edit"></i>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase tracking-wider text-blue-300 font-extrabold block">Directorio de Comercios</span>
+                <h3 class="text-base sm:text-lg font-black text-white">Modificar Datos del Negocio</h3>
+              </div>
+            </div>
+            <button id="close-edit-biz-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+
+          <!-- Formulario con scroll -->
+          <form id="edit-business-form" class="p-6 space-y-4 overflow-y-auto text-xs sm:text-sm flex-1">
+            
+            <!-- ID y Tipo -->
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">ID del Comercio: <strong class="font-mono text-slate-800">${biz.id}</strong></span>
+              <span class="px-2.5 py-0.5 rounded-md font-bold ${biz.isDemo ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'}">
+                ${biz.isDemo ? 'Comercio de Muestra' : 'Comercio Real'}
+              </span>
+            </div>
+
+            <!-- Nombre y Categoría -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Nombre del Comercio *</label>
+                <input type="text" id="edit-biz-name" value="${this.escapeHtml(biz.name || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Categoría Principal *</label>
+                <select id="edit-biz-category" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  ${categories.map(c => `
+                    <option value="${c.id}" ${biz.category === c.id ? 'selected' : ''}>${c.name}</option>
+                  `).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- Ciudad y Dirección -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Ciudad / Cantón (Costa Rica) *</label>
+                <input type="text" id="edit-biz-city" value="${this.escapeHtml(biz.city || 'San José')}" required placeholder="Ej. Escazú, San José" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Dirección Exacta</label>
+                <input type="text" id="edit-biz-address" value="${this.escapeHtml(biz.address || '')}" placeholder="Ej. 100m norte del parque central" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Teléfono y Correo -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Teléfono / WhatsApp (+506) *</label>
+                <input type="tel" id="edit-biz-phone" value="${this.escapeHtml(biz.phone || '')}" required placeholder="+506 8888 7777" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Correo Electrónico</label>
+                <input type="email" id="edit-biz-email" value="${this.escapeHtml(biz.email || '')}" placeholder="contacto@negocio.cr" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1 text-xs">Descripción del Comercio</label>
+              <textarea id="edit-biz-desc" rows="2" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">${this.escapeHtml(biz.description || '')}</textarea>
+            </div>
+
+            <!-- URLs de Imágenes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">URL Imagen de Perfil / Logo</label>
+                <input type="url" id="edit-biz-image" value="${this.escapeHtml(biz.image || '')}" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">URL Foto de Portada</label>
+                <input type="url" id="edit-biz-cover" value="${this.escapeHtml(biz.coverImage || '')}" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Plan y Control de Bloqueo -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Plan de Suscripción</label>
+                <select id="edit-biz-plan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
+                  <option value="test" ${biz.plan === 'test' ? 'selected' : ''}>Prueba ($0.10 - 24h)</option>
+                  <option value="basic" ${biz.plan === 'basic' ? 'selected' : ''}>Básico ($8/mes - 50 res.)</option>
+                  <option value="pro" ${biz.plan === 'pro' ? 'selected' : ''}>Profesional ($15/mes - 200 res.)</option>
+                  <option value="unlimited" ${biz.plan === 'unlimited' ? 'selected' : ''}>Ilimitado ($25/mes - ∞)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Estado de Operación</label>
+                <select id="edit-biz-status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
+                  <option value="active" ${!biz.isBlocked ? 'selected' : ''}>🟢 Activo & Operando</option>
+                  <option value="blocked" ${biz.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Suspendido</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1 text-xs">Visibilidad</label>
+                <select id="edit-biz-visibility" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
+                  <option value="visible" ${!biz.isHidden ? 'selected' : ''}>👁️ Visible en Directorio</option>
+                  <option value="hidden" ${biz.isHidden ? 'selected' : ''}>🙈 Oculto en Inicio</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Motivo de Bloqueo (si aplica) -->
+            <div id="edit-biz-reason-container" class="${biz.isBlocked ? '' : 'hidden'}">
+              <label class="block font-bold text-rose-700 mb-1 text-xs">Motivo de Bloqueo / Suspensión</label>
+              <input type="text" id="edit-biz-reason" value="${this.escapeHtml(biz.blockReason || '')}" placeholder="Ej. Suspensión administrativa temporal..." class="w-full px-3.5 py-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs">
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button type="button" id="cancel-edit-biz-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                Cancelar
+              </button>
+              <button type="submit" id="save-edit-biz-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-save"></i>
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-edit-biz-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+    document.getElementById('cancel-edit-biz-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    const statusSelect = document.getElementById('edit-biz-status');
+    const reasonContainer = document.getElementById('edit-biz-reason-container');
+    statusSelect?.addEventListener('change', () => {
+      if (statusSelect.value === 'blocked') {
+        reasonContainer?.classList.remove('hidden');
+      } else {
+        reasonContainer?.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('edit-business-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-edit-biz-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+      }
+
+      const selectedCatId = document.getElementById('edit-biz-category')?.value;
+      const selectedCatObj = categories.find(c => c.id === selectedCatId);
+      const isBlockedVal = document.getElementById('edit-biz-status')?.value === 'blocked';
+      const isHiddenVal = document.getElementById('edit-biz-visibility')?.value === 'hidden';
+      const selectedPlan = document.getElementById('edit-biz-plan')?.value;
+
+      const updated = {
+        ...biz,
+        name: document.getElementById('edit-biz-name')?.value.trim(),
+        category: selectedCatId,
+        categoryLabel: selectedCatObj ? selectedCatObj.name : selectedCatId,
+        city: document.getElementById('edit-biz-city')?.value.trim(),
+        address: document.getElementById('edit-biz-address')?.value.trim(),
+        phone: document.getElementById('edit-biz-phone')?.value.trim(),
+        email: document.getElementById('edit-biz-email')?.value.trim(),
+        description: document.getElementById('edit-biz-desc')?.value.trim(),
+        image: document.getElementById('edit-biz-image')?.value.trim() || biz.image,
+        coverImage: document.getElementById('edit-biz-cover')?.value.trim() || biz.coverImage,
+        plan: selectedPlan,
+        isBlocked: isBlockedVal,
+        blockReason: isBlockedVal ? (document.getElementById('edit-biz-reason')?.value.trim() || 'Suspensión administrativa') : '',
+        isHidden: isHiddenVal
+      };
+
+      try {
+        await storage.saveBusiness(updated);
+        this.showToast(`¡Negocio "${updated.name}" actualizado con éxito!`, 'success');
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al guardar cambios del negocio.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Cambios';
+        }
+      }
     });
   }
 
