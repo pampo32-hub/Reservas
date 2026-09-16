@@ -11439,7 +11439,7 @@ class App {
                       Derechos de los Titulares (Acceso, Rectificación y Supresión)
                     </h4>
                     <p>
-                      Cualquier usuario puede solicitar en cualquier momento la actualización o eliminación definitiva de su perfil y registros contactando directamente al comercio o al canal de soporte oficial de Reservas CR a través de <strong class="text-blue-600">pampo32@gmail.com</strong>.
+                      Cualquier usuario puede solicitar en cualquier momento la actualización o eliminación definitiva de su perfil y registros contactando directamente al comercio o al canal de soporte oficial de Reservas CR a través de <a href="mailto:contacto@reservascr.app" class="text-blue-600 underline font-bold hover:text-blue-800">contacto@reservascr.app</a>.
                     </p>
                   </section>
                 </div>
