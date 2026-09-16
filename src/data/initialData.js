@@ -1248,3 +1248,106 @@ export const INITIAL_APPOINTMENTS = [
     createdAt: new Date().toISOString()
   }
 ];
+
+export const INITIAL_STAFF = [
+  // ==========================================
+  // 1. Barbería & Estilo Vintage (biz-1)
+  // ==========================================
+  {
+    id: 'staff-101',
+    businessId: 'biz-1',
+    name: 'Carlos Mora',
+    roleTitle: 'Master Barber & Fundador',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8877 6651',
+    services: ['all'],
+    schedule: null,
+    isActive: true
+  },
+  {
+    id: 'staff-102',
+    businessId: 'biz-1',
+    name: 'Bryan Salazar',
+    roleTitle: 'Especialista en Barba y Navaja',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8877 6652',
+    services: ['srv-102', 'srv-103', 'srv-104'],
+    schedule: null,
+    isActive: true
+  },
+  {
+    id: 'staff-103',
+    businessId: 'biz-1',
+    name: 'Mateo Fernández',
+    roleTitle: 'Estilista Urbano & Cortes Fade',
+    avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8877 6653',
+    services: ['srv-101', 'srv-103'],
+    schedule: null,
+    isActive: true
+  },
+
+  // ==========================================
+  // 2. Studio GLAM Salón & Nails Lounge (biz-2)
+  // ==========================================
+  {
+    id: 'staff-201',
+    businessId: 'biz-2',
+    name: 'Valeria Chacón',
+    roleTitle: 'Especialista en Uñas & Manicura Rusa',
+    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8344 1123',
+    services: ['srv-201', 'srv-202'],
+    schedule: null,
+    isActive: true
+  },
+  {
+    id: 'staff-202',
+    businessId: 'biz-2',
+    name: 'Sofía Valverde',
+    roleTitle: 'Master Stylist & Keratinas',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8344 1124',
+    services: ['srv-203'],
+    schedule: null,
+    isActive: true
+  },
+  {
+    id: 'staff-203',
+    businessId: 'biz-2',
+    name: 'Camila Rojas',
+    roleTitle: 'Estilista Integral & Tratamientos',
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8344 1125',
+    services: ['all'],
+    schedule: null,
+    isActive: true
+  },
+
+  // ==========================================
+  // 3. Centro Médico Familiar del Este (biz-3)
+  // ==========================================
+  {
+    id: 'staff-301',
+    businessId: 'biz-3',
+    name: 'Dra. Elena Castro',
+    roleTitle: 'Médico General & Preventivo',
+    avatarUrl: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 2271 8891',
+    services: ['all'],
+    schedule: null,
+    isActive: true
+  },
+  {
+    id: 'staff-302',
+    businessId: 'biz-3',
+    name: 'Dr. Alejandro Méndez',
+    roleTitle: 'Médico Internista',
+    avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 2271 8892',
+    services: ['srv-301', 'srv-302'],
+    schedule: null,
+    isActive: true
+  }
+];
+

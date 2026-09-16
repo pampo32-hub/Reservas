@@ -1,6 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CLIENTS } from './src/data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CLIENTS, INITIAL_STAFF } from './src/data/initialData.js';
 
 dotenv.config();
 
@@ -360,6 +360,44 @@ export async function initDatabase() {
         apt.clientEmail, apt.notes, apt.status, apt.whatsappOptIn !== false
       ]);
     }
+
+    // Sembrar o actualizar personal / especialistas iniciales de ejemplo
+    if (INITIAL_STAFF && Array.isArray(INITIAL_STAFF)) {
+      for (const st of INITIAL_STAFF) {
+        await client.query(`
+          INSERT INTO reservas_staff (
+            id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          ON CONFLICT (id) DO UPDATE SET
+            business_id = EXCLUDED.business_id,
+            name = EXCLUDED.name,
+            role_title = EXCLUDED.role_title,
+            avatar_url = EXCLUDED.avatar_url,
+            phone = EXCLUDED.phone,
+            services = EXCLUDED.services,
+            schedule = EXCLUDED.schedule,
+            is_active = EXCLUDED.is_active
+        `, [
+          st.id,
+          st.businessId,
+          st.name,
+          st.roleTitle || 'Especialista',
+          st.avatarUrl || '',
+          st.phone || '',
+          JSON.stringify(st.services || ['all']),
+          st.schedule ? JSON.stringify(st.schedule) : null,
+          st.isActive !== false
+        ]);
+      }
+      console.log('✨ Especialistas demo sembrados/actualizados en base de datos.');
+    }
+
+    // Asegurar planes adecuados para los negocios demo con equipo
+    await client.query(`
+      UPDATE reservas_businesses
+      SET plan = 'pro', monthly_booking_limit = 300, plan_price_usd = 18.00
+      WHERE id IN ('biz-1', 'biz-2', 'biz-3') AND (plan IS NULL OR plan = 'basic');
+    `);
 
     // Asegurar usuarios demo de negocios
     const demoUsers = [
