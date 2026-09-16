@@ -33,8 +33,20 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
-app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Rutas directas para el Manual de Usuario de Comercios
+app.get(['/manual-comercios-pdf', '/Manual_de_Usuario_Comercios_Reservas_CR.pdf', '/api/manual-pdf'], (req, res) => {
+  const pdfPath = path.join(__dirname, 'public', 'Manual_de_Usuario_Comercios_Reservas_CR.pdf');
+  res.sendFile(pdfPath);
+});
+
+app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'manual_usuario_comercios.html');
+  res.sendFile(htmlPath);
+});
 
 // ==========================================
 // ENDPOINTS DE AUTENTICACIÓN

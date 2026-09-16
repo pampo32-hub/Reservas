@@ -3219,7 +3219,11 @@ class App {
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer" title="Abrir y descargar Manual de Usuario en PDF">
+              <i class="fas fa-book-open text-xs"></i>
+              <span>Manual de Usuario (PDF)</span>
+            </a>
             <button id="dash-logout-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
               <i class="fas fa-sign-out-alt mr-1"></i> Salir del Panel
             </button>
@@ -3368,6 +3372,9 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
             <i class="fas fa-sliders-h mr-1.5 text-indigo-500"></i> Configurar Negocio
           </button>
+          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="manual">
+            <i class="fas fa-book-open mr-1.5 text-amber-500"></i> Manual & Ayuda
+          </button>
         </div>
 
         <!-- Dynamic Tab Content -->
@@ -3420,6 +3427,10 @@ class App {
 
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
+    if (this.activeDashboardTab === 'manual') {
+      return this.renderManualTabContent(currentBiz);
+    }
+
     if (this.activeDashboardTab === 'reports') {
       return this.renderReportsTabContent(currentBiz, appointments);
     }
@@ -4336,6 +4347,107 @@ class App {
             </div>
           </div>
 
+        </div>
+      </div>
+    `;
+  }
+
+  // --- SUB-CONTENIDO: MANUAL DE USUARIO Y GUÍA DE CAPACITACIÓN EXCLUSIVA PARA COMERCIOS ---
+  renderManualTabContent(currentBiz) {
+    return `
+      <div class="space-y-6 animate-fade-in">
+        <!-- Banner Principal del Manual -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-3xl border border-indigo-500/30 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div class="space-y-2 max-w-2xl">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider">
+                <i class="fas fa-book-open"></i> Guía Oficial de Capacitación
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 text-xs font-bold border border-white/10">
+                <i class="fas fa-lock text-amber-400 text-[10px]"></i> Acceso Exclusivo para Comercios Registrados
+              </span>
+            </div>
+            <h2 class="text-2xl font-black text-white">Manual de Usuario para Comercios</h2>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Consulta paso a paso cómo configurar los servicios de <strong>${this.escapeHtml(currentBiz.name)}</strong>, organizar tu equipo, bloquear horarios con 1 clic, activar confirmaciones por WhatsApp y descargar tus reportes contables.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
+            <a 
+              href="/manual-comercios-pdf" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="px-5 py-3.5 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer transform hover:scale-102"
+            >
+              <i class="fas fa-file-pdf text-base text-rose-700"></i>
+              <span>Abrir / Descargar PDF</span>
+            </a>
+            <a 
+              href="/manual-comercios" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
+            >
+              <i class="fas fa-external-link-alt text-xs"></i>
+              <span>Ver Guía Web Completa</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Módulos de Aprendizaje Rápido -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">1</div>
+            <h3 class="font-bold text-slate-900 text-sm">Perfil y Fotos</h3>
+            <p class="text-slate-600">Sube el logo de tu negocio, portada y dirección exacta para destacar en el directorio de Costa Rica.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">2</div>
+            <h3 class="font-bold text-slate-900 text-sm">Servicios y Precios (₡)</h3>
+            <p class="text-slate-600">Configura tu catálogo con precios en colones, duración en minutos y descripción clara.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">3</div>
+            <h3 class="font-bold text-slate-900 text-sm">Equipo y Especialistas</h3>
+            <p class="text-slate-600">Asigna colaboradores a servicios específicos para que cada uno reciba sus citas individuales.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">4</div>
+            <h3 class="font-bold text-slate-900 text-sm">Horarios y Almuerzo</h3>
+            <p class="text-slate-600">Define tus días laborables y hora de comida para ocultar automáticamente esos bloques.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm">5</div>
+            <h3 class="font-bold text-slate-900 text-sm">Bloqueo con 1 Clic</h3>
+            <p class="text-slate-600">Toca cualquier hora en el calendario para inhabilitarla en rojo de inmediato sin formularios.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">6</div>
+            <h3 class="font-bold text-slate-900 text-sm">Reportes a Excel</h3>
+            <p class="text-slate-600">Descarga tu histórico contable de ingresos por rango de fecha y especialista en formato .xlsx.</p>
+          </div>
+        </div>
+
+        <!-- Soporte Directo para Comercios -->
+        <div class="bg-blue-50 border border-blue-200 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl shrink-0 shadow-sm">
+              <i class="fas fa-headset"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 text-sm">¿Tienes dudas o necesitas asistencia personalizada?</h4>
+              <p class="text-xs text-slate-600 mt-0.5">Escríbenos a nuestro canal oficial exclusivo para comercios: <strong class="text-blue-700">soporte@reservascr.app</strong></p>
+            </div>
+          </div>
+          <a href="mailto:soporte@reservascr.app" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 flex items-center gap-2">
+            <i class="fas fa-envelope"></i> Escribir a Soporte
+          </a>
         </div>
       </div>
     `;
