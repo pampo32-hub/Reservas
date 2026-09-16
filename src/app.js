@@ -741,62 +741,53 @@ class App {
                 <i class="fas fa-store text-emerald-200"></i> Negocio Registrado
               </span>
             `}
+            <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
+              ${this.escapeHtml(biz.categoryLabel || biz.category)}
+            </span>
           </div>
 
-          <!-- Rating Badge -->
-          <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-md text-slate-900 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-md">
-            <i class="fas fa-star text-amber-400"></i>
-            <span>${biz.rating || '5.0'}</span>
-            <span class="text-slate-500 font-normal">(${biz.reviewsCount || 0})</span>
-          </div>
+          <!-- Rating -->
+          <span class="absolute top-3 right-3 bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
+            <i class="fas fa-star text-xs"></i> ${biz.rating || 5.0} <span class="text-slate-700 font-normal">(${biz.reviewsCount || 0})</span>
+          </span>
 
-          <!-- Ubicación sobre la imagen -->
-          <div class="absolute bottom-3 left-3 text-white text-xs font-semibold flex items-center gap-1.5 drop-shadow-md">
-            <i class="fas fa-map-marker-alt text-rose-400"></i>
-            <span class="truncate max-w-[200px]">${this.escapeHtml(biz.city || 'Costa Rica')}</span>
+          <div class="absolute bottom-3 left-3 right-3 text-white">
+            <span class="text-xs font-semibold text-slate-200 flex items-center gap-1">
+              <i class="fas fa-map-marker-alt text-rose-400"></i> ${this.escapeHtml(biz.city || 'Costa Rica')}
+            </span>
           </div>
         </div>
 
-        <!-- Content -->
-        <div class="p-6 flex-1 flex flex-col justify-between">
+        <!-- Content Body -->
+        <div class="p-5 flex-1 flex flex-col justify-between">
           <div>
-            <!-- Category Tag -->
-            <div class="mb-2.5">
-              <span class="text-[11px] font-bold tracking-wider uppercase text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100/80">
-                ${this.escapeHtml(biz.categoryLabel || biz.category || 'General')}
-              </span>
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                ${this.escapeHtml(biz.name)}
+              </h3>
+              ${isUnlimited ? `<span class="text-xs font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md flex-shrink-0">Preferencial</span>` : ''}
             </div>
-
-            <!-- Name -->
-            <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-              ${this.escapeHtml(biz.name)}
-            </h3>
-
-            <!-- Description -->
-            <p class="text-slate-600 text-xs mt-2 line-clamp-2 leading-relaxed">
-              ${this.escapeHtml(biz.description || 'Servicios profesionales y atención personalizada.')}
+            <p class="text-xs text-slate-500 mt-1 line-clamp-2">
+              ${this.escapeHtml(biz.description || '')}
             </p>
 
-            <!-- Previsualización de Servicios Destacados -->
-            <div class="mt-4 pt-4 border-t border-slate-100">
-              <div class="space-y-1.5">
-                ${biz.services && biz.services.length > 0 
-                  ? biz.services.slice(0, 2).map(s => `
-                    <div class="flex justify-between items-center text-xs py-0.5">
-                      <span class="text-slate-600 truncate mr-2">${this.escapeHtml(s.name)}</span>
-                      <span class="font-bold text-blue-600 shrink-0">₡${(s.price || 0).toLocaleString()}</span>
-                    </div>
-                  `).join('')
-                  : '<span class="text-xs text-slate-500">Consultar catálogo</span>'
-                }
+            <!-- Key Services Preview -->
+            ${biz.services && biz.services.length > 0 ? `
+              <div class="mt-3 space-y-1.5">
+                ${biz.services.slice(0, 2).map(srv => `
+                  <div class="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                    <span class="text-slate-600 font-medium truncate max-w-[170px]">${this.escapeHtml(srv.name)}</span>
+                    <span class="font-extrabold text-blue-600 flex-shrink-0">${this.formatColones(srv.price)}</span>
+                  </div>
+                `).join('')}
               </div>
-            </div>
+            ` : ''}
 
-            <!-- Schedule & Count -->
-            <div class="mt-4 flex items-center justify-between text-xs text-slate-600 pt-3 border-t border-slate-50">
-              <span class="flex items-center gap-1.5">
-                <i class="far fa-clock text-blue-500"></i>
-                ${biz.schedule ? `${this.formatTime(biz.schedule.openTime)} - ${this.formatTime(biz.schedule.closeTime)}` : 'Horario flexible'}
+            <!-- Schedule info -->
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+              <span class="flex items-center gap-1.5 font-medium">
+                <i class="far fa-clock text-blue-600"></i> 
+                ${biz.schedule ? `${this.formatTime12h(biz.schedule.openTime)} - ${this.formatTime12h(biz.schedule.closeTime)}` : '8:00 AM - 6:00 PM'}
               </span>
               <span class="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
                 ${biz.services ? biz.services.length : 0} servicios
@@ -8767,6 +8758,8 @@ class App {
 
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Visibilidad</label>
+                <select id="edit-biz-visibility" class="w-full px-3 py-2 bg-sla
+... [truncated for diff preview]
                 <select id="edit-biz-visibility" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
                   <option value="visible" ${!biz.isHidden ? 'selected' : ''}>👁️ Visible en Directorio</option>
                   <option value="hidden" ${biz.isHidden ? 'selected' : ''}>🙈 Oculto en Inicio</option>
