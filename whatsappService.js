@@ -211,61 +211,82 @@ export async function sendMetaTemplateMessage(recipientPhone, appointment, busin
   const dateStr = formatDateDMY(appointment.date);
   const timeStr = formatTime12h(appointment.time);
   const priceStr = formatColones(appointment.servicePrice);
-  const addressStr = String(business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : 'Costa Rica').trim();
+  const addressStr = String(business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : (business?.city || 'Costa Rica')).trim();
   const appointmentCode = String((appointment.id || 'APT-000').toUpperCase()).trim();
 
   const url = `https://graph.facebook.com/v20.0/${meta.phoneNumberId}/messages`;
   
-  const payload = {
-    messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to: recipientPhone,
-    type: 'template',
-    template: {
-      name: templateName,
-      language: {
-        code: 'es'
-      },
-      components: [
-        {
-          type: 'body',
-          parameters: [
-            { type: 'text', text: clientName },
-            { type: 'text', text: businessName },
-            { type: 'text', text: serviceName },
-            { type: 'text', text: dateStr },
-            { type: 'text', text: timeStr },
-            { type: 'text', text: priceStr },
-            { type: 'text', text: addressStr },
-            { type: 'text', text: appointmentCode }
-          ]
-        }
-      ]
+  // Lista de códigos de idioma para español en Meta
+  const languageCodes = ['es', 'es_LA', 'es_ES', 'es_CR'];
+  let lastError = null;
+
+  for (const langCode of languageCodes) {
+    const payload = {
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipientPhone,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: {
+          code: langCode
+        },
+        components: [
+          {
+            type: 'body',
+            parameters: [
+              { type: 'text', text: clientName },
+              { type: 'text', text: businessName },
+              { type: 'text', text: serviceName },
+              { type: 'text', text: dateStr },
+              { type: 'text', text: timeStr },
+              { type: 'text', text: priceStr },
+              { type: 'text', text: addressStr },
+              { type: 'text', text: appointmentCode }
+            ]
+          }
+        ]
+      }
+    };
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${meta.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.messages?.[0]?.id) {
+        return {
+          provider: 'Meta WhatsApp Cloud API (Template)',
+          messageId: data.messages[0].id,
+          languageUsed: langCode,
+          data
+        };
+      }
+
+      const errorObj = data?.error || {};
+      const errorCode = errorObj.code || response.status;
+      lastError = new Error(`Meta Template Error [${errorCode}]: ${errorObj.message || response.statusText}`);
+
+      // Si el error es que la plantilla no existe en este idioma (código 132001 o 100), probar el siguiente idioma
+      if (errorCode !== 132001 && errorCode !== 100) {
+        throw lastError;
+      }
+    } catch (err) {
+      lastError = err;
+      if (err.message && !err.message.includes('132001') && !err.message.includes('100')) {
+        throw err;
+      }
     }
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${meta.token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    const errorObj = data?.error || {};
-    const errorCode = errorObj.code || response.status;
-    throw new Error(`Meta Template Error [${errorCode}]: ${errorObj.message || response.statusText}`);
   }
 
-  return {
-    provider: 'Meta WhatsApp Cloud API (Template)',
-    messageId: data.messages?.[0]?.id,
-    data
-  };
+  throw lastError || new Error('No se pudo enviar la plantilla con los códigos de idioma disponibles.');
 }
 
 /**
