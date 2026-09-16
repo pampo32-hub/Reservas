@@ -278,6 +278,45 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
   }
 
+  async activateBusinessPlan(businessId, planId, daysValid = 30) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/activate-business-plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ businessId, planId, daysValid })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return await res.json();
+        }
+        const errData = await res.json();
+        throw new Error(errData.error || 'Error al activar plan del comercio');
+      } catch (e) {
+        if (this.isOnlineApi) throw e;
+      }
+    }
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx >= 0) {
+      const planConfigMap = {
+        'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
+        'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
+        'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
+        'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+      };
+      const p = planConfigMap[planId] || planConfigMap['pro'];
+      businesses[idx].plan = planId;
+      businesses[idx].planPriceUsd = p.price;
+      businesses[idx].monthlyBookingLimit = p.limit;
+      businesses[idx].subscriptionStatus = 'active';
+      businesses[idx].paymentMethod = 'sinpe_movil';
+      businesses[idx].subscriptionUpdatedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    }
+    return { success: true };
+  }
+
   // ==========================================
   // AUTENTICACIÓN: NEGOCIO (DUEÑO)
   // ==========================================
@@ -1448,6 +1487,31 @@ class StorageService {
       return data;
     }
     return { success: true, message: 'Suscripción cancelada localmente.' };
+  }
+
+  async activateBusinessPlan(businessId, planId, daysValid = 30) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/developer/activate-business-plan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId, planId, daysValid })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo activar el plan del comercio.');
+      await this.loadFromApi();
+      return data;
+    }
+
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      biz.plan = planId;
+      biz.subscriptionStatus = 'active';
+      biz.paymentMethod = 'sinpe_movil';
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return { success: true, message: 'Plan activado localmente.' };
   }
 
   async savePayPalSettings(settings) {

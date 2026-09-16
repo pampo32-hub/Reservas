@@ -2550,6 +2550,52 @@ app.post('/api/paypal/cancel-subscription', async (req, res) => {
   }
 });
 
+// 3.1 Activación Manual de Plan por Developer (SINPE Móvil / Autorización Manual)
+app.post('/api/developer/activate-business-plan', async (req, res) => {
+  try {
+    const { businessId, planId, daysValid = 30 } = req.body;
+    if (!businessId || !planId) {
+      return res.status(400).json({ error: 'Faltan parámetros requeridos (businessId, planId).' });
+    }
+
+    const planConfigMap = {
+      'test': { price: 0.10, limit: 10, name: 'Plan Prueba 24 Horas' },
+      'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
+      'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
+      'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+    };
+
+    const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
+
+    const updateRes = await pool.query(`
+      UPDATE reservas_businesses
+      SET plan = $1,
+          plan_price_usd = $2,
+          monthly_booking_limit = $3,
+          subscription_status = 'active',
+          payment_method = 'sinpe_movil',
+          subscription_updated_at = NOW()
+      WHERE id = $4
+      RETURNING *
+    `, [planId, targetPlan.price, targetPlan.limit, businessId]);
+
+    if (updateRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado.' });
+    }
+
+    console.log(`✅ Plan ${planId} activado manualmente vía SINPE para comercio [${businessId}]`);
+
+    res.json({
+      success: true,
+      message: `¡Comercio activado exitosamente con ${targetPlan.name}!`,
+      business: updateRes.rows[0]
+    });
+  } catch (error) {
+    console.error('Error en /api/developer/activate-business-plan:', error);
+    res.status(500).json({ error: error.message || 'Error al activar comercio.' });
+  }
+});
+
 // 4. Webhook Oficial de PayPal (Eventos en tiempo real)
 app.post('/api/webhooks/paypal', async (req, res) => {
   try {

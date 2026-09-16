@@ -3,7 +3,7 @@ import storage from './services/storage.js';
 
 // FLAGS DE LA PLATAFORMA: Registro, login y suscripciones activas
 const REGISTRATION_ENABLED = true;
-const SHOW_BIZ_SHORTCUTS = true;
+const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = false;
 
@@ -2566,6 +2566,32 @@ class App {
           </div>
         </div>
 
+        <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
+        ${(currentBiz.subscriptionStatus === 'pending_sinpe' || currentBiz.subscription_status === 'pending_sinpe') ? `
+          <div class="bg-amber-500/10 border-2 border-amber-400 p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md">Activación SINPE Pendiente</span>
+                  <span class="text-xs font-bold text-amber-900">${planConfig.name}</span>
+                </div>
+                <p class="text-xs text-amber-900 mt-1">
+                  Tu comercio está pendiente de verificación SINPE. Transfiere <strong>~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))} CRC</strong> al <strong>7143-3852</strong> (Juan Jose Jiménez) y envía el comprobante por WhatsApp.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button id="dash-view-sinpe-instructions-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                <i class="fab fa-whatsapp text-sm"></i>
+                <span>Ver Datos SINPE & WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Banner de Suscripción y Cuota Mensual -->
         <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
           <div class="space-y-1.5 max-w-xl">
@@ -2692,6 +2718,10 @@ class App {
 
     document.getElementById('dash-change-plan-btn')?.addEventListener('click', () => {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId });
+    });
+
+    document.getElementById('dash-view-sinpe-instructions-btn')?.addEventListener('click', () => {
+      this.renderSinpePaymentModal({ businessId: currentBiz.id, planId: currentBiz.plan || 'basic' });
     });
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
@@ -4066,6 +4096,14 @@ class App {
         ((a.categoryName || a.category_name) && (a.categoryName || a.category_name).toLowerCase().includes(q))
       );
 
+      const pendingSinpeBusinesses = businesses.filter(b => b.subscriptionStatus === 'pending_sinpe' || b.subscription_status === 'pending_sinpe');
+      const filteredSinpeBusinesses = pendingSinpeBusinesses.filter(b => 
+        !q || (b.name && b.name.toLowerCase().includes(q)) || 
+        (b.email && b.email.toLowerCase().includes(q)) || 
+        (b.phone && b.phone.toLowerCase().includes(q)) ||
+        (b.city && b.city.toLowerCase().includes(q))
+      );
+
       const filteredPreRegs = (preRegistrations || []).filter(pr => 
         !q || (pr.businessName && pr.businessName.toLowerCase().includes(q)) || 
         (pr.contactName && pr.contactName.toLowerCase().includes(q)) || 
@@ -4161,6 +4199,12 @@ class App {
                   ${preRegistrations.length > 0 ? `<span class="px-2 py-0.5 bg-slate-950 text-amber-400 text-[10px] rounded-full font-black">${preRegistrations.length}</span>` : ''}
                 </button>
 
+                <button id="dev-tab-sinpe" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'sinpe' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-mobile-alt"></i>
+                  <span>Activaciones SINPE (${pendingSinpeBusinesses.length})</span>
+                  ${pendingSinpeBusinesses.length > 0 ? `<span class="px-2 py-0.5 bg-amber-400 text-slate-950 text-[10px] rounded-full font-black animate-pulse">${pendingSinpeBusinesses.length}</span>` : ''}
+                </button>
+
                 <button id="dev-tab-alerts" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'alerts' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
                   <i class="fas fa-bell"></i>
                   <span>Nuevas Categorías</span>
@@ -4185,7 +4229,6 @@ class App {
                 <button id="dev-tab-whatsapp" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'whatsapp' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
                   <i class="fab fa-whatsapp ${this.activeDevTab === 'whatsapp' ? 'text-white' : 'text-emerald-600'}"></i>
                   <span>WhatsApp & Meta API</span>
-                  <span>WhatsApp & Meta</span>
                   ${waSettings.configured ? '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>' : '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded font-bold">Por Configurar</span>'}
                 </button>
 
@@ -4276,6 +4319,101 @@ class App {
                                   <a href="${waUrl}" target="_blank" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all">
                                     <i class="fab fa-whatsapp"></i> Chatear
                                   </a>
+                                </td>
+                              </tr>
+                            `;
+                          }).join('')}
+                        </tbody>
+                      </table>
+                    </div>
+                  `}
+                </div>
+              ` : ''}
+
+              <!-- PESTAÑA: ACTIVACIONES SINPE MÓVIL -->
+              ${this.activeDevTab === 'sinpe' ? `
+                <div class="space-y-4">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 class="text-base font-bold text-slate-800">Comercios Pendientes de Activación por SINPE Móvil</h3>
+                      <p class="text-xs text-slate-500">Verifica el comprobante recibido al WhatsApp 7143-3852 y activa el plan del comercio con 1 clic.</p>
+                    </div>
+                    <span class="px-3.5 py-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-black flex items-center gap-1.5 self-start shadow-xs">
+                      <i class="fas fa-university"></i> SINPE: 7143-3852 (Juan Jose Jiménez)
+                    </span>
+                  </div>
+
+                  ${filteredSinpeBusinesses.length === 0 ? `
+                    <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100">
+                      <i class="fas fa-check-circle text-3xl text-emerald-500 mb-2"></i>
+                      <p class="text-sm font-bold text-slate-700">¡Al día! No hay comercios pendientes de activación SINPE</p>
+                      <p class="text-xs text-slate-400">Cuando un comercio se registre o seleccione pagar con SINPE Móvil, aparecerá en esta lista.</p>
+                    </div>
+                  ` : `
+                    <div class="overflow-x-auto">
+                      <table class="w-full text-left text-xs text-slate-600">
+                        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th class="p-3">Comercio</th>
+                            <th class="p-3">Contacto / WhatsApp</th>
+                            <th class="p-3">Categoría & Ciudad</th>
+                            <th class="p-3">Plan Solicitado</th>
+                            <th class="p-3">Seleccionar Plan a Activar</th>
+                            <th class="p-3 text-right">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 font-medium">
+                          ${filteredSinpeBusinesses.map(biz => {
+                            const waClean = (biz.phone || '').replace(/\D/g, '');
+                            const waUrl = `https://wa.me/506${waClean}?text=${encodeURIComponent('Hola ' + (biz.name || '') + ', te contactamos de Reservas CR para confirmar la activación de tu plan por SINPE Móvil.')}`;
+                            const currentPlan = biz.plan || 'basic';
+                            return `
+                              <tr class="hover:bg-slate-50/80 transition-colors bg-amber-50/20">
+                                <td class="p-3">
+                                  <div class="flex items-center gap-2.5">
+                                    <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" class="w-9 h-9 rounded-xl object-cover border border-slate-200">
+                                    <div>
+                                      <strong class="text-slate-900 block font-bold text-sm">${this.escapeHtml(biz.name)}</strong>
+                                      <span class="text-[10px] text-slate-400 font-mono">${biz.id}</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td class="p-3">
+                                  <div class="space-y-1">
+                                    <a href="${waUrl}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-bold hover:bg-emerald-100 transition-colors">
+                                      <i class="fab fa-whatsapp text-emerald-600"></i>
+                                      <span>${this.escapeHtml(biz.phone || '-')}</span>
+                                    </a>
+                                    <span class="text-[10px] text-slate-400 block">${this.escapeHtml(biz.email || '-')}</span>
+                                  </div>
+                                </td>
+                                <td class="p-3">
+                                  <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100 text-[11px] font-bold block w-fit mb-0.5">
+                                    ${this.escapeHtml(biz.categoryLabel || biz.category || '-')}
+                                  </span>
+                                  <span class="text-[10px] text-slate-500">${this.escapeHtml(biz.city || 'Costa Rica')}</span>
+                                </td>
+                                <td class="p-3">
+                                  <span class="px-2.5 py-1 rounded-lg text-xs font-black ${currentPlan === 'unlimited' ? 'bg-purple-100 text-purple-800' : (currentPlan === 'pro' ? 'bg-amber-100 text-amber-800' : (currentPlan === 'test' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'))}">
+                                    ${currentPlan === 'unlimited' ? 'Ilimitado ($25)' : (currentPlan === 'pro' ? 'Profesional ($15)' : (currentPlan === 'test' ? 'Test 24h ($0.10)' : 'Básico ($8)'))}
+                                  </span>
+                                </td>
+                                <td class="p-3">
+                                  <select id="dev-sinpe-plan-select-${biz.id}" class="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                    <option value="test" ${currentPlan === 'test' ? 'selected' : ''}>Plan Prueba ($0.10 - 24 Horas)</option>
+                                    <option value="basic" ${currentPlan === 'basic' ? 'selected' : ''}>Plan Básico ($8/mes - 50 reservas)</option>
+                                    <option value="pro" ${currentPlan === 'pro' ? 'selected' : ''}>Plan Profesional ($15/mes - 200 reservas)</option>
+                                    <option value="unlimited" ${currentPlan === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($25/mes - ∞ reservas)</option>
+                                  </select>
+                                </td>
+                                <td class="p-3 text-right">
+                                  <button 
+                                    class="dev-activate-sinpe-biz-btn px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black inline-flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                                    data-biz-id="${biz.id}"
+                                  >
+                                    <i class="fas fa-check-circle"></i>
+                                    <span>Activar Plan</span>
+                                  </button>
                                 </td>
                               </tr>
                             `;
@@ -5008,9 +5146,35 @@ class App {
         this.activeDevTab = 'preregistrations';
         this.renderDeveloperDashboardView(container);
       });
+      document.getElementById('dev-tab-sinpe')?.addEventListener('click', () => {
+        this.activeDevTab = 'sinpe';
+        this.renderDeveloperDashboardView(container);
+      });
       document.getElementById('dev-tab-paypal')?.addEventListener('click', () => {
         this.activeDevTab = 'paypal';
         this.renderDeveloperDashboardView(container);
+      });
+
+      // Botón: Activar Comercio por SINPE Móvil
+      document.querySelectorAll('.dev-activate-sinpe-biz-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const bizId = btn.getAttribute('data-biz-id');
+          const select = document.getElementById(`dev-sinpe-plan-select-${bizId}`);
+          const planId = select ? select.value : 'pro';
+          const daysValid = planId === 'test' ? 1 : 30;
+
+          try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Activando...';
+            await storage.activateBusinessPlan(bizId, planId, daysValid);
+            this.showToast(`¡Plan ${planId.toUpperCase()} activado exitosamente para el comercio!`, 'success');
+            this.renderDeveloperDashboardView(container);
+          } catch (err) {
+            this.showToast(err.message || 'Error al activar plan', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Activar Plan';
+          }
+        });
       });
 
       // Guardar Configuración de PayPal
@@ -5555,35 +5719,29 @@ class App {
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-white">Básico</span>
-                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 reservas</span>
                           <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">50 reservas</span>
                         </div>
-                        <div class="text-base font-black text-white">$6 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡3,200 CRC / mes</p>
                         <div class="text-base font-black text-white">$8 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡4,200 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-check text-emerald-400 text-[9px]"></i> 150 reservas/mes
                         <i class="fas fa-check text-emerald-400 text-[9px]"></i> 50 reservas/mes
                       </div>
                     </label>
 
                     <!-- Plan Profesional -->
                     <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'pro' ? 'bg-indigo-950 border-amber-400 ring-2 ring-amber-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <span class="absolute -top-2 right-2 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase">Popular</span>
+                      <span class="absolute -top-2.5 right-2 px-2 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider">Popular</span>
                       <input type="radio" name="new-biz-plan" value="pro" ${selectedPlanId === 'pro' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-amber-300">Profesional</span>
-                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 reservas</span>
                           <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">200 reservas</span>
                         </div>
                         <div class="text-base font-black text-amber-300">$15 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[10px] text-slate-400 mt-0.5">~₡7,900 CRC / mes</p>
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
-                        <i class="fas fa-check text-amber-400 text-[9px]"></i> 300 reservas/mes
                         <i class="fas fa-check text-amber-400 text-[9px]"></i> 200 reservas/mes
                       </div>
                     </label>
@@ -5601,6 +5759,44 @@ class App {
                       </div>
                       <div class="text-[10px] text-slate-300 mt-2 pt-1 border-t border-slate-700/80 flex items-center gap-1">
                         <i class="fas fa-infinity text-purple-400 text-[9px]"></i> Reservas sin límite
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 1.1 MÉTODO DE PAGO INICIAL (SINPE MÓVIL O TARJETA/PAYPAL) -->
+                <div class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
+                  <span class="font-black text-emerald-400 block text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fas fa-wallet"></i> Método de Pago *
+                  </span>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <!-- Opción SINPE Móvil -->
+                    <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-indigo-950 border-emerald-400 ring-2 ring-emerald-400/30">
+                      <input type="radio" name="new-biz-paymethod" value="sinpe" checked class="sr-only">
+                      <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                        <i class="fas fa-mobile-alt"></i>
+                      </div>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <span class="font-black text-xs text-white">SINPE Móvil</span>
+                          <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica 🇨🇷</span>
+                        </div>
+                        <p class="text-[10px] text-slate-300 mt-0.5">Transfiere al 7143-3852 y envía el comprobante por WhatsApp para activación rápida.</p>
+                      </div>
+                    </label>
+
+                    <!-- Opción Tarjeta / PayPal -->
+                    <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-slate-800/80 border-slate-700 hover:border-slate-500">
+                      <input type="radio" name="new-biz-paymethod" value="card_paypal" class="sr-only">
+                      <div class="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                        <i class="fas fa-credit-card"></i>
+                      </div>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <span class="font-black text-xs text-white">Tarjeta / PayPal</span>
+                          <span class="text-[9px] font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded">Automático</span>
+                        </div>
+                        <p class="text-[10px] text-slate-300 mt-0.5">Suscripción recurrente con tarjeta de débito/crédito o cuenta PayPal.</p>
                       </div>
                     </label>
                   </div>
@@ -5823,6 +6019,25 @@ class App {
           if (val === 'pro') label.classList.add('border-amber-400', 'ring-amber-400/30');
           else if (val === 'unlimited') label.classList.add('border-purple-400', 'ring-purple-400/30');
           else label.classList.add('border-blue-400', 'ring-blue-400/30');
+        }
+      });
+    });
+
+    // Selector visual de método de pago
+    document.querySelectorAll('.biz-paymethod-label').forEach(label => {
+      label.addEventListener('click', () => {
+        document.querySelectorAll('.biz-paymethod-label').forEach(l => {
+          l.classList.remove('bg-indigo-950', 'border-emerald-400', 'border-amber-400', 'ring-2', 'ring-emerald-400/30', 'ring-amber-400/30');
+          l.classList.add('bg-slate-800/80', 'border-slate-700');
+        });
+        const radio = label.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+          const val = radio.value;
+          label.classList.remove('bg-slate-800/80', 'border-slate-700');
+          label.classList.add('bg-indigo-950', 'ring-2');
+          if (val === 'sinpe') label.classList.add('border-emerald-400', 'ring-emerald-400/30');
+          else label.classList.add('border-amber-400', 'ring-amber-400/30');
         }
       });
     });
@@ -6147,6 +6362,11 @@ class App {
         categoryLabel = catObj ? catObj.name : catSelectVal;
       }
 
+      // Método de pago seleccionado
+      const chosenPayRadio = document.querySelector('input[name="new-biz-paymethod"]:checked');
+      const chosenPayMethod = chosenPayRadio ? chosenPayRadio.value : 'sinpe';
+      const isSinpe = chosenPayMethod === 'sinpe';
+
       try {
         const regData = await storage.registerBusinessWithUser(ownerName, email, password, {
           name,
@@ -6156,6 +6376,8 @@ class App {
           plan: planConfig.id,
           planPriceUsd: planConfig.priceUsd,
           monthlyBookingLimit: planConfig.bookingLimit,
+          subscriptionStatus: isSinpe ? 'pending_sinpe' : 'pending_payment',
+          paymentMethod: isSinpe ? 'sinpe_movil' : 'paypal',
           city,
           phone,
           email,
@@ -6171,17 +6393,19 @@ class App {
           ]
         });
 
-        this.showToast(`¡Negocio registrado exitosamente con ${planConfig.name}!`, 'success');
-        this.showToast(`¡Negocio creado! Conectando con la pasarela para activar tu ${planConfig.name}...`, 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
         this.navigateTo('owner-dashboard');
 
         const createdBizId = regData?.user?.businessId || storage.getActiveBusinessId();
         if (createdBizId) {
-          this.renderPayPalCheckoutModal(createdBizId, planConfig.id);
-        } else {
-          this.navigateTo('owner-dashboard');
+          if (isSinpe) {
+            this.showToast(`¡Negocio creado con éxito! Realiza tu SINPE para activar tu ${planConfig.name}`, 'success');
+            this.renderSinpePaymentModal({ businessId: createdBizId, planId: planConfig.id });
+          } else {
+            this.showToast(`¡Negocio creado! Conectando con la pasarela para activar tu ${planConfig.name}...`, 'success');
+            this.renderPayPalCheckoutModal({ businessId: createdBizId, planId: planConfig.id });
+          }
         }
       } catch (err) {
         this.showToast(err.message || 'Error al registrar negocio.', 'error');
@@ -6478,8 +6702,8 @@ class App {
                       </ul>
                     </div>
 
-                    <!-- Botón de Acción -->
-                    <div class="mt-6 pt-4 border-t border-slate-100">
+                    <!-- Botones de Acción: Suscribirme (Tarjeta/PayPal) y Pagar con SINPE Móvil -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 space-y-2">
                       ${isCurrent ? `
                         <button disabled class="w-full py-3.5 bg-emerald-100 text-emerald-800 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
                           <i class="fas fa-check-circle"></i> Tu Plan Actual
@@ -6489,9 +6713,17 @@ class App {
                           class="select-plan-paypal-btn w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer app-touch-btn"
                           data-plan-id="${plan.id}"
                         >
-                          <i class="fab fa-paypal text-sm text-blue-950"></i>
-                          <span>Suscribirme con PayPal ($${plan.priceUsd}/mes)</span>
+                          <i class="fas fa-credit-card text-xs"></i>
+                          <span>Suscribirme ($${plan.priceUsd}${plan.interval === 'cada 24 horas' ? '/24h' : '/mes'})</span>
                           <i class="fas fa-arrow-right text-xs"></i>
+                        </button>
+
+                        <button 
+                          class="select-plan-sinpe-btn w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer app-touch-btn"
+                          data-plan-id="${plan.id}"
+                        >
+                          <i class="fas fa-mobile-alt text-sm"></i>
+                          <span>Pagar con SINPE Móvil (~${this.formatColones(plan.priceCrc)})</span>
                         </button>
                       `}
                     </div>
@@ -6507,7 +6739,7 @@ class App {
               <i class="fas fa-shield-alt text-emerald-600 text-sm"></i>
               <span>Sin contratos forzosos. Cancela o cambia de plan en cualquier momento.</span>
             </div>
-            <span class="font-bold text-slate-700">Aceptamos PayPal, Tarjetas y Apple Pay en Costa Rica 🇨🇷</span>
+            <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica 🇨🇷</span>
           </div>
         </div>
       </div>
@@ -6517,13 +6749,170 @@ class App {
       modalContainer.innerHTML = '';
     });
 
-    // Acción: Suscribirse con PayPal
+    // Acción: Suscribirse con Tarjeta / PayPal
     document.querySelectorAll('.select-plan-paypal-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const planId = btn.getAttribute('data-plan-id');
         const activeBizId = businessId || storage.getActiveBusinessId() || 'biz-1';
         modalContainer.innerHTML = '';
         this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
+      });
+    });
+
+    // Acción: Pagar con SINPE Móvil
+    document.querySelectorAll('.select-plan-sinpe-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const planId = btn.getAttribute('data-plan-id');
+        const activeBizId = businessId || storage.getActiveBusinessId() || 'biz-1';
+        modalContainer.innerHTML = '';
+        this.renderSinpePaymentModal({ businessId: activeBizId, planId });
+      });
+    });
+  }
+
+  // ==========================================
+  // MODAL DE PAGO CON SINPE MÓVIL (COSTA RICA)
+  // ==========================================
+  renderSinpePaymentModal({ businessId, planId = 'basic' }) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const plan = storage.getPlanById(planId) || { name: 'Plan Básico', priceUsd: 8, priceCrc: 4200, bookingLimitLabel: 'Hasta 50 reservas/mes' };
+    const biz = businessId ? storage.getBusinessById(businessId) : null;
+    const bizName = biz ? biz.name : 'Mi Negocio';
+    const sinpePhoneFormatted = '7143-3852';
+    const sinpePhoneRaw = '71433852';
+    const sinpeTitular = 'Juan Jose Jiménez';
+    const amountCrc = this.formatColones(plan.priceCrc || (plan.priceUsd * 530));
+    const amountUsd = `$${plan.priceUsd} USD`;
+    const isTestPlan = plan.id === 'test';
+
+    const whatsappMessage = `Hola Juan José, adjunto comprobante SINPE Móvil por ${amountCrc} para activar el ${plan.name} (${amountUsd}) del comercio "${bizName}"${businessId ? ` (ID: ${businessId})` : ''}.`;
+    const whatsappUrl = `https://wa.me/50671433852?text=${encodeURIComponent(whatsappMessage)}`;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col">
+          
+          <!-- Header -->
+          <div class="p-6 bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white relative border-b border-emerald-800/40">
+            <button id="close-sinpe-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-emerald-400/30">
+              <i class="fas fa-mobile-alt"></i> Pago Oficial Costa Rica 🇨🇷
+            </div>
+            <h3 class="text-xl font-black text-white">Pago con SINPE Móvil</h3>
+            <p class="text-xs text-emerald-100/90 mt-0.5">Activa tu suscripción de forma rápida y directa.</p>
+          </div>
+
+          <!-- Resumen del Plan -->
+          <div class="p-4 bg-emerald-50/70 border-b border-emerald-100 space-y-2 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600 font-semibold">Comercio:</span>
+              <strong class="text-slate-900 font-black">${this.escapeHtml(bizName)}</strong>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600 font-semibold">Plan Seleccionado:</span>
+              <span class="px-2.5 py-0.5 rounded-md bg-emerald-200 text-emerald-950 font-bold">${plan.name}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600 font-semibold">Monto a Transferir:</span>
+              <span class="text-base font-black text-emerald-700">${amountCrc} CRC <span class="text-xs font-normal text-slate-500">(${amountUsd})</span></span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500">
+              <span>Frecuencia:</span>
+              <span class="font-bold text-slate-700">${isTestPlan ? 'Prueba 24 Horas' : 'Mensual (30 Días)'}</span>
+            </div>
+          </div>
+
+          <!-- Datos de Transferencia SINPE Móvil -->
+          <div class="p-5 space-y-4 text-xs">
+            <div class="p-4 rounded-2xl bg-slate-900 text-white space-y-3 shadow-md border border-slate-800">
+              <div class="flex items-center justify-between text-slate-400 text-[11px] uppercase tracking-wider font-bold">
+                <span><i class="fas fa-university mr-1 text-emerald-400"></i> Datos del SINPE Móvil</span>
+                <span class="text-emerald-400">Paso 1 de 2</span>
+              </div>
+              
+              <!-- Número SINPE con Copiado -->
+              <div class="flex items-center justify-between bg-slate-800/90 p-3 rounded-xl border border-slate-700">
+                <div>
+                  <span class="text-[10px] text-slate-400 block font-medium">Número de Teléfono:</span>
+                  <span class="text-lg font-mono font-black text-emerald-400 tracking-wider" id="sinpe-phone-display">${sinpePhoneFormatted}</span>
+                </div>
+                <button id="copy-sinpe-phone-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs">
+                  <i class="fas fa-copy"></i>
+                  <span>Copiar</span>
+                </button>
+              </div>
+
+              <!-- Titular -->
+              <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700">
+                <span class="text-[10px] text-slate-400 block font-medium">Nombre del Titular:</span>
+                <span class="text-sm font-black text-white">${sinpeTitular}</span>
+              </div>
+            </div>
+
+            <!-- Paso 2: Instrucción de WhatsApp -->
+            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 space-y-2">
+              <div class="flex items-start gap-2.5">
+                <i class="fab fa-whatsapp text-emerald-600 text-lg flex-shrink-0 mt-0.5"></i>
+                <div class="space-y-1">
+                  <span class="font-black text-xs block text-slate-900 uppercase tracking-wide">Paso 2: Envío de Comprobante</span>
+                  <p class="text-xs text-slate-700 leading-relaxed">
+                    Cuando realices el SINPE envía el comprobante de pago al mismo número de WhatsApp del SINPE (<strong>${sinpePhoneFormatted}</strong>) para la activación de la cuenta.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="space-y-2 pt-1">
+              <a 
+                href="${whatsappUrl}" 
+                target="_blank" 
+                id="sinpe-send-whatsapp-btn" 
+                class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+              >
+                <i class="fab fa-whatsapp text-base"></i>
+                <span>Enviar Comprobante por WhatsApp</span>
+                <i class="fas fa-arrow-right text-xs"></i>
+              </a>
+
+              <button 
+                id="sinpe-done-btn" 
+                class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-all cursor-pointer"
+              >
+                Entendido, ya realicé la transferencia
+              </button>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 text-center text-[11px] text-slate-400">
+            Tu plan se activará en cuanto el comprobante sea verificado.
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-sinpe-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('sinpe-done-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.showToast('¡Comprobante en proceso de verificación! Te contactaremos por WhatsApp.', 'success');
+      if (this.currentView === 'owner-dashboard') {
+        this.renderCurrentView();
+      }
+    });
+
+    document.getElementById('copy-sinpe-phone-btn')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(sinpePhoneRaw).then(() => {
+        this.showToast('¡Número SINPE copiado: 7143-3852!', 'success');
+      }).catch(() => {
+        this.showToast('Número: 7143-3852', 'info');
       });
     });
   }

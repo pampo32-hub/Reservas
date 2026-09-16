@@ -60,6 +60,7 @@ export async function initDatabase() {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS auto_confirm_appointments BOOLEAN DEFAULT TRUE;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS paypal_subscription_id VARCHAR(100) DEFAULT NULL;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'trial';
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'none';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS subscription_updated_at TIMESTAMP DEFAULT NOW();
     `);
 
