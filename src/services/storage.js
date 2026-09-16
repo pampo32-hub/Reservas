@@ -557,6 +557,50 @@ class StorageService {
     };
   }
 
+  // ==========================================
+  // MANTENIMIENTO Y EXPORTACIÓN DEVELOPER
+  // ==========================================
+  async getCleanupStats() {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/cleanup/stats`);
+        if (res.ok) return await res.json();
+      } catch (e) {
+        console.error('Error obteniendo stats de limpieza:', e);
+      }
+    }
+    return {
+      passwordResets: 0,
+      pastBlockedSlots: 0,
+      oldCategoryAlerts: 0,
+      cancelledAppointments: 0,
+      oldPreregistrations: 0
+    };
+  }
+
+  async executeDatabaseCleanup(options) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/developer/cleanup/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error ejecutando limpieza.');
+      return data;
+    }
+    return { success: true, message: 'Limpieza simulada en modo local.', totalPurged: 0 };
+  }
+
+  getExportExcelUrl(params = {}) {
+    const query = new URLSearchParams();
+    if (params.businessId) query.append('businessId', params.businessId);
+    if (params.status) query.append('status', params.status);
+    if (params.startDate) query.append('startDate', params.startDate);
+    if (params.endDate) query.append('endDate', params.endDate);
+    return `${this.apiBase}/developer/export/appointments-excel?${query.toString()}`;
+  }
+
   // --- CATEGORÍAS (INCLUYE CATEGORÍAS PERSONALIZADAS DINÁMICAS) ---
   getCategories() {
     const list = [...INITIAL_CATEGORIES];
@@ -1229,9 +1273,29 @@ class StorageService {
       availableSlots.push(minutesToTime(current));
     }
 
+    // Filtrar turnos pasados si la fecha seleccionada es hoy (con margen de 15 minutos)
+    const todayStr = (() => {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    })();
+
+    let filteredSlots = availableSlots;
+    if (dateString === todayStr) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const minAllowedMinutes = currentMinutes + 15; // 15 minutos de margen
+      filteredSlots = availableSlots.filter(slot => {
+        const slotMin = timeToMinutes(slot);
+        return slotMin >= minAllowedMinutes;
+      });
+    }
+
     return {
       isClosed: false,
-      slots: availableSlots
+      slots: filteredSlots
     };
   }
 
@@ -1804,6 +1868,54 @@ class StorageService {
       return data;
     }
     throw new Error('Servidor offline');
+  }
+
+  // ==========================================
+  // MANTENIMIENTO & EXPORTACIÓN EXCEL DEVELOPER
+  // ==========================================
+  async getCleanupStats() {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/cleanup/stats`);
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {
+        console.warn('Error obteniendo estadísticas de limpieza:', e);
+      }
+    }
+    return {
+      expiredOtpCodes: 0,
+      pastDateBlocks: 0,
+      oldCategoryAlerts: 0,
+      oldCancelledAppointments: 0,
+      handledPreRegistrations: 0,
+      totalPurgeable: 0
+    };
+  }
+
+  async executeDatabaseCleanup(options = {}) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/developer/cleanup/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(options)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al ejecutar la depuración.');
+      await this.loadFromApi();
+      return data;
+    }
+    throw new Error('La depuración solo está disponible en modo servidor conectado a base de datos.');
+  }
+
+  getExportExcelUrl({ businessId = 'all', status = 'completed', startDate = '', endDate = '' } = {}) {
+    const params = new URLSearchParams();
+    if (businessId) params.append('businessId', businessId);
+    if (status) params.append('status', status);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    return `${this.apiBase}/developer/export/appointments-excel?${params.toString()}`;
   }
 }
 

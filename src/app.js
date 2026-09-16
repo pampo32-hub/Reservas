@@ -4137,7 +4137,7 @@ class App {
     `;
 
     try {
-      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig] = await Promise.all([
+      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats] = await Promise.all([
         storage.getDeveloperStats(),
         storage.getDeveloperBusinesses(),
         storage.getDeveloperClients(),
@@ -4145,7 +4145,8 @@ class App {
         storage.getDeveloperCategoryAlerts(),
         storage.getWhatsAppSettings(),
         storage.getPreRegistrations(),
-        storage.getPayPalConfig()
+        storage.getPayPalConfig(),
+        storage.getCleanupStats()
       ]);
 
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
@@ -4336,6 +4337,12 @@ class App {
                   <i class="fab fa-paypal text-blue-600"></i>
                   <span>PayPal & Suscripciones</span>
                   <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">Activo</span>
+                </button>
+
+                <button id="dev-tab-maintenance" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'maintenance' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-broom"></i>
+                  <span>Mantenimiento & Exportación</span>
+                  ${(cleanupStats.totalPurgeable || 0) > 0 ? `<span class="px-2 py-0.5 bg-rose-500 text-white text-[10px] rounded-full font-black">${cleanupStats.totalPurgeable}</span>` : ''}
                 </button>
               </div>
 
@@ -5307,6 +5314,262 @@ class App {
                 </div>
               ` : ''}
 
+              <!-- PESTAÑA 8: MANTENIMIENTO DE BASE DE DATOS Y EXPORTACIÓN A EXCEL -->
+              ${this.activeDevTab === 'maintenance' ? `
+                <div class="space-y-8 animate-fade-in">
+                  
+                  <!-- SECCIÓN 1: DEPURACIÓN DE BASE DE DATOS -->
+                  <div class="bg-slate-50/70 rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <span class="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold text-sm">
+                            <i class="fas fa-trash-alt"></i>
+                          </span>
+                          <h3 class="text-lg font-black text-slate-900">Depuración y Limpieza de Base de Datos</h3>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                          Selecciona con las casillas de verificación únicamente los datos temporales o expirados que deseas depurar para optimizar el rendimiento.
+                        </p>
+                      </div>
+                      
+                      <div class="flex items-center gap-2">
+                        <button type="button" id="dev-select-all-cleanup-btn" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100 transition-all shadow-2xs cursor-pointer">
+                          <i class="fas fa-check-square mr-1 text-blue-600"></i> Seleccionar Todo
+                        </button>
+                        <button type="button" id="dev-clear-all-cleanup-btn" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-100 transition-all shadow-2xs cursor-pointer">
+                          <i class="fas fa-square mr-1 text-slate-400"></i> Deseleccionar
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Mensaje de Seguridad / Datos Esenciales Protegidos -->
+                    <div class="p-3.5 bg-emerald-50/80 rounded-2xl border border-emerald-200/80 text-emerald-900 text-xs flex items-start gap-3">
+                      <i class="fas fa-shield-alt text-emerald-600 text-base mt-0.5 flex-shrink-0"></i>
+                      <div class="space-y-0.5">
+                        <span class="font-bold block">Protección de Datos Esenciales Activada</span>
+                        <p class="text-[11px] text-emerald-800 leading-relaxed">
+                          Tus comercios registrados, clientes, servicios, reseñas y citas activas o confirmadas <strong>nunca</strong> serán eliminados. Solo se purgarán los elementos seleccionados que cumplan estrictamente con las condiciones de expiración.
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Formulario de Opciones de Limpieza -->
+                    <form id="dev-cleanup-form" class="space-y-4">
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        
+                        <!-- Opción 1: Códigos OTP -->
+                        <label class="relative flex items-start p-4 bg-white rounded-2xl border-2 transition-all cursor-pointer select-none group border-slate-200 hover:border-amber-400">
+                          <div class="flex items-center h-5 mr-3 mt-0.5">
+                            <input type="checkbox" name="cleanup_option" value="otp" class="dev-cleanup-checkbox w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer">
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+                                Códigos OTP de Contraseñas Expirados
+                              </span>
+                              <span class="px-2 py-0.5 rounded-full text-[11px] font-black ${cleanupStats.expiredOtpCodes > 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-400'}">
+                                ${cleanupStats.expiredOtpCodes || 0}
+                              </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-snug">
+                              Tokens temporales de 6 dígitos que ya caducaron (>15 min) o que ya fueron usados para restablecer contraseña.
+                            </p>
+                          </div>
+                        </label>
+
+                        <!-- Opción 2: Bloqueos Pasados -->
+                        <label class="relative flex items-start p-4 bg-white rounded-2xl border-2 transition-all cursor-pointer select-none group border-slate-200 hover:border-amber-400">
+                          <div class="flex items-center h-5 mr-3 mt-0.5">
+                            <input type="checkbox" name="cleanup_option" value="date_blocks" class="dev-cleanup-checkbox w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer">
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+                                Bloqueos de Fechas Pasadas
+                              </span>
+                              <span class="px-2 py-0.5 rounded-full text-[11px] font-black ${cleanupStats.pastDateBlocks > 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-400'}">
+                                ${cleanupStats.pastDateBlocks || 0}
+                              </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-snug">
+                              Días no laborales o feriados configurados por comercios cuya fecha es anterior al día de hoy.
+                            </p>
+                          </div>
+                        </label>
+
+                        <!-- Opción 3: Alertas de Categorías Antiguas -->
+                        <label class="relative flex items-start p-4 bg-white rounded-2xl border-2 transition-all cursor-pointer select-none group border-slate-200 hover:border-amber-400">
+                          <div class="flex items-center h-5 mr-3 mt-0.5">
+                            <input type="checkbox" name="cleanup_option" value="category_alerts" class="dev-cleanup-checkbox w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer">
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+                                Alertas de Categorías Antiguas (>30 días)
+                              </span>
+                              <span class="px-2 py-0.5 rounded-full text-[11px] font-black ${cleanupStats.oldCategoryAlerts > 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-400'}">
+                                ${cleanupStats.oldCategoryAlerts || 0}
+                              </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-snug">
+                              Solicitudes de nuevas categorías que ya fueron aprobadas/archivadas o tienen más de 30 días de registradas.
+                            </p>
+                          </div>
+                        </label>
+
+                        <!-- Opción 4: Citas Canceladas Antiguas -->
+                        <label class="relative flex items-start p-4 bg-white rounded-2xl border-2 transition-all cursor-pointer select-none group border-slate-200 hover:border-amber-400">
+                          <div class="flex items-center h-5 mr-3 mt-0.5">
+                            <input type="checkbox" name="cleanup_option" value="cancelled_appointments" class="dev-cleanup-checkbox w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer">
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+                                Citas Canceladas Antiguas (>60 días)
+                              </span>
+                              <span class="px-2 py-0.5 rounded-full text-[11px] font-black ${cleanupStats.oldCancelledAppointments > 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-400'}">
+                                ${cleanupStats.oldCancelledAppointments || 0}
+                              </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-snug">
+                              Historial de citas en estado 'cancelled' con más de 2 meses de antigüedad. No afecta citas activas ni completadas.
+                            </p>
+                          </div>
+                        </label>
+
+                        <!-- Opción 5: Pre-registros Gestionados Antiguos -->
+                        <label class="relative flex items-start p-4 bg-white rounded-2xl border-2 transition-all cursor-pointer select-none group border-slate-200 hover:border-amber-400 md:col-span-2">
+                          <div class="flex items-center h-5 mr-3 mt-0.5">
+                            <input type="checkbox" name="cleanup_option" value="handled_preregistrations" class="dev-cleanup-checkbox w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500 cursor-pointer">
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                              <span class="text-xs font-bold text-slate-900 group-hover:text-amber-700 transition-colors">
+                                Pre-registros Contactados / Gestionados (>60 días)
+                              </span>
+                              <span class="px-2 py-0.5 rounded-full text-[11px] font-black ${cleanupStats.handledPreRegistrations > 0 ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-400'}">
+                                ${cleanupStats.handledPreRegistrations || 0}
+                              </span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-snug">
+                              Contactos de la etapa de prelanzamiento que ya fueron gestionados y tienen más de 60 días de antigüedad.
+                            </p>
+                          </div>
+                        </label>
+
+                      </div>
+
+                      <div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200">
+                        <div class="text-xs text-slate-600 font-medium">
+                          <span id="dev-cleanup-selected-count" class="font-bold text-slate-900">0</span> opciones seleccionadas para depurar.
+                        </div>
+
+                        <button type="button" id="dev-btn-execute-cleanup" class="w-full sm:w-auto px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer">
+                          <i class="fas fa-trash-alt"></i>
+                          <span>Ejecutar Depuración Seleccionada</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  <!-- SECCIÓN 2: EXPORTACIÓN DE CLIENTES ATENDIDOS A EXCEL -->
+                  <div class="bg-gradient-to-br from-indigo-950/90 via-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-indigo-900/50 space-y-6">
+                    
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                      <div>
+                        <div class="flex items-center gap-2.5">
+                          <span class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-base">
+                            <i class="fas fa-file-excel"></i>
+                          </span>
+                          <div>
+                            <h3 class="text-lg font-black text-white">Descarga de Clientes Atendidos & Citas (Excel .xlsx)</h3>
+                            <span class="text-[11px] text-emerald-400 font-mono font-bold">Reporte Profesional con formato monetario ₡ y enlace WhatsApp</span>
+                          </div>
+                        </div>
+                        <p class="text-xs text-slate-300 mt-2">
+                          Genera y descarga una hoja de cálculo en Excel estructurada profesionalmente con los datos de clientes, servicios, precios y teléfonos para el comercio seleccionado o para toda la plataforma.
+                        </p>
+                      </div>
+
+                      <div class="px-3.5 py-2 bg-slate-800/80 rounded-2xl border border-slate-700/80 text-right self-start">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Total Citas en BD</span>
+                        <span class="text-base font-black text-amber-400">${appointments.length}</span>
+                      </div>
+                    </div>
+
+                    <form id="dev-export-excel-form" class="space-y-4">
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        
+                        <!-- Filtro: Comercio -->
+                        <div class="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                          <label class="block text-xs font-bold text-slate-200">
+                            <i class="fas fa-store text-indigo-400 mr-1"></i> Seleccionar Comercio:
+                          </label>
+                          <select id="dev-export-biz-select" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="all">🏢 Todos los Comercios (${businesses.length})</option>
+                            ${businesses.map(b => `
+                              <option value="${b.id}">${this.escapeHtml(b.name)} (${b.categoryLabel || 'General'})</option>
+                            `).join('')}
+                          </select>
+                        </div>
+
+                        <!-- Filtro: Estado de Citas -->
+                        <div class="space-y-1.5 sm:col-span-2 lg:col-span-1">
+                          <label class="block text-xs font-bold text-slate-200">
+                            <i class="fas fa-check-circle text-emerald-400 mr-1"></i> Estado de Cita:
+                          </label>
+                          <select id="dev-export-status-select" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            <option value="completed" selected>✅ Solo Completadas / Atendidas (Recomendado)</option>
+                            <option value="confirmed">📅 Confirmadas</option>
+                            <option value="all">📋 Todas (Atendidas, Confirmadas, Pendientes, Canceladas)</option>
+                          </select>
+                        </div>
+
+                        <!-- Filtro: Fecha Desde -->
+                        <div class="space-y-1.5">
+                          <label class="block text-xs font-bold text-slate-200">
+                            <i class="fas fa-calendar-day text-blue-400 mr-1"></i> Fecha Desde:
+                          </label>
+                          <input type="date" id="dev-export-start-date" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+
+                        <!-- Filtro: Fecha Hasta -->
+                        <div class="space-y-1.5">
+                          <label class="block text-xs font-bold text-slate-200">
+                            <i class="fas fa-calendar-day text-blue-400 mr-1"></i> Fecha Hasta:
+                          </label>
+                          <input type="date" id="dev-export-end-date" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
+
+                      </div>
+
+                      <!-- Presets rápidos de fechas y Botón Descargar -->
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-800">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <span class="text-[11px] text-slate-400 font-bold mr-1">Rango rápido:</span>
+                          <button type="button" id="dev-preset-this-month" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 rounded-lg font-bold transition-colors cursor-pointer">
+                            Este Mes
+                          </button>
+                          <button type="button" id="dev-preset-last-month" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 rounded-lg font-bold transition-colors cursor-pointer">
+                            Mes Anterior
+                          </button>
+                          <button type="button" id="dev-preset-all-time" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] text-slate-200 rounded-lg font-bold transition-colors cursor-pointer">
+                            Todo el Historial
+                          </button>
+                        </div>
+
+                        <button type="submit" id="dev-btn-download-excel" class="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-950/30 transition-all flex items-center justify-center gap-2.5 cursor-pointer">
+                          <i class="fas fa-file-excel text-base"></i>
+                          <span>Descargar Excel Estructurado (.xlsx)</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                </div>
+              ` : ''}
+
             </div>
           </div>
         </div>
@@ -5352,6 +5615,110 @@ class App {
       document.getElementById('dev-tab-paypal')?.addEventListener('click', () => {
         this.activeDevTab = 'paypal';
         this.renderDeveloperDashboardView(container);
+      });
+      document.getElementById('dev-tab-maintenance')?.addEventListener('click', () => {
+        this.activeDevTab = 'maintenance';
+        this.renderDeveloperDashboardView(container);
+      });
+
+      // MANTENIMIENTO: Checkboxes y Acciones de Depuración
+      const updateCleanupCount = () => {
+        const checked = document.querySelectorAll('.dev-cleanup-checkbox:checked');
+        const countEl = document.getElementById('dev-cleanup-selected-count');
+        if (countEl) countEl.textContent = checked.length;
+      };
+
+      document.querySelectorAll('.dev-cleanup-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateCleanupCount);
+      });
+
+      document.getElementById('dev-select-all-cleanup-btn')?.addEventListener('click', () => {
+        document.querySelectorAll('.dev-cleanup-checkbox').forEach(cb => { cb.checked = true; });
+        updateCleanupCount();
+      });
+
+      document.getElementById('dev-clear-all-cleanup-btn')?.addEventListener('click', () => {
+        document.querySelectorAll('.dev-cleanup-checkbox').forEach(cb => { cb.checked = false; });
+        updateCleanupCount();
+      });
+
+      // Ejecutar Depuración Seleccionada
+      document.getElementById('dev-btn-execute-cleanup')?.addEventListener('click', () => {
+        const checked = Array.from(document.querySelectorAll('.dev-cleanup-checkbox:checked')).map(cb => cb.value);
+        if (checked.length === 0) {
+          this.showToast('Selecciona al menos una casilla de datos para depurar.', 'warning');
+          return;
+        }
+
+        const options = {
+          otp: checked.includes('otp'),
+          dateBlocks: checked.includes('date_blocks'),
+          categoryAlerts: checked.includes('category_alerts'),
+          cancelledAppointments: checked.includes('cancelled_appointments'),
+          handledPreRegistrations: checked.includes('handled_preregistrations')
+        };
+
+        this.renderCleanupConfirmModal(options, async () => {
+          try {
+            const btn = document.getElementById('dev-btn-execute-cleanup');
+            if (btn) {
+              btn.disabled = true;
+              btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Depurando...';
+            }
+            const res = await storage.executeDatabaseCleanup(options);
+            this.showToast(`¡Depuración completada! Se eliminaron ${res.totalPurged || 0} registros.`, 'success');
+            this.renderDeveloperDashboardView(container);
+          } catch (err) {
+            this.showToast(err.message || 'Error al ejecutar depuración.', 'error');
+          }
+        });
+      });
+
+      // EXPORTACIÓN A EXCEL: Presets de fechas
+      const setDateRange = (start, end) => {
+        const startInput = document.getElementById('dev-export-start-date');
+        const endInput = document.getElementById('dev-export-end-date');
+        if (startInput) startInput.value = start;
+        if (endInput) endInput.value = end;
+      };
+
+      document.getElementById('dev-preset-this-month')?.addEventListener('click', () => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+        setDateRange(`${y}-${m}-01`, `${y}-${m}-${String(lastDay).padStart(2, '0')}`);
+      });
+
+      document.getElementById('dev-preset-last-month')?.addEventListener('click', () => {
+        const now = new Date();
+        const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const y = prevMonthDate.getFullYear();
+        const m = String(prevMonthDate.getMonth() + 1).padStart(2, '0');
+        const lastDay = new Date(y, prevMonthDate.getMonth() + 1, 0).getDate();
+        setDateRange(`${y}-${m}-01`, `${y}-${m}-${String(lastDay).padStart(2, '0')}`);
+      });
+
+      document.getElementById('dev-preset-all-time')?.addEventListener('click', () => {
+        setDateRange('', '');
+      });
+
+      // Submit exportación Excel
+      document.getElementById('dev-export-excel-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const bizSelect = document.getElementById('dev-export-biz-select');
+        const statusSelect = document.getElementById('dev-export-status-select');
+        const startInput = document.getElementById('dev-export-start-date');
+        const endInput = document.getElementById('dev-export-end-date');
+
+        const businessId = bizSelect ? bizSelect.value : 'all';
+        const status = statusSelect ? statusSelect.value : 'completed';
+        const startDate = startInput ? startInput.value : '';
+        const endDate = endInput ? endInput.value : '';
+
+        const downloadUrl = storage.getExportExcelUrl({ businessId, status, startDate, endDate });
+        this.showToast('Generando reporte Excel...', 'info');
+        window.open(downloadUrl, '_blank');
       });
 
       // Botón: Activar Comercio por SINPE Móvil
@@ -5825,6 +6192,87 @@ class App {
       `;
       document.getElementById('dev-retry-btn')?.addEventListener('click', () => this.renderDeveloperDashboardView(container));
     }
+  }
+
+  // ==========================================
+  // MODAL DE CONFIRMACIÓN DE DEPURACIÓN (DEVELOPER)
+  // ==========================================
+  renderCleanupConfirmModal(options, callback) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const items = [];
+    if (options.otp) items.push('🔑 Códigos OTP de recuperación de contraseña expirados (>15 min) o usados');
+    if (options.dateBlocks) items.push('📅 Bloqueos de fechas y feriados pasados');
+    if (options.categoryAlerts) items.push('🏷️ Alertas de solicitudes de categorías antiguas (>30 días)');
+    if (options.cancelledAppointments) items.push('❌ Historial de citas canceladas antiguas (>60 días)');
+    if (options.handledPreRegistrations) items.push('🚀 Pre-registros de comercios contactados/gestionados (>60 días)');
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+          
+          <div class="p-6 bg-gradient-to-r from-rose-950 via-slate-900 to-slate-900 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-10 h-10 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-lg">
+                <i class="fas fa-exclamation-triangle"></i>
+              </span>
+              <div>
+                <h3 class="text-base font-black">Confirmar Depuración</h3>
+                <span class="text-xs text-rose-300">Acción permanente de base de datos</span>
+              </div>
+            </div>
+            <button id="dev-cleanup-modal-close-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-4">
+            <p class="text-xs text-slate-600 font-medium leading-relaxed">
+              Estás a punto de depurar de forma permanente los siguientes registros seleccionados de la base de datos:
+            </p>
+
+            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs font-semibold text-slate-800">
+              ${items.map(it => `
+                <div class="flex items-start gap-2">
+                  <i class="fas fa-check-circle text-rose-500 mt-0.5 flex-shrink-0 text-xs"></i>
+                  <span>${it}</span>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="p-3 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 text-[11px] flex items-start gap-2">
+              <i class="fas fa-shield-alt text-rose-600 text-sm mt-0.5 flex-shrink-0"></i>
+              <p>
+                <strong>Nota:</strong> Los datos de comercios activos, servicios, clientes, reseñas y citas confirmadas <strong>NO</strong> se tocarán.
+              </p>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button type="button" id="dev-cleanup-modal-cancel-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button type="button" id="dev-cleanup-modal-confirm-btn" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                <i class="fas fa-trash-alt"></i>
+                <span>Confirmar y Depurar</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => {
+      modalContainer.innerHTML = '';
+    };
+
+    document.getElementById('dev-cleanup-modal-close-btn')?.addEventListener('click', closeModal);
+    document.getElementById('dev-cleanup-modal-cancel-btn')?.addEventListener('click', closeModal);
+    document.getElementById('dev-cleanup-modal-confirm-btn')?.addEventListener('click', () => {
+      closeModal();
+      if (typeof callback === 'function') callback();
+    });
   }
 
   // ==========================================

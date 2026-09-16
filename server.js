@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import * as XLSX from 'xlsx';
 import { pool, initDatabase } from './db.js';
 import { sendBookingConfirmationEmail, sendReviewRequestEmail, sendPasswordResetEmail } from './emailService.js';
 import { 
@@ -2213,6 +2214,247 @@ app.delete('/api/developer/businesses/:id', async (req, res) => {
   } catch (error) {
     console.error('Error eliminando negocio desde developer:', error);
     res.status(500).json({ error: 'Error al eliminar negocio.' });
+  }
+});
+
+// 10. Estadísticas de Datos Depurables para Mantenimiento de BD
+app.get('/api/developer/cleanup/stats', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. Password resets expirados o usados
+    const resetsRes = await pool.query(
+      "SELECT COUNT(*) as count FROM reservas_password_resets WHERE expires_at < NOW() OR used = TRUE"
+    );
+
+    // 2. Bloqueos de horarios en fechas pasadas
+    const blocksRes = await pool.query(
+      "SELECT COUNT(*) as count FROM reservas_blocked_slots WHERE date < $1",
+      [today]
+    );
+
+    // 3. Alertas de categorías leídas/descartadas con más de 30 días
+    const alertsRes = await pool.query(
+      "SELECT COUNT(*) as count FROM reservas_custom_category_alerts WHERE status IN ('read', 'dismissed') AND created_at < NOW() - INTERVAL '30 days'"
+    );
+
+    // 4. Citas canceladas con más de 60 días
+    const aptsRes = await pool.query(
+      "SELECT COUNT(*) as count FROM reservas_appointments WHERE status = 'cancelled' AND created_at < NOW() - INTERVAL '60 days'"
+    );
+
+    // 5. Pre-registros atendidos o dados de alta con más de 60 días
+    const preregRes = await pool.query(
+      "SELECT COUNT(*) as count FROM reservas_pre_registrations WHERE status IN ('contacted', 'registered') AND created_at < NOW() - INTERVAL '60 days'"
+    );
+
+    const expiredOtpCodes = parseInt(resetsRes.rows[0]?.count || 0, 10);
+    const pastDateBlocks = parseInt(blocksRes.rows[0]?.count || 0, 10);
+    const oldCategoryAlerts = parseInt(alertsRes.rows[0]?.count || 0, 10);
+    const oldCancelledAppointments = parseInt(aptsRes.rows[0]?.count || 0, 10);
+    const handledPreRegistrations = parseInt(preregRes.rows[0]?.count || 0, 10);
+    const totalPurgeable = expiredOtpCodes + pastDateBlocks + oldCategoryAlerts + oldCancelledAppointments + handledPreRegistrations;
+
+    res.json({
+      expiredOtpCodes,
+      pastDateBlocks,
+      oldCategoryAlerts,
+      oldCancelledAppointments,
+      handledPreRegistrations,
+      passwordResets: expiredOtpCodes,
+      pastBlockedSlots: pastDateBlocks,
+      cancelledAppointments: oldCancelledAppointments,
+      oldPreregistrations: handledPreRegistrations,
+      totalPurgeable
+    });
+  } catch (error) {
+    console.error('Error obteniendo stats de limpieza:', error);
+    res.status(500).json({ error: 'Error al consultar estadísticas de limpieza.' });
+  }
+});
+
+// 11. Ejecutar Depuración / Purgado Selectivo de BD
+app.post('/api/developer/cleanup/execute', async (req, res) => {
+  try {
+    const { 
+      purgePasswordResets, 
+      purgePastBlockedSlots, 
+      purgeOldCategoryAlerts, 
+      purgeCancelledAppointments, 
+      purgeOldPreregistrations,
+      otp,
+      dateBlocks,
+      categoryAlerts,
+      cancelledAppointments,
+      handledPreRegistrations
+    } = req.body;
+
+    const doOtp = purgePasswordResets || otp;
+    const doDateBlocks = purgePastBlockedSlots || dateBlocks;
+    const doCategoryAlerts = purgeOldCategoryAlerts || categoryAlerts;
+    const doCancelled = purgeCancelledAppointments || cancelledAppointments;
+    const doPrereg = purgeOldPreregistrations || handledPreRegistrations;
+
+    const today = new Date().toISOString().split('T')[0];
+    const results = {
+      passwordResets: 0,
+      pastBlockedSlots: 0,
+      oldCategoryAlerts: 0,
+      cancelledAppointments: 0,
+      oldPreregistrations: 0
+    };
+
+    if (doOtp) {
+      const r = await pool.query("DELETE FROM reservas_password_resets WHERE expires_at < NOW() OR used = TRUE");
+      results.passwordResets = r.rowCount || 0;
+    }
+
+    if (doDateBlocks) {
+      const r = await pool.query("DELETE FROM reservas_blocked_slots WHERE date < $1", [today]);
+      results.pastBlockedSlots = r.rowCount || 0;
+    }
+
+    if (doCategoryAlerts) {
+      const r = await pool.query("DELETE FROM reservas_custom_category_alerts WHERE status IN ('read', 'dismissed') AND created_at < NOW() - INTERVAL '30 days'");
+      results.oldCategoryAlerts = r.rowCount || 0;
+    }
+
+    if (doCancelled) {
+      const r = await pool.query("DELETE FROM reservas_appointments WHERE status = 'cancelled' AND created_at < NOW() - INTERVAL '60 days'");
+      results.cancelledAppointments = r.rowCount || 0;
+    }
+
+    if (doPrereg) {
+      const r = await pool.query("DELETE FROM reservas_pre_registrations WHERE status IN ('contacted', 'registered') AND created_at < NOW() - INTERVAL '60 days'");
+      results.oldPreregistrations = r.rowCount || 0;
+    }
+
+    const totalPurged = Object.values(results).reduce((a, b) => a + b, 0);
+
+    res.json({
+      success: true,
+      message: `Limpieza completada: se eliminaron ${totalPurged} registros de la base de datos.`,
+      results,
+      totalPurged
+    });
+  } catch (error) {
+    console.error('Error ejecutando limpieza de BD:', error);
+    res.status(500).json({ error: 'Error al ejecutar limpieza de la base de datos.' });
+  }
+});
+
+// 12. Exportar Historial de Citas y Clientes a Excel Profesional (.xlsx)
+app.get('/api/developer/export/appointments-excel', async (req, res) => {
+  try {
+    const { businessId, status = 'completed', startDate, endDate } = req.query;
+
+    let query = `
+      SELECT a.id, a.date, a.time, a.status, a.client_name, a.client_phone, a.client_email,
+             a.service_name, a.service_price, a.service_duration, a.notes, a.created_at,
+             b.name as business_name, b.category as business_category, b.city as business_city, b.phone as business_phone
+      FROM reservas_appointments a
+      LEFT JOIN reservas_businesses b ON a.business_id = b.id
+      WHERE 1=1
+    `;
+    const params = [];
+    let pIdx = 1;
+
+    if (businessId && businessId !== 'all') {
+      query += ` AND a.business_id = $${pIdx++}`;
+      params.push(businessId.trim());
+    }
+
+    if (status && status !== 'all') {
+      query += ` AND a.status = $${pIdx++}`;
+      params.push(status.trim());
+    }
+
+    if (startDate && startDate.trim()) {
+      query += ` AND a.date >= $${pIdx++}`;
+      params.push(startDate.trim());
+    }
+
+    if (endDate && endDate.trim()) {
+      query += ` AND a.date <= $${pIdx++}`;
+      params.push(endDate.trim());
+    }
+
+    query += ' ORDER BY a.date DESC, a.time DESC';
+
+    const dbRes = await pool.query(query, params);
+    const rows = dbRes.rows;
+
+    // Traducir estados
+    const statusLabels = {
+      'completed': 'Completada / Atendida',
+      'confirmed': 'Confirmada',
+      'pending': 'Pendiente',
+      'cancelled': 'Cancelada'
+    };
+
+    // Transformar datos a formato para Excel
+    const excelData = rows.map((r, i) => ({
+      '#': i + 1,
+      'ID Reserva': r.id,
+      'Fecha Cita': r.date,
+      'Hora': r.time,
+      'Estado': statusLabels[r.status] || r.status,
+      'Comercio': r.business_name || 'N/A',
+      'Categoría Comercio': r.business_category || 'N/A',
+      'Ciudad / Cantón': r.business_city || 'N/A',
+      'Teléfono Comercio': r.business_phone || 'N/A',
+      'Nombre Cliente': r.client_name,
+      'Teléfono Cliente': r.client_phone,
+      'WhatsApp Enlace': r.client_phone ? `https://wa.me/${r.client_phone.replace(/[^0-9]/g, '')}` : '',
+      'Correo Cliente': r.client_email || 'Sin correo',
+      'Servicio': r.service_name || 'Servicio General',
+      'Duración (min)': r.service_duration || 30,
+      'Monto (CRC ₡)': parseFloat(r.service_price) || 0,
+      'Notas / Observaciones': r.notes || '',
+      'Fecha de Registro': r.created_at ? new Date(r.created_at).toLocaleString('es-CR') : ''
+    }));
+
+    // Crear libro de trabajo (Workbook) con SheetJS
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+    // Ajustar anchos de columnas
+    const colWidths = [
+      { wch: 5 },  // #
+      { wch: 14 }, // ID
+      { wch: 12 }, // Fecha
+      { wch: 10 }, // Hora
+      { wch: 22 }, // Estado
+      { wch: 28 }, // Comercio
+      { wch: 18 }, // Cat
+      { wch: 18 }, // Ciudad
+      { wch: 18 }, // Tel Biz
+      { wch: 26 }, // Cliente
+      { wch: 16 }, // Tel Cli
+      { wch: 28 }, // WhatsApp link
+      { wch: 26 }, // Email Cli
+      { wch: 28 }, // Servicio
+      { wch: 14 }, // Duración
+      { wch: 16 }, // Monto
+      { wch: 30 }, // Notas
+      { wch: 22 }  // Registro
+    ];
+    worksheet['!cols'] = colWidths;
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reporte de Citas y Clientes');
+
+    // Generar buffer XLSX
+    const buf = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+
+    const bizNameSlug = businessId && businessId !== 'all' ? `Comercio_${businessId}` : 'Todos_Comercios';
+    const filename = `Reporte_Clientes_ReservasCR_${bizNameSlug}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buf);
+  } catch (error) {
+    console.error('Error generando Excel:', error);
+    res.status(500).json({ error: 'Error al generar el archivo Excel.' });
   }
 });
 
