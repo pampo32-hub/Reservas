@@ -3219,6 +3219,7 @@ class App {
             </div>
           </div>
 
+          <div class="flex items-center gap-2">
           <div class="flex items-center gap-2 flex-wrap">
             <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer" title="Abrir y descargar Manual de Usuario en PDF">
               <i class="fas fa-book-open text-xs"></i>
@@ -8950,6 +8951,7 @@ class App {
 
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
+                      <label class="block font-bold text-slate-700 mb
                       <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
                       <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
@@ -11366,8 +11368,14 @@ class App {
       });
     });
 
-    // Global listener for terms and privacy modal triggers
+    // Global listener for terms, privacy and faq modal triggers
     document.addEventListener('click', (e) => {
+      const faqTarget = e.target.closest('.open-faq-modal');
+      if (faqTarget) {
+        e.preventDefault();
+        this.renderFaqModal();
+        return;
+      }
       const termsTarget = e.target.closest('.open-terms-modal');
       if (termsTarget) {
         e.preventDefault();
@@ -11380,6 +11388,169 @@ class App {
         this.renderLegalModal('privacy');
         return;
       }
+    });
+  }
+
+  // --- MODAL DE PREGUNTAS FRECUENTES (FAQ) ---
+  renderFaqModal() {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+          
+          <!-- Header -->
+          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative shrink-0 border-b border-slate-800">
+            <button id="close-faq-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer" title="Cerrar">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
+                <i class="fas fa-circle-question"></i> Centro de Ayuda Oficial
+              </span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
+                <i class="fas fa-map-marker-alt text-[9px]"></i> Costa Rica 🇨🇷
+              </span>
+            </div>
+
+            <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Preguntas Frecuentes (FAQ)</h2>
+            <p class="text-xs text-slate-300 mt-1">Respuestas directas a las consultas más habituales de clientes y comercios en Reservas CR.</p>
+          </div>
+
+          <!-- Scrollable FAQ Content -->
+          <div class="p-5 sm:p-6 overflow-y-auto space-y-3.5 text-xs sm:text-sm text-slate-700 leading-relaxed flex-1 bg-slate-50/50">
+            
+            <!-- 1 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs" open>
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-mobile-screen-button text-blue-600 shrink-0"></i> 1. ¿Mis clientes deben descargar una aplicación?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                <strong>No.</strong> Tus clientes reservan directamente desde cualquier navegador web (celular, tablet o computadora) mediante tu enlace sin instalar aplicaciones pesadas. Solo ingresan sus datos o inician sesión para agendar.
+              </p>
+            </details>
+
+            <!-- 2 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-calendar-xmark text-amber-500 shrink-0"></i> 2. ¿Cómo bloqueo un día feriado o personal?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                Desde la vista de tu Calendario, simplemente haz clic sobre las horas que deseas inhabilitar. Se pondrán en color rojo y ningún cliente podrá reservar en ese horario.
+              </p>
+            </details>
+
+            <!-- 3 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-arrow-trend-up text-emerald-600 shrink-0"></i> 3. ¿Cómo puedo cambiar o mejorar mi plan?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                Puedes solicitar un cambio de plan (de Básico a Pro o Ilimitado) en cualquier momento escribiendo a nuestro correo oficial <strong class="text-slate-800">soporte@reservascr.app</strong> o contactando a tu asesor de cuenta.
+              </p>
+            </details>
+
+            <!-- 4 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-users-gear text-purple-600 shrink-0"></i> 4. ¿Cuántos especialistas puedo registrar?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                Depende de tu plan: el <strong>Plan Básico</strong> incluye 1 especialista, el <strong>Plan Pro</strong> permite hasta 5 colaboradores con agendas independientes, y el <strong>Plan Ilimitado</strong> permite registrar todo tu equipo sin límite.
+              </p>
+            </details>
+
+            <!-- 5 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fab fa-whatsapp text-emerald-500 shrink-0"></i> 5. ¿Cómo se envían las confirmaciones por WhatsApp?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                Al confirmar una reserva, el sistema genera automáticamente el mensaje con todos los datos (fecha, hora, servicio, especialista y monto) listo para abrirse en WhatsApp con 1 toque.
+              </p>
+            </details>
+
+            <!-- 6 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-user-xmark text-rose-500 shrink-0"></i> 6. ¿Qué pasa si un cliente no llega a su cita?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                Puedes abrir los detalles de la cita en tu calendario y marcarla como "Cancelada" o "No Asistió". El espacio quedará documentado en tu historial y reportes contables.
+              </p>
+            </details>
+
+            <!-- 7 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-utensils text-orange-500 shrink-0"></i> 7. ¿Cómo configuro mi hora de almuerzo?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                En la sección de <strong>Horarios de Atención</strong> de tu panel, defines tu horario general y activas tu franja de almuerzo. El sistema ocultará esos bloques de hora en la vista pública.
+              </p>
+            </details>
+
+            <!-- 8 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-mobile text-sky-600 shrink-0"></i> 8. ¿Puedo usar el panel en mi celular fuera del local?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                <strong>Sí.</strong> La plataforma es 100% responsiva. Puedes acceder a <strong>reservascr.app</strong> desde el navegador de tu celular para ver tu agenda del día, aprobar citas y consultar tus reportes desde cualquier lugar.
+              </p>
+            </details>
+
+            <!-- 9 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-file-excel text-emerald-600 shrink-0"></i> 9. ¿Cómo descargo mi reporte contable a Excel?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                En el módulo de <strong>Reportes</strong> (Planes Pro e Ilimitado), selecciona el rango de fechas que deseas auditar y presiona el botón <em>"Exportar a Excel"</em> para obtener tu archivo con totales e ingresos.
+              </p>
+            </details>
+
+            <!-- 10 -->
+            <details class="group bg-white rounded-2xl border border-slate-200/90 p-4 transition-all hover:border-blue-300 shadow-2xs">
+              <summary class="flex items-center justify-between font-bold text-slate-900 cursor-pointer list-none select-none gap-2 text-xs sm:text-sm">
+                <span class="flex items-center gap-2"><i class="fas fa-key text-indigo-600 shrink-0"></i> 10. ¿Qué hago si olvido mi contraseña de acceso?</span>
+                <i class="fas fa-chevron-down text-slate-400 text-xs transition-transform duration-200 group-open:rotate-180 shrink-0"></i>
+              </summary>
+              <p class="mt-2.5 text-xs text-slate-600 leading-relaxed border-t border-slate-100 pt-2.5">
+                En la pantalla de inicio de sesión de comercios, presiona <em>"¿Olvidaste tu contraseña?"</em>, ingresa tu correo registrado y recibirás de inmediato un enlace seguro para restablecerla.
+              </p>
+            </details>
+
+          </div>
+
+          <!-- Footer Modal -->
+          <div class="p-4 sm:p-5 bg-slate-100 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shrink-0">
+            <span class="text-slate-500 font-medium">¿Dudas adicionales? Escríbenos a <strong class="text-slate-800">soporte@reservascr.app</strong></span>
+            <button id="close-faq-modal-bottom-btn" class="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold transition-all cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-faq-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+    document.getElementById('close-faq-modal-bottom-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
     });
   }
 
