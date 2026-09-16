@@ -6537,7 +6537,7 @@ class App {
               <i class="fab fa-paypal"></i> Pasarela de Suscripción Oficial
             </div>
             <h3 class="text-xl font-black text-white">Activar ${plan.name}</h3>
-            <p class="text-xs text-slate-300 mt-0.5">Cobro mensual recurrente de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC).</p>
+            <p class="text-xs text-slate-300 mt-0.5">Mensualidad de <strong>$${plan.priceUsd} USD</strong> (~${this.formatColones(plan.priceCrc)} CRC) &bull; Acceso 30 días</p>
           </div>
 
           <!-- Resumen del Comercio -->
@@ -6569,7 +6569,7 @@ class App {
 
             <div class="pt-2 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
               <i class="fas fa-lock text-emerald-600"></i>
-              <span>Procesado de forma 100% segura por PayPal. Cancela cuando quieras sin penalización.</span>
+              <span>Pago 100% seguro con Tarjeta o PayPal. Sin contratos obligatorios.</span>
             </div>
           </div>
 
@@ -6583,9 +6583,8 @@ class App {
 
     try {
       const config = await storage.getPayPalConfig();
-      const targetPlanId = config.plans[planId] || config.plans.pro;
 
-      // Cargar SDK dinámico si no está en window
+      // Cargar SDK dinámico con soporte de tarjetas e invitado
       await this.loadPayPalSDK(config.clientId, config.currency || 'USD');
 
       const spinner = document.getElementById('paypal-loading-spinner');
@@ -6600,12 +6599,11 @@ class App {
           shape: 'rect',
           color: 'gold',
           layout: 'vertical',
-          label: 'subscribe'
+          label: 'pay'
         },
-        createSubscription: (data, actions) => {
-          return actions.subscription.create({
-            plan_id: targetPlanId
-          });
+        createOrder: async (data, actions) => {
+          const res = await storage.createPayPalOrder(businessId, planId);
+          return res.orderId;
         },
         onApprove: async (data, actions) => {
           const btnContainer = document.getElementById('paypal-button-container');
@@ -6613,14 +6611,14 @@ class App {
             btnContainer.innerHTML = `
               <div class="py-8 text-center space-y-2">
                 <i class="fas fa-circle-notch fa-spin text-2xl text-emerald-600"></i>
-                <p class="text-xs font-bold text-slate-800">Verificando y activando tu suscripción...</p>
+                <p class="text-xs font-bold text-slate-800">Verificando y activando tu plan comercial...</p>
               </div>
             `;
           }
 
           try {
-            await storage.verifyPayPalSubscription(data.subscriptionID, businessId, planId);
-            this.showToast(`¡Suscripción al ${plan.name} activada con éxito!`, 'success');
+            const result = await storage.capturePayPalOrder(data.orderID, businessId, planId);
+            this.showToast(`¡Pago del ${plan.name} completado con éxito!`, 'success');
 
             modalContainer.innerHTML = `
               <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
@@ -6630,7 +6628,7 @@ class App {
                   </div>
                   <h3 class="text-xl font-black text-slate-900">¡Pago Confirmado!</h3>
                   <p class="text-xs text-slate-600">
-                    Tu suscripción al <strong>${plan.name} ($${plan.priceUsd}/mes)</strong> ha sido activada correctamente con ID de PayPal <code>${data.subscriptionID}</code>.
+                    Tu mensualidad del <strong>${plan.name} ($${plan.priceUsd}/mes)</strong> ha sido activada correctamente. ID de transacción: <code>${data.orderID}</code>.
                   </p>
                   <button id="close-paypal-success-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all">
                     Continuar a mi Panel
@@ -6647,7 +6645,7 @@ class App {
             const errBox = document.getElementById('paypal-error-box');
             if (errBox) {
               errBox.classList.remove('hidden');
-              errBox.textContent = err.message || 'Error verificando suscripción.';
+              errBox.textContent = err.message || 'Error confirmando el pago.';
             }
           }
         },
@@ -6686,7 +6684,7 @@ class App {
 
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&vault=true&intent=subscription&components=buttons,applepay&currency=${currency}`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&components=buttons,applepay&enable-funding=card`;
       script.onload = () => resolve(window.paypal);
       script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
       document.head.appendChild(script);

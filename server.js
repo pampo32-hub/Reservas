@@ -2336,8 +2336,6 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
       'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
     };
 
-    const result = await sendReviewRequestEmail(testAppointment, testBusiness);
-    res.json({ success: true, message: 'Correo de valoración de prueba enviado exitosamente.', result });
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
 
     // Actualizar comercio en la Base de Datos PostgreSQL
@@ -2367,10 +2365,134 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
       business: updateRes.rows[0]
     });
   } catch (error) {
-    console.error('Error en /api/test-review-email:', error);
-    res.status(500).json({ error: error.message || 'Error enviando correo de prueba de valoración.' });
     console.error('Error en /api/paypal/verify-subscription:', error);
     res.status(500).json({ error: error.message || 'Error al procesar suscripción de PayPal.' });
+  }
+});
+
+// 2.1 Crear Orden de Pago Único Mensual (Guest Checkout - Tarjeta directa sin crear cuenta)
+app.post('/api/paypal/create-order', async (req, res) => {
+  try {
+    const { businessId, planId } = req.body;
+    if (!businessId || !planId) {
+      return res.status(400).json({ error: 'Faltan parámetros requeridos (businessId, planId).' });
+    }
+
+    const planConfigMap = {
+      'basic': { price: '8.00', name: 'Plan Básico', limit: 50 },
+      'pro': { price: '15.00', name: 'Plan Profesional', limit: 200 },
+      'unlimited': { price: '25.00', name: 'Plan Ilimitado', limit: 999999 }
+    };
+
+    const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
+    const { token, host } = await getPayPalAccessToken();
+
+    const orderPayload = {
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          reference_id: `${businessId}_${planId}`,
+          description: `Suscripción Mensual - ${targetPlan.name} (Reservas CR)`,
+          custom_id: JSON.stringify({ businessId, planId }),
+          amount: {
+            currency_code: 'USD',
+            value: targetPlan.price
+          }
+        }
+      ],
+      application_context: {
+        brand_name: 'Reservas CR',
+        landing_page: 'BILLING',
+        user_action: 'PAY_NOW',
+        shipping_preference: 'NO_SHIPPING'
+      }
+    };
+
+    const payPalRes = await fetch(`https://${host}/v2/checkout/orders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(orderPayload)
+    });
+
+    const orderData = await payPalRes.json();
+    if (!payPalRes.ok) {
+      return res.status(400).json({ error: 'Error al crear la orden en PayPal.', details: orderData });
+    }
+
+    res.json({ success: true, orderId: orderData.id, order: orderData });
+  } catch (error) {
+    console.error('Error en /api/paypal/create-order:', error);
+    res.status(500).json({ error: error.message || 'Error interno creando orden de PayPal.' });
+  }
+});
+
+// 2.2 Capturar Orden y Activar Plan en PostgreSQL
+app.post('/api/paypal/capture-order', async (req, res) => {
+  try {
+    const { orderId, businessId, planId } = req.body;
+    if (!orderId || !businessId || !planId) {
+      return res.status(400).json({ error: 'Faltan parámetros requeridos (orderId, businessId, planId).' });
+    }
+
+    const { token, host } = await getPayPalAccessToken();
+
+    const payPalRes = await fetch(`https://${host}/v2/checkout/orders/${orderId}/capture`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const captureData = await payPalRes.json();
+    if (!payPalRes.ok) {
+      return res.status(400).json({ error: 'Error al capturar el pago en PayPal.', details: captureData });
+    }
+
+    if (captureData.status !== 'COMPLETED') {
+      return res.status(400).json({ error: `El pago no se completó. Estado actual: ${captureData.status}` });
+    }
+
+    const planConfigMap = {
+      'basic': { price: 8.00, limit: 50, name: 'Plan Básico' },
+      'pro': { price: 15.00, limit: 200, name: 'Plan Profesional' },
+      'unlimited': { price: 25.00, limit: 999999, name: 'Plan Ilimitado' }
+    };
+
+    const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
+
+    // Actualizar comercio en la Base de Datos PostgreSQL
+    const updateRes = await pool.query(`
+      UPDATE reservas_businesses
+      SET plan = $1,
+          plan_price_usd = $2,
+          monthly_booking_limit = $3,
+          paypal_subscription_id = $4,
+          subscription_status = 'active',
+          subscription_updated_at = NOW()
+      WHERE id = $5
+      RETURNING *
+    `, [planId, targetPlan.price, targetPlan.limit, orderId, businessId]);
+
+    if (updateRes.rowCount === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado en la base de datos.' });
+    }
+
+    console.log(`✅ Pago de mensualidad con tarjeta / PayPal completado para [${businessId}] -> Plan: ${planId} (Order: ${orderId})`);
+
+    res.json({
+      success: true,
+      message: `¡Pago de mensualidad del ${targetPlan.name} procesado con éxito!`,
+      orderId,
+      status: captureData.status,
+      business: updateRes.rows[0]
+    });
+  } catch (error) {
+    console.error('Error en /api/paypal/capture-order:', error);
+    res.status(500).json({ error: error.message || 'Error capturando orden de PayPal.' });
   }
 });
 

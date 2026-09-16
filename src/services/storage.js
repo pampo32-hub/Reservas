@@ -1395,6 +1395,45 @@ class StorageService {
     return { success: true, message: 'Plan activado localmente.' };
   }
 
+  async createPayPalOrder(businessId, planId) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/paypal/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId, planId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo crear la orden en PayPal.');
+      return data;
+    }
+    return { success: true, orderId: 'ORDER-' + Date.now() };
+  }
+
+  async capturePayPalOrder(orderId, businessId, planId) {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/paypal/capture-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, businessId, planId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo capturar el pago en PayPal.');
+      await this.loadFromApi();
+      return data;
+    }
+
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      biz.plan = planId;
+      biz.paypalSubscriptionId = orderId;
+      biz.subscriptionStatus = 'active';
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return { success: true, message: 'Pago procesado localmente.' };
+  }
+
   async cancelPayPalSubscription(businessId, reason = 'Cancelado por el usuario') {
     if (this.isOnlineApi) {
       const res = await fetch(`${this.apiBase}/paypal/cancel-subscription`, {
