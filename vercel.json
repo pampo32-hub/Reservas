@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=3600"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, s-maxage=3600"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/manual-comercios",
+      "destination": "/public/manual_usuario_comercios.html"
+    },
+    {
+      "source": "/manual-comercios-pdf",
+      "destination": "/public/Manual_de_Usuario_Comercios_Reservas_CR.pdf"
+    },
+    {
+      "source": "/((?!api/|public/|src/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
