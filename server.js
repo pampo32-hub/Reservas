@@ -1680,6 +1680,7 @@ app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
 app.get('/api/businesses/:id/appointments', async (req, res) => {
   try {
     const { id } = req.params;
+    const result = await pool.query('SELECT * FROM reservas_appointments WHERE business_id = $1 ORDER BY date DESC, time ASC', [id]);
     const result = await pool.query(`
       SELECT a.*, r.id as review_id, r.rating as review_rating, r.comment as review_comment
       FROM reservas_appointments a
@@ -1723,6 +1724,7 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   try {
     const { phone } = req.params;
     const { email } = req.query;
+    let query = 'SELECT a.*, b.name as business_name FROM reservas_appointments a LEFT JOIN reservas_businesses b ON a.business_id = b.id WHERE a.client_phone = $1';
     let query = `
       SELECT a.*, b.name as business_name, r.id as review_id, r.rating as review_rating, r.comment as review_comment
       FROM reservas_appointments a 
@@ -1891,16 +1893,22 @@ app.post('/api/appointments', async (req, res) => {
       autoConfirmed: isAutoConfirm
     };
 
+    // Notificaciones de citas (Deshabilitadas temporalmente durante prelanzamiento/publicidad)
+    const ENABLE_BOOKING_NOTIFICATIONS = process.env.ENABLE_BOOKING_NOTIFICATIONS === 'true';
     // Notificaciones automáticas de citas (Email y WhatsApp)
     const ENABLE_BOOKING_NOTIFICATIONS = process.env.ENABLE_BOOKING_NOTIFICATIONS !== 'false';
 
     if (ENABLE_BOOKING_NOTIFICATIONS && isAutoConfirm && initialStatus === 'confirmed') {
       pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
         .then(bizRes => {
+          const business = bizRes.rows[0] || null;
           const business = bizRes.rows[0] || { name: 'Comercio Reservas CR', phone: '+506 2200 0000', plan: 'pro' };
 
           // 1. Enviar correo de confirmación (si proporcionó email)
           if (a.clientEmail && a.clientEmail.includes('@')) {
+            sendBookingConfirmationEmail(createdAppointment, business).catch(emailErr => {
+              console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+            });
             console.log(`📧 [Email Auto] Enviando confirmación de cita #${createdAppointment.id} a ${a.clientEmail}...`);
             sendBookingConfirmationEmail(createdAppointment, business)
               .then(emailRes => {
@@ -1911,11 +1919,15 @@ app.post('/api/appointments', async (req, res) => {
               });
           }
 
+          // 2. Enviar WhatsApp de confirmación proactivo (Solo Planes Pro e Ilimitado)
+          const isProOrUnlimited = business && (business.plan === 'pro' || business.plan === 'unlimited');
+          if (isProOrUnlimited && optIn && a.clientPhone) {
           // 2. Enviar WhatsApp de confirmación proactivo (si proporcionó teléfono y opt-in)
           if (optIn && a.clientPhone) {
             console.log(`📲 [WhatsApp Auto] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
             sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
               .then(waRes => {
+                console.log(`📲 [WhatsApp Auto] Resultado envío cita ${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No enviado (${waRes?.reason || waRes?.error})`);
                 console.log(`📲 [WhatsApp Auto] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
               })
               .catch(waErr => {
@@ -1926,6 +1938,8 @@ app.post('/api/appointments', async (req, res) => {
         .catch(err => {
           console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
         });
+    } else {
+      console.log(`ℹ️ [Notificaciones Citas] Deshabilitadas temporalmente para cita ${createdAppointment.id} (Modo Prelanzamiento)`);
     } else if (!ENABLE_BOOKING_NOTIFICATIONS) {
       console.log(`ℹ️ [Notificaciones Citas] Deshabilitadas por configuración para cita ${createdAppointment.id}`);
     }
