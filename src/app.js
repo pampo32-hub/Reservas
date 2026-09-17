@@ -9,6 +9,135 @@ const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 
+// --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
+const CALENDAR_PASTEL_THEMES = {
+  celeste: {
+    id: 'celeste',
+    name: 'Celeste Pastel',
+    colorName: 'Celeste',
+    swatchBg: '#bae6fd', // sky-200
+    swatchRing: 'ring-sky-500',
+    containerClass: 'bg-gradient-to-br from-sky-100/50 via-sky-50/60 to-blue-50/40 border-sky-200/90 shadow-sky-500/5',
+    headerNavClass: 'bg-white/90 border-sky-200/90 shadow-2xs',
+    navBtnClass: 'bg-white hover:bg-sky-50 text-slate-700 border-sky-200',
+    todayBtnClass: 'bg-sky-100 hover:bg-sky-200/80 text-sky-800 border-sky-300',
+    weekdayHeaderMobile: 'border-b border-sky-100/80',
+    weekdayWeekendText: 'text-sky-600 font-black',
+    mobileGridBg: 'bg-white/95 border-sky-200/90',
+    mobileCellDefault: 'bg-white text-slate-800 hover:bg-sky-50/70',
+    mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-400 font-black',
+    mobileCellSelected: 'bg-sky-600 text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-600 ring-offset-1 z-10 font-black',
+    mobileDetailCard: 'bg-white/95 border-sky-200/90',
+    desktopContainer: 'border-sky-200/90 bg-white/95',
+    desktopWeekdayHeader: 'bg-sky-100/70 border-sky-200/90 text-sky-950',
+    desktopGridDivide: 'divide-sky-100/80 bg-sky-50/20',
+    desktopCellToday: 'ring-2 ring-sky-500 ring-inset bg-sky-50/40',
+    desktopTodayBadge: 'bg-sky-600 text-white',
+    accentText: 'text-sky-600',
+    accentBg: 'bg-sky-600 hover:bg-sky-700'
+  },
+  lavanda: {
+    id: 'lavanda',
+    name: 'Lavanda Pastel',
+    colorName: 'Lavanda',
+    swatchBg: '#e9d5ff', // purple-200
+    swatchRing: 'ring-purple-500',
+    containerClass: 'bg-gradient-to-br from-purple-100/50 via-purple-50/60 to-fuchsia-50/40 border-purple-200/90 shadow-purple-500/5',
+    headerNavClass: 'bg-white/90 border-purple-200/90 shadow-2xs',
+    navBtnClass: 'bg-white hover:bg-purple-50 text-slate-700 border-purple-200',
+    todayBtnClass: 'bg-purple-100 hover:bg-purple-200/80 text-purple-800 border-purple-300',
+    weekdayHeaderMobile: 'border-b border-purple-100/80',
+    weekdayWeekendText: 'text-purple-600 font-black',
+    mobileGridBg: 'bg-white/95 border-purple-200/90',
+    mobileCellDefault: 'bg-white text-slate-800 hover:bg-purple-50/70',
+    mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-400 font-black',
+    mobileCellSelected: 'bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-600 ring-offset-1 z-10 font-black',
+    mobileDetailCard: 'bg-white/95 border-purple-200/90',
+    desktopContainer: 'border-purple-200/90 bg-white/95',
+    desktopWeekdayHeader: 'bg-purple-100/70 border-purple-200/90 text-purple-950',
+    desktopGridDivide: 'divide-purple-100/80 bg-purple-50/20',
+    desktopCellToday: 'ring-2 ring-purple-500 ring-inset bg-purple-50/40',
+    desktopTodayBadge: 'bg-purple-600 text-white',
+    accentText: 'text-purple-600',
+    accentBg: 'bg-purple-600 hover:bg-purple-700'
+  },
+  menta: {
+    id: 'menta',
+    name: 'Menta Pastel',
+    colorName: 'Menta',
+    swatchBg: '#a7f3d0', // emerald-200
+    swatchRing: 'ring-emerald-500',
+    containerClass: 'bg-gradient-to-br from-emerald-100/50 via-emerald-50/60 to-teal-50/40 border-emerald-200/90 shadow-emerald-500/5',
+    headerNavClass: 'bg-white/90 border-emerald-200/90 shadow-2xs',
+    navBtnClass: 'bg-white hover:bg-emerald-50 text-slate-700 border-emerald-200',
+    todayBtnClass: 'bg-emerald-100 hover:bg-emerald-200/80 text-emerald-800 border-emerald-300',
+    weekdayHeaderMobile: 'border-b border-emerald-100/80',
+    weekdayWeekendText: 'text-emerald-600 font-black',
+    mobileGridBg: 'bg-white/95 border-emerald-200/90',
+    mobileCellDefault: 'bg-white text-slate-800 hover:bg-emerald-50/70',
+    mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 font-black',
+    mobileCellSelected: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-600 ring-offset-1 z-10 font-black',
+    mobileDetailCard: 'bg-white/95 border-emerald-200/90',
+    desktopContainer: 'border-emerald-200/90 bg-white/95',
+    desktopWeekdayHeader: 'bg-emerald-100/70 border-emerald-200/90 text-emerald-950',
+    desktopGridDivide: 'divide-emerald-100/80 bg-emerald-50/20',
+    desktopCellToday: 'ring-2 ring-emerald-500 ring-inset bg-emerald-50/40',
+    desktopTodayBadge: 'bg-emerald-600 text-white',
+    accentText: 'text-emerald-600',
+    accentBg: 'bg-emerald-600 hover:bg-emerald-700'
+  },
+  melocoton: {
+    id: 'melocoton',
+    name: 'Melocotón / Rosa',
+    colorName: 'Rosa Pastel',
+    swatchBg: '#fecdd3', // rose-200
+    swatchRing: 'ring-rose-500',
+    containerClass: 'bg-gradient-to-br from-rose-100/50 via-rose-50/60 to-pink-50/40 border-rose-200/90 shadow-rose-500/5',
+    headerNavClass: 'bg-white/90 border-rose-200/90 shadow-2xs',
+    navBtnClass: 'bg-white hover:bg-rose-50 text-slate-700 border-rose-200',
+    todayBtnClass: 'bg-rose-100 hover:bg-rose-200/80 text-rose-800 border-rose-300',
+    weekdayHeaderMobile: 'border-b border-rose-100/80',
+    weekdayWeekendText: 'text-rose-600 font-black',
+    mobileGridBg: 'bg-white/95 border-rose-200/90',
+    mobileCellDefault: 'bg-white text-slate-800 hover:bg-rose-50/70',
+    mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-400 font-black',
+    mobileCellSelected: 'bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-600 ring-offset-1 z-10 font-black',
+    mobileDetailCard: 'bg-white/95 border-rose-200/90',
+    desktopContainer: 'border-rose-200/90 bg-white/95',
+    desktopWeekdayHeader: 'bg-rose-100/70 border-rose-200/90 text-rose-950',
+    desktopGridDivide: 'divide-rose-100/80 bg-rose-50/20',
+    desktopCellToday: 'ring-2 ring-rose-500 ring-inset bg-rose-50/40',
+    desktopTodayBadge: 'bg-rose-600 text-white',
+    accentText: 'text-rose-600',
+    accentBg: 'bg-rose-600 hover:bg-rose-700'
+  },
+  vainilla: {
+    id: 'vainilla',
+    name: 'Vainilla / Arena',
+    colorName: 'Vainilla',
+    swatchBg: '#fde68a', // amber-200
+    swatchRing: 'ring-amber-500',
+    containerClass: 'bg-gradient-to-br from-amber-100/50 via-amber-50/60 to-yellow-50/40 border-amber-200/90 shadow-amber-500/5',
+    headerNavClass: 'bg-white/90 border-amber-200/90 shadow-2xs',
+    navBtnClass: 'bg-white hover:bg-amber-50 text-slate-700 border-amber-200',
+    todayBtnClass: 'bg-amber-100 hover:bg-amber-200/80 text-amber-800 border-amber-300',
+    weekdayHeaderMobile: 'border-b border-amber-100/80',
+    weekdayWeekendText: 'text-amber-600 font-black',
+    mobileGridBg: 'bg-white/95 border-amber-200/90',
+    mobileCellDefault: 'bg-white text-slate-800 hover:bg-amber-50/70',
+    mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-400 font-black',
+    mobileCellSelected: 'bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-600 ring-offset-1 z-10 font-black',
+    mobileDetailCard: 'bg-white/95 border-amber-200/90',
+    desktopContainer: 'border-amber-200/90 bg-white/95',
+    desktopWeekdayHeader: 'bg-amber-100/70 border-amber-200/90 text-amber-950',
+    desktopGridDivide: 'divide-amber-100/80 bg-amber-50/20',
+    desktopCellToday: 'ring-2 ring-amber-500 ring-inset bg-amber-50/40',
+    desktopTodayBadge: 'bg-amber-600 text-white',
+    accentText: 'text-amber-600',
+    accentBg: 'bg-amber-600 hover:bg-amber-700'
+  }
+};
+
 class App {
   constructor() {
     this.currentView = 'directory'; // 'directory' | 'business-detail' | 'owner-dashboard' | 'my-client-bookings' | 'developer-dashboard'
@@ -4862,9 +4991,6 @@ class App {
             </div>
           </div>
 
-          <!-- Filtros de Estado, Selector de Vista (Lista / Calendario), Especialista y Botón de Bloqueo Rápido -->
-          <!-- Filtros de Estado, Selector de Vista (Lista / Calendario), Ordenamiento y Especialista -->
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
           <!-- Filtros de Estado, Selector de Vista (Lista / Calendario) y Botón de Bloqueo Rápido -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap">
@@ -4897,33 +5023,6 @@ class App {
               </button>
             </div>
 
-            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
-              <!-- Selector de Ordenamiento (Solo en Vista de Lista) -->
-              ${this.ownerAgendaViewMode !== 'calendar' ? `
-                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs" title="Criterio de orden de las citas">
-                  <i class="fas fa-arrow-down-short-wide text-slate-400 text-xs"></i>
-                  <select id="owner-sort-order-select" class="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer">
-                    <option value="date-asc" ${sortOrder === 'date-asc' ? 'selected' : ''}>📅 Fecha y Hora de Cita</option>
-                    <option value="arrival-desc" ${sortOrder === 'arrival-desc' ? 'selected' : ''}>🕒 Orden de Llegada (Nuevas primero)</option>
-                    <option value="arrival-asc" ${sortOrder === 'arrival-asc' ? 'selected' : ''}>⏳ Orden de Llegada (Antiguas primero)</option>
-                  </select>
-                </div>
-              ` : ''}
-
-              ${businessStaff.length > 0 ? `
-                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
-                  <i class="fas fa-user-tag text-slate-400 text-xs"></i>
-                  <select id="owner-staff-filter-select" class="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer">
-                    <option value="all" ${staffFilter === 'all' ? 'selected' : ''}>Todos los Especialistas</option>
-                    <option value="unassigned" ${staffFilter === 'unassigned' ? 'selected' : ''}>Sin Asignar / General</option>
-                    ${businessStaff.map(st => `
-                      <option value="${st.id}" ${staffFilter === st.id ? 'selected' : ''}>${st.name} (${st.roleTitle || 'Especialista'})</option>
-                    `).join('')}
-                  </select>
-                </div>
-              ` : ''}
-
-              <button id="quick-manage-slots-btn" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
             <div class="flex items-center gap-2 shrink-0">
               <button id="quick-manage-slots-btn" class="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
                 <i class="fas fa-calendar-times"></i> Bloquear / Liberar Horas
@@ -5679,135 +5778,6 @@ class App {
     }
   }
 
-  // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
-  static CALENDAR_PASTEL_THEMES = {
-    celeste: {
-      id: 'celeste',
-      name: 'Celeste Pastel',
-      colorName: 'Celeste',
-      swatchBg: '#bae6fd', // sky-200
-      swatchRing: 'ring-sky-500',
-      containerClass: 'bg-gradient-to-br from-sky-100/50 via-sky-50/60 to-blue-50/40 border-sky-200/90 shadow-sky-500/5',
-      headerNavClass: 'bg-white/90 border-sky-200/90 shadow-2xs',
-      navBtnClass: 'bg-white hover:bg-sky-50 text-slate-700 border-sky-200',
-      todayBtnClass: 'bg-sky-100 hover:bg-sky-200/80 text-sky-800 border-sky-300',
-      weekdayHeaderMobile: 'border-b border-sky-100/80',
-      weekdayWeekendText: 'text-sky-600 font-black',
-      mobileGridBg: 'bg-white/95 border-sky-200/90',
-      mobileCellDefault: 'bg-white text-slate-800 hover:bg-sky-50/70',
-      mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-400 font-black',
-      mobileCellSelected: 'bg-sky-600 text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-600 ring-offset-1 z-10 font-black',
-      mobileDetailCard: 'bg-white/95 border-sky-200/90',
-      desktopContainer: 'border-sky-200/90 bg-white/95',
-      desktopWeekdayHeader: 'bg-sky-100/70 border-sky-200/90 text-sky-950',
-      desktopGridDivide: 'divide-sky-100/80 bg-sky-50/20',
-      desktopCellToday: 'ring-2 ring-sky-500 ring-inset bg-sky-50/40',
-      desktopTodayBadge: 'bg-sky-600 text-white',
-      accentText: 'text-sky-600',
-      accentBg: 'bg-sky-600 hover:bg-sky-700'
-    },
-    lavanda: {
-      id: 'lavanda',
-      name: 'Lavanda Pastel',
-      colorName: 'Lavanda',
-      swatchBg: '#e9d5ff', // purple-200
-      swatchRing: 'ring-purple-500',
-      containerClass: 'bg-gradient-to-br from-purple-100/50 via-purple-50/60 to-fuchsia-50/40 border-purple-200/90 shadow-purple-500/5',
-      headerNavClass: 'bg-white/90 border-purple-200/90 shadow-2xs',
-      navBtnClass: 'bg-white hover:bg-purple-50 text-slate-700 border-purple-200',
-      todayBtnClass: 'bg-purple-100 hover:bg-purple-200/80 text-purple-800 border-purple-300',
-      weekdayHeaderMobile: 'border-b border-purple-100/80',
-      weekdayWeekendText: 'text-purple-600 font-black',
-      mobileGridBg: 'bg-white/95 border-purple-200/90',
-      mobileCellDefault: 'bg-white text-slate-800 hover:bg-purple-50/70',
-      mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-400 font-black',
-      mobileCellSelected: 'bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-600 ring-offset-1 z-10 font-black',
-      mobileDetailCard: 'bg-white/95 border-purple-200/90',
-      desktopContainer: 'border-purple-200/90 bg-white/95',
-      desktopWeekdayHeader: 'bg-purple-100/70 border-purple-200/90 text-purple-950',
-      desktopGridDivide: 'divide-purple-100/80 bg-purple-50/20',
-      desktopCellToday: 'ring-2 ring-purple-500 ring-inset bg-purple-50/40',
-      desktopTodayBadge: 'bg-purple-600 text-white',
-      accentText: 'text-purple-600',
-      accentBg: 'bg-purple-600 hover:bg-purple-700'
-    },
-    menta: {
-      id: 'menta',
-      name: 'Menta Pastel',
-      colorName: 'Menta',
-      swatchBg: '#a7f3d0', // emerald-200
-      swatchRing: 'ring-emerald-500',
-      containerClass: 'bg-gradient-to-br from-emerald-100/50 via-emerald-50/60 to-teal-50/40 border-emerald-200/90 shadow-emerald-500/5',
-      headerNavClass: 'bg-white/90 border-emerald-200/90 shadow-2xs',
-      navBtnClass: 'bg-white hover:bg-emerald-50 text-slate-700 border-emerald-200',
-      todayBtnClass: 'bg-emerald-100 hover:bg-emerald-200/80 text-emerald-800 border-emerald-300',
-      weekdayHeaderMobile: 'border-b border-emerald-100/80',
-      weekdayWeekendText: 'text-emerald-600 font-black',
-      mobileGridBg: 'bg-white/95 border-emerald-200/90',
-      mobileCellDefault: 'bg-white text-slate-800 hover:bg-emerald-50/70',
-      mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 font-black',
-      mobileCellSelected: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-600 ring-offset-1 z-10 font-black',
-      mobileDetailCard: 'bg-white/95 border-emerald-200/90',
-      desktopContainer: 'border-emerald-200/90 bg-white/95',
-      desktopWeekdayHeader: 'bg-emerald-100/70 border-emerald-200/90 text-emerald-950',
-      desktopGridDivide: 'divide-emerald-100/80 bg-emerald-50/20',
-      desktopCellToday: 'ring-2 ring-emerald-500 ring-inset bg-emerald-50/40',
-      desktopTodayBadge: 'bg-emerald-600 text-white',
-      accentText: 'text-emerald-600',
-      accentBg: 'bg-emerald-600 hover:bg-emerald-700'
-    },
-    melocoton: {
-      id: 'melocoton',
-      name: 'Melocotón / Rosa',
-      colorName: 'Rosa Pastel',
-      swatchBg: '#fecdd3', // rose-200
-      swatchRing: 'ring-rose-500',
-      containerClass: 'bg-gradient-to-br from-rose-100/50 via-rose-50/60 to-pink-50/40 border-rose-200/90 shadow-rose-500/5',
-      headerNavClass: 'bg-white/90 border-rose-200/90 shadow-2xs',
-      navBtnClass: 'bg-white hover:bg-rose-50 text-slate-700 border-rose-200',
-      todayBtnClass: 'bg-rose-100 hover:bg-rose-200/80 text-rose-800 border-rose-300',
-      weekdayHeaderMobile: 'border-b border-rose-100/80',
-      weekdayWeekendText: 'text-rose-600 font-black',
-      mobileGridBg: 'bg-white/95 border-rose-200/90',
-      mobileCellDefault: 'bg-white text-slate-800 hover:bg-rose-50/70',
-      mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-400 font-black',
-      mobileCellSelected: 'bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-600 ring-offset-1 z-10 font-black',
-      mobileDetailCard: 'bg-white/95 border-rose-200/90',
-      desktopContainer: 'border-rose-200/90 bg-white/95',
-      desktopWeekdayHeader: 'bg-rose-100/70 border-rose-200/90 text-rose-950',
-      desktopGridDivide: 'divide-rose-100/80 bg-rose-50/20',
-      desktopCellToday: 'ring-2 ring-rose-500 ring-inset bg-rose-50/40',
-      desktopTodayBadge: 'bg-rose-600 text-white',
-      accentText: 'text-rose-600',
-      accentBg: 'bg-rose-600 hover:bg-rose-700'
-    },
-    vainilla: {
-      id: 'vainilla',
-      name: 'Vainilla / Arena',
-      colorName: 'Vainilla',
-      swatchBg: '#fde68a', // amber-200
-      swatchRing: 'ring-amber-500',
-      containerClass: 'bg-gradient-to-br from-amber-100/50 via-amber-50/60 to-yellow-50/40 border-amber-200/90 shadow-amber-500/5',
-      headerNavClass: 'bg-white/90 border-amber-200/90 shadow-2xs',
-      navBtnClass: 'bg-white hover:bg-amber-50 text-slate-700 border-amber-200',
-      todayBtnClass: 'bg-amber-100 hover:bg-amber-200/80 text-amber-800 border-amber-300',
-      weekdayHeaderMobile: 'border-b border-amber-100/80',
-      weekdayWeekendText: 'text-amber-600 font-black',
-      mobileGridBg: 'bg-white/95 border-amber-200/90',
-      mobileCellDefault: 'bg-white text-slate-800 hover:bg-amber-50/70',
-      mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-400 font-black',
-      mobileCellSelected: 'bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-600 ring-offset-1 z-10 font-black',
-      mobileDetailCard: 'bg-white/95 border-amber-200/90',
-      desktopContainer: 'border-amber-200/90 bg-white/95',
-      desktopWeekdayHeader: 'bg-amber-100/70 border-amber-200/90 text-amber-950',
-      desktopGridDivide: 'divide-amber-100/80 bg-amber-50/20',
-      desktopCellToday: 'ring-2 ring-amber-500 ring-inset bg-amber-50/40',
-      desktopTodayBadge: 'bg-amber-600 text-white',
-      accentText: 'text-amber-600',
-      accentBg: 'bg-amber-600 hover:bg-amber-700'
-    }
-  };
-
   // --- VISTA CALENDARIO DE AGENDA DE COMERCIO ---
   renderOwnerCalendarView(currentBiz, allAppointments, filteredAppointments, businessStaff) {
     const calDate = this.ownerCalendarCurrentMonth || new Date();
@@ -5825,7 +5795,7 @@ class App {
 
     // Tema Pastel Activo
     const activeThemeId = this.ownerCalendarTheme || 'celeste';
-    const themes = App.CALENDAR_PASTEL_THEMES;
+    const themes = CALENDAR_PASTEL_THEMES;
     const theme = themes[activeThemeId] || themes.celeste;
 
     // Días del mes actual
@@ -8693,7 +8663,7 @@ class App {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const themeId = btn.getAttribute('data-theme');
-        if (themeId && App.CALENDAR_PASTEL_THEMES[themeId]) {
+        if (themeId && CALENDAR_PASTEL_THEMES[themeId]) {
           this.ownerCalendarTheme = themeId;
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('reservas_calendar_theme', themeId);
