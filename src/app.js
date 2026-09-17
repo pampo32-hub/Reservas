@@ -353,6 +353,8 @@ class App {
         const query = params.rating ? `?rating=${params.rating}` : '';
         return aptId ? `#/calificar/${encodeURIComponent(aptId)}${query}` : '#/';
       }
+      case 'business-landing':
+        return '#/unete';
       case 'my-client-bookings':
         return '#/mis-reservas';
       case 'owner-dashboard':
@@ -367,7 +369,13 @@ class App {
 
   parseHash(hash = window.location.hash) {
     const cleanHash = (hash || '').trim();
+    const pathname = (window.location.pathname || '').trim();
     const searchParams = new URLSearchParams(window.location.search);
+
+    // 0. Revisar si la ruta viene directo en el pathname (ej: /unete o /para-negocios)
+    if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)$/i.test(pathname)) {
+      return { view: 'business-landing', params: {} };
+    }
 
     // 1. Revisar si viene en query params (?calificar=apt-xxx o ?aptId=apt-xxx)
     if (searchParams.has('calificar') || searchParams.has('aptId') || searchParams.has('appointmentId')) {
@@ -428,6 +436,11 @@ class App {
     const bizMatch = cleanHash.match(/^#\/?negocio\/([^/?#]+)/i);
     if (bizMatch) {
       return { view: 'business-detail', params: { businessId: decodeURIComponent(bizMatch[1]) } };
+    }
+
+    // 5.1 Landing Exclusiva para Negocios (Onboarding B2B)
+    if (/^#\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)/i.test(cleanHash)) {
+      return { view: 'business-landing', params: {} };
     }
 
     // 6. Mis citas
@@ -556,6 +569,12 @@ class App {
               </button>
             ` : ''}
 
+            <!-- Botón Únete / Para Negocios (Móvil) -->
+            <button id="mobile-top-landing-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-sky-500 to-emerald-500 shadow-xs flex items-center gap-1 app-touch-btn" title="Para Negocios">
+              <i class="fas fa-rocket text-xs"></i>
+              <span>Negocios</span>
+            </button>
+
             <!-- Botón Instalar App PWA (Móvil) -->
             <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer" title="Instalar App en el Celular">
               <i class="fas fa-download text-blue-600 text-xs"></i>
@@ -587,6 +606,12 @@ class App {
             <!-- Explorar -->
             <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
+            </button>
+
+            <!-- Botón Únete / Para Negocios (Desktop) -->
+            <button id="nav-landing-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-blue-600 via-sky-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 shadow-sm shadow-cyan-500/20 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 ${this.currentView === 'business-landing' ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}" title="Conoce la plataforma para tu negocio">
+              <i class="fas fa-rocket text-xs"></i>
+              <span>¿Tienes un Negocio? Únete</span>
             </button>
 
             <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
@@ -682,6 +707,8 @@ class App {
     });
 
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('nav-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
+    document.getElementById('mobile-top-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
     document.getElementById('nav-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('mobile-top-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('nav-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
@@ -893,6 +920,9 @@ class App {
     switch (this.currentView) {
       case 'directory':
         this.renderDirectoryView(main);
+        break;
+      case 'business-landing':
+        this.renderBusinessLandingView(main);
         break;
       case 'business-detail':
         this.renderBusinessDetailView(main);
@@ -1631,6 +1661,580 @@ class App {
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
+  }
+
+  // ==========================================
+  // VISTA 1.5: LANDING EXCLUSIVA PARA NEGOCIOS (/unete)
+  // ==========================================
+  renderBusinessLandingView(container) {
+    container.innerHTML = `
+      <div class="animate-fade-in bg-slate-950 text-slate-100 min-h-screen pb-24 overflow-hidden select-none">
+        
+        <!-- 1. HERO SECTION PRINCIPAL -->
+        <section class="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+          <!-- Luces ambientales de fondo -->
+          <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-r from-blue-600/20 via-cyan-500/20 to-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/3 -right-32 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/2 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 text-center max-w-4xl mx-auto space-y-6">
+            
+            <!-- Badge Superior -->
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/40 text-cyan-300 text-xs font-black uppercase tracking-wider shadow-lg shadow-cyan-500/10 animate-fade-in">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>🚀 PLATAFORMA OFICIAL PARA NEGOCIOS • COSTA RICA 🇨🇷</span>
+            </div>
+
+            <!-- Titular de Impacto -->
+            <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.15] tracking-tight">
+              Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">24/7</span> con confirmación por WhatsApp
+            </h1>
+
+            <!-- Subtítulo -->
+            <p class="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+              Elimina los mensajes interminables de WhatsApp, reduce las ausencias y ten tu propio enlace profesional listo para tu biografía de Instagram y TikTok.
+            </p>
+
+            <!-- 3 Badges de Confianza -->
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs sm:text-sm font-bold text-slate-200">
+              <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
+                <i class="fas fa-bolt text-emerald-400"></i>
+                <span>0% Comisiones por Cita</span>
+              </div>
+              <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
+                <i class="fab fa-whatsapp text-emerald-400 text-base"></i>
+                <span>WhatsApp Automático</span>
+              </div>
+              <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
+                <i class="fas fa-clock text-cyan-400"></i>
+                <span>Configuración en 2 Minutos</span>
+              </div>
+            </div>
+
+            <!-- Botones de Acción Primarios -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+              <button id="landing-hero-register-btn" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-base shadow-xl shadow-cyan-500/25 flex items-center justify-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
+                <i class="fas fa-rocket text-lg"></i>
+                <span>Registrar Mi Negocio Gratis</span>
+              </button>
+              <button id="landing-scroll-demo-btn" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer">
+                <i class="fas fa-play-circle text-cyan-400 text-lg"></i>
+                <span>Probar Demo en Vivo</span>
+              </button>
+            </div>
+
+            <!-- Pequeño recordatorio de prueba gratis -->
+            <p class="text-xs text-slate-400">
+              ✨ <strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
+            </p>
+
+          </div>
+        </section>
+
+        <!-- 2. CALCULADORA INTERACTIVA DE AHORRO -->
+        <section id="landing-calculator-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+          <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl border border-slate-800 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="text-center max-w-2xl mx-auto mb-8 space-y-2">
+              <span class="text-emerald-400 font-black text-xs uppercase tracking-wider">
+                <i class="fas fa-calculator mr-1"></i> Calculadora Interactiva de Rendimiento
+              </span>
+              <h2 class="text-2xl sm:text-4xl font-black text-white">¿Cuánto tiempo y dinero estás perdiendo?</h2>
+              <p class="text-xs sm:text-sm text-slate-400">Calcula cuánto ganas al automatizar la gestión de tus citas con Reservas CR.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+              
+              <!-- Controles Interactivos -->
+              <div class="space-y-6 bg-slate-950/80 p-6 rounded-2xl border border-slate-800/80">
+                <!-- Slider Citas Diarias -->
+                <div>
+                  <div class="flex justify-between items-center mb-2">
+                    <label for="calc-daily-appointments" class="text-xs sm:text-sm font-bold text-slate-300">Citas atendidas al día:</label>
+                    <span id="calc-daily-val" class="px-3 py-1 rounded-xl bg-blue-500/20 text-cyan-400 font-black text-sm border border-cyan-500/30">15 citas</span>
+                  </div>
+                  <input type="range" id="calc-daily-appointments" min="5" max="50" step="1" value="15" class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                  <div class="flex justify-between text-[11px] text-slate-400 mt-1">
+                    <span>5 citas</span>
+                    <span>25 citas</span>
+                    <span>50 citas</span>
+                  </div>
+                </div>
+
+                <!-- Input Precio Promedio -->
+                <div>
+                  <div class="flex justify-between items-center mb-2">
+                    <label for="calc-price-service" class="text-xs sm:text-sm font-bold text-slate-300">Precio promedio por servicio (₡):</label>
+                    <span id="calc-price-val" class="text-xs text-slate-400 font-semibold">₡12,000</span>
+                  </div>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₡</span>
+                    <input type="number" id="calc-price-service" value="12000" step="1000" min="2000" max="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-8 pr-4 text-white font-bold text-sm focus:outline-none focus:border-cyan-400">
+                  </div>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
+                  <i class="fas fa-lightbulb text-amber-400 text-sm mt-0.5 flex-shrink-0"></i>
+                  <span>Un negocio promedio gasta <strong>3.5 minutos por cliente</strong> respondiendo mensajes y coordinando turnos en WhatsApp.</span>
+                </div>
+              </div>
+
+              <!-- Resultados en Tiempo Real -->
+              <div class="space-y-4">
+                <div class="p-5 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-900 border border-blue-500/30 shadow-lg">
+                  <div class="flex items-center gap-3 mb-1">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                      <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div>
+                      <span class="text-xs text-slate-400 font-bold block">Tiempo libre recuperado</span>
+                      <h4 id="calc-hours-saved" class="text-2xl font-black text-cyan-300">22 horas al mes</h4>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-2">Horas que dejas de pasar pegado al teléfono y puedes usar para atender más clientes o descansar.</p>
+                </div>
+
+                <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/30 shadow-lg">
+                  <div class="flex items-center gap-3 mb-1">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                      <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                      <span class="text-xs text-slate-400 font-bold block">Citas adicionales fuera de horario</span>
+                      <h4 id="calc-extra-bookings" class="text-2xl font-black text-emerald-400">+93 citas / mes</h4>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-400 mt-2">Captadas mientras duermes gracias a que el cliente puede reservar a las 11:00 PM o domingos sin esperar respuesta.</p>
+                </div>
+
+                <div class="text-center pt-2">
+                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-emerald-500/20 cursor-pointer">
+                    ¡Quiero recuperar mi tiempo ahora! >
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
+        <section id="landing-demo-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+          <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span class="text-cyan-400 font-black text-xs uppercase tracking-wider">
+              <i class="fas fa-mobile-alt mr-1"></i> Demo Interactiva en Vivo
+            </span>
+            <h2 class="text-2xl sm:text-4xl font-black text-white">Así de fácil reservará tu cliente en 10 segundos</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Interactúa con el teléfono de demostración y mira cómo se confirma la cita al instante.</p>
+          </div>
+
+          <div class="flex flex-col lg:flex-row items-center justify-center gap-10">
+            
+            <!-- SMARTPHONE MOCKUP INTERACTIVO -->
+            <div class="w-full max-w-sm bg-slate-900 rounded-[44px] p-3.5 border-4 border-slate-800 shadow-2xl shadow-cyan-500/10 relative">
+              
+              <!-- Pantalla de la App Demo -->
+              <div class="bg-white text-slate-900 rounded-[34px] overflow-hidden p-4 space-y-3 relative">
+                
+                <!-- Header de la App Simulado -->
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
+                      <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Logo" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                      <span class="font-black text-xs text-slate-900 block leading-tight">Studio Barber & Spa</span>
+                      <span class="text-[10px] text-emerald-600 font-bold">● Abierto Ahora</span>
+                    </div>
+                  </div>
+                  <span class="text-[10px] bg-slate-100 font-bold px-2 py-0.5 rounded-full text-slate-600">⭐ 4.9 (128)</span>
+                </div>
+
+                <!-- Paso 1: Selecciona Servicio -->
+                <div>
+                  <span class="text-[11px] font-black text-slate-500 uppercase tracking-wide block mb-1.5">1. Elige Servicio:</span>
+                  <div class="space-y-1.5" id="demo-services-list">
+                    <div class="demo-service-item p-2.5 rounded-xl border-2 border-cyan-500 bg-cyan-50/50 flex justify-between items-center cursor-pointer transition-all" data-service="Corte & Barba VIP" data-price="12000">
+                      <div>
+                        <span class="font-black text-xs text-slate-900 block">✂️ Corte & Barba VIP</span>
+                        <span class="text-[10px] text-slate-500">45 min</span>
+                      </div>
+                      <span class="font-black text-xs text-cyan-700">₡12,000</span>
+                    </div>
+                    <div class="demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all" data-service="Manicura Spa" data-price="15000">
+                      <div>
+                        <span class="font-black text-xs text-slate-900 block">💅 Manicura Spa Completa</span>
+                        <span class="text-[10px] text-slate-500">60 min</span>
+                      </div>
+                      <span class="font-black text-xs text-slate-700">₡15,000</span>
+                    </div>
+                    <div class="demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all" data-service="Masaje Relajante" data-price="25000">
+                      <div>
+                        <span class="font-black text-xs text-slate-900 block">💆 Masaje Relajante</span>
+                        <span class="text-[10px] text-slate-500">60 min</span>
+                      </div>
+                      <span class="font-black text-xs text-slate-700">₡25,000</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Paso 2: Horarios Disponibles -->
+                <div>
+                  <span class="text-[11px] font-black text-slate-500 uppercase tracking-wide block mb-1.5">2. Horarios para Hoy:</span>
+                  <div class="grid grid-cols-2 gap-1.5" id="demo-slots-list">
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">09:30 AM</button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border-2 border-emerald-500 text-xs font-black text-emerald-800 bg-emerald-50 shadow-xs">10:30 AM ✓</button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">02:00 PM</button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">04:30 PM</button>
+                  </div>
+                </div>
+
+                <!-- Botón Confirmar Simulación -->
+                <div class="pt-1">
+                  <button id="demo-confirm-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-95">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Toca para Confirmar Cita Demo</span>
+                  </button>
+                </div>
+
+                <!-- Notificación Emergente de WhatsApp (Simulada) -->
+                <div id="demo-whatsapp-toast" class="hidden absolute top-3 inset-x-3 z-30 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border-2 border-emerald-500 animate-bounce">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0">
+                      <i class="fab fa-whatsapp"></i>
+                    </div>
+                    <div class="text-[11px] leading-tight">
+                      <span class="font-extrabold text-emerald-400 block">¡Confirmación por WhatsApp!</span>
+                      <p class="text-slate-300 mt-0.5" id="demo-wa-text">Tu cita de Corte & Barba VIP quedó lista para hoy a las 10:30 AM.</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+            <!-- EXPLICACIÓN PASO A PASO AL LADO -->
+            <div class="max-w-md space-y-6 text-left">
+              <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-cyan-500/30">1</div>
+                <div>
+                  <h4 class="font-black text-white text-base">El cliente entra a tu propio enlace</h4>
+                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Colocas tu link <code class="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded">reservas.cr/tu-negocio</code> en tu biografía de Instagram o estados de WhatsApp.</p>
+                </div>
+              </div>
+
+              <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-emerald-500/30">2</div>
+                <div>
+                  <h4 class="font-black text-white text-base">Elige servicio, especialista y hora</h4>
+                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Solo ve los horarios que tú tienes verdaderamente libres. Cero dobles reservas o confusiones.</p>
+                </div>
+              </div>
+
+              <div class="flex gap-4 items-start">
+                <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-purple-500/30">3</div>
+                <div>
+                  <h4 class="font-black text-white text-base">WhatsApp automático inmediato</h4>
+                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Tanto tú como tu cliente reciben los detalles de la cita con opción para agregar al calendario de Google.</p>
+                </div>
+              </div>
+
+              <div class="pt-2">
+                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-sm shadow-md transition-all cursor-pointer">
+                  ¡Quiero esto en mi negocio! >
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 4. 4 PILARES DE VALOR (VENTAJAS ESTRATÉGICAS) -->
+        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <span class="text-emerald-400 font-black text-xs uppercase tracking-wider">
+              <i class="fas fa-gem mr-1"></i> Todo lo que necesitas para crecer
+            </span>
+            <h2 class="text-2xl sm:text-4xl font-black text-white">Diseñado para la realidad de los negocios en Costa Rica</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Sin software complicado. Diseñado para usarse desde tu celular en 1 minuto.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            <!-- Tarjeta 1 -->
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <h3 class="font-black text-white text-lg">Agenda 24/7 en Piloto Automático</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">Tu negocio sigue agendando citas mientras estás ocupado atendiendo, en tu día libre o de noche mientras duermes.</p>
+            </div>
+
+            <!-- Tarjeta 2 -->
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <h3 class="font-black text-white text-lg">Recordatorios y Confirmación WhatsApp</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">Reduce hasta un 85% las ausencias de clientes que olvidan la cita con recordatorios automáticos.</p>
+            </div>
+
+            <!-- Tarjeta 3 -->
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-blue-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl">
+                <i class="fas fa-link"></i>
+              </div>
+              <h3 class="font-black text-white text-lg">Tu Propio Link para Redes Sociales</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">Un enlace elegante y limpio listo para tu Instagram, TikTok o código QR físico para poner en tu local comercial.</p>
+            </div>
+
+            <!-- Tarjeta 4 -->
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl">
+                <i class="fas fa-sliders-h"></i>
+              </div>
+              <h3 class="font-black text-white text-lg">Control Total de tus Horarios</h3>
+              <p class="text-xs text-slate-400 leading-relaxed">Bloquea horas para almorzar, permisos personales o feriados completos en 1 solo clic desde tu panel.</p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 5. TABLA DE PLANES Y PRECIOS TRANSPARENTES -->
+        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+          <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <span class="text-amber-400 font-black text-xs uppercase tracking-wider">
+              <i class="fas fa-crown mr-1"></i> Precios Claros y Sin Sorpresas
+            </span>
+            <h2 class="text-2xl sm:text-4xl font-black text-white">Comienza hoy mismo sin riesgo</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Sin comisiones por cita. Prueba todas las funciones gratis.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+            
+            <!-- Plan 1: Prueba de Prelanzamiento -->
+            <div class="p-8 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-6">
+              <div class="space-y-4">
+                <span class="text-xs font-black text-cyan-400 uppercase tracking-wider">Acceso Anticipado</span>
+                <h3 class="text-2xl font-black text-white">Prueba Gratuita</h3>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-4xl font-black text-white">₡0</span>
+                  <span class="text-xs text-slate-400 font-bold">/ 15 días gratis</span>
+                </div>
+                <p class="text-xs text-slate-400">Perfecto para configurar tu catálogo de servicios, probar con tus primeros clientes y ver cómo funciona.</p>
+
+                <ul class="space-y-2.5 text-xs text-slate-300 pt-2">
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Catálogo de servicios ilimitado</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Tu enlace propio para Instagram</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Confirmaciones automáticas</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Sin tarjeta de crédito requerida</li>
+                </ul>
+              </div>
+
+              <button id="landing-plan-free-btn" class="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xs transition-all border border-slate-700 cursor-pointer">
+                Comenzar Prueba Gratis
+              </button>
+            </div>
+
+            <!-- Plan 2: Plan Pro Ilimitado -->
+            <div class="p-8 rounded-3xl bg-gradient-to-b from-slate-900 via-indigo-950/40 to-slate-900 border-2 border-emerald-500/60 flex flex-col justify-between space-y-6 shadow-2xl relative">
+              <div class="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-md">
+                Recomendado
+              </div>
+
+              <div class="space-y-4">
+                <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">Todo Incluido</span>
+                <h3 class="text-2xl font-black text-white">Plan Pro Ilimitado</h3>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-4xl font-black text-emerald-400">₡15,000</span>
+                  <span class="text-xs text-slate-400 font-bold">/ mes</span>
+                </div>
+                <p class="text-xs text-slate-400">La solución definitiva para salones, barberías y profesionales que quieren automatizar su negocio al 100%.</p>
+
+                <ul class="space-y-2.5 text-xs text-slate-200 pt-2">
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> <strong>Citas y reservas ilimitadas</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> <strong>WhatsApp oficial automatizado</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Múltiples especialistas y horarios</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Integración con Google Calendar (.ics)</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Soporte VIP en Costa Rica</li>
+                </ul>
+              </div>
+
+              <button id="landing-plan-pro-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer">
+                Registrar con 15 Días Gratis
+              </button>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 6. PREGUNTAS FRECUENTES (FAQ) -->
+        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+          <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
+            <span class="text-cyan-400 font-black text-xs uppercase tracking-wider">
+              <i class="fas fa-question-circle mr-1"></i> Resolvemos tus dudas
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-black text-white">Preguntas Frecuentes</h2>
+          </div>
+
+          <div class="space-y-3">
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿Mis clientes necesitan descargar una aplicación?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                No, tus clientes no tienen que descargar nada pesado ni crear cuentas complicadas. Tocan tu link en Instagram o WhatsApp y reservan directamente en su navegador web en 10 segundos.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                Sí. Desde tu panel de negocio puedes definir tus horarios de apertura, descansos y bloquear cualquier hora específica o día completo con un solo toque para que nadie pueda agendar en ese momento.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿Necesito tarjeta de crédito para registrarme?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis sin pagos previos.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <!-- 7. BANNER FINAL DE LLAMADO A LA ACCIÓN -->
+        <section class="py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center">
+          <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-emerald-950 rounded-3xl p-8 sm:p-12 border border-cyan-500/30 shadow-2xl space-y-6">
+            <h2 class="text-2xl sm:text-4xl font-black text-white">¿Listo para tener tu agenda en piloto automático?</h2>
+            <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
+              Únete a los negocios de Costa Rica que ya están ahorrando horas de trabajo cada semana con Reservas CR.
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
+              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
+                <i class="fas fa-rocket mr-2"></i> Crear Mi Cuenta Gratis Ahora
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    `;
+
+    this.initBusinessLandingEvents();
+  }
+
+  // --- EVENTOS Y LÓGICA DE LA LANDING DE NEGOCIOS ---
+  initBusinessLandingEvents() {
+    // 1. Botones de Registro
+    const openRegister = () => this.renderAuthModal({ mode: 'register', role: 'business' });
+    document.getElementById('landing-hero-register-btn')?.addEventListener('click', openRegister);
+    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openRegister);
+    document.getElementById('landing-demo-register-btn')?.addEventListener('click', openRegister);
+    document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
+    document.getElementById('landing-plan-pro-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'pro' }));
+    document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openRegister);
+
+    // 2. Smooth Scroll to Demo
+    document.getElementById('landing-scroll-demo-btn')?.addEventListener('click', () => {
+      document.getElementById('landing-demo-section')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // 3. Calculadora Interactiva de Ahorro
+    const dailyInput = document.getElementById('calc-daily-appointments');
+    const priceInput = document.getElementById('calc-price-service');
+    const dailyValSpan = document.getElementById('calc-daily-val');
+    const priceValSpan = document.getElementById('calc-price-val');
+    const hoursSavedEl = document.getElementById('calc-hours-saved');
+    const extraBookingsEl = document.getElementById('calc-extra-bookings');
+
+    const recalculateSavings = () => {
+      const daily = parseInt(dailyInput?.value || 15, 10);
+      const price = parseInt(priceInput?.value || 12000, 10);
+
+      if (dailyValSpan) dailyValSpan.textContent = `${daily} citas`;
+      if (priceValSpan) priceValSpan.textContent = `₡${price.toLocaleString('es-CR')}`;
+
+      // Ahorro de tiempo: 3.5 minutos por cliente x 25 días laborales / 60 min
+      const hoursSavedMonth = Math.round((daily * 3.5 * 25) / 60);
+      if (hoursSavedEl) hoursSavedEl.textContent = `${hoursSavedMonth} horas al mes`;
+
+      // Citas adicionales estimadas fuera de horario (~25% de volumen mensual)
+      const monthlyAppointments = daily * 25;
+      const extraBookings = Math.round(monthlyAppointments * 0.25);
+      if (extraBookingsEl) extraBookingsEl.textContent = `+${extraBookings} citas / mes`;
+    };
+
+    dailyInput?.addEventListener('input', recalculateSavings);
+    priceInput?.addEventListener('input', recalculateSavings);
+
+    // 4. Simulador de Reserva Demo Interactiva
+    let selectedDemoService = 'Corte & Barba VIP';
+    let selectedDemoSlot = '10:30 AM';
+
+    document.querySelectorAll('.demo-service-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.demo-service-item').forEach(i => {
+          i.className = 'demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all';
+          i.querySelector('span:last-child').className = 'font-black text-xs text-slate-700';
+        });
+        item.className = 'demo-service-item p-2.5 rounded-xl border-2 border-cyan-500 bg-cyan-50/50 flex justify-between items-center cursor-pointer transition-all';
+        item.querySelector('span:last-child').className = 'font-black text-xs text-cyan-700';
+        selectedDemoService = item.getAttribute('data-service') || 'Corte & Barba VIP';
+      });
+    });
+
+    document.querySelectorAll('.demo-slot-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.demo-slot-btn').forEach(b => {
+          b.className = 'demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100';
+          b.textContent = b.textContent.replace(' ✓', '');
+        });
+        btn.className = 'demo-slot-btn py-2 px-3 rounded-xl border-2 border-emerald-500 text-xs font-black text-emerald-800 bg-emerald-50 shadow-xs';
+        if (!btn.textContent.includes('✓')) btn.textContent = `${btn.textContent} ✓`;
+        selectedDemoSlot = btn.textContent.replace(' ✓', '').trim();
+      });
+    });
+
+    const confirmDemoBtn = document.getElementById('demo-confirm-btn');
+    const waToast = document.getElementById('demo-whatsapp-toast');
+    const waText = document.getElementById('demo-wa-text');
+
+    confirmDemoBtn?.addEventListener('click', () => {
+      if (waText) {
+        waText.textContent = `Tu cita de ${selectedDemoService} quedó confirmada para hoy a las ${selectedDemoSlot} en Studio Barber & Spa.`;
+      }
+      if (waToast) {
+        waToast.classList.remove('hidden');
+        confirmDemoBtn.innerHTML = '<i class="fas fa-check"></i> ¡Cita Confirmada con Éxito!';
+        confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-2';
+
+        setTimeout(() => {
+          waToast.classList.add('hidden');
+          confirmDemoBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Toca para Probar Otra Cita Demo</span>';
+          confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer';
+        }, 5000);
+      }
+    });
   }
 
   // ==========================================

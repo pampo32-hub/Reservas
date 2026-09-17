@@ -70,35 +70,10 @@
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider">
       <i class="fas fa-layer-group"></i> Campaña Completa de 4 Historias Animadas (Stories / Reels 9:16)
     </div>
-    <h1 class="text-xl sm:text-2xl font-black text-white">Secuencia Publicitaria Oficial (4 Historias Animadas)</h1>
+    <h1 class="text-xl sm:text-2xl font-black text-white">Secuencia Publicitaria Oficial (4 GIFs / Slides)</h1>
     
-    <!-- Opciones de Descarga y Acceso Móvil -->
-    <div class="space-y-2 pt-1 pb-2">
-      <!-- Botones de Descarga en Imágenes HD -->
-      <div class="flex flex-wrap items-center justify-center gap-3">
-        <button onclick="downloadCurrentSlidePNG()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black shadow-lg shadow-blue-500/25 flex items-center gap-2 transition-transform transform hover:scale-105 cursor-pointer text-xs">
-          <i class="fas fa-file-image text-sm"></i>
-          <span>Descargar Historia Actual en PNG HD</span>
-        </button>
-
-        <button onclick="downloadAllSlidesPNG()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition-transform transform hover:scale-105 cursor-pointer text-xs">
-          <i class="fas fa-images text-sm"></i>
-          <span>Descargar las 4 Historias (Pack PNG)</span>
-        </button>
-      </div>
-
-      <!-- Cuadro para abrir directamente en el Celular (Misma red WiFi) -->
-      <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-slate-300 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 max-w-lg mx-auto">
-        <div class="flex items-center gap-2 text-left">
-          <i class="fas fa-mobile-alt text-emerald-400 text-base"></i>
-          <span><strong>Abrir en tu Celular (Mismo WiFi):</strong></span>
-        </div>
-        <code class="px-3 py-1 bg-black rounded-lg text-emerald-400 font-mono text-xs select-all">http://192.168.0.11:3000/src/assets/publicidad/anuncio_story_animado.html</code>
-      </div>
-    </div>
-
     <!-- Selector Manual de Historias -->
-    <div class="flex flex-wrap items-center justify-center gap-2">
+    <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
       <button onclick="goToSlide(0)" id="btn-slide-0" class="px-3.5 py-1.5 rounded-xl text-xs font-black transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
         1. El Caos 😫
       </button>
@@ -112,15 +87,15 @@
         4. Lanzamiento 🚀
       </button>
 
-      <button id="btn-auto-play" onclick="toggleAutoPlay()" class="ml-2 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 border border-slate-700">
+      <button id="btn-auto-play" onclick="toggleAutoPlay()" class="ml-2 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md">
         <i id="play-icon" class="fas fa-pause text-[10px]"></i>
-        <span id="play-text">Pausar</span>
+        <span id="play-text">Auto Bucle</span>
       </button>
     </div>
   </div>
 
   <!-- FRAME DEL SMARTPHONE 9:16 -->
-  <div id="story-frame-container" class="story-frame relative bg-gradient-to-b from-slate-900 via-slate-950 to-black p-4 border-[6px] border-slate-800 flex flex-col justify-between overflow-hidden">
+  <div class="story-frame relative bg-gradient-to-b from-slate-900 via-slate-950 to-black p-4 border-[6px] border-slate-800 flex flex-col justify-between overflow-hidden">
     
     <!-- Resplandores de fondo -->
     <div class="absolute -top-24 -left-24 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -496,139 +471,6 @@
       }
     }
 
-    // ==========================================
-    // GRABADOR DE VIDEO AUTOMÁTICO (MP4 / WebM)
-    // ==========================================
-    let isRecording = false;
-
-    async function startVideoRecording() {
-      if (isRecording) return;
-      isRecording = true;
-
-      const recordBtn = document.getElementById('btn-record-video');
-      const recordText = document.getElementById('record-btn-text');
-      const originalText = recordText.textContent;
-      recordBtn.disabled = true;
-
-      // Crear Canvas de Grabación (720 x 1280 px HD)
-      const recordCanvas = document.createElement('canvas');
-      recordCanvas.width = 720;
-      recordCanvas.height = 1280;
-      const ctx = recordCanvas.getContext('2d');
-
-      const stream = recordCanvas.captureStream(25); // 25 FPS
-      let mimeType = 'video/webm;codecs=vp9';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'video/webm';
-      }
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = '';
-      }
-
-      let mediaRecorder;
-      try {
-        mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-      } catch (e) {
-        mediaRecorder = new MediaRecorder(stream);
-      }
-
-      const chunks = [];
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) chunks.push(e.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/mp4' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'anuncio_historias_reservas_cr.mp4';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-        recordText.textContent = '✅ ¡Video Descargado!';
-        setTimeout(() => {
-          recordText.textContent = originalText;
-          recordBtn.disabled = false;
-          isRecording = false;
-        }, 3000);
-      };
-
-      mediaRecorder.start();
-
-      // Grabar la secuencia de las 4 historias
-      const frameContainer = document.getElementById('story-frame-container');
-      const totalSeconds = 16;
-      let elapsedSeconds = 0;
-
-      showSlide(0);
-
-      const renderInterval = setInterval(async () => {
-        try {
-          const cvs = await html2canvas(frameContainer, {
-            scale: 1.8,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#030712'
-          });
-          ctx.clearRect(0, 0, 720, 1280);
-          ctx.drawImage(cvs, 0, 0, 720, 1280);
-        } catch (err) {
-          console.warn('Frame render:', err);
-        }
-      }, 100);
-
-      const progressInterval = setInterval(() => {
-        elapsedSeconds++;
-        const currentHist = Math.min(4, Math.floor(elapsedSeconds / 4) + 1);
-        recordText.innerHTML = `<i class="fas fa-circle text-red-500 animate-ping mr-2"></i> Grabando historia ${currentHist}/4 (${elapsedSeconds}s / ${totalSeconds}s)...`;
-
-        if (elapsedSeconds >= totalSeconds) {
-          clearInterval(renderInterval);
-          clearInterval(progressInterval);
-          mediaRecorder.stop();
-        }
-      }, 1000);
-    }
-
-    // ==========================================
-    // DESCARGA DE HISTORIAS EN PNG HD (1080x1920)
-    // ==========================================
-    async function downloadCurrentSlidePNG() {
-      const frameContainer = document.getElementById('story-frame-container');
-      const cvs = await html2canvas(frameContainer, {
-        scale: 2.7, // 400px * 2.7 = 1080px exactos
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#030712'
-      });
-      const link = document.createElement('a');
-      link.download = `historia_${currentSlide + 1}_reservas_cr.png`;
-      link.href = cvs.toDataURL('image/png', 1.0);
-      link.click();
-    }
-
-    async function downloadAllSlidesPNG() {
-      toggleAutoPlay(); // pausar si está corriendo
-      for (let i = 0; i < totalSlides; i++) {
-        showSlide(i);
-        await new Promise(r => setTimeout(r, 600)); // esperar renderizado
-        const frameContainer = document.getElementById('story-frame-container');
-        const cvs = await html2canvas(frameContainer, {
-          scale: 2.7,
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: '#030712'
-        });
-        const link = document.createElement('a');
-        link.download = `historia_${i + 1}_reservas_cr.png`;
-        link.href = cvs.toDataURL('image/png', 1.0);
-        link.click();
-        await new Promise(r => setTimeout(r, 400));
-      }
-    }
-
     // Iniciar
     window.addEventListener('DOMContentLoaded', () => {
       showSlide(0);
@@ -636,3 +478,4 @@
   </script>
 </body>
 </html>
+

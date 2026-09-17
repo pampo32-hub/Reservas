@@ -48,6 +48,11 @@ app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
   res.sendFile(htmlPath);
 });
 
+// Rutas directas para Landing B2B de Negocios
+app.get(['/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio'], (req, res) => {
+  res.redirect('/#/unete');
+});
+
 // ==========================================
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
@@ -3615,6 +3620,14 @@ app.post('/api/developer/paypal-sync-plans', async (req, res) => {
     console.error('Error en /api/developer/paypal-sync-plans:', error);
     res.status(500).json({ error: error.message || 'Error al sincronizar planes con PayPal.' });
   }
+});
+
+// Middleware Catch-All para SPA (Cualquier ruta no capturada por API sirve index.html)
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Endpoint de API no encontrado' });
+  }
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Iniciar base de datos, servidor y worker de reseñas
