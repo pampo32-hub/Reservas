@@ -4708,6 +4708,9 @@ class App {
                 <button id="dash-export-excel-btn" class="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-excel text-emerald-600"></i> Exportar a Excel (.xlsx)
                 </button>
+                <button id="dash-export-csv-btn" class="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                  <i class="fas fa-file-csv text-purple-600"></i> Exportar (CSV)
+                </button>
                 <button id="dash-export-pdf-btn" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-pdf text-rose-600"></i> Descargar Reporte PDF
                 </button>

@@ -53,6 +53,24 @@ app.get(['/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/n
   res.redirect('/#/unete');
 });
 
+// Sitemap y Robots para Indexación en Google / Search Console
+app.get(['/sitemap.xml', '/sitemap'], async (req, res) => {
+  try {
+    const sitemapPath = path.join(__dirname, 'public', 'sitemap.xml');
+    res.header('Content-Type', 'application/xml');
+    res.sendFile(sitemapPath);
+  } catch (err) {
+    console.error('Error sirviendo sitemap.xml:', err);
+    res.status(500).send('Error generando sitemap');
+  }
+});
+
+app.get('/robots.txt', (req, res) => {
+  const robotsPath = path.join(__dirname, 'public', 'robots.txt');
+  res.header('Content-Type', 'text/plain');
+  res.sendFile(robotsPath);
+});
+
 // ==========================================
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
