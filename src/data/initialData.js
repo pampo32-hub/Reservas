@@ -1,5 +1,29 @@
 export const SUBSCRIPTION_PLANS = [
   {
+    id: 'free',
+    name: 'Plan Gratis',
+    badge: '100% Gratis',
+    priceUsd: 0,
+    originalPriceUsd: 0,
+    priceCrc: 0,
+    interval: 'de por vida',
+    bookingLimit: 25,
+    bookingLimitLabel: '25 reservas / mes',
+    staffLimit: 1,
+    staffLimitLabel: '1 profesional (dueño)',
+    tagline: 'Comienza a digitalizar tus citas hoy sin costo para siempre.',
+    features: [
+      'Hasta 25 reservas mensuales de por vida',
+      '1 especialista (dueño único)',
+      'Catálogo con hasta 5 servicios',
+      'Tu enlace propio para Instagram y TikTok',
+      'Confirmaciones por correo electrónico',
+      'Sin contratos ni tarjeta de crédito'
+    ],
+    popular: false,
+    color: 'emerald'
+  },
+  {
     id: 'basic',
     name: 'Plan Básico',
     badge: 'Emprendedor',

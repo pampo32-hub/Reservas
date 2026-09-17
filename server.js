@@ -242,8 +242,8 @@ app.post('/api/auth/business/register', async (req, res) => {
     const features = business.features || ['Sinpe Móvil', 'Atención Personalizada'];
 
     const planId = business.plan || 'pro';
-    const planPriceUsd = planId === 'unlimited' ? 35 : (planId === 'basic' ? 10 : 18);
-    const bookingLimit = planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300);
+    const planPriceUsd = planId === 'free' ? 0 : (planId === 'unlimited' ? 35 : (planId === 'basic' ? 10 : 18));
+    const bookingLimit = planId === 'free' ? 25 : (planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300));
     const socialLinks = business.socialLinks || business.social_links || {};
     const autoConfirm = business.autoConfirmAppointments !== undefined ? Boolean(business.autoConfirmAppointments) : true;
 

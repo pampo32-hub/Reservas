@@ -1724,9 +1724,10 @@ class App {
             </div>
 
             <!-- Pequeño recordatorio de prueba gratis -->
-            <p class="text-xs text-slate-400">
-              ✨ <strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
-            </p>
+            <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm">
+              <span class="text-base">🎁</span>
+              <span><strong>Pre-registro Especial:</strong> Obtén <strong>15 Días de Prueba Gratis del Plan Profesional (Pro)</strong> a partir del lanzamiento. ¡Sin tarjeta ni pagos hoy!</span>
+            </div>
 
           </div>
         </section>
@@ -1809,8 +1810,8 @@ class App {
                 </div>
 
                 <div class="text-center pt-2">
-                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-emerald-500/20 cursor-pointer">
-                    ¡Quiero recuperar mi tiempo ahora! >
+                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer">
+                    🎁 ¡Pre-registrarme con 15 Días de Prueba Pro Gratis! >
                   </button>
                 </div>
               </div>
@@ -1942,8 +1943,8 @@ class App {
               </div>
 
               <div class="pt-2">
-                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-sm shadow-md transition-all cursor-pointer">
-                  ¡Quiero esto en mi negocio! >
+                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer">
+                  🎁 ¡Quiero 15 Días de Prueba Pro Gratis! >
                 </button>
               </div>
             </div>
@@ -2002,68 +2003,120 @@ class App {
           </div>
         </section>
 
-        <!-- 5. TABLA DE PLANES Y PRECIOS TRANSPARENTES -->
-        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <!-- 5. TABLA DE LOS 4 PLANES DE SUSCRIPCIÓN -->
+        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span class="text-amber-400 font-black text-xs uppercase tracking-wider">
-              <i class="fas fa-crown mr-1"></i> Precios Claros y Sin Sorpresas
+              <i class="fas fa-crown mr-1"></i> Precios Transparentes y Sin Letra Pequeña
             </span>
-            <h2 class="text-2xl sm:text-4xl font-black text-white">Comienza hoy mismo sin riesgo</h2>
-            <p class="text-xs sm:text-sm text-slate-400">Sin comisiones por cita. Prueba todas las funciones gratis.</p>
+            <h2 class="text-2xl sm:text-4xl font-black text-white">Elige el plan perfecto para tu negocio</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Comienza 100% gratis o aprovecha los <strong>15 Días de Prueba del Plan Profesional</strong>.</p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          <!-- Cuadrícula de 4 Planes -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             
-            <!-- Plan 1: Prueba de Prelanzamiento -->
-            <div class="p-8 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-6">
-              <div class="space-y-4">
-                <span class="text-xs font-black text-cyan-400 uppercase tracking-wider">Acceso Anticipado</span>
-                <h3 class="text-2xl font-black text-white">Prueba Gratuita</h3>
+            <!-- PLAN 1: GRATIS DE POR VIDA -->
+            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-emerald-500/40 transition-all">
+              <div class="space-y-3">
+                <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 inline-block">100% Gratis</span>
+                <h3 class="text-xl font-black text-white">Plan Gratis</h3>
                 <div class="flex items-baseline gap-1">
-                  <span class="text-4xl font-black text-white">₡0</span>
-                  <span class="text-xs text-slate-400 font-bold">/ 15 días gratis</span>
+                  <span class="text-3xl font-black text-white">₡0</span>
+                  <span class="text-xs text-slate-400 font-bold">/ de por vida</span>
                 </div>
-                <p class="text-xs text-slate-400">Perfecto para configurar tu catálogo de servicios, probar con tus primeros clientes y ver cómo funciona.</p>
+                <p class="text-xs text-slate-400">Ideal para emprendedores independientes que están empezando.</p>
 
-                <ul class="space-y-2.5 text-xs text-slate-300 pt-2">
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Catálogo de servicios ilimitado</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Tu enlace propio para Instagram</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Confirmaciones automáticas</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Sin tarjeta de crédito requerida</li>
+                <ul class="space-y-2 text-xs text-slate-300 pt-2">
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Hasta 25 reservas / mes</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> 1 especialista (dueño)</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Catálogo de 5 servicios</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Tu propio link personalizado</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Cero tarjetas de crédito</li>
                 </ul>
               </div>
 
-              <button id="landing-plan-free-btn" class="w-full py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-xs transition-all border border-slate-700 cursor-pointer">
-                Comenzar Prueba Gratis
+              <button id="landing-plan-free-btn" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-black text-xs transition-all border border-slate-700 cursor-pointer">
+                Comenzar Gratis de por Vida
               </button>
             </div>
 
-            <!-- Plan 2: Plan Pro Ilimitado -->
-            <div class="p-8 rounded-3xl bg-gradient-to-b from-slate-900 via-indigo-950/40 to-slate-900 border-2 border-emerald-500/60 flex flex-col justify-between space-y-6 shadow-2xl relative">
-              <div class="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-md">
-                Recomendado
-              </div>
-
-              <div class="space-y-4">
-                <span class="text-xs font-black text-emerald-400 uppercase tracking-wider">Todo Incluido</span>
-                <h3 class="text-2xl font-black text-white">Plan Pro Ilimitado</h3>
+            <!-- PLAN 2: BÁSICO -->
+            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-blue-500/40 transition-all">
+              <div class="space-y-3">
+                <span class="text-[11px] font-black text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 inline-block">Emprendedor</span>
+                <h3 class="text-xl font-black text-white">Plan Básico</h3>
                 <div class="flex items-baseline gap-1">
-                  <span class="text-4xl font-black text-emerald-400">₡15,000</span>
-                  <span class="text-xs text-slate-400 font-bold">/ mes</span>
+                  <span class="text-3xl font-black text-white">$10</span>
+                  <span class="text-xs text-slate-400 font-bold">/ mes (~₡5,200)</span>
                 </div>
-                <p class="text-xs text-slate-400">La solución definitiva para salones, barberías y profesionales que quieren automatizar su negocio al 100%.</p>
+                <p class="text-xs text-slate-400">Para profesionales con flujo constante de clientes.</p>
 
-                <ul class="space-y-2.5 text-xs text-slate-200 pt-2">
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> <strong>Citas y reservas ilimitadas</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> <strong>WhatsApp oficial automatizado</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Múltiples especialistas y horarios</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Integración con Google Calendar (.ics)</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-emerald-400"></i> Soporte VIP en Costa Rica</li>
+                <ul class="space-y-2 text-xs text-slate-300 pt-2">
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Hasta 150 reservas / mes</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> 1 especialista (dueño)</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Catálogo ilimitado de servicios</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Confirmaciones automáticas</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Bloqueo flexible de horarios</li>
                 </ul>
               </div>
 
-              <button id="landing-plan-pro-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer">
-                Registrar con 15 Días Gratis
+              <button id="landing-plan-basic-btn" class="w-full py-3 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white font-black text-xs transition-all border border-blue-500/30 cursor-pointer">
+                Elegir Plan Básico
+              </button>
+            </div>
+
+            <!-- PLAN 3: PROFESIONAL (PRO) -->
+            <div class="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-indigo-950/60 to-slate-900 border-2 border-amber-400 flex flex-col justify-between space-y-5 shadow-2xl relative">
+              <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-md whitespace-nowrap">
+                ⭐ Más Popular • 15 Días Gratis
+              </div>
+
+              <div class="space-y-3 pt-1">
+                <span class="text-[11px] font-black text-amber-300 uppercase tracking-wider bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 inline-block">Profesional</span>
+                <h3 class="text-xl font-black text-white">Plan Profesional</h3>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-3xl font-black text-amber-300">$18</span>
+                  <span class="text-xs text-slate-400 font-bold">/ mes (~₡9,400)</span>
+                </div>
+                <p class="text-xs text-slate-300 font-medium">La solución completa para salones, barberías, spas y clínicas con equipo.</p>
+
+                <ul class="space-y-2 text-xs text-slate-200 pt-2">
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> <strong>Hasta 300 reservas / mes</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> <strong>Hasta 5 especialistas / empleados</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> <strong>WhatsApp oficial automatizado</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> Reportes y métricas de ingresos</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> Google Calendar (.ics)</li>
+                </ul>
+              </div>
+
+              <button id="landing-plan-pro-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all cursor-pointer transform hover:scale-102">
+                🎁 Probar 15 Días Pro Gratis
+              </button>
+            </div>
+
+            <!-- PLAN 4: ILIMITADO -->
+            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-purple-500/40 transition-all">
+              <div class="space-y-3">
+                <span class="text-[11px] font-black text-purple-400 uppercase tracking-wider bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20 inline-block">Sin Límites</span>
+                <h3 class="text-xl font-black text-white">Plan Ilimitado</h3>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-3xl font-black text-white">$35</span>
+                  <span class="text-xs text-slate-400 font-bold">/ mes (~₡18,200)</span>
+                </div>
+                <p class="text-xs text-slate-400">Para franquicias y negocios con gran volumen de citas.</p>
+
+                <ul class="space-y-2 text-xs text-slate-300 pt-2">
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> <strong>Reservas 100% ilimitadas</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> <strong>Especialistas ilimitados</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> Posición preferencial en directorio</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> Soporte prioritario VIP</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> Todo lo del Plan Profesional</li>
+                </ul>
+              </div>
+
+              <button id="landing-plan-unlimited-btn" class="w-full py-3 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-black text-xs transition-all border border-purple-500/30 cursor-pointer">
+                Elegir Plan Ilimitado
               </button>
             </div>
 
@@ -2080,6 +2133,26 @@ class App {
           </div>
 
           <div class="space-y-3">
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿En qué consiste la prueba de 15 días gratis?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                Al pre-registrarte recibes 15 días completos de acceso gratuito al <strong>Plan Profesional (Pro)</strong> a partir del lanzamiento oficial. Podrás probar las confirmaciones automáticas por WhatsApp, agregar hasta 5 especialistas y recibir citas sin pagar nada ni ingresar tarjeta de crédito.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿El Plan Gratis realmente es gratis de por vida?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                Sí, puedes usar el Plan Gratis para siempre sin costo. Te incluye hasta 25 citas mensuales y catálogo de hasta 5 servicios para tu negocio. Si en el futuro tu negocio crece y necesitas más citas o más empleados, puedes actualizar a Pro cuando quieras.
+              </p>
+            </details>
+
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Mis clientes necesitan descargar una aplicación?</span>
@@ -2099,26 +2172,6 @@ class App {
                 ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
               </p>
             </details>
-
-            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
-              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
-              </summary>
-              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                Sí. Desde tu panel de negocio puedes definir tus horarios de apertura, descansos y bloquear cualquier hora específica o día completo con un solo toque para que nadie pueda agendar en ese momento.
-              </p>
-            </details>
-
-            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
-              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Necesito tarjeta de crédito para registrarme?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
-              </summary>
-              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis sin pagos previos.
-              </p>
-            </details>
           </div>
         </section>
 
@@ -2127,11 +2180,11 @@ class App {
           <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-emerald-950 rounded-3xl p-8 sm:p-12 border border-cyan-500/30 shadow-2xl space-y-6">
             <h2 class="text-2xl sm:text-4xl font-black text-white">¿Listo para tener tu agenda en piloto automático?</h2>
             <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-              Únete a los negocios de Costa Rica que ya están ahorrando horas de trabajo cada semana con Reservas CR.
+              Pre-regístrate hoy y asegura tus <strong>15 Días de Prueba Gratis del Plan Pro</strong> sin ningún compromiso.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
-              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
-                <i class="fas fa-rocket mr-2"></i> Crear Mi Cuenta Gratis Ahora
+              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
+                🎁 Pre-registrarme con 15 Días Pro Gratis
               </button>
             </div>
           </div>
@@ -2145,16 +2198,26 @@ class App {
 
   // --- EVENTOS Y LÓGICA DE LA LANDING DE NEGOCIOS ---
   initBusinessLandingEvents() {
-    // 1. Botones de Registro
-    const openRegister = () => this.renderAuthModal({ mode: 'register', role: 'business' });
-    document.getElementById('landing-hero-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-demo-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
-    document.getElementById('landing-plan-pro-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'pro' }));
-    document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openRegister);
+    // 1. Botones Principales que dirigen al Pre-registro con 15 Días de Prueba Pro
+    const openPreRegister = () => this.renderPreRegisterModal('pro');
+    document.getElementById('landing-hero-register-btn')?.addEventListener('click', openPreRegister);
+    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openPreRegister);
+    document.getElementById('landing-demo-register-btn')?.addEventListener('click', openPreRegister);
+    document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openPreRegister);
 
-    // 2. Smooth Scroll to Demo
+    // 2. Botones de Planes Específicos
+    document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
+    });
+    document.getElementById('landing-plan-basic-btn')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'basic' });
+    });
+    document.getElementById('landing-plan-pro-btn')?.addEventListener('click', openPreRegister);
+    document.getElementById('landing-plan-unlimited-btn')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'unlimited' });
+    });
+
+    // 3. Smooth Scroll to Demo
     document.getElementById('landing-scroll-demo-btn')?.addEventListener('click', () => {
       document.getElementById('landing-demo-section')?.scrollIntoView({ behavior: 'smooth' });
     });
@@ -9951,96 +10014,121 @@ class App {
                     <span class="text-[10px] text-slate-300 font-medium">Cambia o cancela cuando quieras</span>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                    <!-- Plan Gratis -->
+                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'free' ? 'bg-indigo-950 border-emerald-400 ring-2 ring-emerald-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                      <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider z-10 pointer-events-none">Gratis</span>
+                      <input type="radio" name="new-biz-plan" value="free" ${selectedPlanId === 'free' ? 'checked' : ''} class="sr-only">
+                      <div>
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="font-black text-xs text-emerald-300">Gratis</span>
+                          <span class="text-[9px] font-bold text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">25 res.</span>
+                        </div>
+                        <div class="text-sm sm:text-base font-black text-white">₡0 <span class="text-[9px] font-normal text-slate-400">/ siempre</span></div>
+                        <p class="text-[9px] text-slate-400 mt-0.5">De por vida</p>
+                      </div>
+                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1"><i class="fas fa-check text-emerald-400 text-[8px]"></i> <span>25 res/mes</span></div>
+                        <div class="flex items-center gap-1"><i class="fas fa-user text-emerald-400 text-[8px]"></i> <span>1 dueño</span></div>
+                      </div>
+                    </label>
+
                     <!-- Plan Básico -->
-                    <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'basic' ? 'bg-indigo-950 border-blue-400 ring-2 ring-blue-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'basic' ? 'bg-indigo-950 border-blue-400 ring-2 ring-blue-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
                       <input type="radio" name="new-biz-plan" value="basic" ${selectedPlanId === 'basic' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-white">Básico</span>
                           <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 res.</span>
                         </div>
-                        <div class="text-base font-black text-white">$10 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡5,200 CRC / mes</p>
+                        <div class="text-sm sm:text-base font-black text-white">$10 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[9px] text-slate-400 mt-0.5">~₡5,200 CRC</p>
                       </div>
-                      <div class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1.5"><i class="fas fa-check text-emerald-400 text-[9px]"></i> <span>150 reservas/mes</span></div>
-                        <div class="flex items-center gap-1.5"><i class="fas fa-user text-blue-400 text-[9px]"></i> <span>1 especialista</span></div>
+                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1"><i class="fas fa-check text-emerald-400 text-[8px]"></i> <span>150 res/mes</span></div>
+                        <div class="flex items-center gap-1"><i class="fas fa-user text-blue-400 text-[8px]"></i> <span>1 dueño</span></div>
                       </div>
                     </label>
 
                     <!-- Plan Profesional -->
-                    <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'pro' ? 'bg-indigo-950 border-amber-400 ring-2 ring-amber-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider z-10 pointer-events-none">Popular</span>
+                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'pro' ? 'bg-indigo-950 border-amber-400 ring-2 ring-amber-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                      <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider z-10 pointer-events-none">Popular</span>
                       <input type="radio" name="new-biz-plan" value="pro" ${selectedPlanId === 'pro' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-amber-300">Profesional</span>
+                          <span class="font-black text-xs text-amber-300">Pro</span>
                           <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 res.</span>
                         </div>
-                        <div class="text-base font-black text-amber-300">$18 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡9,400 CRC / mes</p>
+                        <div class="text-sm sm:text-base font-black text-amber-300">$18 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[9px] text-slate-400 mt-0.5">~₡9,400 CRC</p>
                       </div>
-                      <div class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1.5"><i class="fas fa-check text-amber-400 text-[9px]"></i> <span>300 reservas/mes</span></div>
-                        <div class="flex items-center gap-1.5"><i class="fas fa-users text-amber-400 text-[9px]"></i> <span class="font-bold text-amber-200">Hasta 5 especialistas</span></div>
+                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1"><i class="fas fa-check text-amber-400 text-[8px]"></i> <span>300 res/mes</span></div>
+                        <div class="flex items-center gap-1"><i class="fas fa-users text-amber-400 text-[8px]"></i> <span>Hasta 5 esp.</span></div>
                       </div>
                     </label>
 
                     <!-- Plan Ilimitado -->
-                    <label class="biz-plan-card-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'unlimited' ? 'bg-indigo-950 border-purple-400 ring-2 ring-purple-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
+                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'unlimited' ? 'bg-indigo-950 border-purple-400 ring-2 ring-purple-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
                       <input type="radio" name="new-biz-plan" value="unlimited" ${selectedPlanId === 'unlimited' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
                           <span class="font-black text-xs text-purple-300">Ilimitado</span>
                           <span class="text-[9px] font-bold text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded">∞</span>
                         </div>
-                        <div class="text-base font-black text-purple-300">$35 <span class="text-[10px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[10px] text-slate-400 mt-0.5">~₡18,200 CRC / mes</p>
+                        <div class="text-sm sm:text-base font-black text-purple-300">$35 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
+                        <p class="text-[9px] text-slate-400 mt-0.5">~₡18,200 CRC</p>
                       </div>
-                      <div class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1.5"><i class="fas fa-infinity text-purple-400 text-[9px]"></i> <span>Reservas ilimitadas</span></div>
-                        <div class="flex items-center gap-1.5"><i class="fas fa-users text-purple-400 text-[9px]"></i> <span class="font-bold text-purple-200">Especialistas ilimitados</span></div>
+                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
+                        <div class="flex items-center gap-1"><i class="fas fa-infinity text-purple-400 text-[8px]"></i> <span>Sin límites</span></div>
+                        <div class="flex items-center gap-1"><i class="fas fa-users text-purple-400 text-[8px]"></i> <span>Esp. ilimitados</span></div>
                       </div>
                     </label>
                   </div>
                 </div>
 
                 <!-- 1.1 MÉTODO DE PAGO INICIAL (SINPE MÓVIL O TARJETA/PAYPAL) -->
-                <div class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
-                  <span class="font-black text-emerald-400 block text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fas fa-wallet"></i> Método de Pago *
-                  </span>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <!-- Opción SINPE Móvil -->
-                    <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-indigo-950 border-emerald-400 ring-2 ring-emerald-400/30">
-                      <input type="radio" name="new-biz-paymethod" value="sinpe" checked class="sr-only">
-                      <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                        <i class="fas fa-mobile-alt"></i>
-                      </div>
-                      <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                          <span class="font-black text-xs text-white">SINPE Móvil</span>
-                          <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica 🇨🇷</span>
-                        </div>
-                        <p class="text-[10px] text-slate-300 mt-0.5">Transfiere al 7143-3852 y envía el comprobante por WhatsApp para activación rápida.</p>
-                      </div>
-                    </label>
+                <div id="biz-paymethod-wrapper" class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
+                  <div id="biz-paymethod-free-note" class="${selectedPlanId === 'free' ? 'block' : 'hidden'} p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2.5 text-xs text-emerald-300 font-bold">
+                    <i class="fas fa-gift text-emerald-400 text-base flex-shrink-0"></i>
+                    <span>🎁 Plan 100% Gratis de por vida: No requiere método de pago. Tu cuenta se activará de inmediato.</span>
+                  </div>
 
-                    <!-- Opción Tarjeta / PayPal -->
-                    <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-slate-800/80 border-slate-700 hover:border-slate-500">
-                      <input type="radio" name="new-biz-paymethod" value="card_paypal" class="sr-only">
-                      <div class="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                        <i class="fas fa-credit-card"></i>
-                      </div>
-                      <div class="flex-1">
-                        <div class="flex items-center justify-between">
-                          <span class="font-black text-xs text-white">Tarjeta / PayPal</span>
-                          <span class="text-[9px] font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded">Automático</span>
+                  <div id="biz-paymethod-options" class="${selectedPlanId === 'free' ? 'hidden' : 'block'} space-y-3">
+                    <span class="font-black text-emerald-400 block text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fas fa-wallet"></i> Método de Pago *
+                    </span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <!-- Opción SINPE Móvil -->
+                      <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-indigo-950 border-emerald-400 ring-2 ring-emerald-400/30">
+                        <input type="radio" name="new-biz-paymethod" value="sinpe" checked class="sr-only">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                          <i class="fas fa-mobile-alt"></i>
                         </div>
-                        <p class="text-[10px] text-slate-300 mt-0.5">Suscripción recurrente con tarjeta de débito/crédito o cuenta PayPal.</p>
-                      </div>
-                    </label>
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between">
+                            <span class="font-black text-xs text-white">SINPE Móvil</span>
+                            <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica 🇨🇷</span>
+                          </div>
+                          <p class="text-[10px] text-slate-300 mt-0.5">Transfiere al 7143-3852 y envía el comprobante por WhatsApp para activación rápida.</p>
+                        </div>
+                      </label>
+
+                      <!-- Opción Tarjeta / PayPal -->
+                      <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-slate-800/80 border-slate-700 hover:border-slate-500">
+                        <input type="radio" name="new-biz-paymethod" value="card_paypal" class="sr-only">
+                        <div class="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
+                          <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="flex-1">
+                          <div class="flex items-center justify-between">
+                            <span class="font-black text-xs text-white">Tarjeta / PayPal</span>
+                            <span class="text-[9px] font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded">Automático</span>
+                          </div>
+                          <p class="text-[10px] text-slate-300 mt-0.5">Suscripción recurrente con tarjeta de débito/crédito o cuenta PayPal.</p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -10518,9 +10606,13 @@ class App {
       }
 
       // Método de pago seleccionado
+      const isFreePlan = planConfig.id === 'free';
       const chosenPayRadio = document.querySelector('input[name="new-biz-paymethod"]:checked');
       const chosenPayMethod = chosenPayRadio ? chosenPayRadio.value : 'sinpe';
       const isSinpe = chosenPayMethod === 'sinpe';
+
+      const initialSubStatus = isFreePlan ? 'active' : (isSinpe ? 'pending_sinpe' : 'pending_payment');
+      const initialPayMethod = isFreePlan ? 'free' : (isSinpe ? 'sinpe_movil' : 'paypal');
 
       try {
         const regData = await storage.registerBusinessWithUser(ownerName, email, password, {
@@ -10531,8 +10623,8 @@ class App {
           plan: planConfig.id,
           planPriceUsd: planConfig.priceUsd,
           monthlyBookingLimit: planConfig.bookingLimit,
-          subscriptionStatus: isSinpe ? 'pending_sinpe' : 'pending_payment',
-          paymentMethod: isSinpe ? 'sinpe_movil' : 'paypal',
+          subscriptionStatus: initialSubStatus,
+          paymentMethod: initialPayMethod,
           city,
           phone,
           email,
@@ -10554,7 +10646,9 @@ class App {
 
         const createdBizId = regData?.user?.businessId || storage.getActiveBusinessId();
         if (createdBizId) {
-          if (isSinpe) {
+          if (isFreePlan) {
+            this.showToast('¡Negocio creado con éxito en el Plan Gratis de por vida! 🎉', 'success');
+          } else if (isSinpe) {
             this.showToast(`¡Negocio creado con éxito! Realiza tu SINPE para activar tu ${planConfig.name}`, 'success');
             this.renderSinpePaymentModal({ businessId: createdBizId, planId: planConfig.id });
           } else {
@@ -10605,9 +10699,9 @@ class App {
               </span>
             </div>
 
-            <h3 class="text-lg sm:text-xl font-black text-white">¡Pre-regístrate y obtén 15 Días Gratis!</h3>
+            <h3 class="text-lg sm:text-xl font-black text-white">¡Pre-regístrate y obtén 15 Días Gratis del Plan Profesional (PRO)!</h3>
             <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-              A partir del día de lanzamiento tendrás <strong>15 días totalmente gratis</strong> para probar la plataforma con tus clientes. <strong>Sin pagos hoy ni tarjetas requeridas.</strong>
+              A partir del día de lanzamiento tendrás <strong>15 días de prueba completa del Plan Profesional (PRO)</strong> (WhatsApp automatizado, hasta 300 citas y multi-especialistas) para probar la plataforma con tus clientes sin costo. <strong>Sin pagos hoy ni tarjetas requeridas.</strong>
             </p>
           </div>
 
@@ -10660,10 +10754,10 @@ class App {
               </select>
             </div>
 
-            <!-- Selección de Plan de Interés -->
+            <!-- Selección de Plan de Interés (4 Planes) -->
             <div>
-              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (Tarifa congelada tras tus 15 días gratis):</label>
-              <div class="grid grid-cols-3 gap-2">
+              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (Tarifa congelada tras tus 15 días gratis Pro):</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 ${plans.map(p => `
                   <label class="cursor-pointer">
                     <input type="radio" name="prereg-plan" value="${p.id}" class="sr-only peer" ${p.id === selectedPlanId ? 'checked' : ''}>
@@ -10671,9 +10765,9 @@ class App {
                       <span class="font-black text-slate-900 text-[11px] block truncate w-full">${p.name}</span>
                       <div class="flex items-center justify-center gap-1 my-0.5 flex-wrap">
                         ${p.originalPriceUsd ? `<span class="text-[10px] text-slate-400 line-through decoration-rose-500 decoration-1 font-bold">$${p.originalPriceUsd}</span>` : ''}
-                        <span class="text-amber-600 font-black text-sm">$${p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">/mes</span></span>
+                        <span class="text-amber-600 font-black text-sm">${p.priceUsd === 0 ? 'Gratis' : '$' + p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">${p.priceUsd === 0 ? '' : '/mes'}</span></span>
                       </div>
-                      <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' reservas'}</span>
+                      <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' res.'}</span>
                     </div>
                   </label>
                 `).join('')}
