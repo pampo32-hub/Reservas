@@ -501,15 +501,20 @@ class StorageService {
 
   async loginOrRegisterClient(name, phone, email, whatsappOptIn = true) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/client/login-or-register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, email, whatsappOptIn })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error en acceso de cliente.');
-      this.setClientUser(data.client);
-      return data.client;
+      try {
+        const res = await fetch(`${this.apiBase}/auth/client/login-or-register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone, email, whatsappOptIn })
+        });
+        const data = await res.json();
+        if (res.ok && data.client) {
+          this.setClientUser(data.client);
+          return data.client;
+        }
+      } catch (err) {
+        console.warn('Error en loginOrRegisterClient online, usando fallback local:', err);
+      }
     }
 
     const client = { id: `cli-${Date.now()}`, name, phone, email, whatsappOptIn };
@@ -1020,8 +1025,10 @@ class StorageService {
         const res = await fetch(`${this.apiBase}/businesses/${businessId}/appointments`);
         if (res.ok) {
           const data = await res.json();
-          this.appointmentsCache = data;
-          localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(data));
+          const localAll = this.getAppointments().filter(a => a.businessId !== businessId);
+          const combined = [...data, ...localAll];
+          this.appointmentsCache = combined;
+          localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(combined));
           return data;
         }
       } catch (e) {
@@ -1032,11 +1039,7 @@ class StorageService {
   }
 
   getAppointmentsByBusiness(businessId) {
-    if (this.appointmentsCache && this.appointmentsCache.length > 0) {
-      const filtered = this.appointmentsCache.filter(a => a.businessId === businessId);
-      if (filtered.length > 0) return filtered;
-    }
-    const all = this.getAppointments();
+    const all = this.appointmentsCache || this.getAppointments();
     return all.filter(a => a.businessId === businessId);
   }
 
@@ -1057,6 +1060,7 @@ class StorageService {
   }
 
   async createAppointment(appointmentData) {
+    let created = null;
     if (this.isOnlineApi) {
       try {
         const res = await fetch(`${this.apiBase}/appointments`, {
@@ -1065,27 +1069,30 @@ class StorageService {
           body: JSON.stringify(appointmentData)
         });
         if (res.ok) {
-          const created = await res.json();
-          await this.getAppointmentsByBusinessAsync(appointmentData.businessId);
-          return created;
+          created = await res.json();
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          console.warn('API error creando reserva en Neon, guardando local:', errData);
         }
       } catch (e) {
         console.error('Error creando reserva en API Neon:', e);
       }
     }
 
-    const appointments = this.getAppointments();
-    const newAppointment = {
-      id: `apt-${Date.now().toString().slice(-6)}`,
-      ...appointmentData,
-      status: appointmentData.status || 'confirmed',
-      createdAt: new Date().toISOString()
-    };
+    if (!created) {
+      created = {
+        id: `apt-${Date.now().toString().slice(-6)}`,
+        ...appointmentData,
+        status: appointmentData.status || 'confirmed',
+        createdAt: new Date().toISOString()
+      };
+    }
 
-    appointments.unshift(newAppointment);
+    const appointments = this.getAppointments().filter(a => a.id !== created.id);
+    appointments.unshift(created);
     localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
     this.appointmentsCache = appointments;
-    return newAppointment;
+    return created;
   }
 
   async updateAppointment(appointmentId, updatedData) {

@@ -1,6 +1,7 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
+// FLAGS DE LA PLATAFORMA: Registro, login y suscripciones activas
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
@@ -3552,7 +3553,7 @@ class App {
             <h3 class="text-2xl font-black text-slate-900 mt-1">
               Demostración de Agendamiento
             </h3>
-            <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
+            <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${(appointment.id || '').toUpperCase()}</strong></p>
 
             <!-- Aviso Informativo de Prelanzamiento -->
             <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
@@ -3691,7 +3692,7 @@ class App {
           <h3 class="text-2xl font-black text-slate-900 mt-1">
             ${isPending ? 'Cita en Aprobación' : 'Tu Cita ha sido Agendada'}
           </h3>
-          <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">#${appointment.id.toUpperCase()}</strong></p>
+          <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">#${(appointment.id || '').toUpperCase()}</strong></p>
 
           <!-- Tarjeta de Confirmación de Notificaciones -->
           <div class="mt-4 p-4 ${isPending ? 'bg-amber-50/80 border-amber-200' : 'bg-emerald-50/80 border-emerald-200'} rounded-2xl border text-left space-y-2">
@@ -3699,6 +3700,7 @@ class App {
               <i class="fas ${isPending ? 'fa-bell text-amber-600' : 'fa-check-double text-emerald-600'} text-sm"></i>
               <span>${isPending ? 'Pendiente de confirmación por el comercio' : 'Notificaciones y Recordatorios Activos'}</span>
             </div>
+            
             <p class="text-slate-700 text-xs leading-relaxed">
               ${isPending 
                 ? 'El establecimiento revisará tu solicitud de turno y confirmará tu cita a la brevedad. Te avisaremos cuando sea aprobada.' 
@@ -4264,7 +4266,7 @@ class App {
   // ==========================================
   // VISTA 3: PANEL DE DUEÑO DE NEGOCIO (DASHBOARD)
   // ==========================================
-  renderOwnerDashboardView(container) {
+  async renderOwnerDashboardView(container) {
     const bizUser = storage.getBusinessUser();
     if (!bizUser) {
       this.renderBusinessAuthModal();
@@ -4278,6 +4280,8 @@ class App {
       return;
     }
 
+    // Sincronizar citas frescas del backend para este negocio
+    await storage.getAppointmentsByBusinessAsync(currentBiz.id);
     const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
@@ -9001,6 +9005,7 @@ class App {
                                       <i class="fas fa-eye text-emerald-600"></i> Mostrar
                                     </button>
                                   ` : `
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hov
                                     <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="hide" data-name="${b.name}" title="Ocultar de la página principal">
                                       <i class="fas fa-eye-slash text-amber-600"></i> Ocultar
                                     </button>
