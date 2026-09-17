@@ -2123,12 +2123,54 @@ class StorageService {
   // ==========================================
   // MÉTODOS DE NOTIFICACIONES PUSH MÓVILES
   // ==========================================
+  // MÉTODOS DE NOTIFICACIONES PUSH MÓVILES (PWA & iOS)
+  // ==========================================
+
+  async initServiceWorker() {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        console.log('✅ Service Worker registrado con éxito:', registration.scope);
+        return registration;
+      } catch (err) {
+        console.warn('⚠️ Error registrando Service Worker:', err);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  isIos() {
+    if (typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent || '') || 
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  isStandalone() {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(display-mode: standalone)').matches || 
+      window.navigator.standalone === true || 
+      (typeof document !== 'undefined' && document.referrer && document.referrer.includes('android-app://'));
+  }
 
   isPushSupported() {
-    return typeof window !== 'undefined' && 
-      'serviceWorker' in navigator && 
+    if (typeof window === 'undefined') return false;
+    return 'serviceWorker' in navigator && 
       'PushManager' in window && 
       'Notification' in window;
+  }
+
+  getPushSupportDetails() {
+    const isIosDevice = this.isIos();
+    const isStandaloneMode = this.isStandalone();
+    const supported = this.isPushSupported();
+    
+    return {
+      supported,
+      isIos: isIosDevice,
+      isStandalone: isStandaloneMode,
+      needsIosInstall: isIosDevice && !isStandaloneMode && !('Notification' in window)
+    };
   }
 
   getPushPermission() {
@@ -2144,62 +2186,96 @@ class StorageService {
   }
 
   async checkPushSubscriptionStatus() {
-    if (!this.isPushSupported()) {
-      return { supported: false, isSubscribed: false, permission: 'unsupported' };
+    const details = this.getPushSupportDetails();
+    if (!details.supported && !details.needsIosInstall) {
+      return { supported: false, isSubscribed: false, permission: 'unsupported', details };
     }
-    const permission = Notification.permission;
+
+    if (details.needsIosInstall) {
+      return { supported: false, isSubscribed: false, permission: 'unsupported', details, needsIosInstall: true };
+    }
+
+    const permission = (typeof Notification !== 'undefined') ? Notification.permission : 'default';
+    
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
+      // Asegurar que el Service Worker esté registrado sin quedarse esperando indefinidamente
+      await this.initServiceWorker();
+      
+      const getRegPromise = navigator.serviceWorker.ready;
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 2500));
+      
+      const reg = await Promise.race([getRegPromise, timeoutPromise]).catch(() => null);
+      if (!reg || !reg.pushManager) {
+        return { supported: true, isSubscribed: false, permission, details };
+      }
+
+      const sub = await reg.pushManager.getSubscription().catch(() => null);
       return {
         supported: true,
         isSubscribed: Boolean(sub),
         permission,
-        subscription: sub
+        subscription: sub,
+        details
       };
     } catch (e) {
       console.warn('Error verificando estado de suscripción push:', e);
-      return { supported: true, isSubscribed: false, permission, error: e.message };
+      return { supported: true, isSubscribed: false, permission, error: e.message, details };
     }
   }
 
   async registerPushForBusiness(businessId) {
-    if (!this.isPushSupported()) {
-      throw new Error('Tu navegador o dispositivo no soporta notificaciones Push directas.');
+    if (typeof window === 'undefined') throw new Error('Entorno no válido');
+
+    // 1. Asegurar registro del SW
+    try {
+      await this.initServiceWorker();
+    } catch (swErr) {
+      console.warn('Error asegurando SW:', swErr);
     }
 
-    // 1. Solicitar permiso al usuario
+    if (typeof Notification === 'undefined' || !('PushManager' in window)) {
+      if (this.isIos()) {
+        throw new Error('En iPhone/iPad debes agregar la app a tu pantalla de inicio (Compartir ⎋ -> Agregar a pantalla de inicio) para recibir notificaciones.');
+      }
+      throw new Error('Tu navegador no soporta notificaciones Push directas.');
+    }
+
+    // 2. Solicitar permiso al usuario directamente en el gesto de toque
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
-      throw new Error('Permiso de notificaciones denegado. Puedes habilitarlo en los ajustes de tu navegador.');
+      throw new Error('Permiso de notificaciones no concedido. Puedes habilitarlo en Ajustes > Safari o en los permisos de la aplicación.');
     }
 
-    // 2. Obtener clave VAPID
+    // 3. Obtener clave VAPID
     const publicKey = await this.getVapidPublicKey();
     if (!publicKey) {
       throw new Error('El servidor no proveyó una clave pública de notificaciones.');
     }
 
-    // 3. Convertir clave VAPID
+    // 4. Convertir clave VAPID
     const convertedKey = this._urlBase64ToUint8Array(publicKey);
 
-    // 4. Suscribir en el Service Worker
-    const reg = await navigator.serviceWorker.ready;
-    let subscription = await reg.pushManager.getSubscription();
+    // 5. Suscribir en el Service Worker con timeout de seguridad
+    const getReadyPromise = navigator.serviceWorker.ready;
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker no respondió a tiempo')), 5000));
+    const readyReg = await Promise.race([getReadyPromise, timeoutPromise]);
+    
+    let subscription = await readyReg.pushManager.getSubscription();
     if (!subscription) {
-      subscription = await reg.pushManager.subscribe({
+      subscription = await readyReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
     }
 
-    // 5. Enviar al backend para guardar en PostgreSQL
+    // 6. Enviar al backend para guardar en PostgreSQL
     const res = await fetch(`${this.apiBase}/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         businessId,
-        subscription: subscription.toJSON()
+        subscription: subscription.toJSON(),
+        userAgent: navigator.userAgent || ''
       })
     });
 

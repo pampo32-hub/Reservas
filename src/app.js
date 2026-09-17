@@ -365,6 +365,13 @@ class App {
   }
 
   async init() {
+    // 0. Registrar Service Worker para PWA y Notificaciones Push
+    try {
+      storage.initServiceWorker();
+    } catch (e) {
+      console.warn('SW init notice:', e);
+    }
+
     // 1. Escuchar botones Atrás y Adelante del navegador
     window.addEventListener('popstate', (e) => {
       if (e.state && e.state.view) {
@@ -4557,12 +4564,57 @@ class App {
   }
 
   // --- GESTIÓN DE NOTIFICACIONES PUSH MÓVILES (WEB PUSH) ---
+  // --- GESTIÓN DE NOTIFICACIONES PUSH MÓVILES (WEB PUSH) ---
   async updatePushNotificationBanner(currentBiz) {
     const container = document.getElementById('push-notification-container');
     if (!container || !currentBiz) return;
 
-    if (!storage.isPushSupported()) {
-      // Navegador no compatible con Web Push
+    let status = { supported: false, isSubscribed: false, permission: 'default' };
+    try {
+      status = await storage.checkPushSubscriptionStatus();
+    } catch (e) {
+      console.warn('Error obteniendo estado push:', e);
+    }
+
+    // Caso 1: iPhone / iPad en navegador Safari normal (requiere guardar en pantalla de inicio)
+    if (status.needsIosInstall) {
+      container.innerHTML = `
+        <div class="mb-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-indigo-500/30 animate-fade-in">
+          <div class="flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0 text-indigo-300 text-lg">
+              <i class="fab fa-apple"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="font-bold text-sm text-white">Activar Notificaciones en iPhone (iOS)</h4>
+                <span class="text-[10px] bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-full font-bold">iOS 16.4+</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                En iPhone/iPad de Apple, las alertas push nativas requieren abrir la app agregada a tu pantalla de inicio:
+              </p>
+              <div class="mt-2.5 bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-slate-200 space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">1</span>
+                  <span>Toca el botón <strong>Compartir</strong> (<i class="fas fa-arrow-up-from-bracket text-blue-400"></i>) en la barra de Safari.</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">2</span>
+                  <span>Selecciona <strong>"Agregar a pantalla de inicio"</strong> (<i class="fas fa-plus-square text-blue-400"></i>).</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">3</span>
+                  <span>Abre la app desde tu pantalla de inicio para recibir alertas push de cada reserva.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Caso 2: Navegador totalmente incompatible
+    if (!status.supported && !status.isSubscribed) {
       container.innerHTML = `
         <div class="mb-6 bg-slate-100 text-slate-700 p-4 rounded-2xl border border-slate-200 text-xs flex items-center gap-3">
           <i class="fas fa-info-circle text-slate-400 text-base shrink-0"></i>
@@ -4574,10 +4626,8 @@ class App {
       return;
     }
 
-    const status = await storage.checkPushSubscriptionStatus();
-
+    // Caso 3: Ya está activado en este dispositivo
     if (status.isSubscribed && status.permission === 'granted') {
-      // Dispositivo activado y listo
       container.innerHTML = `
         <div class="mb-6 bg-gradient-to-r from-emerald-950/90 via-emerald-900/90 to-teal-950 text-white p-4 sm:p-5 rounded-2xl shadow-sm border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
           <div class="flex items-center gap-3.5">
@@ -4635,7 +4685,7 @@ class App {
       });
 
     } else {
-      // No está suscrito o permiso no solicitado
+      // Caso 4: No está suscrito o permiso pendiente
       container.innerHTML = `
         <div class="mb-6 bg-gradient-to-r from-indigo-950 via-slate-900 to-blue-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
           <div class="flex items-center gap-3.5">
