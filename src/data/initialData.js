@@ -1,5 +1,28 @@
 export const SUBSCRIPTION_PLANS = [
   {
+    id: 'test',
+    name: 'Plan Prueba ($5)',
+    badge: 'Prueba de Pago',
+    priceUsd: 5,
+    originalPriceUsd: 10,
+    priceCrc: 2600,
+    interval: 'mensual',
+    bookingLimit: 50,
+    bookingLimitLabel: '50 reservas / mes',
+    staffLimit: 1,
+    staffLimitLabel: '1 especialista',
+    tagline: 'Plan especial para pruebas y validación de pago con PayPal.',
+    features: [
+      'Cobro real de $5 USD vía PayPal o Tarjeta',
+      'Hasta 50 reservas en tu panel',
+      '1 especialista activo',
+      'Confirmación automática por correo y WhatsApp',
+      'Soporte directo de pruebas'
+    ],
+    popular: false,
+    color: 'emerald'
+  },
+  {
     id: 'free',
     name: 'Plan Gratis',
     badge: '100% Gratis',

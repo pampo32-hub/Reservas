@@ -3310,6 +3310,7 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
 
     // Mapeo de límites y precios por plan
     const planConfigMap = {
+      'test': { price: 5.00, limit: 50, name: 'Plan Prueba ($5)' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
       'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
@@ -3358,6 +3359,7 @@ app.post('/api/paypal/create-order', async (req, res) => {
     }
 
     const planConfigMap = {
+      'test': { price: '5.00', name: 'Plan Prueba ($5)', limit: 50 },
       'basic': { price: '10.00', name: 'Plan Básico', limit: 150 },
       'pro': { price: '18.00', name: 'Plan Profesional', limit: 300 },
       'unlimited': { price: '35.00', name: 'Plan Ilimitado', limit: 999999 }
@@ -3436,6 +3438,7 @@ app.post('/api/paypal/capture-order', async (req, res) => {
     }
 
     const planConfigMap = {
+      'test': { price: 5.00, limit: 50, name: 'Plan Prueba ($5)' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
       'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
