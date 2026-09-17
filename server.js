@@ -950,11 +950,13 @@ app.get('/api/businesses', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
-      plan: b.plan || 'pro',
-      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
+      plan: b.plan || 'basic',
+      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
+      subscriptionStatus: b.subscription_status,
+      paymentMethod: b.payment_method,
       services: srvRes.rows
         .filter(s => s.business_id === b.id)
         .map(s => ({
@@ -970,6 +972,61 @@ app.get('/api/businesses', async (req, res) => {
   } catch (error) {
     console.error('Error en GET /api/businesses:', error);
     res.status(500).json({ error: 'Error al consultar negocios' });
+  }
+});
+
+// Endpoint explícito para el Developer Dashboard
+app.get('/api/developer/businesses', async (req, res) => {
+  try {
+    const bizRes = await pool.query(`
+      SELECT * FROM reservas_businesses 
+      ORDER BY is_demo DESC, created_at ASC
+    `);
+    const srvRes = await pool.query('SELECT * FROM reservas_services ORDER BY created_at ASC');
+
+    const businesses = bizRes.rows.map(b => ({
+      id: b.id,
+      name: b.name,
+      category: b.category,
+      categoryLabel: b.category_label,
+      rating: parseFloat(b.rating),
+      reviewsCount: parseInt(b.reviews_count, 10),
+      priceRange: b.price_range || '₡₡',
+      address: b.address,
+      city: b.city,
+      phone: b.phone,
+      email: b.email,
+      description: b.description,
+      image: b.image,
+      coverImage: b.cover_image,
+      schedule: b.schedule,
+      features: Array.isArray(b.features) ? b.features : [],
+      isDemo: Boolean(b.is_demo),
+      isHidden: Boolean(b.is_hidden),
+      isBlocked: Boolean(b.is_blocked),
+      blockReason: b.block_reason || '',
+      plan: b.plan || 'basic',
+      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      socialLinks: b.social_links || {},
+      autoConfirmAppointments: b.auto_confirm_appointments !== false,
+      subscriptionStatus: b.subscription_status,
+      paymentMethod: b.payment_method,
+      services: srvRes.rows
+        .filter(s => s.business_id === b.id)
+        .map(s => ({
+          id: s.id,
+          name: s.name,
+          duration: s.duration,
+          price: parseFloat(s.price),
+          description: s.description
+        }))
+    }));
+
+    res.json(businesses);
+  } catch (error) {
+    console.error('Error en GET /api/developer/businesses:', error);
+    res.status(500).json({ error: 'Error al consultar negocios para developer' });
   }
 });
 

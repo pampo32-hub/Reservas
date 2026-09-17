@@ -8423,7 +8423,7 @@ class App {
                                 >
                                   <option value="free" ${b.plan === 'free' ? 'selected' : ''}>🎁 Gratis (₡0 • 25)</option>
                                   <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>🔹 Básico ($10 • 150)</option>
-                                  <option value="pro" ${(b.plan === 'pro' || (!b.plan && b.plan !== 'free' && b.plan !== 'basic')) ? 'selected' : ''}>⭐ Pro ($18 • 300)</option>
+                                  <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>⭐ Pro ($18 • 300)</option>
                                   <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>🚀 Ilimitado ($35 • ∞)</option>
                                 </select>
                               </td>
@@ -11725,7 +11725,7 @@ class App {
                 <select id="edit-biz-plan" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
                   <option value="free" ${biz.plan === 'free' ? 'selected' : ''}>Gratis (₡0/mes - 25 res. - 1 esp.)</option>
                   <option value="basic" ${biz.plan === 'basic' ? 'selected' : ''}>Básico ($10/mes - 150 res. - 1 esp.)</option>
-                  <option value="pro" ${(biz.plan === 'pro' || (!biz.plan && biz.plan !== 'free' && biz.plan !== 'basic')) ? 'selected' : ''}>Profesional ($18/mes - 300 res. - 5 esp.)</option>
+                  <option value="pro" ${biz.plan === 'pro' ? 'selected' : ''}>Profesional ($18/mes - 300 res. - 5 esp.)</option>
                   <option value="unlimited" ${biz.plan === 'unlimited' ? 'selected' : ''}>Ilimitado ($35/mes - ∞ res. - ∞ esp.)</option>
                 </select>
               </div>
