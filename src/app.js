@@ -385,11 +385,30 @@ class App {
     const initialRoute = this.parseHash(window.location.hash);
     this.currentView = initialRoute.view;
     this.currentRouteParams = initialRoute.params || {};
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('reservas_current_view', this.currentView);
+    }
     if (initialRoute.params.businessId) {
       this.selectedBusinessId = initialRoute.params.businessId;
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('reservas_selected_biz_id', initialRoute.params.businessId);
+      }
     }
     if (initialRoute.params.appointmentId) {
       this.selectedAppointmentId = initialRoute.params.appointmentId;
+    }
+    if (initialRoute.params.tab) {
+      if (this.currentView === 'owner-dashboard') {
+        this.activeDashboardTab = initialRoute.params.tab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_owner_tab', initialRoute.params.tab);
+        }
+      } else if (this.currentView === 'developer-dashboard') {
+        this.activeDevTab = initialRoute.params.tab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_dev_tab', initialRoute.params.tab);
+        }
+      }
     }
 
     const initialUrl = this.getUrlForView(this.currentView, initialRoute.params);
@@ -401,16 +420,8 @@ class App {
     this.renderMobileBottomNav();
     this.renderCurrentView();
     this.setupGlobalEvents();
-    try {
-      this.renderHeader();
-      this.renderMobileBottomNav();
-      this.renderCurrentView();
-      this.setupGlobalEvents();
-    } catch (err) {
-      console.error('Error inicializando vista:', err);
-    }
 
-    // Sincronizar datos frescos del servidor y refrescar
+    // Sincronizar datos frescos del servidor y refrescar conservando la vista actual
     try {
       if (storage.initAsync) {
         await storage.initAsync();
@@ -427,7 +438,7 @@ class App {
   getUrlForView(view, params = {}) {
     switch (view) {
       case 'business-detail': {
-        const bizId = params.businessId || this.selectedBusinessId;
+        const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
         return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
       }
       case 'review-booking': {
@@ -439,10 +450,14 @@ class App {
         return '/unete';
       case 'my-client-bookings':
         return '/mis-reservas';
-      case 'owner-dashboard':
-        return '/panel-negocio';
-      case 'developer-dashboard':
-        return '/developer';
+      case 'owner-dashboard': {
+        const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
+        return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
+      }
+      case 'developer-dashboard': {
+        const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
+        return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
+      }
       case 'directory':
       default:
         return '/';
@@ -482,10 +497,12 @@ class App {
         return { view: 'my-client-bookings', params: {} };
       }
       if (/^\/?(panel-negocio|dashboard|owner)$/i.test(pathname)) {
-        return { view: 'owner-dashboard', params: {} };
+        const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+        return { view: 'owner-dashboard', params: { tab } };
       }
       if (/^\/?(developer|developer-dashboard|admin)$/i.test(pathname)) {
-        return { view: 'developer-dashboard', params: {} };
+        const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
+        return { view: 'developer-dashboard', params: { tab } };
       }
       if (/^\/?(login|acceso|entrar|soy-negocio)$/i.test(pathname)) {
         setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
@@ -508,6 +525,26 @@ class App {
 
     // 2. Ruta raíz vacía
     if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
+      // Si la URL es la raíz pero hay una vista guardada en sessionStorage, podemos restaurarla si es un dashboard activo
+      if (typeof sessionStorage !== 'undefined') {
+        const savedView = sessionStorage.getItem('reservas_current_view');
+        const savedOwnerTab = sessionStorage.getItem('reservas_active_owner_tab') || 'appointments';
+        const savedDevTab = sessionStorage.getItem('reservas_active_dev_tab') || 'alerts';
+        const savedBizId = sessionStorage.getItem('reservas_selected_biz_id');
+
+        if (savedView === 'owner-dashboard' && storage.getBusinessUser()) {
+          return { view: 'owner-dashboard', params: { tab: savedOwnerTab } };
+        }
+        if (savedView === 'developer-dashboard' && storage.getDeveloperUser()) {
+          return { view: 'developer-dashboard', params: { tab: savedDevTab } };
+        }
+        if (savedView === 'my-client-bookings' && storage.getClientUser()) {
+          return { view: 'my-client-bookings', params: {} };
+        }
+        if (savedView === 'business-detail' && savedBizId) {
+          return { view: 'business-detail', params: { businessId: savedBizId } };
+        }
+      }
       return { view: 'directory', params: {} };
     }
 
@@ -566,12 +603,18 @@ class App {
 
     // 7. Panel negocio en hash
     if (/^#\/?(panel-negocio|dashboard|owner)/i.test(cleanHash)) {
-      return { view: 'owner-dashboard', params: {} };
+      const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
+      const hashParams = new URLSearchParams(hashQuery);
+      const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+      return { view: 'owner-dashboard', params: { tab } };
     }
 
     // 8. Developer en hash
     if (/^#\/?(developer|developer-dashboard|admin)/i.test(cleanHash)) {
-      return { view: 'developer-dashboard', params: {} };
+      const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
+      const hashParams = new URLSearchParams(hashQuery);
+      const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
+      return { view: 'developer-dashboard', params: { tab } };
     }
 
     // 9. Acceso directo por URL en hash
@@ -587,11 +630,31 @@ class App {
   navigateTo(view, params = {}, pushHistory = true) {
     this.currentView = view;
     this.currentRouteParams = params || {};
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem('reservas_current_view', view);
+    }
+
     if (params.businessId) {
       this.selectedBusinessId = params.businessId;
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('reservas_selected_biz_id', params.businessId);
+      }
     }
     if (params.appointmentId) {
       this.selectedAppointmentId = params.appointmentId;
+    }
+    if (params.tab) {
+      if (view === 'owner-dashboard') {
+        this.activeDashboardTab = params.tab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_owner_tab', params.tab);
+        }
+      } else if (view === 'developer-dashboard') {
+        this.activeDevTab = params.tab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_dev_tab', params.tab);
+        }
+      }
     }
 
     const targetUrl = this.getUrlForView(view, params);
@@ -2466,9 +2529,18 @@ class App {
   // VISTA 2: DETALLE DEL NEGOCIO & SERVICIOS
   // ==========================================
   renderBusinessDetailView(container) {
-    const biz = storage.getBusinessById(this.selectedBusinessId);
+    const bizId = this.selectedBusinessId || this.currentRouteParams?.businessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
+    const biz = storage.getBusinessById(bizId);
     if (!biz) {
-      this.navigateTo('directory');
+      container.innerHTML = `
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center animate-fade-in">
+          <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4 animate-pulse">
+            <i class="fas fa-circle-notch fa-spin"></i>
+          </div>
+          <h2 class="text-lg font-bold text-slate-800">Cargando perfil del comercio...</h2>
+          <p class="text-xs text-slate-500 mt-1">Conectando con el catálogo de servicios.</p>
+        </div>
+      `;
       return;
     }
 
@@ -4514,6 +4586,10 @@ class App {
 
     document.getElementById('dash-logout-btn')?.addEventListener('click', () => {
       storage.logoutBusiness();
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('reservas_current_view');
+        sessionStorage.removeItem('reservas_active_owner_tab');
+      }
       this.showToast('Sesión de negocio cerrada.', 'info');
       this.renderHeader();
       this.navigateTo('directory');
@@ -4545,7 +4621,15 @@ class App {
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.activeDashboardTab = btn.getAttribute('data-tab');
+        const tab = btn.getAttribute('data-tab');
+        this.activeDashboardTab = tab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_owner_tab', tab);
+        }
+        const newUrl = this.getUrlForView('owner-dashboard', { tab });
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({ view: 'owner-dashboard', params: { tab } }, '', newUrl);
+        }
         this.renderCurrentView();
       });
     });
@@ -4952,6 +5036,11 @@ class App {
           </div>
 
           <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
+            <!-- Sección Fotos con Guía de Medidas -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-5">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
+              </h3>
             <!-- Sección Fotos con Guía de Medidas y Carga desde PC/Móvil -->
             <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-6">
               <div class="flex items-center justify-between border-b border-slate-200 pb-3">
@@ -4964,6 +5053,9 @@ class App {
               </div>
 
               <!-- Banner de Portada -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="font-bold text-slate-700">Banner / Portada Principal</label>
               <div class="space-y-3">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
@@ -4971,11 +5063,28 @@ class App {
                     <p class="text-[11px] text-slate-500">Aparece en el encabezado de la página de tu negocio.</p>
                   </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 1200 x 450 px (16:6)
                     <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 1200 x 450 px (16:6)
                   </span>
                 </div>
+                <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="URL de la imagen de portada (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
+                <!-- Preview Banner -->
+                <div class="h-32 w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative">
+                  <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image}" alt="Vista previa banner" class="w-full h-full object-cover">
+                  <span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">Vista previa del banner</span>
 
                 <!-- Preview Banner & Trigger Button -->
+                <div class="space-y-2">
+                  <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
+                    <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
+                      <i class="fas fa-camera text-2xl"></i>
+                      <span class="text-xs font-bold">Cambiar imagen de portada</span>
+                      <span class="text-[10px] text-slate-200">Clic para seleccionar desde tu PC o celular</span>
+                    </div>
+                    <span class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-lg font-medium pointer-events-none">
+                      <i class="fas fa-eye mr-1"></i> Vista previa
+                    </span>
                 <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
                   <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
                   <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
@@ -4988,6 +5097,16 @@ class App {
                   </span>
                 </div>
 
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
+                    <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                      <i class="fas fa-upload"></i>
+                      <span>Subir Banner desde PC / Celular</span>
+                    </button>
+                    <span id="cover-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
+                      <i class="fas fa-check-circle"></i> Imagen cargada y optimizada
+                    </span>
+                  </div>
                 <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
                   <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
@@ -4999,6 +5118,11 @@ class App {
                   </span>
                 </div>
 
+                  <div class="pt-1">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                      <span>O ingresa el enlace URL de la imagen directamente:</span>
+                    </div>
+                    <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="https://ejemplo.com/portada.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
                 <div class="pt-1">
                   <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
                     <span>O ingresa el enlace URL de la imagen directamente:</span>
@@ -5008,6 +5132,9 @@ class App {
               </div>
 
               <!-- Foto de Perfil / Logo -->
+              <div class="space-y-2 pt-3 border-t border-slate-200">
+                <div class="flex items-center justify-between">
+                  <label class="font-bold text-slate-700">Foto de Perfil / Logo Cuadrado</label>
               <div class="space-y-3 pt-4 border-t border-slate-200">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
@@ -5015,9 +5142,15 @@ class App {
                     <p class="text-[11px] text-slate-500">Se muestra en la tarjeta de búsqueda, directorio y logo principal.</p>
                   </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 800 x 800 px (1:1)
                     <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 800 x 800 px (1:1)
                   </span>
                 </div>
+                <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="URL del logo o foto de perfil (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
+                <!-- Preview Logo -->
+                <div class="flex items-center gap-3">
+                  <img id="preview-logo-img" src="${currentBiz.image}" alt="Vista previa logo" class="w-16 h-16 rounded-2xl object-cover border border-slate-300">
+                  <span class="text-xs text-slate-500">Se muestra en las tarjetas de búsqueda del directorio.</span>
 
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <!-- Avatar Preview / Trigger -->
@@ -9759,48 +9892,37 @@ class App {
       // Event Listeners del Panel Developer
       document.getElementById('dev-logout-view-btn')?.addEventListener('click', () => {
         storage.logoutDeveloper();
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('reservas_current_view');
+          sessionStorage.removeItem('reservas_active_dev_tab');
+        }
         this.showToast('Sesión de Developer cerrada.', 'info');
         this.renderHeader();
         this.navigateTo('directory');
       });
 
       // Tabs Switch
-      document.getElementById('dev-tab-alerts')?.addEventListener('click', () => {
-        this.activeDevTab = 'alerts';
+      const setDevTab = (tab) => {
+        this.activeDevTab = tab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_dev_tab', tab);
+        }
+        const newUrl = this.getUrlForView('developer-dashboard', { tab });
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({ view: 'developer-dashboard', params: { tab } }, '', newUrl);
+        }
         this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-businesses')?.addEventListener('click', () => {
-        this.activeDevTab = 'businesses';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-clients')?.addEventListener('click', () => {
-        this.activeDevTab = 'clients';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-appointments')?.addEventListener('click', () => {
-        this.activeDevTab = 'appointments';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-whatsapp')?.addEventListener('click', () => {
-        this.activeDevTab = 'whatsapp';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-preregistrations')?.addEventListener('click', () => {
-        this.activeDevTab = 'preregistrations';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-sinpe')?.addEventListener('click', () => {
-        this.activeDevTab = 'sinpe';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-paypal')?.addEventListener('click', () => {
-        this.activeDevTab = 'paypal';
-        this.renderDeveloperDashboardView(container);
-      });
-      document.getElementById('dev-tab-maintenance')?.addEventListener('click', () => {
-        this.activeDevTab = 'maintenance';
-        this.renderDeveloperDashboardView(container);
-      });
+      };
+
+      document.getElementById('dev-tab-alerts')?.addEventListener('click', () => setDevTab('alerts'));
+      document.getElementById('dev-tab-businesses')?.addEventListener('click', () => setDevTab('businesses'));
+      document.getElementById('dev-tab-clients')?.addEventListener('click', () => setDevTab('clients'));
+      document.getElementById('dev-tab-appointments')?.addEventListener('click', () => setDevTab('appointments'));
+      document.getElementById('dev-tab-whatsapp')?.addEventListener('click', () => setDevTab('whatsapp'));
+      document.getElementById('dev-tab-preregistrations')?.addEventListener('click', () => setDevTab('preregistrations'));
+      document.getElementById('dev-tab-sinpe')?.addEventListener('click', () => setDevTab('sinpe'));
+      document.getElementById('dev-tab-paypal')?.addEventListener('click', () => setDevTab('paypal'));
+      document.getElementById('dev-tab-maintenance')?.addEventListener('click', () => setDevTab('maintenance'));
 
       // MANTENIMIENTO: Checkboxes y Acciones de Depuración
       const updateCleanupCount = () => {

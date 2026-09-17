@@ -14,9 +14,12 @@ const STORAGE_KEYS = {
 class StorageService {
   constructor() {
     this.apiBase = '/api';
-    this.businessesCache = [];
-    this.appointmentsCache = [];
-    this.blockedSlotsCache = [];
+    const localBiz = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.BUSINESSES) : null;
+    this.businessesCache = localBiz ? JSON.parse(localBiz) : INITIAL_BUSINESSES;
+    const localApts = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.APPOINTMENTS) : null;
+    this.appointmentsCache = localApts ? JSON.parse(localApts) : INITIAL_APPOINTMENTS;
+    const localSlots = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.BLOCKED_SLOTS) : null;
+    this.blockedSlotsCache = localSlots ? JSON.parse(localSlots) : [];
     this.isOnlineApi = true;
     this.init();
   }
@@ -48,6 +51,7 @@ class StorageService {
       const res = await fetch(`${this.apiBase}/businesses`);
       if (!res.ok) throw new Error('API no disponible');
       this.businessesCache = await res.json();
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(this.businessesCache));
       this.isOnlineApi = true;
     } catch (e) {
       this.isOnlineApi = false;
