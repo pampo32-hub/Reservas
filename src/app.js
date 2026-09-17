@@ -10652,8 +10652,8 @@ class App {
 
       // Plan de suscripción elegido
       const chosenPlanRadio = document.querySelector('input[name="new-biz-plan"]:checked');
-      const chosenPlanId = chosenPlanRadio ? chosenPlanRadio.value : 'basic';
-      const planConfig = storage.getPlanById(chosenPlanId);
+      const chosenPlanId = chosenPlanRadio ? chosenPlanRadio.value : 'free';
+      const planConfig = storage.getPlanById(chosenPlanId) || { id: 'free', name: 'Plan Gratis', priceUsd: 0, bookingLimit: 25 };
 
       if (password.length < 6) {
         this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
@@ -10700,7 +10700,7 @@ class App {
       }
 
       // Método de pago seleccionado
-      const isFreePlan = planConfig.id === 'free';
+      const isFreePlan = (planConfig.id === 'free' || planConfig.priceUsd === 0 || chosenPlanId === 'free');
       const chosenPayRadio = document.querySelector('input[name="new-biz-paymethod"]:checked');
       const chosenPayMethod = chosenPayRadio ? chosenPayRadio.value : 'sinpe';
       const isSinpe = chosenPayMethod === 'sinpe';
@@ -10714,9 +10714,9 @@ class App {
           category: finalCategory,
           categoryLabel,
           isCustomCategory,
-          plan: planConfig.id,
-          planPriceUsd: planConfig.priceUsd,
-          monthlyBookingLimit: planConfig.bookingLimit,
+          plan: isFreePlan ? 'free' : planConfig.id,
+          planPriceUsd: isFreePlan ? 0 : planConfig.priceUsd,
+          monthlyBookingLimit: isFreePlan ? 25 : planConfig.bookingLimit,
           subscriptionStatus: initialSubStatus,
           paymentMethod: initialPayMethod,
           city,
@@ -11147,13 +11147,28 @@ class App {
   }
 
   // ==========================================
+  // ==========================================
   // MODAL DE PAGO CON SINPE MÓVIL (COSTA RICA)
   // ==========================================
-  renderSinpePaymentModal({ businessId, planId = 'basic' }) {
+  async renderSinpePaymentModal({ businessId, planId = 'basic' }) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const plan = storage.getPlanById(planId) || { name: 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' };
+    const plan = storage.getPlanById(planId) || { id: 'basic', name: 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' };
+    
+    // Si es Plan Gratis, activar de inmediato sin solicitar pago
+    if (plan.id === 'free' || plan.priceUsd === 0 || planId === 'free') {
+      if (businessId) {
+        await storage.updateBusinessPlan(businessId, 'free');
+      }
+      modalContainer.innerHTML = '';
+      this.showToast('✅ ¡Plan Gratis activado de por vida!', 'success');
+      if (this.currentView === 'owner-dashboard') {
+        this.renderCurrentView();
+      }
+      return;
+    }
+
     const biz = businessId ? storage.getBusinessById(businessId) : null;
     const bizName = biz ? biz.name : 'Mi Negocio';
     const sinpePhoneFormatted = '7143-3852';
@@ -11299,7 +11314,21 @@ class App {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const plan = storage.getPlanById(planId) || { name: 'Plan Profesional', priceUsd: 18, priceCrc: 9400, bookingLimitLabel: 'Hasta 300 reservas/mes' };
+    const plan = storage.getPlanById(planId) || { id: 'pro', name: 'Plan Profesional', priceUsd: 18, priceCrc: 9400, bookingLimitLabel: 'Hasta 300 reservas/mes' };
+    
+    // Si es Plan Gratis, activar de inmediato sin abrir pasarela de cobro
+    if (plan.id === 'free' || plan.priceUsd === 0 || planId === 'free') {
+      if (businessId) {
+        await storage.updateBusinessPlan(businessId, 'free');
+      }
+      modalContainer.innerHTML = '';
+      this.showToast('✅ ¡Plan Gratis activado de por vida!', 'success');
+      if (this.currentView === 'owner-dashboard') {
+        this.renderCurrentView();
+      }
+      return;
+    }
+
     const biz = businessId ? storage.getBusinessById(businessId) : null;
     const amountCrc = this.formatColones(plan.priceCrc || (plan.priceUsd * 530));
 
@@ -11323,7 +11352,6 @@ class App {
           <div class="p-5 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Comercio:</span>
-              <strong class="text-slate-900 font
               <strong class="text-slate-900 font-black">${biz ? this.escapeHtml(biz.name) : 'Tu Comercio'}</strong>
             </div>
             <div class="flex items-center justify-between">
