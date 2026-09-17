@@ -124,6 +124,48 @@ class App {
       .replace(/'/g, '&#039;');
   }
 
+  // --- COMPRESIÓN Y OPTIMIZACIÓN DE IMÁGENES SUBIDAS DESDE EL DISPOSITIVO ---
+  compressImageFile(file, maxWidth = 1200, maxHeight = 800, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) {
+        return reject(new Error('El archivo seleccionado no es una imagen válida.'));
+      }
+
+      const reader = new FileReader();
+      reader.onload = (readerEvent) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const mimeType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+          const dataUrl = canvas.toDataURL(mimeType, quality);
+          resolve(dataUrl);
+        };
+        img.onerror = () => reject(new Error('Error al procesar la imagen seleccionada.'));
+        img.src = readerEvent.target.result;
+      };
+      reader.onerror = () => reject(new Error('Error al leer el archivo desde el dispositivo.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
   // --- PARSER ROBUSTO DE FECHA Y HORA DE CITA ---
   parseAppointmentDates(appointment) {
     if (!appointment) return null;
@@ -4650,41 +4692,103 @@ class App {
           </div>
 
           <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
-            <!-- Sección Fotos con Guía de Medidas -->
-            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-5">
-              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
-              </h3>
+            <!-- Sección Fotos con Guía de Medidas y Carga desde PC/Móvil -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-6">
+              <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
+                </h3>
+                <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">
+                  <i class="fas fa-cloud-upload-alt mr-1"></i> Sube imágenes directamente desde tu dispositivo
+                </span>
+              </div>
 
               <!-- Banner de Portada -->
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <label class="font-bold text-slate-700">Banner / Portada Principal</label>
+              <div class="space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <label class="font-bold text-slate-800 text-sm block">Banner / Portada Principal</label>
+                    <p class="text-[11px] text-slate-500">Aparece en el encabezado de la página de tu negocio.</p>
+                  </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 1200 x 450 px (16:6)
+                    <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 1200 x 450 px (16:6)
                   </span>
                 </div>
-                <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="URL de la imagen de portada (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
-                <!-- Preview Banner -->
-                <div class="h-32 w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative">
-                  <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image}" alt="Vista previa banner" class="w-full h-full object-cover">
-                  <span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">Vista previa del banner</span>
+
+                <!-- Preview Banner & Trigger Button -->
+                <div class="space-y-2">
+                  <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
+                    <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
+                      <i class="fas fa-camera text-2xl"></i>
+                      <span class="text-xs font-bold">Cambiar imagen de portada</span>
+                      <span class="text-[10px] text-slate-200">Clic para seleccionar desde tu PC o celular</span>
+                    </div>
+                    <span class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-lg font-medium pointer-events-none">
+                      <i class="fas fa-eye mr-1"></i> Vista previa
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
+                    <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                      <i class="fas fa-upload"></i>
+                      <span>Subir Banner desde PC / Celular</span>
+                    </button>
+                    <span id="cover-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
+                      <i class="fas fa-check-circle"></i> Imagen cargada y optimizada
+                    </span>
+                  </div>
+
+                  <div class="pt-1">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                      <span>O ingresa el enlace URL de la imagen directamente:</span>
+                    </div>
+                    <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="https://ejemplo.com/portada.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
+                  </div>
                 </div>
               </div>
 
               <!-- Foto de Perfil / Logo -->
-              <div class="space-y-2 pt-3 border-t border-slate-200">
-                <div class="flex items-center justify-between">
-                  <label class="font-bold text-slate-700">Foto de Perfil / Logo Cuadrado</label>
+              <div class="space-y-3 pt-4 border-t border-slate-200">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <label class="font-bold text-slate-800 text-sm block">Foto de Perfil / Logo Comercial</label>
+                    <p class="text-[11px] text-slate-500">Se muestra en la tarjeta de búsqueda, directorio y logo principal.</p>
+                  </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 800 x 800 px (1:1)
+                    <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 800 x 800 px (1:1)
                   </span>
                 </div>
-                <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="URL del logo o foto de perfil (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
-                <!-- Preview Logo -->
-                <div class="flex items-center gap-3">
-                  <img id="preview-logo-img" src="${currentBiz.image}" alt="Vista previa logo" class="w-16 h-16 rounded-2xl object-cover border border-slate-300">
-                  <span class="text-xs text-slate-500">Se muestra en las tarjetas de búsqueda del directorio.</span>
+
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <!-- Avatar Preview / Trigger -->
+                  <div class="relative group cursor-pointer flex-shrink-0" id="logo-dropzone">
+                    <img id="preview-logo-img" src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800'}" alt="Vista previa logo" class="w-24 h-24 rounded-2xl object-cover border-2 border-slate-300 shadow-sm">
+                    <div class="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-center p-1 backdrop-blur-xs">
+                      <i class="fas fa-camera text-base"></i>
+                      <span class="text-[9px] font-bold">Cambiar</span>
+                    </div>
+                  </div>
+
+                  <!-- Actions and URL input -->
+                  <div class="flex-1 w-full space-y-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <input type="file" id="upload-biz-image-file" accept="image/*" class="hidden">
+                      <button type="button" id="btn-trigger-upload-logo" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                        <i class="fas fa-upload"></i>
+                        <span>Subir Logo desde PC / Celular</span>
+                      </button>
+                      <span id="logo-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
+                        <i class="fas fa-check-circle"></i> Logo cargado y optimizado
+                      </span>
+                    </div>
+
+                    <div>
+                      <div class="text-[11px] text-slate-500 mb-1">O ingresa el enlace URL del logo:</div>
+                      <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="https://ejemplo.com/logo.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -6703,7 +6807,7 @@ class App {
               </div>
             </div>
 
-            <!-- WhatsApp y Foto URL -->
+            <!-- WhatsApp y Foto Avatar -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -6719,15 +6823,29 @@ class App {
               </div>
               <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Foto / Avatar URL (Opcional)
+                  Foto de Perfil / Avatar (Opcional)
                 </label>
-                <input 
-                  type="url" 
-                  id="staff-avatar-input" 
-                  value="${staffMember?.avatarUrl || ''}" 
-                  placeholder="https://ejemplo.com/foto.jpg" 
-                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
+                <div class="flex items-center gap-2">
+                  <div class="relative group cursor-pointer flex-shrink-0" id="staff-avatar-dropzone">
+                    <img id="staff-avatar-preview" src="${staffMember?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'}" alt="Avatar preview" class="w-11 h-11 rounded-xl object-cover border border-slate-300">
+                    <div class="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                      <i class="fas fa-camera text-xs"></i>
+                    </div>
+                  </div>
+                  <div class="flex-1 space-y-1">
+                    <input type="file" id="upload-staff-avatar-file" accept="image/*" class="hidden">
+                    <button type="button" id="btn-trigger-upload-staff-avatar" class="w-full px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i class="fas fa-upload"></i> Subir desde PC / Celular
+                    </button>
+                    <input 
+                      type="text" 
+                      id="staff-avatar-input" 
+                      value="${staffMember?.avatarUrl || ''}" 
+                      placeholder="O URL: https://..." 
+                      class="w-full px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -6835,6 +6953,35 @@ class App {
 
     document.getElementById('cancel-staff-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    // Manejo de avatar del especialista (archivo local o URL)
+    const staffAvatarFile = document.getElementById('upload-staff-avatar-file');
+    const staffAvatarBtn = document.getElementById('btn-trigger-upload-staff-avatar');
+    const staffAvatarDropzone = document.getElementById('staff-avatar-dropzone');
+    const staffAvatarInput = document.getElementById('staff-avatar-input');
+    const staffAvatarPreview = document.getElementById('staff-avatar-preview');
+
+    staffAvatarBtn?.addEventListener('click', () => staffAvatarFile?.click());
+    staffAvatarDropzone?.addEventListener('click', () => staffAvatarFile?.click());
+
+    staffAvatarFile?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 400, 400, 0.85);
+        if (staffAvatarInput) staffAvatarInput.value = compressed;
+        if (staffAvatarPreview) staffAvatarPreview.src = compressed;
+        this.showToast('Foto de especialista cargada con éxito', 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Error al procesar la foto.', 'error');
+      }
+    });
+
+    staffAvatarInput?.addEventListener('input', (e) => {
+      if (staffAvatarPreview && e.target.value) {
+        staffAvatarPreview.src = e.target.value;
+      }
     });
 
     const allServicesChk = document.getElementById('staff-all-services-checkbox');
@@ -7600,6 +7747,64 @@ class App {
     imageInput?.addEventListener('input', (e) => {
       const img = document.getElementById('preview-logo-img');
       if (img && e.target.value) img.src = e.target.value;
+    });
+
+    // Subida directa de Banner desde archivo local (PC / Móvil)
+    const uploadCoverFile = document.getElementById('upload-biz-cover-file');
+    const btnTriggerCover = document.getElementById('btn-trigger-upload-cover');
+    const bannerDropzone = document.getElementById('banner-dropzone');
+    const coverUploadStatus = document.getElementById('cover-upload-status');
+
+    btnTriggerCover?.addEventListener('click', () => uploadCoverFile?.click());
+    bannerDropzone?.addEventListener('click', (e) => {
+      // Evitar doble trigger si se hace click en el botón interno
+      if (e.target.closest('#btn-trigger-upload-cover')) return;
+      uploadCoverFile?.click();
+    });
+
+    uploadCoverFile?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 1200, 600, 0.85);
+        if (coverInput) coverInput.value = compressed;
+        const img = document.getElementById('preview-cover-img');
+        if (img) img.src = compressed;
+        if (coverUploadStatus) {
+          coverUploadStatus.classList.remove('hidden');
+          coverUploadStatus.classList.add('flex');
+        }
+        this.showToast('Banner cargado y optimizado con éxito', 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Error al procesar la imagen del banner.', 'error');
+      }
+    });
+
+    // Subida directa de Logo / Perfil desde archivo local (PC / Móvil)
+    const uploadLogoFile = document.getElementById('upload-biz-image-file');
+    const btnTriggerLogo = document.getElementById('btn-trigger-upload-logo');
+    const logoDropzone = document.getElementById('logo-dropzone');
+    const logoUploadStatus = document.getElementById('logo-upload-status');
+
+    btnTriggerLogo?.addEventListener('click', () => uploadLogoFile?.click());
+    logoDropzone?.addEventListener('click', () => uploadLogoFile?.click());
+
+    uploadLogoFile?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 800, 800, 0.85);
+        if (imageInput) imageInput.value = compressed;
+        const img = document.getElementById('preview-logo-img');
+        if (img) img.src = compressed;
+        if (logoUploadStatus) {
+          logoUploadStatus.classList.remove('hidden');
+          logoUploadStatus.classList.add('flex');
+        }
+        this.showToast('Logo cargado y optimizado con éxito', 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Error al procesar la imagen del logo.', 'error');
+      }
     });
 
     const profileForm = document.getElementById('edit-profile-form');
@@ -11743,16 +11948,36 @@ class App {
               <textarea id="edit-biz-desc" rows="2" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">${this.escapeHtml(biz.description || '')}</textarea>
             </div>
 
-            <!-- URLs de Imágenes -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1 text-xs">URL Imagen de Perfil / Logo</label>
-                <input type="url" id="edit-biz-image" value="${this.escapeHtml(biz.image || '')}" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <!-- Subida de Imágenes / URLs -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
+              <!-- Logo / Foto Perfil -->
+              <div class="space-y-2">
+                <label class="block font-bold text-slate-800 text-xs">Foto de Perfil / Logo</label>
+                <div class="flex items-center gap-2.5">
+                  <img id="dev-preview-logo-img" src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800'}" alt="Preview logo" class="w-12 h-12 rounded-xl object-cover border border-slate-300">
+                  <div class="flex-1 space-y-1">
+                    <input type="file" id="dev-upload-biz-image-file" accept="image/*" class="hidden">
+                    <button type="button" id="dev-btn-upload-logo" class="w-full px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i class="fas fa-upload"></i> Subir Logo (PC)
+                    </button>
+                  </div>
+                </div>
+                <input type="text" id="edit-biz-image" value="${this.escapeHtml(biz.image || '')}" placeholder="O URL: https://..." class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
 
-              <div>
-                <label class="block font-bold text-slate-700 mb-1 text-xs">URL Foto de Portada</label>
-                <input type="url" id="edit-biz-cover" value="${this.escapeHtml(biz.coverImage || '')}" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <!-- Banner Portada -->
+              <div class="space-y-2">
+                <label class="block font-bold text-slate-800 text-xs">Foto de Portada / Banner</label>
+                <div class="flex items-center gap-2.5">
+                  <img id="dev-preview-cover-img" src="${biz.coverImage || biz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Preview banner" class="w-16 h-12 rounded-xl object-cover border border-slate-300">
+                  <div class="flex-1 space-y-1">
+                    <input type="file" id="dev-upload-biz-cover-file" accept="image/*" class="hidden">
+                    <button type="button" id="dev-btn-upload-cover" class="w-full px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                      <i class="fas fa-upload"></i> Subir Banner (PC)
+                    </button>
+                  </div>
+                </div>
+                <input type="text" id="edit-biz-cover" value="${this.escapeHtml(biz.coverImage || '')}" placeholder="O URL: https://..." class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-[11px] focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
@@ -11812,6 +12037,54 @@ class App {
     });
     document.getElementById('cancel-edit-biz-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
+    });
+
+    // Manejo de carga de Logo desde PC
+    const devUploadLogoFile = document.getElementById('dev-upload-biz-image-file');
+    const devBtnUploadLogo = document.getElementById('dev-btn-upload-logo');
+    const devImgLogoInput = document.getElementById('edit-biz-image');
+    const devImgLogoPreview = document.getElementById('dev-preview-logo-img');
+
+    devBtnUploadLogo?.addEventListener('click', () => devUploadLogoFile?.click());
+    devUploadLogoFile?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 800, 800, 0.85);
+        if (devImgLogoInput) devImgLogoInput.value = compressed;
+        if (devImgLogoPreview) devImgLogoPreview.src = compressed;
+        this.showToast('Logo cargado y optimizado con éxito', 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Error al procesar el logo.', 'error');
+      }
+    });
+
+    devImgLogoInput?.addEventListener('input', (e) => {
+      if (devImgLogoPreview && e.target.value) devImgLogoPreview.src = e.target.value;
+    });
+
+    // Manejo de carga de Banner desde PC
+    const devUploadCoverFile = document.getElementById('dev-upload-biz-cover-file');
+    const devBtnUploadCover = document.getElementById('dev-btn-upload-cover');
+    const devImgCoverInput = document.getElementById('edit-biz-cover');
+    const devImgCoverPreview = document.getElementById('dev-preview-cover-img');
+
+    devBtnUploadCover?.addEventListener('click', () => devUploadCoverFile?.click());
+    devUploadCoverFile?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 1200, 600, 0.85);
+        if (devImgCoverInput) devImgCoverInput.value = compressed;
+        if (devImgCoverPreview) devImgCoverPreview.src = compressed;
+        this.showToast('Banner cargado y optimizado con éxito', 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Error al procesar el banner.', 'error');
+      }
+    });
+
+    devImgCoverInput?.addEventListener('input', (e) => {
+      if (devImgCoverPreview && e.target.value) devImgCoverPreview.src = e.target.value;
     });
 
     const statusSelect = document.getElementById('edit-biz-status');
