@@ -124,27 +124,72 @@ class App {
       .replace(/'/g, '&#039;');
   }
 
+  // --- PARSER ROBUSTO DE FECHA Y HORA DE CITA ---
+  parseAppointmentDates(appointment) {
+    if (!appointment) return null;
+    let rawDate = String(appointment.date || this.getTodayDateString()).trim();
+    let rawTime = String(appointment.time || '09:00').trim();
+    const duration = Number(appointment.serviceDuration || appointment.duration) || 30;
+
+    // Si la fecha viene como ISO string completo "2026-09-17T00:00:00.000Z", extraer solo la fecha
+    if (rawDate.includes('T')) {
+      rawDate = rawDate.split('T')[0];
+    }
+
+    let y = new Date().getFullYear();
+    let m = new Date().getMonth() + 1;
+    let d = new Date().getDate();
+
+    if (rawDate.includes('-')) {
+      const parts = rawDate.split('-').map(p => parseInt(p, 10));
+      if (parts.length >= 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+        if (parts[0] > 1000) { y = parts[0]; m = parts[1]; d = parts[2]; }
+        else { d = parts[0]; m = parts[1]; y = parts[2]; }
+      }
+    } else if (rawDate.includes('/')) {
+      const parts = rawDate.split('/').map(p => parseInt(p, 10));
+      if (parts.length >= 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+        if (parts[0] > 1000) { y = parts[0]; m = parts[1]; d = parts[2]; }
+        else { d = parts[0]; m = parts[1]; y = parts[2]; }
+      }
+    }
+
+    let hh = 9;
+    let mm = 0;
+    if (rawTime) {
+      const isPM = /pm/i.test(rawTime);
+      const isAM = /am/i.test(rawTime);
+      const cleanTime = rawTime.replace(/[^0-9:]/g, '');
+      const timeParts = cleanTime.split(':').map(p => parseInt(p, 10));
+      if (timeParts.length >= 1 && !isNaN(timeParts[0])) {
+        hh = timeParts[0];
+        if (isPM && hh < 12) hh += 12;
+        if (isAM && hh === 12) hh = 0;
+      }
+      if (timeParts.length >= 2 && !isNaN(timeParts[1])) {
+        mm = timeParts[1];
+      }
+    }
+
+    const startDt = new Date(y, m - 1, d, hh, mm, 0);
+    const endDt = new Date(startDt.getTime() + duration * 60000);
+
+    return { startDt, endDt, rawDate, duration };
+  }
+
   // --- GENERACIÓN DE ENLACE GOOGLE CALENDAR ---
   generateGoogleCalendarUrl(appointment, business) {
     if (!appointment) return '#';
     const biz = business || storage.getBusinessById(appointment.businessId) || { name: 'Comercio Reservas CR' };
-    const date = appointment.date || this.getTodayDateString(); // YYYY-MM-DD
-    const time = appointment.time || '09:00'; // HH:mm
-    const duration = Number(appointment.serviceDuration) || 30;
-
-    const [y, m, d] = date.split('-').map(Number);
-    const [hh, mm] = time.split(':').map(Number);
-    
-    // Crear fechas
-    const startDt = new Date(y, m - 1, d, hh, mm, 0);
-    const endDt = new Date(startDt.getTime() + duration * 60000);
+    const dateData = this.parseAppointmentDates(appointment);
+    if (!dateData) return '#';
 
     const pad = (n) => String(n).padStart(2, '0');
     const formatCalDate = (dt) => {
       return `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
     };
 
-    const datesStr = `${formatCalDate(startDt)}/${formatCalDate(endDt)}`;
+    const datesStr = `${formatCalDate(dateData.startDt)}/${formatCalDate(dateData.endDt)}`;
     const title = `Cita: ${appointment.serviceName || 'Servicio'} en ${biz.name}`;
     const location = `${biz.name}, ${biz.address || biz.city || 'Costa Rica'}`;
     const details = `Turno agendado en ${biz.name}\n` +
@@ -157,22 +202,15 @@ class App {
       (appointment.notes ? `Notas: ${appointment.notes}\n` : '') +
       `Gestionado por Reservas CR (Costa Rica 🇨🇷)`;
 
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datesStr}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datesStr}&ctz=America/Costa_Rica&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
   }
 
   // --- DESCARGA DE ARCHIVO .ICS (APPLE CALENDAR / OUTLOOK / ANDROID) ---
   downloadIcsFile(appointment, business) {
     if (!appointment) return;
     const biz = business || storage.getBusinessById(appointment.businessId) || { name: 'Comercio Reservas CR' };
-    const date = appointment.date || this.getTodayDateString();
-    const time = appointment.time || '09:00';
-    const duration = Number(appointment.serviceDuration) || 30;
-
-    const [y, m, d] = date.split('-').map(Number);
-    const [hh, mm] = time.split(':').map(Number);
-    
-    const startDt = new Date(y, m - 1, d, hh, mm, 0);
-    const endDt = new Date(startDt.getTime() + duration * 60000);
+    const dateData = this.parseAppointmentDates(appointment);
+    if (!dateData) return;
 
     const pad = (n) => String(n).padStart(2, '0');
     const formatIcsDate = (dt) => {
@@ -199,8 +237,8 @@ class App {
       'BEGIN:VEVENT',
       `UID:reserva-${appointment.id || Date.now()}@reservascr.app`,
       `DTSTAMP:${nowUtc}`,
-      `DTSTART:${formatIcsDate(startDt)}`,
-      `DTEND:${formatIcsDate(endDt)}`,
+      `DTSTART:${formatIcsDate(dateData.startDt)}`,
+      `DTEND:${formatIcsDate(dateData.endDt)}`,
       `SUMMARY:${title}`,
       `DESCRIPTION:${details}`,
       `LOCATION:${location}`,
@@ -213,7 +251,7 @@ class App {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `cita_${(biz.name || 'reserva').toLowerCase().replace(/\s+/g, '_')}_${date}.ics`);
+    link.setAttribute('download', `cita_${(biz.name || 'reserva').toLowerCase().replace(/\s+/g, '_')}_${dateData.rawDate}.ics`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
