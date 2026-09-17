@@ -1325,11 +1325,11 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
     const { id } = req.params;
     const { plan } = req.body;
 
-    const planPrices = { basic: 10, pro: 18, unlimited: 35 };
-    const planLimits = { basic: 150, pro: 300, unlimited: null };
+    const planPrices = { free: 0, basic: 10, pro: 18, unlimited: 35 };
+    const planLimits = { free: 25, basic: 150, pro: 300, unlimited: null };
 
-    const planPriceUsd = planPrices[plan] || 10;
-    const monthlyBookingLimit = planLimits[plan] !== undefined ? planLimits[plan] : 150;
+    const planPriceUsd = planPrices[plan] !== undefined ? planPrices[plan] : 0;
+    const monthlyBookingLimit = planLimits[plan] !== undefined ? planLimits[plan] : 25;
 
     await pool.query(`
       UPDATE reservas_businesses SET
@@ -1339,9 +1339,16 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
       WHERE id = $4
     `, [plan, planPriceUsd, monthlyBookingLimit, id]);
 
+    const planNames = {
+      free: 'Plan Gratis (₡0)',
+      basic: 'Plan Básico ($10)',
+      pro: 'Plan Profesional ($18)',
+      unlimited: 'Plan Ilimitado ($35)'
+    };
+
     res.json({ 
       success: true, 
-      message: `Plan del comercio actualizado a "${plan === 'basic' ? 'Plan Básico ($10)' : (plan === 'pro' ? 'Plan Profesional ($18)' : 'Plan Ilimitado ($35)')}".`,
+      message: `Plan del comercio actualizado a "${planNames[plan] || plan}".`,
       plan,
       planPriceUsd,
       monthlyBookingLimit
