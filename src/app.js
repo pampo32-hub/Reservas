@@ -6946,7 +6946,7 @@ class App {
             <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Agrega a los colaboradores de tu local para que tus clientes puedan reservar con ellos específicamente o mediante turno asignado.
             </p>
-            <button id="add-new-staff-btn" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer">
+            <button id="add-first-staff-btn" class="open-add-staff-modal-btn mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-blue-500/20">
               <i class="fas fa-plus"></i> Agregar Primer Especialista
             </button>
           </div>
@@ -7934,6 +7934,14 @@ class App {
     // Pestaña de Equipo / Especialistas
     document.getElementById('add-new-staff-btn')?.addEventListener('click', () => {
       this.renderStaffModal(currentBiz);
+    });
+    document.getElementById('add-first-staff-btn')?.addEventListener('click', () => {
+      this.renderStaffModal(currentBiz);
+    });
+    document.querySelectorAll('.open-add-staff-modal-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderStaffModal(currentBiz);
+      });
     });
 
     document.getElementById('dash-upgrade-team-pro-btn')?.addEventListener('click', () => {
