@@ -4590,6 +4590,14 @@ class App {
           </div>
         </div>
 
+        <!-- Tabs Navigation con Scroll Táctil Suave y Sin Scrollbar -->
+        <div class="flex items-center gap-2 border-b border-slate-200 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
+            <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
+          </button>
+          ${(!isFree && !isBasic) ? `
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
+              <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
         <!-- Tabs Navigation con Píldoras Segmentadas y Desplazamiento Suave -->
         <div class="bg-slate-100/90 p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-2xs mb-6">
           <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth custom-scrollbar">
@@ -4597,6 +4605,25 @@ class App {
               <i class="fas fa-calendar-alt text-xs"></i>
               <span>Agenda (${appointments.length})</span>
             </button>
+          ` : ''}
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
+            <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
+          </button>
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="team">
+            <i class="fas fa-users-cog mr-1.5 text-indigo-500"></i> Equipo y Especialistas
+          </button>
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
+            <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
+          </button>
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
+            <i class="fas fa-clock mr-1.5"></i> Horarios de Atención
+          </button>
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
+            <i class="fas fa-sliders-h mr-1.5 text-indigo-500"></i> Configurar Negocio
+          </button>
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="manual">
+            <i class="fas fa-book-open mr-1.5 text-amber-500"></i> Manual & Ayuda
+          </button>
             ${(!isFree && !isBasic) ? `
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="reports">
                 <i class="fas fa-chart-pie text-xs ${this.activeDashboardTab === 'reports' ? 'text-white' : 'text-emerald-500'}"></i>
@@ -5405,34 +5432,34 @@ class App {
       const categories = storage.getCategories();
 
       return `
-        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-4xl mx-auto space-y-6 animate-fade-in">
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 md:p-8 shadow-xs max-w-4xl mx-auto space-y-6 animate-fade-in">
           <!-- Encabezado de Sección -->
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
             <div>
-              <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
-                <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm shadow-xs">
+              <h2 class="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2.5">
+                <span class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base shadow-xs">
                   <i class="fas fa-sliders-h"></i>
                 </span>
                 Configuración del Negocio
               </h2>
               <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                Personaliza la marca, fotos de portada, logotipo, información de contacto y características visibles para tus clientes.
+                Personaliza la marca, fotos de portada, logotipo, información de contacto y características visibles en el directorio.
               </p>
             </div>
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold self-start sm:self-center">
+            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold self-start sm:self-center shrink-0">
               <i class="fas fa-check-circle text-emerald-500"></i> Perfil Público Activo
             </span>
           </div>
 
           <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
-            <!-- Sección Fotos y Marca -->
-            <div class="p-5 sm:p-6 bg-slate-50/75 rounded-2xl border border-slate-200/90 space-y-6">
+            <!-- Sección Fotos y Marca (Optimizada para Tablets y Móviles) -->
+            <div class="p-5 sm:p-6 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-6">
               <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
                   <i class="fas fa-images text-indigo-600"></i> Fotos y Marca del Comercio
                 </h3>
                 <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">
-                  <i class="fas fa-cloud-upload-alt mr-1"></i> Sube imágenes directamente desde tu dispositivo o ingresa un enlace
+                  <i class="fas fa-cloud-upload-alt mr-1"></i> Sube imágenes desde tu dispositivo o ingresa un enlace
                 </span>
               </div>
 
@@ -5440,8 +5467,8 @@ class App {
               <div class="space-y-3">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <label class="font-bold text-slate-800 text-sm block">Banner / Portada Principal</label>
-                    <p class="text-[11px] text-slate-500">Aparece en el encabezado de la página de tu negocio.</p>
+                    <label class="font-bold text-slate-800 text-xs sm:text-sm block">Banner / Portada Principal</label>
+                    <p class="text-[11px] text-slate-500">Aparece en el encabezado de tu página de reservas.</p>
                   </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200/80">
                     <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 1200 x 450 px
@@ -5449,7 +5476,7 @@ class App {
                 </div>
 
                 <!-- Preview Banner & Dropzone -->
-                <div class="h-40 sm:h-48 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone" title="Clic para cambiar imagen de portada">
+                <div class="w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer aspect-[16/6] min-h-[150px] sm:min-h-[190px] md:min-h-[220px]" id="banner-dropzone" title="Clic para cambiar imagen de portada">
                   <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
                   <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1.5 backdrop-blur-xs">
                     <i class="fas fa-camera text-2xl"></i>
@@ -5461,11 +5488,11 @@ class App {
                   </span>
                 </div>
 
-                <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-2 flex-wrap pt-1">
                   <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
-                  <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                  <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-upload"></i>
-                    <span>Subir Banner desde PC / Celular</span>
+                    <span>Subir Banner desde PC / Tablet / Celular</span>
                   </button>
                   <span id="cover-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
                     <i class="fas fa-check-circle"></i> Banner cargado y optimizado
@@ -5482,7 +5509,7 @@ class App {
               <div class="space-y-3 pt-4 border-t border-slate-200/80">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <label class="font-bold text-slate-800 text-sm block">Foto de Perfil / Logotipo</label>
+                    <label class="font-bold text-slate-800 text-xs sm:text-sm block">Foto de Perfil / Logotipo</label>
                     <p class="text-[11px] text-slate-500">Se muestra en la tarjeta del directorio, búsquedas y citas.</p>
                   </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200/80">
@@ -5490,23 +5517,23 @@ class App {
                   </span>
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-white rounded-2xl border border-slate-200/80">
                   <!-- Avatar Preview / Trigger -->
-                  <div class="relative group cursor-pointer flex-shrink-0" id="logo-dropzone" title="Clic para cambiar logo">
-                    <img id="preview-logo-img" src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800'}" alt="Vista previa logo" class="w-24 h-24 rounded-2xl object-cover border-2 border-slate-300 shadow-sm">
+                  <div class="relative group cursor-pointer shrink-0" id="logo-dropzone" title="Clic para cambiar logo">
+                    <img id="preview-logo-img" src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800'}" alt="Vista previa logo" class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl object-cover border-2 border-slate-300 shadow-sm">
                     <div class="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-center p-1 backdrop-blur-xs">
-                      <i class="fas fa-camera text-base"></i>
-                      <span class="text-[9px] font-bold">Cambiar</span>
+                      <i class="fas fa-camera text-lg"></i>
+                      <span class="text-[10px] font-bold">Cambiar</span>
                     </div>
                   </div>
 
                   <!-- Actions and URL input -->
-                  <div class="flex-1 w-full space-y-2.5">
+                  <div class="flex-1 w-full space-y-3">
                     <div class="flex items-center gap-2 flex-wrap">
                       <input type="file" id="upload-biz-image-file" accept="image/*" class="hidden">
-                      <button type="button" id="btn-trigger-upload-logo" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                      <button type="button" id="btn-trigger-upload-logo" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                         <i class="fas fa-upload"></i>
-                        <span>Subir Logo desde PC / Celular</span>
+                        <span>Subir Logo desde PC / Tablet / Celular</span>
                       </button>
                       <span id="logo-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
                         <i class="fas fa-check-circle"></i> Logo cargado y optimizado
@@ -5515,20 +5542,20 @@ class App {
 
                     <div>
                       <label class="block text-[11px] text-slate-500 mb-1">O ingresa el enlace URL del logo:</label>
-                      <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="https://ejemplo.com/logo.jpg" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="https://ejemplo.com/logo.jpg" class="w-full px-3.5 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Datos Generales -->
+            <!-- Datos Generales (Adaptados con Grid para Tablets y Escritorio) -->
             <div class="p-5 sm:p-6 bg-white rounded-2xl border border-slate-200/90 space-y-4">
-              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2 border-b border-slate-100 pb-3">
                 <i class="fas fa-info-circle text-blue-600"></i> Información General y Contacto
               </h3>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1.5">Nombre Comercial del Negocio *</label>
                   <input type="text" id="edit-biz-name" value="${this.escapeHtml(currentBiz.name)}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -5541,7 +5568,7 @@ class App {
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1.5">Provincia / Cantón *</label>
                   <input type="text" id="edit-biz-city" value="${this.escapeHtml(currentBiz.city || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -5552,7 +5579,7 @@ class App {
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block font-bold text-slate-700 mb-1.5">Correo Electrónico de Contacto</label>
                   <input type="email" id="edit-biz-email" value="${this.escapeHtml(currentBiz.email || '')}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
@@ -5570,15 +5597,15 @@ class App {
             </div>
 
             <!-- Redes Sociales y Enlaces Web -->
-            <div class="p-5 sm:p-6 bg-slate-50/75 rounded-2xl border border-slate-200/90 space-y-4">
+            <div class="p-5 sm:p-6 bg-slate-50/80 rounded-2xl border border-slate-200/90 space-y-4">
               <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
                   <i class="fas fa-share-alt text-blue-600"></i> Redes Sociales & Enlaces
                 </h3>
                 <span class="text-[11px] text-slate-500 font-medium">Visibles para tus clientes en el perfil</span>
               </div>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-pink-600 text-sm">
                     <i class="fab fa-instagram"></i>
@@ -5611,10 +5638,10 @@ class App {
 
             <!-- Características / Comodidades -->
             <div class="p-5 sm:p-6 bg-white rounded-2xl border border-slate-200/90 space-y-3">
-              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+              <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2 border-b border-slate-100 pb-3">
                 <i class="fas fa-concierge-bell text-amber-500"></i> Comodidades y Métodos de Pago
               </h3>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 pt-1">
                 ${allFeatures.map(feat => `
                   <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs transition-colors">
                     <input type="checkbox" name="biz_features" value="${feat}" ${currentFeatures.includes(feat) ? 'checked' : ''} class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
@@ -5907,20 +5934,20 @@ class App {
         </div>
 
         <!-- ========================================================================= -->
-        <!-- VISTA MÓVIL: CALENDARIO COMPACTO TÁCTIL + AGENDA DEL DÍA (SOLO PANTALLAS < 768px) -->
+        <!-- VISTA MÓVIL: CALENDARIO ESPACIOSO TÁCTIL + AGENDA DEL DÍA (SOLO PANTALLAS < 768px) -->
         <!-- ========================================================================= -->
         <div class="block md:hidden space-y-4">
-          <!-- Mini Cuadrícula Mensual -->
-          <div class="${theme.mobileGridBg} rounded-3xl border overflow-hidden shadow-2xs p-3 space-y-2 transition-colors">
+          <!-- Cuadrícula Mensual Ampliada -->
+          <div class="${theme.mobileGridBg} rounded-3xl border overflow-hidden shadow-2xs p-3.5 sm:p-4 space-y-2.5 transition-colors">
             <!-- Días de la semana -->
-            <div class="grid grid-cols-7 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 ${theme.weekdayHeaderMobile}">
+            <div class="grid grid-cols-7 text-center text-[11px] sm:text-xs font-black text-slate-500 uppercase tracking-wider py-1.5 ${theme.weekdayHeaderMobile}">
               ${daysOfWeek.map((d, idx) => `
                 <div class="${idx >= 5 ? theme.weekdayWeekendText : ''}">${d}</div>
               `).join('')}
             </div>
 
-            <!-- Celdas compactas cuadradas -->
-            <div class="grid grid-cols-7 gap-1">
+            <!-- Celdas amplias proporcionales cuadradas -->
+            <div class="grid grid-cols-7 gap-1.5 sm:gap-2">
               ${cells.map(cell => {
                 const count = cell.appointments.length;
                 const isSelected = cell.dateKey === selectedMobileDate;
@@ -5933,36 +5960,36 @@ class App {
                 } else if (isToday) {
                   cellBg = theme.mobileCellToday;
                 } else if (!isCurrentMonth) {
-                  cellBg = 'bg-slate-50/40 text-slate-300 opacity-40';
+                  cellBg = 'bg-slate-50/40 text-slate-300 opacity-35';
                 }
 
                 return `
                   <button 
                     type="button"
-                    class="cal-mobile-day-btn h-12 rounded-2xl flex flex-col items-center justify-center p-1 transition-all cursor-pointer relative ${cellBg}"
+                    class="cal-mobile-day-btn min-h-[48px] sm:min-h-[56px] aspect-square rounded-2xl flex flex-col items-center justify-between py-1.5 px-1 transition-all cursor-pointer relative shadow-2xs ${cellBg} ${isToday && !isSelected ? 'ring-2 ring-slate-800 ring-offset-1' : ''}"
                     data-date="${cell.dateKey}"
                     ${!isCurrentMonth ? 'disabled' : ''}
                   >
-                    <span class="text-xs font-bold leading-none ${isSelected ? 'text-white' : ''}">
+                    <span class="text-xs sm:text-sm font-black leading-none ${isSelected ? 'text-white' : ''}">
                       ${cell.dayNumber}
                     </span>
                     
                     ${(count > 0 && isCurrentMonth) ? `
-                      <div class="flex items-center gap-0.5 mt-1">
+                      <div class="flex items-center justify-center gap-0.5 mt-auto pb-0.5">
                         ${count <= 3 ? cell.appointments.map(a => {
                           let dotBg = 'bg-blue-500';
                           if (a.status === 'pending') dotBg = 'bg-amber-500';
                           else if (a.status === 'completed') dotBg = 'bg-emerald-500';
                           else if (a.status === 'cancelled') dotBg = 'bg-rose-500';
                           if (isSelected) dotBg = 'bg-white';
-                          return `<span class="w-1.5 h-1.5 rounded-full ${dotBg}"></span>`;
+                          return `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${dotBg} shadow-2xs"></span>`;
                         }).join('') : `
-                          <span class="text-[9px] font-black px-1 rounded-full ${isSelected ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}">
+                          <span class="text-[9px] sm:text-[10px] font-black px-1.5 py-0.2 rounded-full leading-none ${isSelected ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}">
                             ${count}
                           </span>
                         `}
                       </div>
-                    ` : '<span class="h-1.5 mt-1"></span>'}
+                    ` : '<span class="h-1.5 sm:h-2"></span>'}
                   </button>
                 `;
               }).join('')}
@@ -5970,12 +5997,12 @@ class App {
           </div>
 
           <!-- Agenda del Día Seleccionado en Móvil -->
-          <div class="${theme.mobileDetailCard} rounded-3xl border p-4 shadow-xs space-y-3 transition-colors">
+          <div class="${theme.mobileDetailCard} rounded-3xl border p-4 sm:p-5 shadow-xs space-y-3.5 transition-colors">
             <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
               <div>
                 <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Citas Programadas</span>
-                <h4 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
-                  <i class="fas fa-calendar-day ${theme.accentText} text-xs"></i>
+                <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
+                  <i class="fas fa-calendar-day ${theme.accentText} text-xs sm:text-sm"></i>
                   <span>${this.formatDateFullSpanish(selectedMobileDate)}</span>
                 </h4>
               </div>
@@ -5985,7 +6012,7 @@ class App {
                 </span>
                 <button 
                   type="button" 
-                  class="cal-mobile-quick-add-btn px-3 py-1.5 ${theme.accentBg} active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                  class="cal-mobile-quick-add-btn px-3.5 py-2 ${theme.accentBg} active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                   data-date="${selectedMobileDate}"
                   title="Crear reserva manual en esta fecha"
                 >
@@ -5997,15 +6024,15 @@ class App {
 
             <!-- Lista de Citas del Día -->
             ${mobileSelectedDayApts.length === 0 ? `
-              <div class="text-center py-8 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 space-y-2">
+              <div class="text-center py-8 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 space-y-2.5">
                 <div class="w-12 h-12 rounded-2xl bg-white text-slate-600 shadow-2xs flex items-center justify-center mx-auto text-lg">
                   <i class="fas fa-calendar-plus ${theme.accentText}"></i>
                 </div>
-                <h5 class="font-bold text-slate-800 text-xs">No hay citas agendadas para este día</h5>
-                <p class="text-[11px] text-slate-500 max-w-xs mx-auto">Toca el botón inferior para agendar una reserva de cliente o llamada manual.</p>
+                <h5 class="font-bold text-slate-800 text-xs sm:text-sm">No hay citas agendadas para este día</h5>
+                <p class="text-[11px] sm:text-xs text-slate-500 max-w-xs mx-auto">Toca el botón inferior para agendar una reserva de cliente o llamada manual.</p>
                 <button 
                   type="button" 
-                  class="cal-mobile-quick-add-btn mt-2 px-4 py-2 ${theme.accentBg} text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all inline-flex items-center gap-1.5"
+                  class="cal-mobile-quick-add-btn mt-2 px-4 py-2.5 ${theme.accentBg} text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all inline-flex items-center gap-1.5"
                   data-date="${selectedMobileDate}"
                 >
                   <i class="fas fa-plus"></i>
@@ -6026,14 +6053,15 @@ class App {
                       <div class="flex items-start justify-between gap-2">
                         <div>
                           <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-black text-sm text-slate-900 font-mono bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
-                              ⏰ ${this.formatTime12h(apt.time)}
+                            <span class="font-black text-sm text-slate-900 font-mono bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-1">
+                              <i class="far fa-clock text-slate-400 text-xs"></i>
+                              <span>${this.formatTime12h(apt.time)}</span>
                             </span>
                             ${statusBadge}
                           </div>
                           <h4 class="font-extrabold text-slate-900 text-sm mt-1.5 leading-snug">${this.escapeHtml(apt.serviceName)}</h4>
                         </div>
-                        <span class="font-black text-slate-900 text-sm shrink-0">
+                        <span class="font-black text-slate-900 text-sm shrink-0 bg-white px-2.5 py-1 rounded-lg border border-slate-100 shadow-2xs">
                           ${this.formatColones(apt.servicePrice)}
                         </span>
                       </div>
@@ -6055,16 +6083,16 @@ class App {
                       </div>
 
                       ${apt.notes ? `
-                        <div class="text-[11px] text-slate-600 bg-amber-50/70 p-2 rounded-lg border border-amber-200/60 italic">
+                        <div class="text-[11px] text-slate-600 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60 italic">
                           "${this.escapeHtml(apt.notes)}"
                         </div>
                       ` : ''}
 
                       <!-- Botones de Acción Táctiles -->
-                      <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                      <div class="flex items-center gap-2 flex-wrap pt-1">
                         <button 
                           type="button"
-                          class="cal-apt-chip flex-1 py-2 px-3 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                          class="cal-apt-chip flex-1 py-2.5 px-3 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
                           data-apt-id="${apt.id}"
                         >
                           <i class="fas fa-info-circle text-xs text-slate-500"></i>
@@ -6076,18 +6104,18 @@ class App {
                             href="https://wa.me/506${cleanPhone}?text=${encodeURIComponent(`¡Hola ${apt.clientName}! Te saludamos de ${currentBiz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            class="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs"
+                            class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs"
                             title="Contactar por WhatsApp"
                           >
                             <i class="fab fa-whatsapp text-sm"></i>
-                            <span class="hidden sm:inline">WhatsApp</span>
+                            <span>WhatsApp</span>
                           </a>
                         ` : ''}
 
                         ${apt.status === 'pending' ? `
                           <button 
                             type="button" 
-                            class="status-change-btn py-2 px-3 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            class="status-change-btn py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             data-apt-id="${apt.id}" 
                             data-status="confirmed"
                           >
@@ -6099,7 +6127,7 @@ class App {
                         ${apt.status === 'confirmed' ? `
                           <button 
                             type="button" 
-                            class="status-change-btn py-2 px-3 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            class="status-change-btn py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             data-apt-id="${apt.id}" 
                             data-status="completed"
                           >
@@ -8548,7 +8576,6 @@ class App {
         await storage.updateAppointmentStatus(aptId, newStatus);
         const isBizEmailOnly = currentBiz && (currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan);
         const statusMsgs = {
-          confirmed: '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           confirmed: isBizEmailOnly ? '✅ ¡Reserva confirmada! Se envió el correo de confirmación al cliente.' : '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           completed: '🎉 ¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
           cancelled: '❌ Reserva cancelada.'
