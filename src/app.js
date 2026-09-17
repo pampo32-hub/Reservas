@@ -4254,7 +4254,7 @@ class App {
       const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
 
       const isAutoConfirm = currentBiz.autoConfirmAppointments !== false;
-      const isBizBasic = currentBiz.plan === 'basic';
+      const isBizEmailOnly = currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan;
 
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
@@ -4301,9 +4301,9 @@ class App {
                 </div>
                 <p class="text-xs text-slate-700 leading-relaxed max-w-3xl">
                   ${isAutoConfirm ? `
-                    <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>${isBizBasic ? 'correo electrónico' : 'correo electrónico y WhatsApp'}</strong>.${isBizBasic ? ' <span class="text-slate-500 font-medium">(La confirmación por WhatsApp está disponible a partir del Plan Profesional).</span>' : ''}
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>${isBizEmailOnly ? 'correo electrónico' : 'correo electrónico y WhatsApp'}</strong>.${isBizEmailOnly ? ' <span class="text-slate-500 font-medium">(La confirmación por WhatsApp está disponible a partir del Plan Profesional).</span>' : ''}
                   ` : `
-                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El ${isBizBasic ? 'correo electrónico' : 'correo y WhatsApp'} se enviará únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El ${isBizEmailOnly ? 'correo electrónico' : 'correo y WhatsApp'} se enviará únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
                   `}
                 </p>
               </div>
@@ -4817,8 +4817,8 @@ class App {
                   </div>
                   <p class="text-xs text-slate-600 leading-relaxed">
                     ${currentBiz.autoConfirmAppointments !== false
-                      ? (currentBiz.plan === 'basic' ? 'Las reservas se confirman inmediatamente y se envía correo de confirmación al cliente al agendar.' : 'Las reservas se confirman inmediatamente y se envía confirmación por WhatsApp y correo al cliente al agendar.')
-                      : (currentBiz.plan === 'basic' ? 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar correo al cliente.' : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo al cliente.')}
+                      ? ((currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan) ? 'Las reservas se confirman inmediatamente y se envía correo de confirmación al cliente al agendar.' : 'Las reservas se confirman inmediatamente y se envía confirmación por WhatsApp y correo al cliente al agendar.')
+                      : ((currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan) ? 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar correo al cliente.' : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo al cliente.')}
                   </p>
                 </div>
                 <label class="relative inline-flex items-center cursor-pointer flex-shrink-0 self-start sm:self-center">
@@ -7280,8 +7280,9 @@ class App {
         const aptId = btn.getAttribute('data-apt-id');
         const newStatus = btn.getAttribute('data-status');
         await storage.updateAppointmentStatus(aptId, newStatus);
+        const isBizEmailOnly = currentBiz && (currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan);
         const statusMsgs = {
-          confirmed: '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
+          confirmed: isBizEmailOnly ? '✅ ¡Reserva confirmada! Se envió el correo de confirmación al cliente.' : '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           completed: '🎉 ¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
           cancelled: '❌ Reserva cancelada.'
         };

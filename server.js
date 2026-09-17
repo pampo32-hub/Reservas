@@ -1802,8 +1802,9 @@ app.post('/api/appointments', async (req, res) => {
             });
           }
 
-          // 2. Enviar WhatsApp de confirmación proactivo (Plantilla oficial Meta Cloud API)
-          if (optIn && a.clientPhone) {
+          // 2. Enviar WhatsApp de confirmación proactivo (Solo Planes Pro e Ilimitado)
+          const isProOrUnlimited = business && (business.plan === 'pro' || business.plan === 'unlimited');
+          if (isProOrUnlimited && optIn && a.clientPhone) {
             sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
               .then(waRes => {
                 console.log(`📲 [WhatsApp Auto] Resultado envío cita ${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No enviado (${waRes?.reason || waRes?.error})`);
@@ -2133,7 +2134,8 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
         });
       }
 
-      if (aptNotif.whatsappOptIn && aptNotif.clientPhone) {
+      const isProOrUnlimited = business && (business.plan === 'pro' || business.plan === 'unlimited');
+      if (isProOrUnlimited && aptNotif.whatsappOptIn && aptNotif.clientPhone) {
         sendBookingConfirmationWhatsApp(aptNotif, business, pool).catch(err => {
           console.error('⚠️ Error no bloqueante al enviar WhatsApp de confirmación manual:', err.message);
         });
