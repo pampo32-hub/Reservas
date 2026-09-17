@@ -1932,6 +1932,7 @@ class App {
           </div>
         </section>
 
+        <!-- 3. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <!-- 2. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <section id="landing-demo-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
@@ -2117,17 +2118,12 @@ class App {
           </div>
         </section>
 
-        <!-- 5. TABLA DE PLANES Y PRECIOS TRANSPARENTES -->
-        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <!-- 5. TABLA DE LOS 4 PLANES DE SUSCRIPCIÓN -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span class="text-amber-400 font-black text-xs uppercase tracking-wider">
-              <i class="fas fa-crown mr-1"></i> Precios Claros y Sin Sorpresas
               <i class="fas fa-crown mr-1"></i> Precios Transparentes y Sin Letra Pequeña
             </span>
-            <h2 class="text-2xl sm:text-4xl font-black text-white">Comienza hoy mismo sin riesgo</h2>
-            <p class="text-xs sm:text-sm text-slate-400">Sin comisiones por cita. Prueba todas las funciones gratis.</p>
             <h2 class="text-2xl sm:text-4xl font-black text-white">Elige el plan perfecto para tu negocio</h2>
             <p class="text-xs sm:text-sm text-slate-400">Comienza 100% gratis o aprovecha los <strong>15 Días de Prueba del Plan Profesional</strong>.</p>
           </div>
@@ -2138,11 +2134,15 @@ class App {
             <!-- PLAN 1: GRATIS DE POR VIDA -->
             <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-emerald-500/40 transition-all">
               <div class="space-y-3">
-                <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 inline-block">100% Gratis</span>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 inline-block">100% Gratis</span>
+                </div>
                 <h3 class="text-xl font-black text-white">Plan Gratis</h3>
-                <div class="flex items-baseline gap-1">
+                
+                <div class="flex items-baseline gap-2 flex-wrap">
                   <span class="text-3xl font-black text-white">₡0</span>
                   <span class="text-xs text-slate-400 font-bold">/ de por vida</span>
+                  <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-tight">100% Gratis</span>
                 </div>
                 <p class="text-xs text-slate-400">Ideal para emprendedores independientes que están empezando a digitalizar su negocio.</p>
 
@@ -2163,11 +2163,16 @@ class App {
             <!-- PLAN 2: BÁSICO -->
             <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-blue-500/40 transition-all">
               <div class="space-y-3">
-                <span class="text-[11px] font-black text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 inline-block">Emprendedor</span>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-black text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 inline-block">Emprendedor</span>
+                </div>
                 <h3 class="text-xl font-black text-white">Plan Básico</h3>
-                <div class="flex items-baseline gap-1">
+                
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-slate-500 line-through decoration-rose-500 decoration-2" title="Precio regular">$15</span>
                   <span class="text-3xl font-black text-white">$10</span>
                   <span class="text-xs text-slate-400 font-bold">/ mes (~₡5,200)</span>
+                  <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-black uppercase tracking-tight">Lanzamiento</span>
                 </div>
                 <p class="text-xs text-slate-400">Para profesionales con flujo constante de clientes.</p>
 
@@ -2192,11 +2197,16 @@ class App {
               </div>
 
               <div class="space-y-3 pt-1">
-                <span class="text-[11px] font-black text-amber-300 uppercase tracking-wider bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 inline-block">Profesional</span>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-black text-amber-300 uppercase tracking-wider bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 inline-block">Profesional</span>
+                </div>
                 <h3 class="text-xl font-black text-white">Plan Profesional</h3>
-                <div class="flex items-baseline gap-1">
+                
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$25</span>
                   <span class="text-3xl font-black text-amber-300">$18</span>
                   <span class="text-xs text-slate-400 font-bold">/ mes (~₡9,400)</span>
+                  <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-black uppercase tracking-tight">Lanzamiento</span>
                 </div>
                 <p class="text-xs text-slate-300 font-medium">La solución completa para salones, barberías, spas y clínicas con equipo.</p>
 
@@ -2217,11 +2227,16 @@ class App {
             <!-- PLAN 4: ILIMITADO -->
             <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-purple-500/40 transition-all">
               <div class="space-y-3">
-                <span class="text-[11px] font-black text-purple-400 uppercase tracking-wider bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20 inline-block">Sin Límites</span>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-black text-purple-400 uppercase tracking-wider bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20 inline-block">Sin Límites</span>
+                </div>
                 <h3 class="text-xl font-black text-white">Plan Ilimitado</h3>
-                <div class="flex items-baseline gap-1">
+                
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  <span class="text-sm font-bold text-slate-500 line-through decoration-rose-500 decoration-2" title="Precio regular">$45</span>
                   <span class="text-3xl font-black text-white">$35</span>
                   <span class="text-xs text-slate-400 font-bold">/ mes (~₡18,200)</span>
+                  <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-black uppercase tracking-tight">Lanzamiento</span>
                 </div>
                 <p class="text-xs text-slate-400">Para franquicias y negocios con gran volumen de citas.</p>
 
@@ -8908,6 +8923,7 @@ class App {
                       <i class="fas fa-check-circle mr-1"></i> Activos (${activeBusinessesCount})
                     </button>
                     <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'hidden' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="hidden">
+                      <i class="fas fa-ey
                       <i class="fas fa-eye-slash mr-1"></i> Ocultos en Inicio (${hiddenBusinessesCount})
                     </button>
                     <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'blocked' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="blocked">
