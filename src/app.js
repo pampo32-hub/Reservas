@@ -4590,34 +4590,44 @@ class App {
           </div>
         </div>
 
-        <!-- Tabs Navigation con Scroll Táctil Suave y Sin Scrollbar -->
-        <div class="flex items-center gap-2 border-b border-slate-200 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
-            <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
-          </button>
-          ${(!isFree && !isBasic) ? `
-            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
-              <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
+        <!-- Tabs Navigation con Píldoras Segmentadas y Desplazamiento Suave -->
+        <div class="bg-slate-100/90 p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-2xs mb-6">
+          <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth custom-scrollbar">
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="appointments">
+              <i class="fas fa-calendar-alt text-xs"></i>
+              <span>Agenda (${appointments.length})</span>
             </button>
-          ` : ''}
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
-            <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="team">
-            <i class="fas fa-users-cog mr-1.5 text-indigo-500"></i> Equipo y Especialistas
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
-            <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
-            <i class="fas fa-clock mr-1.5"></i> Horarios de Atención
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
-            <i class="fas fa-sliders-h mr-1.5 text-indigo-500"></i> Configurar Negocio
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="manual">
-            <i class="fas fa-book-open mr-1.5 text-amber-500"></i> Manual & Ayuda
-          </button>
+            ${(!isFree && !isBasic) ? `
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="reports">
+                <i class="fas fa-chart-pie text-xs ${this.activeDashboardTab === 'reports' ? 'text-white' : 'text-emerald-500'}"></i>
+                <span>Reportes</span>
+              </button>
+            ` : ''}
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="blocked-slots">
+              <i class="fas fa-calendar-times text-xs ${this.activeDashboardTab === 'blocked-slots' ? 'text-white' : 'text-rose-500'}"></i>
+              <span>Bloqueos</span>
+            </button>
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="team">
+              <i class="fas fa-users-cog text-xs ${this.activeDashboardTab === 'team' ? 'text-white' : 'text-indigo-500'}"></i>
+              <span>Equipo</span>
+            </button>
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="services">
+              <i class="fas fa-tag text-xs"></i>
+              <span>Servicios (${currentBiz.services ? currentBiz.services.length : 0})</span>
+            </button>
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="schedule">
+              <i class="fas fa-clock text-xs"></i>
+              <span>Horarios</span>
+            </button>
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="profile">
+              <i class="fas fa-sliders-h text-xs ${this.activeDashboardTab === 'profile' ? 'text-white' : 'text-indigo-600'}"></i>
+              <span>Configuración</span>
+            </button>
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="manual">
+              <i class="fas fa-book-open text-xs ${this.activeDashboardTab === 'manual' ? 'text-white' : 'text-amber-500'}"></i>
+              <span>Manual & Ayuda</span>
+            </button>
+          </div>
         </div>
 
         <!-- Dynamic Tab Content -->
@@ -5395,88 +5405,62 @@ class App {
       const categories = storage.getCategories();
 
       return `
-        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-3xl">
-          <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs max-w-4xl mx-auto space-y-6 animate-fade-in">
+          <!-- Encabezado de Sección -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
             <div>
-              <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-                <i class="fas fa-sliders-h text-indigo-600"></i> Configurar Negocio
+              <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm shadow-xs">
+                  <i class="fas fa-sliders-h"></i>
+                </span>
+                Configuración del Negocio
               </h2>
-              <p class="text-xs text-slate-500">Personaliza la imagen, ubicación, datos de contacto, categoría y fotos que ven tus clientes en el directorio.</p>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Personaliza la marca, fotos de portada, logotipo, información de contacto y servicios visibles para tus clientes.
+              </p>
             </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold self-start sm:self-center">
+              <i class="fas fa-check-circle text-emerald-500"></i> Perfil Público Activo
+            </span>
           </div>
 
           <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
-            <!-- Sección Fotos con Guía de Medidas -->
-            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-5">
-              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
-              </h3>
-            <!-- Sección Fotos con Guía de Medidas y Carga desde PC/Móvil -->
-            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-6">
-              <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
+            <!-- Sección Fotos y Marca -->
+            <div class="p-5 sm:p-6 bg-slate-50/75 rounded-2xl border border-slate-200/90 space-y-6">
+              <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <i class="fas fa-images text-indigo-600"></i> Fotos y Marca del Comercio
                 </h3>
                 <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">
-                  <i class="fas fa-cloud-upload-alt mr-1"></i> Sube imágenes directamente desde tu dispositivo
+                  <i class="fas fa-cloud-upload-alt mr-1"></i> Sube imágenes directamente desde tu dispositivo o ingresa un enlace
                 </span>
               </div>
 
               <!-- Banner de Portada -->
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <label class="font-bold text-slate-700">Banner / Portada Principal</label>
               <div class="space-y-3">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <label class="font-bold text-slate-800 text-sm block">Banner / Portada Principal</label>
                     <p class="text-[11px] text-slate-500">Aparece en el encabezado de la página de tu negocio.</p>
                   </div>
-                  <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 1200 x 450 px (16:6)
-                    <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 1200 x 450 px (16:6)
+                  <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200/80">
+                    <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 1200 x 450 px
                   </span>
                 </div>
-                <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="URL de la imagen de portada (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
-                <!-- Preview Banner -->
-                <div class="h-32 w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative">
-                  <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image}" alt="Vista previa banner" class="w-full h-full object-cover">
-                  <span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">Vista previa del banner</span>
 
-                <!-- Preview Banner & Trigger Button -->
-                <div class="space-y-2">
-                  <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
-                    <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
-                      <i class="fas fa-camera text-2xl"></i>
-                      <span class="text-xs font-bold">Cambiar imagen de portada</span>
-                      <span class="text-[10px] text-slate-200">Clic para seleccionar desde tu PC o celular</span>
-                    </div>
-                    <span class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-lg font-medium pointer-events-none">
-                      <i class="fas fa-eye mr-1"></i> Vista previa
-                    </span>
-                <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
+                <!-- Preview Banner & Dropzone -->
+                <div class="h-40 sm:h-48 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone" title="Clic para cambiar imagen de portada">
                   <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
-                  <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
+                  <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1.5 backdrop-blur-xs">
                     <i class="fas fa-camera text-2xl"></i>
                     <span class="text-xs font-bold">Cambiar imagen de portada</span>
-                    <span class="text-[10px] text-slate-200">Clic para seleccionar desde tu PC o celular</span>
+                    <span class="text-[10px] text-slate-200">Clic para seleccionar desde tu dispositivo</span>
                   </div>
-                  <span class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-lg font-medium pointer-events-none">
+                  <span class="absolute bottom-2.5 right-2.5 bg-black/70 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-lg font-medium pointer-events-none">
                     <i class="fas fa-eye mr-1"></i> Vista previa
                   </span>
                 </div>
 
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
-                    <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
-                      <i class="fas fa-upload"></i>
-                      <span>Subir Banner desde PC / Celular</span>
-                    </button>
-                    <span id="cover-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
-                      <i class="fas fa-check-circle"></i> Imagen cargada y optimizada
-                    </span>
-                  </div>
                 <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
                   <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
@@ -5484,47 +5468,31 @@ class App {
                     <span>Subir Banner desde PC / Celular</span>
                   </button>
                   <span id="cover-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
-                    <i class="fas fa-check-circle"></i> Imagen cargada y optimizada
+                    <i class="fas fa-check-circle"></i> Banner cargado y optimizado
                   </span>
                 </div>
 
-                  <div class="pt-1">
-                    <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                      <span>O ingresa el enlace URL de la imagen directamente:</span>
-                    </div>
-                    <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="https://ejemplo.com/portada.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
-                <div class="pt-1">
-                  <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
-                    <span>O ingresa el enlace URL de la imagen directamente:</span>
-                  </div>
-                  <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="https://ejemplo.com/portada.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
+                <div>
+                  <label class="block text-[11px] text-slate-500 mb-1">O ingresa el enlace URL de la imagen de portada directamente:</label>
+                  <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="https://ejemplo.com/portada.jpg" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
               </div>
 
               <!-- Foto de Perfil / Logo -->
-              <div class="space-y-2 pt-3 border-t border-slate-200">
-                <div class="flex items-center justify-between">
-                  <label class="font-bold text-slate-700">Foto de Perfil / Logo Cuadrado</label>
-              <div class="space-y-3 pt-4 border-t border-slate-200">
+              <div class="space-y-3 pt-4 border-t border-slate-200/80">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
-                    <label class="font-bold text-slate-800 text-sm block">Foto de Perfil / Logo Comercial</label>
-                    <p class="text-[11px] text-slate-500">Se muestra en la tarjeta de búsqueda, directorio y logo principal.</p>
+                    <label class="font-bold text-slate-800 text-sm block">Foto de Perfil / Logotipo</label>
+                    <p class="text-[11px] text-slate-500">Se muestra en la tarjeta del directorio, búsquedas y citas.</p>
                   </div>
-                  <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
-                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 800 x 800 px (1:1)
+                  <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200/80">
                     <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 800 x 800 px (1:1)
                   </span>
                 </div>
-                <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="URL del logo o foto de perfil (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
-                <!-- Preview Logo -->
-                <div class="flex items-center gap-3">
-                  <img id="preview-logo-img" src="${currentBiz.image}" alt="Vista previa logo" class="w-16 h-16 rounded-2xl object-cover border border-slate-300">
-                  <span class="text-xs text-slate-500">Se muestra en las tarjetas de búsqueda del directorio.</span>
 
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <!-- Avatar Preview / Trigger -->
-                  <div class="relative group cursor-pointer flex-shrink-0" id="logo-dropzone">
+                  <div class="relative group cursor-pointer flex-shrink-0" id="logo-dropzone" title="Clic para cambiar logo">
                     <img id="preview-logo-img" src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800'}" alt="Vista previa logo" class="w-24 h-24 rounded-2xl object-cover border-2 border-slate-300 shadow-sm">
                     <div class="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-center p-1 backdrop-blur-xs">
                       <i class="fas fa-camera text-base"></i>
@@ -5533,7 +5501,7 @@ class App {
                   </div>
 
                   <!-- Actions and URL input -->
-                  <div class="flex-1 w-full space-y-2">
+                  <div class="flex-1 w-full space-y-2.5">
                     <div class="flex items-center gap-2 flex-wrap">
                       <input type="file" id="upload-biz-image-file" accept="image/*" class="hidden">
                       <button type="button" id="btn-trigger-upload-logo" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
@@ -5546,8 +5514,8 @@ class App {
                     </div>
 
                     <div>
-                      <div class="text-[11px] text-slate-500 mb-1">O ingresa el enlace URL del logo:</div>
-                      <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="https://ejemplo.com/logo.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
+                      <label class="block text-[11px] text-slate-500 mb-1">O ingresa el enlace URL del logo:</label>
+                      <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="https://ejemplo.com/logo.jpg" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                   </div>
                 </div>
@@ -5555,103 +5523,114 @@ class App {
             </div>
 
             <!-- Datos Generales -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-                <input type="text" id="edit-biz-name" value="${this.escapeHtml(currentBiz.name)}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
-              </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
-                <select id="edit-biz-category" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  ${categories.map(c => `<option value="${c.id}" ${currentBiz.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
-                </select>
-              </div>
-            </div>
+            <div class="p-5 sm:p-6 bg-white rounded-2xl border border-slate-200/90 space-y-4">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fas fa-info-circle text-blue-600"></i> Información General y Contacto
+              </h3>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
-                <input type="text" id="edit-biz-city" value="${this.escapeHtml(currentBiz.city || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5">Nombre Comercial del Negocio *</label>
+                  <input type="text" id="edit-biz-name" value="${this.escapeHtml(currentBiz.name)}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5">Categoría del Negocio *</label>
+                  <select id="edit-biz-category" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
+                    ${categories.map(c => `<option value="${c.id}" ${currentBiz.category === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                <input type="tel" id="edit-biz-phone" value="${this.escapeHtml(currentBiz.phone || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-              </div>
-            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Correo Electrónico de Contacto</label>
-                <input type="email" id="edit-biz-email" value="${this.escapeHtml(currentBiz.email || '')}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5">Provincia / Cantón *</label>
+                  <input type="text" id="edit-biz-city" value="${this.escapeHtml(currentBiz.city || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5">Teléfono / WhatsApp (+506) *</label>
+                  <input type="tel" id="edit-biz-phone" value="${this.escapeHtml(currentBiz.phone || '')}" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
               </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-                <input type="text" id="edit-biz-address" value="${this.escapeHtml(currentBiz.address || '')}" placeholder="100m Norte de..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
-              </div>
-            </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Descripción del Negocio</label>
-              <textarea id="edit-biz-desc" rows="3" placeholder="Describe tus especialidades y experiencia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">${this.escapeHtml(currentBiz.description || '')}</textarea>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5">Correo Electrónico de Contacto</label>
+                  <input type="email" id="edit-biz-email" value="${this.escapeHtml(currentBiz.email || '')}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1.5">Dirección Exacta</label>
+                  <input type="text" id="edit-biz-address" value="${this.escapeHtml(currentBiz.address || '')}" placeholder="100m Norte de..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1.5">Descripción del Negocio</label>
+                <textarea id="edit-biz-desc" rows="3" placeholder="Describe tus especialidades, años de experiencia y propuesta de valor..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">${this.escapeHtml(currentBiz.description || '')}</textarea>
+              </div>
             </div>
 
             <!-- Redes Sociales y Enlaces Web -->
-            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
-              <div class="flex items-center justify-between">
-                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  <i class="fas fa-share-alt text-blue-600"></i> Redes Sociales & Sitio Web
+            <div class="p-5 sm:p-6 bg-slate-50/75 rounded-2xl border border-slate-200/90 space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+                <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <i class="fas fa-share-alt text-blue-600"></i> Redes Sociales & Enlaces
                 </h3>
-                <span class="text-[11px] text-slate-400 font-medium">Visibles para tus clientes</span>
+                <span class="text-[11px] text-slate-500 font-medium">Visibles para tus clientes en el perfil</span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-pink-600 text-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-pink-600 text-sm">
                     <i class="fab fa-instagram"></i>
                   </div>
-                  <input type="text" id="edit-biz-instagram" value="${currentBiz.socialLinks?.instagram || currentBiz.social_links?.instagram || ''}" placeholder="Instagram (@minegocio o URL)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-pink-400 focus:outline-none">
+                  <input type="text" id="edit-biz-instagram" value="${currentBiz.socialLinks?.instagram || currentBiz.social_links?.instagram || ''}" placeholder="Instagram (@minegocio o URL)" class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-pink-400 focus:outline-none">
                 </div>
 
                 <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-blue-600 text-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-blue-600 text-sm">
                     <i class="fab fa-facebook"></i>
                   </div>
-                  <input type="text" id="edit-biz-facebook" value="${currentBiz.socialLinks?.facebook || currentBiz.social_links?.facebook || ''}" placeholder="Facebook (usuario o enlace)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                  <input type="text" id="edit-biz-facebook" value="${currentBiz.socialLinks?.facebook || currentBiz.social_links?.facebook || ''}" placeholder="Facebook (usuario o enlace)" class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-blue-400 focus:outline-none">
                 </div>
 
                 <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-900 text-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-900 text-sm">
                     <i class="fab fa-tiktok"></i>
                   </div>
-                  <input type="text" id="edit-biz-tiktok" value="${currentBiz.socialLinks?.tiktok || currentBiz.social_links?.tiktok || ''}" placeholder="TikTok (@minegocio)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none">
+                  <input type="text" id="edit-biz-tiktok" value="${currentBiz.socialLinks?.tiktok || currentBiz.social_links?.tiktok || ''}" placeholder="TikTok (@minegocio)" class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-slate-400 focus:outline-none">
                 </div>
 
                 <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-600 text-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-600 text-sm">
                     <i class="fas fa-globe"></i>
                   </div>
-                  <input type="text" id="edit-biz-website" value="${currentBiz.socialLinks?.website || currentBiz.social_links?.website || ''}" placeholder="Sitio Web / Menú Digital (https://...)" class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
+                  <input type="text" id="edit-biz-website" value="${currentBiz.socialLinks?.website || currentBiz.social_links?.website || ''}" placeholder="Sitio Web / Menú Digital (https://...)" class="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-400 focus:outline-none">
                 </div>
               </div>
             </div>
 
             <!-- Características / Comodidades -->
-            <div>
-              <label class="block font-bold text-slate-700 mb-2 uppercase text-xs tracking-wider">Comodidades y Métodos de Pago</label>
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div class="p-5 sm:p-6 bg-white rounded-2xl border border-slate-200/90 space-y-3">
+              <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fas fa-concierge-bell text-amber-500"></i> Comodidades y Métodos de Pago
+              </h3>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
                 ${allFeatures.map(feat => `
-                  <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
-                    <input type="checkbox" name="biz_features" value="${feat}" ${currentFeatures.includes(feat) ? 'checked' : ''} class="rounded text-blue-600">
+                  <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs transition-colors">
+                    <input type="checkbox" name="biz_features" value="${feat}" ${currentFeatures.includes(feat) ? 'checked' : ''} class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4">
                     <span class="font-medium text-slate-700">${feat}</span>
                   </label>
                 `).join('')}
               </div>
             </div>
 
-            <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
-              <i class="fas fa-save mr-1.5"></i>
-              <span>Guardar Configuración del Negocio</span>
-            </button>
+            <!-- Botón Guardar -->
+            <div class="pt-2">
+              <button type="submit" class="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-2xl font-black shadow-lg shadow-indigo-500/25 transition-all text-sm sm:text-base flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]">
+                <i class="fas fa-save text-lg"></i>
+                <span>Guardar Configuración del Negocio</span>
+              </button>
+            </div>
           </form>
         </div>
       `;
