@@ -5,7 +5,7 @@
 
   <!-- 1. PÁGINA PRINCIPAL / DIRECTORIO DE COMERCIOS -->
   <url>
-    <loc>https://reservascr.com/</loc>
+    <loc>https://reservascr.app/</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -13,7 +13,7 @@
 
   <!-- 2. PÁGINA DE PRE-REGISTRO Y REGISTRO DE NEGOCIOS -->
   <url>
-    <loc>https://reservascr.com/unete</loc>
+    <loc>https://reservascr.app/unete</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -21,7 +21,7 @@
 
   <!-- 3. MANUAL DE USUARIO Y GUÍA DE OPERACIÓN PARA COMERCIOS -->
   <url>
-    <loc>https://reservascr.com/manual-comercios</loc>
+    <loc>https://reservascr.app/manual-comercios</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -29,7 +29,7 @@
 
   <!-- 4. MANUAL OFICIAL EN FORMATO PDF -->
   <url>
-    <loc>https://reservascr.com/manual-comercios-pdf</loc>
+    <loc>https://reservascr.app/manual-comercios-pdf</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -37,193 +37,193 @@
 
   <!-- 5. PERFILES INDIVIDUALES DE COMERCIOS REGISTRADOS -->
   <url>
-    <loc>https://reservascr.com/negocio/biz-1</loc>
+    <loc>https://reservascr.app/negocio/biz-1</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-2</loc>
+    <loc>https://reservascr.app/negocio/biz-2</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-3</loc>
+    <loc>https://reservascr.app/negocio/biz-3</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-4</loc>
+    <loc>https://reservascr.app/negocio/biz-4</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-5</loc>
+    <loc>https://reservascr.app/negocio/biz-5</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-6</loc>
+    <loc>https://reservascr.app/negocio/biz-6</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-7</loc>
+    <loc>https://reservascr.app/negocio/biz-7</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-8</loc>
+    <loc>https://reservascr.app/negocio/biz-8</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-9</loc>
+    <loc>https://reservascr.app/negocio/biz-9</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-10</loc>
+    <loc>https://reservascr.app/negocio/biz-10</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-11</loc>
+    <loc>https://reservascr.app/negocio/biz-11</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-12</loc>
+    <loc>https://reservascr.app/negocio/biz-12</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-13</loc>
+    <loc>https://reservascr.app/negocio/biz-13</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-14</loc>
+    <loc>https://reservascr.app/negocio/biz-14</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-15</loc>
+    <loc>https://reservascr.app/negocio/biz-15</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-16</loc>
+    <loc>https://reservascr.app/negocio/biz-16</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-17</loc>
+    <loc>https://reservascr.app/negocio/biz-17</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-18</loc>
+    <loc>https://reservascr.app/negocio/biz-18</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-19</loc>
+    <loc>https://reservascr.app/negocio/biz-19</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-20</loc>
+    <loc>https://reservascr.app/negocio/biz-20</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-21</loc>
+    <loc>https://reservascr.app/negocio/biz-21</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-22</loc>
+    <loc>https://reservascr.app/negocio/biz-22</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-23</loc>
+    <loc>https://reservascr.app/negocio/biz-23</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-24</loc>
+    <loc>https://reservascr.app/negocio/biz-24</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-25</loc>
+    <loc>https://reservascr.app/negocio/biz-25</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-26</loc>
+    <loc>https://reservascr.app/negocio/biz-26</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-27</loc>
+    <loc>https://reservascr.app/negocio/biz-27</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-28</loc>
+    <loc>https://reservascr.app/negocio/biz-28</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-29</loc>
+    <loc>https://reservascr.app/negocio/biz-29</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-30</loc>
+    <loc>https://reservascr.app/negocio/biz-30</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-31</loc>
+    <loc>https://reservascr.app/negocio/biz-31</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://reservascr.com/negocio/biz-32</loc>
+    <loc>https://reservascr.app/negocio/biz-32</loc>
     <lastmod>2026-09-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

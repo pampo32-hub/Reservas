@@ -1,5 +1,5 @@
 # Robots.txt para Reservas CR
-# https://reservascr.com
+# https://reservascr.app
 
 User-agent: *
 Allow: /
@@ -17,4 +17,4 @@ Disallow: /calificar/
 Disallow: /api/
 
 # Ubicación del Sitemap oficial para Google y otros motores de búsqueda
-Sitemap: https://reservascr.com/sitemap.xml
+Sitemap: https://reservascr.app/sitemap.xml
