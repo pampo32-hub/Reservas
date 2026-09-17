@@ -1,11 +1,12 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
-// FLAGS DE LA PLATAFORMA: Registro, login y suscripciones activas
+// FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
+const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 
 class App {
   constructor() {
@@ -3521,7 +3522,11 @@ class App {
 
       this.closeBookingModal();
       this.renderSuccessBookingModal(newAppointment, biz);
-      this.showToast('¡Prueba de reserva completada con éxito!', 'info');
+      if (IS_DEMO_BOOKING_MODE) {
+        this.showToast('¡Prueba de reserva completada con éxito!', 'info');
+      } else {
+        this.showToast(initialStatus === 'confirmed' ? '¡Reserva confirmada con éxito!' : '¡Solicitud de reserva enviada con éxito!', 'success');
+      }
     });
   }
 
@@ -3532,50 +3537,176 @@ class App {
 
     const isPending = appointment.status === 'pending';
 
+    // MODO PRUEBA / SIMULACIÓN DE RESERVA (Se activa con IS_DEMO_BOOKING_MODE = true)
+    if (IS_DEMO_BOOKING_MODE) {
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
+            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
+              <i class="fas fa-check-circle"></i>
+            </div>
+
+            <span class="text-xs uppercase font-extrabold text-blue-600 tracking-wider">
+              ¡Simulación de Reserva Exitosa!
+            </span>
+            <h3 class="text-2xl font-black text-slate-900 mt-1">
+              Demostración de Agendamiento
+            </h3>
+            <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
+
+            <!-- Aviso Informativo de Prelanzamiento -->
+            <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
+              <div class="flex items-center gap-2 font-black text-blue-950 text-xs sm:text-sm">
+                <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shadow-2xs">
+                  <i class="fas fa-bullhorn"></i>
+                </div>
+                <span>Aviso Informativo • Modo Prelanzamiento</span>
+              </div>
+              
+              <p class="text-xs text-slate-700 leading-relaxed font-medium">
+                ¡Has completado con éxito esta prueba de reserva en <strong>Reservas CR</strong>!
+              </p>
+
+              <div class="p-3.5 bg-white/95 rounded-xl border border-blue-100 text-slate-800 text-[11px] leading-relaxed space-y-2 shadow-2xs">
+                <div class="font-extrabold text-blue-900 flex items-center gap-1.5 text-xs">
+                  <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
+                  <i class="fas fa-envelope text-blue-600 text-sm"></i>
+                  <span>¿Qué sucede cuando la plataforma esté 100% activa?</span>
+                </div>
+                <p class="text-slate-600">
+                  Al confirmar una reserva con la página activa, <strong>en ese momento recibirías automáticamente un mensaje de texto por WhatsApp y un correo electrónico</strong> confirmando la cita, tu cita quedaría activada en tiempo real en la agenda del comercio y recibirías recordatorios previos a tu turno.
+                </p>
+                <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
+                  <i class="fas fa-check text-emerald-600"></i>
+                  <span>No se ha realizado ningún cobro ni envío de mensajes reales durante esta prueba.</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Establecimiento:</span>
+                <span class="font-bold text-slate-800">${business.name}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Servicio:</span>
+                <span class="font-bold text-slate-800">${appointment.serviceName}</span>
+              </div>
+              ${appointment.staffName ? `
+                <div class="flex justify-between">
+                  <span class="text-slate-500">Especialista:</span>
+                  <span class="font-bold text-blue-700 flex items-center gap-1">
+                    <i class="fas fa-user-tag text-blue-500 text-[11px]"></i>
+                    ${appointment.staffName}
+                  </span>
+                </div>
+              ` : ''}
+              <div class="flex justify-between">
+                <span class="text-slate-500">Fecha y Hora:</span>
+                <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Estado de prueba:</span>
+                <span class="font-bold text-blue-700 flex items-center gap-1">
+                  <i class="fas fa-flask text-[11px]"></i>
+                  Simulación Prelanzamiento
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Cliente:</span>
+                <span class="font-bold text-slate-800">${appointment.clientName}</span>
+              </div>
+              <div class="flex justify-between pt-2 border-t border-slate-200">
+                <span class="text-slate-500 font-medium">Precio del servicio:</span>
+                <span class="font-black text-sm text-slate-900">${this.formatColones(appointment.servicePrice)}</span>
+              </div>
+            </div>
+
+            <!-- Sincronización con Calendario Personal -->
+            <div class="mt-4 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-left space-y-2 animate-fade-in">
+              <div class="flex items-center gap-2">
+                <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
+                <span class="text-xs font-bold text-indigo-950">Añadir a tu Calendario Personal</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <a 
+                  href="${this.generateGoogleCalendarUrl(appointment, business)}" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  title="Sincronizar directamente con Google Calendar"
+                >
+                  <i class="fab fa-google text-rose-500"></i>
+                  <span>Google Calendar</span>
+                </a>
+                <button 
+                  type="button" 
+                  id="success-download-ics-btn"
+                  class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
+                  title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
+                >
+                  <i class="fas fa-calendar-alt text-blue-600"></i>
+                  <span>Apple / Outlook (.ics)</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-col gap-2">
+              <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer">
+                Ver Mis Reservas
+              </button>
+              <button id="success-done-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                Seguir Explorando
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('success-download-ics-btn')?.addEventListener('click', () => {
+        this.downloadIcsFile(appointment, business);
+      });
+      document.getElementById('success-view-bookings-btn')?.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+        this.navigateTo('my-client-bookings');
+      });
+      document.getElementById('success-done-btn')?.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      });
+      return;
+    }
+
+    // MODO REAL ACTIVO: Confirmación de Reserva Real
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
-          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
-            <i class="fas fa-check-circle"></i>
+          <div class="w-16 h-16 ${isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
+            <i class="fas ${isPending ? 'fa-clock' : 'fa-check-circle'}"></i>
           </div>
 
-          <span class="text-xs uppercase font-extrabold text-blue-600 tracking-wider">
-            ¡Simulación de Reserva Exitosa!
+          <span class="text-xs uppercase font-extrabold ${isPending ? 'text-amber-600' : 'text-emerald-600'} tracking-wider">
+            ${isPending ? 'Solicitud de Turno Recibida' : '¡Reserva Confirmada con Éxito!'}
           </span>
           <h3 class="text-2xl font-black text-slate-900 mt-1">
-            Demostración de Agendamiento
+            ${isPending ? 'Cita en Aprobación' : 'Tu Cita ha sido Agendada'}
           </h3>
-          <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
+          <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">#${appointment.id.toUpperCase()}</strong></p>
 
-          <!-- Aviso Informativo de Prelanzamiento -->
-          <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
-            <div class="flex items-center gap-2 font-black text-blue-950 text-xs sm:text-sm">
-              <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shadow-2xs">
-                <i class="fas fa-bullhorn"></i>
-              </div>
-              <span>Aviso Informativo • Modo Prelanzamiento</span>
+          <!-- Tarjeta de Confirmación de Notificaciones -->
+          <div class="mt-4 p-4 ${isPending ? 'bg-amber-50/80 border-amber-200' : 'bg-emerald-50/80 border-emerald-200'} rounded-2xl border text-left space-y-2">
+            <div class="flex items-center gap-2 font-bold ${isPending ? 'text-amber-900' : 'text-emerald-950'} text-xs">
+              <i class="fas ${isPending ? 'fa-bell text-amber-600' : 'fa-check-double text-emerald-600'} text-sm"></i>
+              <span>${isPending ? 'Pendiente de confirmación por el comercio' : 'Notificaciones y Recordatorios Activos'}</span>
             </div>
-            
-            <p class="text-xs text-slate-700 leading-relaxed font-medium">
-              ¡Has completado con éxito esta prueba de reserva en <strong>Reservas CR</strong>!
+            <p class="text-slate-700 text-xs leading-relaxed">
+              ${isPending 
+                ? 'El establecimiento revisará tu solicitud de turno y confirmará tu cita a la brevedad. Te avisaremos cuando sea aprobada.' 
+                : 'La cita ha quedado registrada en tiempo real en la agenda del comercio. Recibirás los recordatorios previos a tu cita.'}
             </p>
-
-            <div class="p-3.5 bg-white/95 rounded-xl border border-blue-100 text-slate-800 text-[11px] leading-relaxed space-y-2 shadow-2xs">
-              <div class="font-extrabold text-blue-900 flex items-center gap-1.5 text-xs">
-                <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
-                <i class="fas fa-envelope text-blue-600 text-sm"></i>
-                <span>¿Qué sucede cuando la plataforma esté 100% activa?</span>
-              </div>
-              <p class="text-slate-600">
-                Al confirmar una reserva con la página activa, <strong>en ese momento recibirías automáticamente un mensaje de texto por WhatsApp y un correo electrónico</strong> confirmando la cita, tu cita quedaría activada en tiempo real en la agenda del comercio y recibirías recordatorios previos a tu turno.
-              </p>
-              <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
-                <i class="fas fa-check text-emerald-600"></i>
-                <span>No se ha realizado ningún cobro ni envío de mensajes reales durante esta prueba.</span>
-              </div>
-            </div>
           </div>
 
+          <!-- Resumen de la Cita -->
           <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
             <div class="flex justify-between">
               <span class="text-slate-500">Establecimiento:</span>
@@ -3599,10 +3730,10 @@ class App {
               <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-500">Estado de prueba:</span>
-              <span class="font-bold text-blue-700 flex items-center gap-1">
-                <i class="fas fa-flask text-[11px]"></i>
-                Simulación Prelanzamiento
+              <span class="text-slate-500">Estado:</span>
+              <span class="font-bold ${isPending ? 'text-amber-700 bg-amber-50' : 'text-emerald-700 bg-emerald-50'} px-2 py-0.5 rounded-md flex items-center gap-1">
+                <i class="fas ${isPending ? 'fa-hourglass-half' : 'fa-check-circle'} text-[10px]"></i>
+                ${isPending ? 'Pendiente de Aprobación' : 'Confirmada en Agenda'}
               </span>
             </div>
             <div class="flex justify-between">
