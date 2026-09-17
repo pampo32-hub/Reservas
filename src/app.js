@@ -6946,6 +6946,7 @@ class App {
             <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
               Agrega a los colaboradores de tu local para que tus clientes puedan reservar con ellos específicamente o mediante turno asignado.
             </p>
+            <button id="add-new-staff-btn" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer">
             <button id="add-first-staff-btn" class="open-add-staff-modal-btn mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-blue-500/20">
               <i class="fas fa-plus"></i> Agregar Primer Especialista
             </button>
@@ -8920,6 +8921,7 @@ class App {
                         <i class="fas fa-ban text-rose-600"></i> ${blockedBusinessesCount} Bloqueados
                       </span>
                     </div>
+     
                   </div>
 
                   <!-- Chips de filtrado rápido por estado/tipo -->
@@ -11945,6 +11947,7 @@ class App {
 
     const biz = businessId ? storage.getBusinessById(businessId) : null;
     const amountCrc = this.formatColones(plan.priceCrc || (plan.priceUsd * 530));
+    const durationLabel = 'Mensual (30 Días)';
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
