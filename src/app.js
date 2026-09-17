@@ -4254,6 +4254,7 @@ class App {
       const cancelledCount = appointments.filter(a => a.status === 'cancelled').length;
 
       const isAutoConfirm = currentBiz.autoConfirmAppointments !== false;
+      const isBizBasic = currentBiz.plan === 'basic';
       const isBizEmailOnly = currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan;
 
       return `
@@ -4301,8 +4302,10 @@ class App {
                 </div>
                 <p class="text-xs text-slate-700 leading-relaxed max-w-3xl">
                   ${isAutoConfirm ? `
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>${isBizBasic ? 'correo electrónico' : 'correo electrónico y WhatsApp'}</strong>.${isBizBasic ? ' <span class="text-slate-500 font-medium">(La confirmación por WhatsApp está disponible a partir del Plan Profesional).</span>' : ''}
                     <strong>¿Para qué sirve?</strong> Al estar <strong>activa</strong>, las reservas generadas por tus clientes en la página se confirman inmediatamente y el sistema les envía en el acto la confirmación por <strong>${isBizEmailOnly ? 'correo electrónico' : 'correo electrónico y WhatsApp'}</strong>.${isBizEmailOnly ? ' <span class="text-slate-500 font-medium">(La confirmación por WhatsApp está disponible a partir del Plan Profesional).</span>' : ''}
                   ` : `
+                    <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El ${isBizBasic ? 'correo electrónico' : 'correo y WhatsApp'} se enviará únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
                     <strong>¿Para qué sirve?</strong> Al estar <strong>inactiva</strong>, cada nueva reserva entrará en estado <strong>Pendiente</strong>. El cliente verá un aviso en la página indicándole que <em>en unos minutos recibirá la confirmación</em>. El ${isBizEmailOnly ? 'correo electrónico' : 'correo y WhatsApp'} se enviará únicamente hasta que presiones <strong>"Aceptar"</strong> en la reserva.
                   `}
                 </p>
@@ -4504,23 +4507,61 @@ class App {
     }
 
     if (this.activeDashboardTab === 'services') {
+      const isFree = !currentBiz.plan || currentBiz.plan === 'free';
+      const servicesCount = currentBiz.services ? currentBiz.services.length : 0;
+      const isLimitReached = isFree && servicesCount >= 5;
+
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs">
-          <div class="flex items-center justify-between mb-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 class="text-lg font-bold text-slate-900">Catálogo de Servicios y Precios</h2>
-              <p class="text-xs text-slate-500">Agrega, modifica precios en colones (₡) o duraciones de tus servicios.</p>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-lg font-bold text-slate-900">Catálogo de Servicios y Precios</h2>
+                ${isFree ? `
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isLimitReached ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'}">
+                    ${servicesCount} / 5 Servicios (Plan Gratis)
+                  </span>
+                ` : `
+                  <span class="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-wider">
+                    Servicios Ilimitados
+                  </span>
+                `}
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Agrega, modifica precios en colones (₡) o duraciones de tus servicios.</p>
             </div>
 
             <div class="flex items-center gap-2">
               <button id="quick-manage-slots-from-services-btn" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer">
                 <i class="fas fa-calendar-times"></i> Gestionar Horas
               </button>
-              <button id="add-new-service-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer">
+              <button id="add-new-service-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-blue-500/20">
                 <i class="fas fa-plus"></i> Agregar Servicio
               </button>
             </div>
           </div>
+
+          ${isLimitReached ? `
+            <!-- Banner de Alerta de Límite de 5 Servicios en Plan Gratis -->
+            <div class="mb-6 p-4.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 border-2 border-amber-400/80 text-amber-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in shadow-xs">
+              <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-lg font-black shrink-0 shadow-xs">
+                  <i class="fas fa-tags"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md">Límite de Catálogo (5/5)</span>
+                    <span class="text-xs font-bold text-amber-900">Plan Gratis</span>
+                  </div>
+                  <p class="text-xs text-amber-950 mt-1 leading-relaxed">
+                    Has registrado los <strong>5 servicios permitidos</strong> en tu catálogo del <strong>Plan Gratis</strong>. Para agregar más servicios y activar opciones profesionales, mejora tu plan en cualquier momento.
+                  </p>
+                </div>
+              </div>
+              <button id="dash-upgrade-services-btn" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-500/20 shrink-0 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                <i class="fas fa-rocket"></i> Mejorar Plan
+              </button>
+            </div>
+          ` : ''}
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             ${currentBiz.services && currentBiz.services.length > 0 ? currentBiz.services.map(srv => `
@@ -4817,6 +4858,8 @@ class App {
                   </div>
                   <p class="text-xs text-slate-600 leading-relaxed">
                     ${currentBiz.autoConfirmAppointments !== false
+                      ? (currentBiz.plan === 'basic' ? 'Las reservas se confirman inmediatamente y se envía correo de confirmación al cliente al agendar.' : 'Las reservas se confirman inmediatamente y se envía confirmación por WhatsApp y correo al cliente al agendar.')
+                      : (currentBiz.plan === 'basic' ? 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar correo al cliente.' : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo al cliente.')}
                       ? ((currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan) ? 'Las reservas se confirman inmediatamente y se envía correo de confirmación al cliente al agendar.' : 'Las reservas se confirman inmediatamente y se envía confirmación por WhatsApp y correo al cliente al agendar.')
                       : ((currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan) ? 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar correo al cliente.' : 'Las reservas entran en estado Pendiente y requieren tu confirmación antes de enviar WhatsApp y correo al cliente.')}
                   </p>
@@ -7282,6 +7325,7 @@ class App {
         await storage.updateAppointmentStatus(aptId, newStatus);
         const isBizEmailOnly = currentBiz && (currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan);
         const statusMsgs = {
+          confirmed: '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           confirmed: isBizEmailOnly ? '✅ ¡Reserva confirmada! Se envió el correo de confirmación al cliente.' : '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
           completed: '🎉 ¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
           cancelled: '❌ Reserva cancelada.'
@@ -7480,7 +7524,16 @@ class App {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan });
     });
 
+    document.getElementById('dash-upgrade-services-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'free' });
+    });
+
     document.getElementById('add-new-service-btn')?.addEventListener('click', () => {
+      const isFree = !currentBiz.plan || currentBiz.plan === 'free';
+      if (isFree && currentBiz.services && currentBiz.services.length >= 5) {
+        this.renderServiceLimitModal(currentBiz);
+        return;
+      }
       this.renderNewServiceModal(currentBiz.id);
     });
 
@@ -12348,17 +12401,87 @@ class App {
     this.renderAuthModal({ mode: 'register', role: 'business' });
   }
 
-  // --- MODAL PARA AGREGAR SERVICIO ---
-  renderNewServiceModal(businessId) {
+  // --- MODAL DE LÍMITE DE SERVICIOS (PLAN GRATIS: MÁXIMO 5) ---
+  renderServiceLimitModal(currentBiz) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6 sm:p-7 text-center">
+          <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+            <i class="fas fa-lock"></i>
+          </div>
+          
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-300">
+            <i class="fas fa-tags"></i> Límite de Servicios Alcanzado (5/5)
+          </div>
+
+          <h3 class="text-xl font-black text-slate-900">¿Deseas agregar más servicios?</h3>
+          <p class="text-xs text-slate-600 mt-2 leading-relaxed">
+            Tu comercio en el <strong>Plan Gratis</strong> incluye hasta <strong>5 servicios</strong> en el catálogo. Para registrar el sexto servicio y ofrecer un catálogo completo, sube a un plan superior hoy.
+          </p>
+
+          <div class="my-5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
+            <div class="flex items-center gap-2 text-slate-700 font-semibold">
+              <i class="fas fa-check-circle text-emerald-500"></i>
+              <span>Catálogo de servicios 100% ilimitado</span>
+            </div>
+            <div class="flex items-center gap-2 text-slate-700 font-semibold">
+              <i class="fas fa-check-circle text-emerald-500"></i>
+              <span>Hasta 150 o 300+ reservas cada mes</span>
+            </div>
+            <div class="flex items-center gap-2 text-slate-700 font-semibold">
+              <i class="fas fa-check-circle text-emerald-500"></i>
+              <span>Confirmaciones automáticas por correo y WhatsApp</span>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <button id="upgrade-from-srv-limit-btn" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer">
+              <i class="fas fa-rocket"></i> Ver Planes y Mejorar Ahora
+            </button>
+            <button id="close-srv-limit-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-colors cursor-pointer">
+              Continuar con 5 Servicios
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-srv-limit-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('upgrade-from-srv-limit-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.renderPlansModal({ businessId: currentBiz?.id, currentPlanId: 'free' });
+    });
+  }
+
+  // --- MODAL PARA AGREGAR SERVICIO ---
+  renderNewServiceModal(businessId) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const biz = storage.getBusinessById(businessId);
+    const isFree = !biz?.plan || biz?.plan === 'free';
+    if (isFree && biz?.services && biz.services.length >= 5) {
+      this.renderServiceLimitModal(biz);
+      return;
+    }
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-slate-900">Agregar Nuevo Servicio</h3>
-            <button id="close-srv-modal-btn" class="text-slate-400 hover:text-slate-600">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Agregar Nuevo Servicio</h3>
+              ${isFree ? `
+                <span class="text-[11px] font-bold text-emerald-700">Plan Gratis: Servicio ${(biz?.services?.length || 0) + 1} de 5</span>
+              ` : ''}
+            </div>
+            <button id="close-srv-modal-btn" class="text-slate-400 hover:text-slate-600 cursor-pointer">
               <i class="fas fa-times text-lg"></i>
             </button>
           </div>
@@ -12366,17 +12489,17 @@ class App {
           <form id="new-service-form" class="space-y-4 text-xs sm:text-sm">
             <div>
               <label class="block font-bold text-slate-700 mb-1">Nombre del Servicio *</label>
-              <input type="text" id="srv-name" required placeholder="Ej. Limpieza Facial Profunda" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <input type="text" id="srv-name" required placeholder="Ej. Limpieza Facial Profunda" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Precio (₡ CRC) *</label>
-                <input type="number" id="srv-price" required min="0" step="500" placeholder="Ej. 15000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <input type="number" id="srv-price" required min="0" step="500" placeholder="Ej. 15000" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1">Duración (min) *</label>
-                <select id="srv-duration" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium">
+                <select id="srv-duration" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   <option value="15">15 min</option>
                   <option value="30" selected>30 min</option>
                   <option value="45">45 min</option>
@@ -12389,10 +12512,10 @@ class App {
 
             <div>
               <label class="block font-bold text-slate-700 mb-1">Descripción</label>
-              <textarea id="srv-desc" rows="2" placeholder="Detalles de lo que incluye el servicio..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl"></textarea>
+              <textarea id="srv-desc" rows="2" placeholder="Detalles de lo que incluye el servicio..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
             </div>
 
-            <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all">
+            <button type="submit" id="submit-srv-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer">
               Crear Servicio
             </button>
           </form>
@@ -12406,15 +12529,34 @@ class App {
 
     document.getElementById('new-service-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('srv-name').value;
+      const submitBtn = document.getElementById('submit-srv-btn');
+      const name = document.getElementById('srv-name').value.trim();
       const price = document.getElementById('srv-price').value;
       const duration = document.getElementById('srv-duration').value;
-      const description = document.getElementById('srv-desc').value;
+      const description = document.getElementById('srv-desc').value.trim();
 
-      await storage.addService(businessId, { name, price, duration, description });
-      this.showToast('Servicio agregado al catálogo.', 'success');
-      modalContainer.innerHTML = '';
-      this.renderCurrentView();
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+      }
+
+      try {
+        await storage.addService(businessId, { name, price, duration, description });
+        this.showToast('✅ Servicio agregado al catálogo con éxito.', 'success');
+        modalContainer.innerHTML = '';
+        this.renderCurrentView();
+      } catch (err) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Crear Servicio';
+        }
+        this.showToast(err.message || 'Error al agregar servicio', 'error');
+        if (err.message && (err.message.includes('límite') || err.message.includes('Mejora tu plan') || err.message.includes('5 servicios'))) {
+          modalContainer.innerHTML = '';
+          const currentBiz = storage.getBusinessById(businessId);
+          this.renderServiceLimitModal(currentBiz || { id: businessId, plan: 'free' });
+        }
+      }
     });
   }
 

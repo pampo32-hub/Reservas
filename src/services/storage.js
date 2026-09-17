@@ -812,17 +812,27 @@ class StorageService {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(serviceData)
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Error al agregar servicio');
+        }
         const created = await res.json();
         await this.loadFromApi();
         return created;
       } catch (e) {
-        console.error('Error agregando servicio a API Neon:', e);
+        console.error('Error agregando servicio a API:', e);
+        throw e;
       }
     }
 
     const businesses = this.getBusinesses();
     const business = businesses.find(b => b.id === businessId);
     if (!business) return null;
+
+    const plan = business.plan || 'free';
+    if (plan === 'free' && (business.services && business.services.length >= 5)) {
+      throw new Error('Has alcanzado el límite de 5 servicios del Plan Gratis. Mejora tu plan para agregar servicios ilimitados.');
+    }
 
     const newService = {
       id: `srv-${Date.now()}`,

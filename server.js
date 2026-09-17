@@ -1398,6 +1398,25 @@ app.post('/api/businesses/:id/services', async (req, res) => {
   try {
     const { id: businessId } = req.params;
     const s = req.body;
+
+    // Verificar límite de servicios según el plan
+    const bizRes = await pool.query('SELECT plan FROM reservas_businesses WHERE id = $1', [businessId]);
+    const biz = bizRes.rows[0];
+    const plan = biz ? (biz.plan || 'free') : 'free';
+
+    if (plan === 'free') {
+      const countRes = await pool.query('SELECT COUNT(*) FROM reservas_services WHERE business_id = $1', [businessId]);
+      const currentServicesCount = parseInt(countRes.rows[0]?.count || 0, 10);
+      if (currentServicesCount >= 5) {
+        return res.status(403).json({
+          error: 'Has alcanzado el límite de 5 servicios del Plan Gratis. Mejora tu plan para agregar servicios ilimitados.',
+          upgradeRequired: true,
+          limit: 5,
+          current: currentServicesCount
+        });
+      }
+    }
+
     const newServiceId = `srv-${Date.now()}`;
 
     await pool.query(`
