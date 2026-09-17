@@ -1,12 +1,11 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
-// FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
+// FLAGS DE LA PLATAFORMA: Registro, login y suscripciones activas
 const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
-const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 
 class App {
   constructor() {
@@ -3213,41 +3212,45 @@ class App {
             </div>
 
             <!-- Paso 3: Horarios Disponibles en Tiempo Real -->
-            <div>
+            <div id="booking-slots-section">
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  ${hasMultipleStaff ? '3. Horario Disponible' : '2. Horario Disponible'} (${availability.slots ? availability.slots.length : 0} libres)
+                  ${hasMultipleStaff ? '3. Horario Disponible' : '2. Horario Disponible'} <span id="booking-slots-count-label" class="font-normal text-slate-500">(${availability.slots ? availability.slots.length : 0} libres)</span>
                 </label>
-                ${this.bookingState.selectedTime ? `
-                  <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-200">
-                    Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}
-                  </span>
-                ` : ''}
+                <div id="booking-selected-time-badge">
+                  ${this.bookingState.selectedTime ? `
+                    <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                      <i class="fas fa-clock mr-1"></i> Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}
+                    </span>
+                  ` : ''}
+                </div>
               </div>
 
-              ${availability.isClosed ? `
-                <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
-                  <i class="fas fa-calendar-times text-base"></i>
-                  <span>${availability.reason}</span>
-                </div>
-              ` : availability.slots.length === 0 ? `
-                <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
-                  <i class="fas fa-info-circle text-base"></i>
-                  <span>No hay turnos disponibles para esta fecha o especialista. Intenta con otro día o especialista.</span>
-                </div>
-              ` : `
-                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
-                  ${availability.slots.map(slot => `
-                    <button 
-                      type="button" 
-                      class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center cursor-pointer transition-all ${this.bookingState.selectedTime === slot ? 'selected bg-blue-600 text-white border-blue-600 shadow-md' : ''}"
-                      data-slot="${slot}"
-                    >
-                      ${this.formatTime12h(slot)}
-                    </button>
-                  `).join('')}
-                </div>
-              `}
+              <div id="booking-slots-grid-wrapper">
+                ${availability.isClosed ? `
+                  <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
+                    <i class="fas fa-calendar-times text-base"></i>
+                    <span>${availability.reason}</span>
+                  </div>
+                ` : availability.slots.length === 0 ? `
+                  <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
+                    <i class="fas fa-info-circle text-base"></i>
+                    <span>No hay turnos disponibles para esta fecha o especialista. Intenta con otro día o especialista.</span>
+                  </div>
+                ` : `
+                  <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
+                    ${availability.slots.map(slot => `
+                      <button 
+                        type="button" 
+                        class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center cursor-pointer transition-all ${this.bookingState.selectedTime === slot ? 'selected bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white'}"
+                        data-slot="${slot}"
+                      >
+                        ${this.formatTime12h(slot)}
+                      </button>
+                    `).join('')}
+                  </div>
+                `}
+              </div>
             </div>
 
             <!-- Paso 4: Identificación / Datos del Cliente -->
@@ -3337,13 +3340,132 @@ class App {
 
     document.getElementById('close-modal-btn')?.addEventListener('click', () => this.closeBookingModal());
 
+    // Asignación interactiva de slots sin recargar el modal completo
+    const attachSlotListeners = () => {
+      document.querySelectorAll('.time-slot-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const slot = btn.getAttribute('data-slot');
+          this.bookingState.selectedTime = slot;
+
+          // Actualizar estilos de los botones de horario
+          document.querySelectorAll('.time-slot-btn').forEach(b => {
+            b.classList.remove('selected', 'bg-blue-600', 'text-white', 'border-blue-600', 'shadow-md');
+            b.classList.add('border-slate-200', 'text-slate-700', 'bg-white');
+          });
+          btn.classList.remove('border-slate-200', 'text-slate-700', 'bg-white');
+          btn.classList.add('selected', 'bg-blue-600', 'text-white', 'border-blue-600', 'shadow-md');
+
+          // Actualizar badge de horario elegido
+          const selectedBadge = document.getElementById('booking-selected-time-badge');
+          if (selectedBadge) {
+            selectedBadge.innerHTML = `
+              <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                <i class="fas fa-clock mr-1"></i> Elegido: ${this.formatTime12h(slot)}
+              </span>
+            `;
+          }
+
+          // Habilitar y actualizar botón de envío
+          const submitBtn = document.getElementById('submit-booking-btn');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `
+              <i class="fas fa-check-circle"></i>
+              <span>Confirmar Reserva (${this.formatTime12h(slot)})</span>
+            `;
+          }
+        });
+      });
+    };
+
+    // Actualización de slots disponibles al cambiar fecha o especialista (sin flasheo del modal)
+    const updateSlotsView = () => {
+      const currentSelectedStaff = this.bookingState.staffId || 'any';
+      const curAvailability = storage.getAvailableSlots(
+        biz.id,
+        this.bookingState.selectedDate,
+        service.duration,
+        null,
+        currentSelectedStaff,
+        service.id
+      );
+
+      const countLabel = document.getElementById('booking-slots-count-label');
+      if (countLabel) {
+        countLabel.textContent = `(${curAvailability.slots ? curAvailability.slots.length : 0} libres)`;
+      }
+
+      const selectedBadge = document.getElementById('booking-selected-time-badge');
+      if (selectedBadge) {
+        selectedBadge.innerHTML = this.bookingState.selectedTime
+          ? `<span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"><i class="fas fa-clock mr-1"></i> Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}</span>`
+          : '';
+      }
+
+      const slotsGrid = document.getElementById('booking-slots-grid-wrapper');
+      if (slotsGrid) {
+        if (curAvailability.isClosed) {
+          slotsGrid.innerHTML = `
+            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
+              <i class="fas fa-calendar-times text-base"></i>
+              <span>${curAvailability.reason}</span>
+            </div>
+          `;
+        } else if (!curAvailability.slots || curAvailability.slots.length === 0) {
+          slotsGrid.innerHTML = `
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
+              <i class="fas fa-info-circle text-base"></i>
+              <span>No hay turnos disponibles para esta fecha o especialista. Intenta con otro día o especialista.</span>
+            </div>
+          `;
+        } else {
+          slotsGrid.innerHTML = `
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
+              ${curAvailability.slots.map(slot => `
+                <button 
+                  type="button" 
+                  class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center cursor-pointer transition-all ${this.bookingState.selectedTime === slot ? 'selected bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white'}"
+                  data-slot="${slot}"
+                >
+                  ${this.formatTime12h(slot)}
+                </button>
+              `).join('')}
+            </div>
+          `;
+          attachSlotListeners();
+        }
+      }
+
+      const submitBtn = document.getElementById('submit-booking-btn');
+      if (submitBtn) {
+        if (!this.bookingState.selectedTime) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>Confirmar Reserva</span>
+          `;
+        }
+      }
+    };
+
+    attachSlotListeners();
+
     // Selección de Especialista
     document.querySelectorAll('.staff-select-card').forEach(card => {
       card.addEventListener('click', () => {
         const staffId = card.getAttribute('data-staff-id');
         this.bookingState.staffId = staffId;
         this.bookingState.selectedTime = null;
-        this.renderBookingModal();
+
+        // Actualizar visualmente la tarjeta activa
+        document.querySelectorAll('.staff-select-card').forEach(c => {
+          c.classList.remove('bg-blue-50', 'border-blue-600', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
+          c.classList.add('bg-slate-50/70', 'border-slate-200', 'text-slate-700');
+        });
+        card.classList.remove('bg-slate-50/70', 'border-slate-200', 'text-slate-700');
+        card.classList.add('bg-blue-50', 'border-blue-600', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
+
+        updateSlotsView();
       });
     });
 
@@ -3351,14 +3473,7 @@ class App {
     dateInput?.addEventListener('change', (e) => {
       this.bookingState.selectedDate = e.target.value;
       this.bookingState.selectedTime = null;
-      this.renderBookingModal();
-    });
-
-    document.querySelectorAll('.time-slot-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.bookingState.selectedTime = btn.getAttribute('data-slot');
-        this.renderBookingModal();
-      });
+      updateSlotsView();
     });
 
     const form = document.getElementById('booking-form');
@@ -3406,11 +3521,7 @@ class App {
 
       this.closeBookingModal();
       this.renderSuccessBookingModal(newAppointment, biz);
-      if (IS_DEMO_BOOKING_MODE) {
-        this.showToast('¡Prueba de reserva completada con éxito!', 'info');
-      } else {
-        this.showToast(initialStatus === 'confirmed' ? '¡Reserva confirmada con éxito!' : '¡Solicitud de reserva enviada con éxito!', 'success');
-      }
+      this.showToast('¡Prueba de reserva completada con éxito!', 'info');
     });
   }
 
@@ -3421,176 +3532,50 @@ class App {
 
     const isPending = appointment.status === 'pending';
 
-    // MODO PRUEBA / SIMULACIÓN DE RESERVA (Se activa con IS_DEMO_BOOKING_MODE = true)
-    if (IS_DEMO_BOOKING_MODE) {
-      modalContainer.innerHTML = `
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-          <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
-            <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
-              <i class="fas fa-check-circle"></i>
-            </div>
-
-            <span class="text-xs uppercase font-extrabold text-blue-600 tracking-wider">
-              ¡Simulación de Reserva Exitosa!
-            </span>
-            <h3 class="text-2xl font-black text-slate-900 mt-1">
-              Demostración de Agendamiento
-            </h3>
-            <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
-
-            <!-- Aviso Informativo de Prelanzamiento -->
-            <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
-              <div class="flex items-center gap-2 font-black text-blue-950 text-xs sm:text-sm">
-                <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shadow-2xs">
-                  <i class="fas fa-bullhorn"></i>
-                </div>
-                <span>Aviso Informativo • Modo Prelanzamiento</span>
-              </div>
-              
-              <p class="text-xs text-slate-700 leading-relaxed font-medium">
-                ¡Has completado con éxito esta prueba de reserva en <strong>Reservas CR</strong>!
-              </p>
-
-              <div class="p-3.5 bg-white/95 rounded-xl border border-blue-100 text-slate-800 text-[11px] leading-relaxed space-y-2 shadow-2xs">
-                <div class="font-extrabold text-blue-900 flex items-center gap-1.5 text-xs">
-                  <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
-                  <i class="fas fa-envelope text-blue-600 text-sm"></i>
-                  <span>¿Qué sucede cuando la plataforma esté 100% activa?</span>
-                </div>
-                <p class="text-slate-600">
-                  Al confirmar una reserva con la página activa, <strong>en ese momento recibirías automáticamente un mensaje de texto por WhatsApp y un correo electrónico</strong> confirmando la cita, tu cita quedaría activada en tiempo real en la agenda del comercio y recibirías recordatorios previos a tu turno.
-                </p>
-                <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
-                  <i class="fas fa-check text-emerald-600"></i>
-                  <span>No se ha realizado ningún cobro ni envío de mensajes reales durante esta prueba.</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
-              <div class="flex justify-between">
-                <span class="text-slate-500">Establecimiento:</span>
-                <span class="font-bold text-slate-800">${business.name}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-500">Servicio:</span>
-                <span class="font-bold text-slate-800">${appointment.serviceName}</span>
-              </div>
-              ${appointment.staffName ? `
-                <div class="flex justify-between">
-                  <span class="text-slate-500">Especialista:</span>
-                  <span class="font-bold text-blue-700 flex items-center gap-1">
-                    <i class="fas fa-user-tag text-blue-500 text-[11px]"></i>
-                    ${appointment.staffName}
-                  </span>
-                </div>
-              ` : ''}
-              <div class="flex justify-between">
-                <span class="text-slate-500">Fecha y Hora:</span>
-                <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-500">Estado de prueba:</span>
-                <span class="font-bold text-blue-700 flex items-center gap-1">
-                  <i class="fas fa-flask text-[11px]"></i>
-                  Simulación Prelanzamiento
-                </span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-slate-500">Cliente:</span>
-                <span class="font-bold text-slate-800">${appointment.clientName}</span>
-              </div>
-              <div class="flex justify-between pt-2 border-t border-slate-200">
-                <span class="text-slate-500 font-medium">Precio del servicio:</span>
-                <span class="font-black text-sm text-slate-900">${this.formatColones(appointment.servicePrice)}</span>
-              </div>
-            </div>
-
-            <!-- Sincronización con Calendario Personal -->
-            <div class="mt-4 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-left space-y-2 animate-fade-in">
-              <div class="flex items-center gap-2">
-                <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
-                <span class="text-xs font-bold text-indigo-950">Añadir a tu Calendario Personal</span>
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <a 
-                  href="${this.generateGoogleCalendarUrl(appointment, business)}" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
-                  title="Sincronizar directamente con Google Calendar"
-                >
-                  <i class="fab fa-google text-rose-500"></i>
-                  <span>Google Calendar</span>
-                </a>
-                <button 
-                  type="button" 
-                  id="success-download-ics-btn"
-                  class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
-                  title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
-                >
-                  <i class="fas fa-calendar-alt text-blue-600"></i>
-                  <span>Apple / Outlook (.ics)</span>
-                </button>
-              </div>
-            </div>
-
-            <div class="mt-6 flex flex-col gap-2">
-              <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer">
-                Ver Mis Reservas
-              </button>
-              <button id="success-done-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
-                Seguir Explorando
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-
-      document.getElementById('success-download-ics-btn')?.addEventListener('click', () => {
-        this.downloadIcsFile(appointment, business);
-      });
-      document.getElementById('success-view-bookings-btn')?.addEventListener('click', () => {
-        modalContainer.innerHTML = '';
-        this.navigateTo('my-client-bookings');
-      });
-      document.getElementById('success-done-btn')?.addEventListener('click', () => {
-        modalContainer.innerHTML = '';
-        this.renderCurrentView();
-      });
-      return;
-    }
-
-    // MODO REAL ACTIVO: Confirmación de Reserva Real
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
-          <div class="w-16 h-16 ${isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
-            <i class="fas ${isPending ? 'fa-clock' : 'fa-check-circle'}"></i>
+          <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
+            <i class="fas fa-check-circle"></i>
           </div>
 
-          <span class="text-xs uppercase font-extrabold ${isPending ? 'text-amber-600' : 'text-emerald-600'} tracking-wider">
-            ${isPending ? 'Solicitud de Turno Recibida' : '¡Reserva Confirmada con Éxito!'}
+          <span class="text-xs uppercase font-extrabold text-blue-600 tracking-wider">
+            ¡Simulación de Reserva Exitosa!
           </span>
           <h3 class="text-2xl font-black text-slate-900 mt-1">
-            ${isPending ? 'Cita en Aprobación' : 'Tu Cita ha sido Agendada'}
+            Demostración de Agendamiento
           </h3>
-          <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">#${appointment.id.toUpperCase()}</strong></p>
+          <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${appointment.id.toUpperCase()}</strong></p>
 
-          <!-- Tarjeta de Confirmación de Notificaciones -->
-          <div class="mt-4 p-4 ${isPending ? 'bg-amber-50/80 border-amber-200' : 'bg-emerald-50/80 border-emerald-200'} rounded-2xl border text-left space-y-2">
-            <div class="flex items-center gap-2 font-bold ${isPending ? 'text-amber-900' : 'text-emerald-950'} text-xs">
-              <i class="fas ${isPending ? 'fa-bell text-amber-600' : 'fa-check-double text-emerald-600'} text-sm"></i>
-              <span>${isPending ? 'Pendiente de confirmación por el comercio' : 'Notificaciones y Recordatorios Activos'}</span>
+          <!-- Aviso Informativo de Prelanzamiento -->
+          <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
+            <div class="flex items-center gap-2 font-black text-blue-950 text-xs sm:text-sm">
+              <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shadow-2xs">
+                <i class="fas fa-bullhorn"></i>
+              </div>
+              <span>Aviso Informativo • Modo Prelanzamiento</span>
             </div>
-            <p class="text-slate-700 text-xs leading-relaxed">
-              ${isPending 
-                ? 'El establecimiento revisará tu solicitud de turno y confirmará tu cita a la brevedad. Te avisaremos cuando sea aprobada.' 
-                : 'La cita ha quedado registrada en tiempo real en la agenda del comercio. Recibirás los recordatorios previos a tu cita.'}
+            
+            <p class="text-xs text-slate-700 leading-relaxed font-medium">
+              ¡Has completado con éxito esta prueba de reserva en <strong>Reservas CR</strong>!
             </p>
+
+            <div class="p-3.5 bg-white/95 rounded-xl border border-blue-100 text-slate-800 text-[11px] leading-relaxed space-y-2 shadow-2xs">
+              <div class="font-extrabold text-blue-900 flex items-center gap-1.5 text-xs">
+                <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
+                <i class="fas fa-envelope text-blue-600 text-sm"></i>
+                <span>¿Qué sucede cuando la plataforma esté 100% activa?</span>
+              </div>
+              <p class="text-slate-600">
+                Al confirmar una reserva con la página activa, <strong>en ese momento recibirías automáticamente un mensaje de texto por WhatsApp y un correo electrónico</strong> confirmando la cita, tu cita quedaría activada en tiempo real en la agenda del comercio y recibirías recordatorios previos a tu turno.
+              </p>
+              <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
+                <i class="fas fa-check text-emerald-600"></i>
+                <span>No se ha realizado ningún cobro ni envío de mensajes reales durante esta prueba.</span>
+              </div>
+            </div>
           </div>
 
-          <!-- Resumen de la Cita -->
           <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
             <div class="flex justify-between">
               <span class="text-slate-500">Establecimiento:</span>
@@ -3614,10 +3599,10 @@ class App {
               <span class="font-bold text-blue-600">${this.formatDateDMY(appointment.date)} a las ${this.formatTime12h(appointment.time)}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-slate-500">Estado:</span>
-              <span class="font-bold ${isPending ? 'text-amber-700 bg-amber-50' : 'text-emerald-700 bg-emerald-50'} px-2 py-0.5 rounded-md flex items-center gap-1">
-                <i class="fas ${isPending ? 'fa-hourglass-half' : 'fa-check-circle'} text-[10px]"></i>
-                ${isPending ? 'Pendiente de Aprobación' : 'Confirmada en Agenda'}
+              <span class="text-slate-500">Estado de prueba:</span>
+              <span class="font-bold text-blue-700 flex items-center gap-1">
+                <i class="fas fa-flask text-[11px]"></i>
+                Simulación Prelanzamiento
               </span>
             </div>
             <div class="flex justify-between">
@@ -9173,7 +9158,6 @@ class App {
                               id="dev-wa-waba-id" 
                               value="${waSettings.wabaId || ''}" 
                               placeholder="Ej. 102938475610293" 
-                              class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 
                               class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                             >
                           </div>
