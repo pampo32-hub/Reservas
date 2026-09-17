@@ -38,6 +38,8 @@ class App {
     // Estado del panel de dueño
     this.activeDashboardTab = 'appointments'; // 'appointments' | 'blocked-slots' | 'services' | 'team' | 'profile' | 'schedule' | 'manual'
     this.ownerAgendaViewMode = 'list'; // 'list' | 'calendar'
+    this.ownerAppointmentSort = (typeof localStorage !== 'undefined' && localStorage.getItem('reservas_owner_sort_order')) || 'date-asc';
+    this.ownerCalendarTheme = (typeof localStorage !== 'undefined' && localStorage.getItem('reservas_calendar_theme')) || 'celeste';
     this.ownerCalendarCurrentMonth = new Date();
     this.ownerCalendarExpandedDays = new Set();
 
@@ -750,59 +752,47 @@ class App {
             </div>
           </div>
 
-          <!-- MÓVIL (< md): Controles Compactos Superiores -->
-          <div class="flex md:hidden items-center gap-1.5">
+          <!-- MÓVIL (< md): Controles Compactos Superiores Optimizados -->
+          <div class="flex md:hidden items-center gap-1.5 shrink-0 max-w-[62vw] justify-end overflow-x-auto no-scrollbar py-1">
             ${devUser ? `
-              <button id="mobile-top-dev-badge" class="px-2.5 py-1 rounded-lg bg-slate-900 text-amber-400 text-[11px] font-black border border-slate-700 flex items-center gap-1 app-touch-btn" title="Panel Developer">
+              <button id="mobile-top-dev-badge" class="px-2.5 py-1 rounded-xl bg-slate-900 text-amber-400 text-[11px] font-black border border-slate-700 flex items-center gap-1 app-touch-btn shrink-0 shadow-xs" title="Panel Developer">
                 <i class="fas fa-shield-alt text-[10px]"></i>
                 <span>DEV</span>
               </button>
             ` : ''}
 
-            ${clientUser && !devUser ? `
-              <button id="mobile-top-profile-badge" class="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/60 flex items-center gap-1.5 app-touch-btn">
-                <i class="fas fa-user-circle text-xs text-blue-600"></i>
-                <span class="max-w-[80px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil'}</span>
-              </button>
-            ` : ''}
-
             ${bizUser && !devUser ? `
-              <button id="mobile-top-biz-badge" class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/60 flex items-center gap-1.5 app-touch-btn">
+              <button id="mobile-top-biz-badge" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs">
                 <i class="fas fa-store text-xs text-indigo-600"></i>
-                <span class="max-w-[80px] truncate">${activeBiz ? activeBiz.name : 'Negocio'}</span>
+                <span class="max-w-[100px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
               </button>
             ` : ''}
 
-            <!-- Botón Únete / Para Negocios (Móvil) -->
-            <button id="mobile-top-landing-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 via-sky-500 to-emerald-500 shadow-xs flex items-center gap-1 app-touch-btn" title="Para Negocios">
-              <i class="fas fa-rocket text-xs"></i>
-              <span>Negocios</span>
-            </button>
+            ${clientUser && !bizUser && !devUser ? `
+              <button id="mobile-top-profile-badge" class="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs">
+                <i class="fas fa-user-circle text-xs text-blue-600"></i>
+                <span class="max-w-[90px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mis Citas'}</span>
+              </button>
+            ` : ''}
+
+            ${!clientUser && !bizUser && !devUser ? `
+              <!-- Botón Pre-Registro 15 Días Gratis (Móvil) -->
+              <button id="mobile-top-prereg-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 border border-amber-300 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0" title="Pre-regístrate y obtén 15 Días Gratis">
+                <i class="fas fa-gift text-slate-950 text-xs"></i>
+                <span>15 Días Gratis</span>
+              </button>
+
+              <!-- Botón Únete / Para Negocios (Móvil) -->
+              <button id="mobile-top-landing-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-xs flex items-center gap-1 app-touch-btn shrink-0" title="Para Negocios">
+                <i class="fas fa-rocket text-xs"></i>
+                <span>Negocios</span>
+              </button>
+            ` : ''}
 
             <!-- Botón Instalar App PWA (Móvil) -->
-            <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer" title="Instalar App en el Celular">
+            <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0" title="Instalar App en el Celular">
               <i class="fas fa-download text-blue-600 text-xs"></i>
-              <span>App</span>
             </button>
-
-            <!-- Botón Pre-Registro 15 Días Gratis (Móvil) -->
-            <button id="mobile-top-prereg-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 border border-amber-300/80 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer animate-pulse" title="Pre-regístrate y obtén 15 Días Gratis">
-              <i class="fas fa-gift text-slate-950 text-xs"></i>
-              <span>15 Días Gratis</span>
-            </button>
-
-            <!-- Botón Planes y Suscripciones (Móvil) -->
-            <button id="mobile-top-plans-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 flex items-center gap-1 app-touch-btn" title="Ver Planes de Suscripción">
-              <i class="fas fa-crown text-amber-600 text-xs"></i>
-              <span>Planes</span>
-            </button>
-
-            ${!clientUser && !bizUser && !devUser && SHOW_LOGIN_BUTTON ? `
-              <button id="mobile-top-login-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn">
-                <i class="fas fa-sign-in-alt text-xs"></i>
-                <span>Entrar</span>
-              </button>
-            ` : ''}
           </div>
 
           <!-- ESCRITORIO PC (>= md): Navigation & Auth Controls Completos -->
@@ -4340,30 +4330,30 @@ class App {
             </div>
           </div>
 
-          <div class="flex items-center gap-2 flex-wrap">
-            <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer" title="Abrir y descargar Manual de Usuario en PDF">
+          <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Abrir y descargar Manual de Usuario en PDF">
               <i class="fas fa-book-open text-xs"></i>
-              <span>Manual de Usuario (PDF)</span>
+              <span>Manual (PDF)</span>
             </a>
-            <button id="dash-logout-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
-              <i class="fas fa-sign-out-alt mr-1"></i> Salir del Panel
+            <button id="dash-logout-btn" class="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1">
+              <i class="fas fa-sign-out-alt mr-1"></i> Salir
             </button>
           </div>
         </div>
 
         <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
         ${(currentBiz.subscriptionStatus === 'pending_sinpe' || currentBiz.subscription_status === 'pending_sinpe') ? `
-          <div class="bg-amber-500/10 border-2 border-amber-400 p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md">
+          <div class="bg-amber-500/10 border-2 border-amber-400 p-4 sm:p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md">
             <div class="flex items-center gap-3.5">
               <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
                 <i class="fas fa-clock"></i>
               </div>
               <div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md">Activación SINPE Pendiente</span>
                   <span class="text-xs font-bold text-amber-900">${planConfig.name}</span>
                 </div>
-                <p class="text-xs text-amber-900 mt-1">
+                <p class="text-xs text-amber-900 mt-1 leading-relaxed">
                   Tu comercio está pendiente de verificación SINPE. Transfiere <strong>~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))} CRC</strong> al <strong>7143-3852</strong> (Juan Jose Jiménez) y envía el comprobante por WhatsApp.
                 </p>
               </div>
@@ -4378,7 +4368,7 @@ class App {
         ` : ''}
 
         <!-- Banner de Suscripción y Cuota Mensual -->
-        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
           <div class="space-y-1.5 max-w-xl">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
@@ -4389,8 +4379,8 @@ class App {
                 ${planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`}
               </span>
             </div>
-            <h3 class="text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
-            <p class="text-xs text-slate-300">
+            <h3 class="text-base sm:text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
               ${isUnlimited 
                 ? `🚀 Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
                 : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas permitidas este mes.`}
@@ -4422,7 +4412,7 @@ class App {
               </div>
             `}
 
-            <button id="dash-change-plan-btn" class="w-full py-2 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+            <button id="dash-change-plan-btn" class="w-full py-2.5 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
               <i class="fas fa-arrow-up-right-from-square text-xs"></i>
               <span>Cambiar o Mejorar Plan</span>
             </button>
@@ -4433,70 +4423,70 @@ class App {
         <div id="push-notification-container"></div>
 
         <!-- Metric Stat Cards -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div class="flex items-center justify-between text-slate-500 mb-2">
-              <span class="text-xs font-semibold uppercase">Reservas Hoy</span>
-              <i class="fas fa-calendar-day text-blue-600"></i>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Reservas Hoy</span>
+              <i class="fas fa-calendar-day text-blue-600 text-sm"></i>
             </div>
-            <span class="text-2xl font-black text-slate-900">${todayAppointments.length}</span>
-            <span class="text-[11px] text-slate-400 block mt-1">turnos agendados</span>
+            <span class="text-xl sm:text-2xl font-black text-slate-900">${todayAppointments.length}</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">turnos agendados</span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div class="flex items-center justify-between text-slate-500 mb-2">
-              <span class="text-xs font-semibold uppercase">Total Reservas</span>
-              <i class="fas fa-users text-indigo-600"></i>
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Total Reservas</span>
+              <i class="fas fa-users text-indigo-600 text-sm"></i>
             </div>
-            <span class="text-2xl font-black text-slate-900">${appointments.length}</span>
-            <span class="text-[11px] text-slate-400 block mt-1">histórico total</span>
+            <span class="text-xl sm:text-2xl font-black text-slate-900">${appointments.length}</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">histórico total</span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div class="flex items-center justify-between text-slate-500 mb-2">
-              <span class="text-xs font-semibold uppercase">Ingresos Est.</span>
-              <span class="font-extrabold text-emerald-600 text-sm">CRC</span>
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Ingresos Est.</span>
+              <span class="font-extrabold text-emerald-600 text-xs sm:text-sm">CRC</span>
             </div>
-            <span class="text-2xl font-black text-slate-900">${this.formatColones(estimatedRevenue)}</span>
-            <span class="text-[11px] text-emerald-600 block mt-1">reservas confirmadas</span>
+            <span class="text-lg sm:text-2xl font-black text-slate-900 truncate block">${this.formatColones(estimatedRevenue)}</span>
+            <span class="text-[10px] sm:text-[11px] text-emerald-600 block mt-0.5">confirmadas</span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <div class="flex items-center justify-between text-slate-500 mb-2">
-              <span class="text-xs font-semibold uppercase">Servicios</span>
-              <i class="fas fa-list text-amber-600"></i>
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Servicios</span>
+              <i class="fas fa-list text-amber-600 text-sm"></i>
             </div>
-            <span class="text-2xl font-black text-slate-900">${currentBiz.services ? currentBiz.services.length : 0}</span>
-            <span class="text-[11px] text-slate-400 block mt-1">activos en catálogo</span>
+            <span class="text-xl sm:text-2xl font-black text-slate-900">${currentBiz.services ? currentBiz.services.length : 0}</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">en catálogo</span>
           </div>
         </div>
 
-        <!-- Tabs Navigation -->
-        <div class="flex items-center gap-2 border-b border-slate-200 mb-6 overflow-x-auto pb-2">
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
+        <!-- Tabs Navigation con Scroll Táctil Suave y Sin Scrollbar -->
+        <div class="flex items-center gap-2 border-b border-slate-200 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
             <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
           </button>
           ${(!isFree && !isBasic) ? `
-            <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
               <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
             </button>
           ` : ''}
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
             <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="team">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="team">
             <i class="fas fa-users-cog mr-1.5 text-indigo-500"></i> Equipo y Especialistas
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
             <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
             <i class="fas fa-clock mr-1.5"></i> Horarios de Atención
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
             <i class="fas fa-sliders-h mr-1.5 text-indigo-500"></i> Configurar Negocio
           </button>
-          <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="manual">
+          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="manual">
             <i class="fas fa-book-open mr-1.5 text-amber-500"></i> Manual & Ayuda
           </button>
         </div>
@@ -4747,6 +4737,7 @@ class App {
     if (this.activeDashboardTab === 'appointments') {
       const filter = this.ownerAppointmentFilter || 'all';
       const staffFilter = this.ownerStaffFilter || 'all';
+      const sortOrder = this.ownerAppointmentSort || (typeof localStorage !== 'undefined' && localStorage.getItem('reservas_owner_sort_order')) || 'date-asc';
       const businessStaff = storage.getBusinessStaffSync(currentBiz.id) || [];
 
       let filteredAppointments = appointments;
@@ -4767,6 +4758,30 @@ class App {
         filteredAppointments = filteredAppointments.filter(a => !a.staffId);
       } else if (staffFilter && staffFilter !== 'all') {
         filteredAppointments = filteredAppointments.filter(a => a.staffId === staffFilter);
+      }
+
+      // Ordenamiento de Citas (Por Fecha/Hora de Turno vs Orden de Llegada/Registro)
+      if (sortOrder === 'arrival-desc') {
+        filteredAppointments = [...filteredAppointments].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (timeB !== timeA) return timeB - timeA;
+          return (b.id || '').localeCompare(a.id || '');
+        });
+      } else if (sortOrder === 'arrival-asc') {
+        filteredAppointments = [...filteredAppointments].sort((a, b) => {
+          const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (timeA !== timeB) return timeA - timeB;
+          return (a.id || '').localeCompare(b.id || '');
+        });
+      } else {
+        // 'date-asc' (Por fecha y hora programada de la cita)
+        filteredAppointments = [...filteredAppointments].sort((a, b) => {
+          const dateComp = (a.date || '').localeCompare(b.date || '');
+          if (dateComp !== 0) return dateComp;
+          return (a.time || '').localeCompare(b.time || '');
+        });
       }
 
       const pendingCount = appointments.filter(a => a.status === 'pending').length;
@@ -4848,7 +4863,10 @@ class App {
           </div>
 
           <!-- Filtros de Estado, Selector de Vista (Lista / Calendario), Especialista y Botón de Bloqueo Rápido -->
+          <!-- Filtros de Estado, Selector de Vista (Lista / Calendario), Ordenamiento y Especialista -->
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-6">
+          <!-- Filtros de Estado, Selector de Vista (Lista / Calendario) y Botón de Bloqueo Rápido -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
             <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap">
               <!-- Switcher Vista Lista vs Calendario -->
               <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0 mr-1">
@@ -4880,6 +4898,18 @@ class App {
             </div>
 
             <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+              <!-- Selector de Ordenamiento (Solo en Vista de Lista) -->
+              ${this.ownerAgendaViewMode !== 'calendar' ? `
+                <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs" title="Criterio de orden de las citas">
+                  <i class="fas fa-arrow-down-short-wide text-slate-400 text-xs"></i>
+                  <select id="owner-sort-order-select" class="bg-transparent text-xs font-bold text-slate-700 focus:outline-none cursor-pointer">
+                    <option value="date-asc" ${sortOrder === 'date-asc' ? 'selected' : ''}>📅 Fecha y Hora de Cita</option>
+                    <option value="arrival-desc" ${sortOrder === 'arrival-desc' ? 'selected' : ''}>🕒 Orden de Llegada (Nuevas primero)</option>
+                    <option value="arrival-asc" ${sortOrder === 'arrival-asc' ? 'selected' : ''}>⏳ Orden de Llegada (Antiguas primero)</option>
+                  </select>
+                </div>
+              ` : ''}
+
               ${businessStaff.length > 0 ? `
                 <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-2xs">
                   <i class="fas fa-user-tag text-slate-400 text-xs"></i>
@@ -4894,6 +4924,8 @@ class App {
               ` : ''}
 
               <button id="quick-manage-slots-btn" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
+            <div class="flex items-center gap-2 shrink-0">
+              <button id="quick-manage-slots-btn" class="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
                 <i class="fas fa-calendar-times"></i> Bloquear / Liberar Horas
               </button>
             </div>
@@ -4903,6 +4935,46 @@ class App {
             <!-- VISTA DE CALENDARIO -->
             ${this.renderOwnerCalendarView(currentBiz, appointments, filteredAppointments, businessStaff)}
           ` : `
+            <!-- BARRA DESTACADA DE ORDENAMIENTO Y FILTROS (VISTA LISTA) -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 mb-5 shadow-2xs">
+              <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <i class="fas fa-list-check text-blue-600 text-sm"></i>
+                <span>Mostrando <strong class="text-blue-600 font-extrabold">${filteredAppointments.length}</strong> de ${appointments.length} citas</span>
+              </div>
+
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                <!-- Selector de Ordenamiento -->
+                <div class="flex items-center justify-between sm:justify-start gap-2 bg-white px-3.5 py-2 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all shadow-2xs">
+                  <label for="owner-sort-order-select" class="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-arrow-down-short-wide text-blue-600"></i>
+                    <span>Ordenar por:</span>
+                  </label>
+                  <select id="owner-sort-order-select" class="bg-transparent text-xs font-extrabold text-blue-700 focus:outline-none cursor-pointer">
+                    <option value="date-asc" ${sortOrder === 'date-asc' ? 'selected' : ''}>📅 Fecha y Hora de Cita</option>
+                    <option value="arrival-desc" ${sortOrder === 'arrival-desc' ? 'selected' : ''}>🕒 Orden de Llegada (Nuevas primero)</option>
+                    <option value="arrival-asc" ${sortOrder === 'arrival-asc' ? 'selected' : ''}>⏳ Orden de Llegada (Antiguas primero)</option>
+                  </select>
+                </div>
+
+                <!-- Filtro de Especialista si tiene colaboradores -->
+                ${businessStaff.length > 0 ? `
+                  <div class="flex items-center justify-between sm:justify-start gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 transition-all shadow-2xs">
+                    <label for="owner-staff-filter-select" class="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                      <i class="fas fa-user-tag text-indigo-600"></i>
+                      <span>Especialista:</span>
+                    </label>
+                    <select id="owner-staff-filter-select" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                      <option value="all" ${staffFilter === 'all' ? 'selected' : ''}>Todos los Especialistas</option>
+                      <option value="unassigned" ${staffFilter === 'unassigned' ? 'selected' : ''}>Sin Asignar / General</option>
+                      ${businessStaff.map(st => `
+                        <option value="${st.id}" ${staffFilter === st.id ? 'selected' : ''}>${st.name} (${st.roleTitle || 'Especialista'})</option>
+                      `).join('')}
+                    </select>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+
             <!-- VISTA DE LISTA / TABLA -->
             ${filteredAppointments.length === 0 ? `
               <div class="text-center py-12 text-slate-400">
@@ -4910,7 +4982,104 @@ class App {
                 <p class="text-sm font-semibold">No hay reservas en esta categoría o filtro de especialista.</p>
               </div>
             ` : `
-              <div class="overflow-x-auto">
+              <!-- 1. VISTA MÓVIL: Tarjetas Nativas para Celulares (< md) -->
+              <div class="block md:hidden space-y-3.5">
+                ${filteredAppointments.map(apt => `
+                  <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs space-y-3">
+                    <!-- Cabecera Tarjeta Móvil -->
+                    <div class="flex items-start justify-between gap-2">
+                      <div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs font-black font-mono">
+                          <i class="far fa-clock text-blue-600"></i> ${this.formatTime12h(apt.time)}
+                        </span>
+                        <div class="text-[11px] font-bold text-slate-500 mt-1">${this.formatDateDMY(apt.date)}</div>
+                        ${(sortOrder.startsWith('arrival') && apt.createdAt) ? `
+                          <div class="text-[9.5px] text-slate-400 font-medium mt-0.5">
+                            <i class="fas fa-history text-[9px] text-blue-500"></i> Creada: ${new Date(apt.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        ` : ''}
+                      </div>
+                      <span class="badge-status badge-status-${apt.status} text-[10px]">
+                        ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
+                      </span>
+                    </div>
+
+                    <!-- Datos Cliente y Servicio -->
+                    <div class="space-y-1.5 pt-2 border-t border-slate-200/80">
+                      <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-sm text-slate-900">${this.escapeHtml(apt.clientName)}</span>
+                        <span class="font-black text-sm text-emerald-600">${this.formatColones(apt.servicePrice)}</span>
+                      </div>
+                      <div class="text-xs text-slate-700 font-medium">
+                        <strong>Servicio:</strong> ${this.escapeHtml(apt.serviceName)} (${apt.serviceDuration}m)
+                      </div>
+                      <div class="flex items-center justify-between text-xs text-slate-500">
+                        <span class="inline-flex items-center gap-1 bg-white px-2 py-0.5 rounded-md border border-slate-200 font-medium">
+                          <i class="fas fa-user-tag text-blue-500 text-[10px]"></i> ${this.escapeHtml(apt.staffName || 'General')}
+                        </span>
+                        ${apt.clientPhone ? `
+                          <a href="tel:${apt.clientPhone}" class="text-blue-600 font-bold hover:underline flex items-center gap-1">
+                            <i class="fas fa-phone-alt text-[10px]"></i> ${apt.clientPhone}
+                          </a>
+                        ` : ''}
+                      </div>
+                      ${apt.notes ? `<p class="text-[11px] text-slate-500 italic bg-white p-2.5 rounded-xl border border-slate-100 mt-1">"${this.escapeHtml(apt.notes)}"</p>` : ''}
+                    </div>
+
+                    <!-- Acciones en Celular (Botones Grandes y Accesibles) -->
+                    <div class="pt-2 border-t border-slate-200/80 grid grid-cols-2 gap-2">
+                      ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                        <button class="status-change-btn py-2.5 px-3 text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}" data-status="confirmed">
+                          <i class="fas fa-check-circle"></i> Aceptar
+                        </button>
+                      ` : ''}
+
+                      ${(apt.status === 'confirmed' || apt.status === 'pending') ? `
+                        <button class="status-change-btn py-2.5 px-3 text-indigo-800 bg-indigo-100 hover:bg-indigo-200 border border-indigo-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}" data-status="completed">
+                          <i class="fas fa-clipboard-check"></i> Completar
+                        </button>
+                      ` : ''}
+
+                      <button class="edit-appointment-btn py-2.5 px-3 text-blue-800 bg-blue-100 hover:bg-blue-200 border border-blue-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}">
+                        <i class="fas fa-calendar-alt"></i> Modificar
+                      </button>
+
+                      ${apt.status !== 'cancelled' ? `
+                        <button class="status-change-btn py-2.5 px-3 text-rose-800 bg-rose-100 hover:bg-rose-200 border border-rose-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}" data-status="cancelled">
+                          <i class="fas fa-ban"></i> Cancelar
+                        </button>
+                      ` : `
+                        <button class="delete-apt-btn py-2.5 px-3 text-slate-700 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}">
+                          <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                      `}
+                    </div>
+
+                    <!-- Enlaces de WhatsApp y Sincronización Calendario en Móvil -->
+                    <div class="flex items-center justify-between pt-1 text-xs">
+                      ${apt.clientPhone ? `
+                        <a href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60">
+                          <i class="fab fa-whatsapp text-emerald-600"></i> WhatsApp
+                        </a>
+                      ` : '<span></span>'}
+                      <div class="flex items-center gap-1.5">
+                        <a href="${this.generateGoogleCalendarUrl(apt, currentBiz)}" target="_blank" rel="noopener noreferrer" class="text-slate-600 hover:text-rose-600 font-bold flex items-center gap-1 text-[11px] bg-white px-2 py-1 rounded-lg border border-slate-200">
+                          <i class="fab fa-google text-rose-500"></i> Google
+                        </a>
+                        <button type="button" class="owner-download-ics-btn text-slate-600 hover:text-blue-600 font-bold flex items-center gap-1 text-[11px] bg-white px-2 py-1 rounded-lg border border-slate-200 cursor-pointer" data-apt-id="${apt.id}">
+                          <i class="fas fa-download text-blue-600"></i> .ICS
+                        </button>
+                        <button class="delete-apt-btn p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all inline-flex items-center justify-center cursor-pointer" data-apt-id="${apt.id}" title="Eliminar registro">
+                          <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- 2. VISTA ESCRITORIO: Tabla Completa (>= md) -->
+              <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left text-xs text-slate-700">
                   <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
                     <tr>
@@ -4929,6 +5098,11 @@ class App {
                         <td class="py-3.5 px-4 font-bold text-slate-900">
                           <div>${this.formatDateDMY(apt.date)}</div>
                           <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
+                          ${(sortOrder.startsWith('arrival') && apt.createdAt) ? `
+                            <div class="text-[9.5px] text-slate-400 font-normal mt-0.5">
+                              <i class="fas fa-history text-[8px] text-blue-500"></i> Creada: ${new Date(apt.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          ` : ''}
                         </td>
                         <td class="py-3.5 px-4">
                           <div class="font-bold text-slate-800">${apt.clientName}</div>
@@ -5505,6 +5679,135 @@ class App {
     }
   }
 
+  // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
+  static CALENDAR_PASTEL_THEMES = {
+    celeste: {
+      id: 'celeste',
+      name: 'Celeste Pastel',
+      colorName: 'Celeste',
+      swatchBg: '#bae6fd', // sky-200
+      swatchRing: 'ring-sky-500',
+      containerClass: 'bg-gradient-to-br from-sky-100/50 via-sky-50/60 to-blue-50/40 border-sky-200/90 shadow-sky-500/5',
+      headerNavClass: 'bg-white/90 border-sky-200/90 shadow-2xs',
+      navBtnClass: 'bg-white hover:bg-sky-50 text-slate-700 border-sky-200',
+      todayBtnClass: 'bg-sky-100 hover:bg-sky-200/80 text-sky-800 border-sky-300',
+      weekdayHeaderMobile: 'border-b border-sky-100/80',
+      weekdayWeekendText: 'text-sky-600 font-black',
+      mobileGridBg: 'bg-white/95 border-sky-200/90',
+      mobileCellDefault: 'bg-white text-slate-800 hover:bg-sky-50/70',
+      mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-400 font-black',
+      mobileCellSelected: 'bg-sky-600 text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-600 ring-offset-1 z-10 font-black',
+      mobileDetailCard: 'bg-white/95 border-sky-200/90',
+      desktopContainer: 'border-sky-200/90 bg-white/95',
+      desktopWeekdayHeader: 'bg-sky-100/70 border-sky-200/90 text-sky-950',
+      desktopGridDivide: 'divide-sky-100/80 bg-sky-50/20',
+      desktopCellToday: 'ring-2 ring-sky-500 ring-inset bg-sky-50/40',
+      desktopTodayBadge: 'bg-sky-600 text-white',
+      accentText: 'text-sky-600',
+      accentBg: 'bg-sky-600 hover:bg-sky-700'
+    },
+    lavanda: {
+      id: 'lavanda',
+      name: 'Lavanda Pastel',
+      colorName: 'Lavanda',
+      swatchBg: '#e9d5ff', // purple-200
+      swatchRing: 'ring-purple-500',
+      containerClass: 'bg-gradient-to-br from-purple-100/50 via-purple-50/60 to-fuchsia-50/40 border-purple-200/90 shadow-purple-500/5',
+      headerNavClass: 'bg-white/90 border-purple-200/90 shadow-2xs',
+      navBtnClass: 'bg-white hover:bg-purple-50 text-slate-700 border-purple-200',
+      todayBtnClass: 'bg-purple-100 hover:bg-purple-200/80 text-purple-800 border-purple-300',
+      weekdayHeaderMobile: 'border-b border-purple-100/80',
+      weekdayWeekendText: 'text-purple-600 font-black',
+      mobileGridBg: 'bg-white/95 border-purple-200/90',
+      mobileCellDefault: 'bg-white text-slate-800 hover:bg-purple-50/70',
+      mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-400 font-black',
+      mobileCellSelected: 'bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-600 ring-offset-1 z-10 font-black',
+      mobileDetailCard: 'bg-white/95 border-purple-200/90',
+      desktopContainer: 'border-purple-200/90 bg-white/95',
+      desktopWeekdayHeader: 'bg-purple-100/70 border-purple-200/90 text-purple-950',
+      desktopGridDivide: 'divide-purple-100/80 bg-purple-50/20',
+      desktopCellToday: 'ring-2 ring-purple-500 ring-inset bg-purple-50/40',
+      desktopTodayBadge: 'bg-purple-600 text-white',
+      accentText: 'text-purple-600',
+      accentBg: 'bg-purple-600 hover:bg-purple-700'
+    },
+    menta: {
+      id: 'menta',
+      name: 'Menta Pastel',
+      colorName: 'Menta',
+      swatchBg: '#a7f3d0', // emerald-200
+      swatchRing: 'ring-emerald-500',
+      containerClass: 'bg-gradient-to-br from-emerald-100/50 via-emerald-50/60 to-teal-50/40 border-emerald-200/90 shadow-emerald-500/5',
+      headerNavClass: 'bg-white/90 border-emerald-200/90 shadow-2xs',
+      navBtnClass: 'bg-white hover:bg-emerald-50 text-slate-700 border-emerald-200',
+      todayBtnClass: 'bg-emerald-100 hover:bg-emerald-200/80 text-emerald-800 border-emerald-300',
+      weekdayHeaderMobile: 'border-b border-emerald-100/80',
+      weekdayWeekendText: 'text-emerald-600 font-black',
+      mobileGridBg: 'bg-white/95 border-emerald-200/90',
+      mobileCellDefault: 'bg-white text-slate-800 hover:bg-emerald-50/70',
+      mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 font-black',
+      mobileCellSelected: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-600 ring-offset-1 z-10 font-black',
+      mobileDetailCard: 'bg-white/95 border-emerald-200/90',
+      desktopContainer: 'border-emerald-200/90 bg-white/95',
+      desktopWeekdayHeader: 'bg-emerald-100/70 border-emerald-200/90 text-emerald-950',
+      desktopGridDivide: 'divide-emerald-100/80 bg-emerald-50/20',
+      desktopCellToday: 'ring-2 ring-emerald-500 ring-inset bg-emerald-50/40',
+      desktopTodayBadge: 'bg-emerald-600 text-white',
+      accentText: 'text-emerald-600',
+      accentBg: 'bg-emerald-600 hover:bg-emerald-700'
+    },
+    melocoton: {
+      id: 'melocoton',
+      name: 'Melocotón / Rosa',
+      colorName: 'Rosa Pastel',
+      swatchBg: '#fecdd3', // rose-200
+      swatchRing: 'ring-rose-500',
+      containerClass: 'bg-gradient-to-br from-rose-100/50 via-rose-50/60 to-pink-50/40 border-rose-200/90 shadow-rose-500/5',
+      headerNavClass: 'bg-white/90 border-rose-200/90 shadow-2xs',
+      navBtnClass: 'bg-white hover:bg-rose-50 text-slate-700 border-rose-200',
+      todayBtnClass: 'bg-rose-100 hover:bg-rose-200/80 text-rose-800 border-rose-300',
+      weekdayHeaderMobile: 'border-b border-rose-100/80',
+      weekdayWeekendText: 'text-rose-600 font-black',
+      mobileGridBg: 'bg-white/95 border-rose-200/90',
+      mobileCellDefault: 'bg-white text-slate-800 hover:bg-rose-50/70',
+      mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-400 font-black',
+      mobileCellSelected: 'bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-600 ring-offset-1 z-10 font-black',
+      mobileDetailCard: 'bg-white/95 border-rose-200/90',
+      desktopContainer: 'border-rose-200/90 bg-white/95',
+      desktopWeekdayHeader: 'bg-rose-100/70 border-rose-200/90 text-rose-950',
+      desktopGridDivide: 'divide-rose-100/80 bg-rose-50/20',
+      desktopCellToday: 'ring-2 ring-rose-500 ring-inset bg-rose-50/40',
+      desktopTodayBadge: 'bg-rose-600 text-white',
+      accentText: 'text-rose-600',
+      accentBg: 'bg-rose-600 hover:bg-rose-700'
+    },
+    vainilla: {
+      id: 'vainilla',
+      name: 'Vainilla / Arena',
+      colorName: 'Vainilla',
+      swatchBg: '#fde68a', // amber-200
+      swatchRing: 'ring-amber-500',
+      containerClass: 'bg-gradient-to-br from-amber-100/50 via-amber-50/60 to-yellow-50/40 border-amber-200/90 shadow-amber-500/5',
+      headerNavClass: 'bg-white/90 border-amber-200/90 shadow-2xs',
+      navBtnClass: 'bg-white hover:bg-amber-50 text-slate-700 border-amber-200',
+      todayBtnClass: 'bg-amber-100 hover:bg-amber-200/80 text-amber-800 border-amber-300',
+      weekdayHeaderMobile: 'border-b border-amber-100/80',
+      weekdayWeekendText: 'text-amber-600 font-black',
+      mobileGridBg: 'bg-white/95 border-amber-200/90',
+      mobileCellDefault: 'bg-white text-slate-800 hover:bg-amber-50/70',
+      mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-400 font-black',
+      mobileCellSelected: 'bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-600 ring-offset-1 z-10 font-black',
+      mobileDetailCard: 'bg-white/95 border-amber-200/90',
+      desktopContainer: 'border-amber-200/90 bg-white/95',
+      desktopWeekdayHeader: 'bg-amber-100/70 border-amber-200/90 text-amber-950',
+      desktopGridDivide: 'divide-amber-100/80 bg-amber-50/20',
+      desktopCellToday: 'ring-2 ring-amber-500 ring-inset bg-amber-50/40',
+      desktopTodayBadge: 'bg-amber-600 text-white',
+      accentText: 'text-amber-600',
+      accentBg: 'bg-amber-600 hover:bg-amber-700'
+    }
+  };
+
   // --- VISTA CALENDARIO DE AGENDA DE COMERCIO ---
   renderOwnerCalendarView(currentBiz, allAppointments, filteredAppointments, businessStaff) {
     const calDate = this.ownerCalendarCurrentMonth || new Date();
@@ -5518,6 +5821,12 @@ class App {
     const monthTitle = `${monthNames[month]} ${year}`;
 
     const daysOfWeek = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const daysOfWeekShort = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+    // Tema Pastel Activo
+    const activeThemeId = this.ownerCalendarTheme || 'celeste';
+    const themes = App.CALENDAR_PASTEL_THEMES;
+    const theme = themes[activeThemeId] || themes.celeste;
 
     // Días del mes actual
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -5528,6 +5837,13 @@ class App {
     firstDayIndex = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
     const todayStr = this.getTodayDateString();
+
+    // Determinar día seleccionado en móvil
+    const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    let selectedMobileDate = this.ownerCalendarSelectedDate;
+    if (!selectedMobileDate || !selectedMobileDate.startsWith(currentMonthPrefix)) {
+      selectedMobileDate = todayStr.startsWith(currentMonthPrefix) ? todayStr : `${currentMonthPrefix}-01`;
+    }
 
     // Celdas del calendario
     const cells = [];
@@ -5578,48 +5894,292 @@ class App {
       });
     }
 
+    // Citas del día seleccionado en móvil
+    const mobileSelectedDayApts = filteredAppointments
+      .filter(a => a.date === selectedMobileDate)
+      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
     return `
-      <div class="calendar-view-container space-y-4 animate-fade-in">
-        <!-- Barra de Navegación de Mes y Leyenda -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-          <div class="flex items-center gap-2">
-            <button id="cal-prev-month-btn" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
-              <i class="fas fa-chevron-left text-[10px]"></i>
-              <span class="hidden sm:inline">Anterior</span>
-            </button>
-            <button id="cal-today-btn" class="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-extrabold transition-all shadow-2xs cursor-pointer">
-              Hoy
-            </button>
-            <button id="cal-next-month-btn" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 rounded-xl border border-slate-200 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
-              <span class="hidden sm:inline">Siguiente</span>
-              <i class="fas fa-chevron-right text-[10px]"></i>
-            </button>
-            <h3 class="text-base sm:text-lg font-black text-slate-900 ml-2 tracking-tight flex items-center gap-2">
-              <i class="fas fa-calendar-days text-blue-600 text-sm"></i>
+      <div class="calendar-view-container space-y-4 animate-fade-in p-3 sm:p-5 rounded-3xl border ${theme.containerClass} backdrop-blur-xs transition-colors duration-300">
+        <!-- Barra de Navegación de Mes, Selector de Color Pastel y Leyenda -->
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-3 ${theme.headerNavClass} p-3 sm:p-4 rounded-2xl border transition-colors">
+          <!-- Navegación y Título del Mes -->
+          <div class="flex items-center justify-between w-full lg:w-auto gap-2">
+            <div class="flex items-center gap-1.5">
+              <button id="cal-prev-month-btn" class="p-2 sm:px-3 sm:py-1.5 ${theme.navBtnClass} active:scale-95 rounded-xl border text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+                <i class="fas fa-chevron-left text-[11px]"></i>
+                <span class="hidden sm:inline">Anterior</span>
+              </button>
+              <button id="cal-today-btn" class="px-3 py-1.5 ${theme.todayBtnClass} active:scale-95 border rounded-xl text-xs font-extrabold transition-all shadow-2xs cursor-pointer">
+                Hoy
+              </button>
+              <button id="cal-next-month-btn" class="p-2 sm:px-3 sm:py-1.5 ${theme.navBtnClass} active:scale-95 rounded-xl border text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1">
+                <span class="hidden sm:inline">Siguiente</span>
+                <i class="fas fa-chevron-right text-[11px]"></i>
+              </button>
+            </div>
+            <h3 class="text-sm sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-1.5 sm:ml-2">
+              <i class="fas fa-calendar-days ${theme.accentText} text-xs sm:text-sm"></i>
               <span>${monthTitle}</span>
             </h3>
           </div>
 
-          <!-- Leyenda de Estados -->
-          <div class="flex items-center gap-3 text-[11px] font-semibold text-slate-600 flex-wrap">
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Confirmada</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Pendiente</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Completada</span>
-            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Cancelada</span>
+          <!-- Controles de la Derecha: Selector de Color Pastel y Leyenda de Estados -->
+          <div class="flex items-center justify-between lg:justify-end gap-3 flex-wrap w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200/60">
+            <!-- Selector de 5 Colores Pasteles -->
+            <div class="flex items-center gap-1.5 bg-white/90 px-2 py-1 rounded-xl border border-slate-200/90 shadow-2xs">
+              <span class="text-[10px] font-black text-slate-600 flex items-center gap-1">
+                <i class="fas fa-palette ${theme.accentText} text-[11px]"></i>
+                <span class="hidden sm:inline text-[10px]">Fondo:</span>
+              </span>
+              <div class="flex items-center gap-1">
+                ${Object.values(themes).map(t => `
+                  <button 
+                    type="button" 
+                    class="cal-theme-swatch-btn w-5 h-5 sm:w-6 sm:h-6 rounded-full transition-all cursor-pointer flex items-center justify-center relative ${t.id === activeThemeId ? 'scale-110 shadow-xs ring-2 ring-offset-1 ' + t.swatchRing : 'hover:scale-105 opacity-75 hover:opacity-100'}"
+                    data-theme="${t.id}"
+                    title="Color de fondo: ${t.name}"
+                    style="background-color: ${t.swatchBg}; border: 1.5px solid rgba(0,0,0,0.12);"
+                  >
+                    ${t.id === activeThemeId ? '<i class="fas fa-check text-[8px] sm:text-[9px] text-slate-800"></i>' : ''}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Leyenda de Estados -->
+            <div class="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-semibold text-slate-600 flex-wrap">
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Confirmada</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Pendiente</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Completada</span>
+              <span class="inline-flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Cancelada</span>
+            </div>
           </div>
         </div>
 
-        <!-- Cuadrícula del Calendario -->
-        <div class="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+        <!-- ========================================================================= -->
+        <!-- VISTA MÓVIL: CALENDARIO COMPACTO TÁCTIL + AGENDA DEL DÍA (SOLO PANTALLAS < 768px) -->
+        <!-- ========================================================================= -->
+        <div class="block md:hidden space-y-4">
+          <!-- Mini Cuadrícula Mensual -->
+          <div class="${theme.mobileGridBg} rounded-3xl border overflow-hidden shadow-2xs p-3 space-y-2 transition-colors">
+            <!-- Días de la semana -->
+            <div class="grid grid-cols-7 text-center text-[11px] font-black text-slate-500 uppercase tracking-wider pb-1 ${theme.weekdayHeaderMobile}">
+              ${daysOfWeek.map((d, idx) => `
+                <div class="${idx >= 5 ? theme.weekdayWeekendText : ''}">${d}</div>
+              `).join('')}
+            </div>
+
+            <!-- Celdas compactas cuadradas -->
+            <div class="grid grid-cols-7 gap-1">
+              ${cells.map(cell => {
+                const count = cell.appointments.length;
+                const isSelected = cell.dateKey === selectedMobileDate;
+                const isCurrentMonth = cell.isCurrentMonth;
+                const isToday = cell.isToday;
+
+                let cellBg = theme.mobileCellDefault;
+                if (isSelected) {
+                  cellBg = theme.mobileCellSelected;
+                } else if (isToday) {
+                  cellBg = theme.mobileCellToday;
+                } else if (!isCurrentMonth) {
+                  cellBg = 'bg-slate-50/40 text-slate-300 opacity-40';
+                }
+
+                return `
+                  <button 
+                    type="button"
+                    class="cal-mobile-day-btn h-12 rounded-2xl flex flex-col items-center justify-center p-1 transition-all cursor-pointer relative ${cellBg}"
+                    data-date="${cell.dateKey}"
+                    ${!isCurrentMonth ? 'disabled' : ''}
+                  >
+                    <span class="text-xs font-bold leading-none ${isSelected ? 'text-white' : ''}">
+                      ${cell.dayNumber}
+                    </span>
+                    
+                    ${(count > 0 && isCurrentMonth) ? `
+                      <div class="flex items-center gap-0.5 mt-1">
+                        ${count <= 3 ? cell.appointments.map(a => {
+                          let dotBg = 'bg-blue-500';
+                          if (a.status === 'pending') dotBg = 'bg-amber-500';
+                          else if (a.status === 'completed') dotBg = 'bg-emerald-500';
+                          else if (a.status === 'cancelled') dotBg = 'bg-rose-500';
+                          if (isSelected) dotBg = 'bg-white';
+                          return `<span class="w-1.5 h-1.5 rounded-full ${dotBg}"></span>`;
+                        }).join('') : `
+                          <span class="text-[9px] font-black px-1 rounded-full ${isSelected ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'}">
+                            ${count}
+                          </span>
+                        `}
+                      </div>
+                    ` : '<span class="h-1.5 mt-1"></span>'}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Agenda del Día Seleccionado en Móvil -->
+          <div class="${theme.mobileDetailCard} rounded-3xl border p-4 shadow-xs space-y-3 transition-colors">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-wrap gap-2">
+              <div>
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Citas Programadas</span>
+                <h4 class="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                  <i class="fas fa-calendar-day ${theme.accentText} text-xs"></i>
+                  <span>${this.formatDateFullSpanish(selectedMobileDate)}</span>
+                </h4>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-800 font-black text-xs">
+                  ${mobileSelectedDayApts.length} ${mobileSelectedDayApts.length === 1 ? 'cita' : 'citas'}
+                </span>
+                <button 
+                  type="button" 
+                  class="cal-mobile-quick-add-btn px-3 py-1.5 ${theme.accentBg} active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                  data-date="${selectedMobileDate}"
+                  title="Crear reserva manual en esta fecha"
+                >
+                  <i class="fas fa-plus text-[10px]"></i>
+                  <span>Agendar</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Lista de Citas del Día -->
+            ${mobileSelectedDayApts.length === 0 ? `
+              <div class="text-center py-8 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-white text-slate-600 shadow-2xs flex items-center justify-center mx-auto text-lg">
+                  <i class="fas fa-calendar-plus ${theme.accentText}"></i>
+                </div>
+                <h5 class="font-bold text-slate-800 text-xs">No hay citas agendadas para este día</h5>
+                <p class="text-[11px] text-slate-500 max-w-xs mx-auto">Toca el botón inferior para agendar una reserva de cliente o llamada manual.</p>
+                <button 
+                  type="button" 
+                  class="cal-mobile-quick-add-btn mt-2 px-4 py-2 ${theme.accentBg} text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all inline-flex items-center gap-1.5"
+                  data-date="${selectedMobileDate}"
+                >
+                  <i class="fas fa-plus"></i>
+                  <span>Agendar Cita en este día</span>
+                </button>
+              </div>
+            ` : `
+              <div class="space-y-3">
+                ${mobileSelectedDayApts.map(apt => {
+                  const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '');
+                  let statusBadge = '<span class="badge-status badge-status-confirmed text-[10px]">Confirmada</span>';
+                  if (apt.status === 'pending') statusBadge = '<span class="badge-status badge-status-pending text-[10px]">Pendiente</span>';
+                  else if (apt.status === 'completed') statusBadge = '<span class="badge-status badge-status-completed text-[10px]">Completada</span>';
+                  else if (apt.status === 'cancelled') statusBadge = '<span class="badge-status badge-status-cancelled text-[10px]">Cancelada</span>';
+
+                  return `
+                    <div class="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/60 hover:bg-white transition-all space-y-3 shadow-2xs">
+                      <div class="flex items-start justify-between gap-2">
+                        <div>
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-black text-sm text-slate-900 font-mono bg-white px-2.5 py-0.5 rounded-lg border border-slate-200 shadow-2xs">
+                              ⏰ ${this.formatTime12h(apt.time)}
+                            </span>
+                            ${statusBadge}
+                          </div>
+                          <h4 class="font-extrabold text-slate-900 text-sm mt-1.5 leading-snug">${this.escapeHtml(apt.serviceName)}</h4>
+                        </div>
+                        <span class="font-black text-slate-900 text-sm shrink-0">
+                          ${this.formatColones(apt.servicePrice)}
+                        </span>
+                      </div>
+
+                      <div class="grid grid-cols-2 gap-2 text-xs bg-white p-3 rounded-xl border border-slate-100">
+                        <div>
+                          <span class="text-[10px] text-slate-400 font-bold block">Cliente:</span>
+                          <strong class="font-bold text-slate-800 block truncate">${this.escapeHtml(apt.clientName)}</strong>
+                          <span class="text-[11px] text-slate-500">${this.escapeHtml(apt.clientPhone || 'Sin tel')}</span>
+                        </div>
+                        <div>
+                          <span class="text-[10px] text-slate-400 font-bold block">Especialista:</span>
+                          <span class="font-bold text-slate-700 block truncate">
+                            <i class="fas fa-user-tag ${theme.accentText} text-[10px] mr-1"></i>
+                            ${this.escapeHtml(apt.staffName || 'General')}
+                          </span>
+                          <span class="text-[10px] text-slate-400">${apt.serviceDuration || 30} min</span>
+                        </div>
+                      </div>
+
+                      ${apt.notes ? `
+                        <div class="text-[11px] text-slate-600 bg-amber-50/70 p-2 rounded-lg border border-amber-200/60 italic">
+                          "${this.escapeHtml(apt.notes)}"
+                        </div>
+                      ` : ''}
+
+                      <!-- Botones de Acción Táctiles -->
+                      <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                        <button 
+                          type="button"
+                          class="cal-apt-chip flex-1 py-2 px-3 bg-white hover:bg-slate-50 active:scale-95 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                          data-apt-id="${apt.id}"
+                        >
+                          <i class="fas fa-info-circle text-xs text-slate-500"></i>
+                          <span>Gestionar</span>
+                        </button>
+
+                        ${cleanPhone ? `
+                          <a 
+                            href="https://wa.me/506${cleanPhone}?text=${encodeURIComponent(`¡Hola ${apt.clientName}! Te saludamos de ${currentBiz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            class="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs"
+                            title="Contactar por WhatsApp"
+                          >
+                            <i class="fab fa-whatsapp text-sm"></i>
+                            <span class="hidden sm:inline">WhatsApp</span>
+                          </a>
+                        ` : ''}
+
+                        ${apt.status === 'pending' ? `
+                          <button 
+                            type="button" 
+                            class="status-change-btn py-2 px-3 bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            data-apt-id="${apt.id}" 
+                            data-status="confirmed"
+                          >
+                            <i class="fas fa-check"></i>
+                            <span>Aceptar</span>
+                          </button>
+                        ` : ''}
+
+                        ${apt.status === 'confirmed' ? `
+                          <button 
+                            type="button" 
+                            class="status-change-btn py-2 px-3 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            data-apt-id="${apt.id}" 
+                            data-status="completed"
+                          >
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>Completar</span>
+                          </button>
+                        ` : ''}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VISTA ESCRITORIO: CUADRÍCULA COMPLETA DE 7 COLUMNAS (SOLO PANTALLAS >= 768px) -->
+        <!-- ========================================================================= -->
+        <div class="hidden md:block border rounded-3xl overflow-hidden ${theme.desktopContainer} shadow-2xs transition-colors">
           <!-- Cabecera de Días de la Semana -->
-          <div class="grid grid-cols-7 bg-slate-100/80 border-b border-slate-200 text-center text-[11px] font-black text-slate-600 uppercase tracking-wider py-2.5">
+          <div class="grid grid-cols-7 ${theme.desktopWeekdayHeader} border-b text-center text-[11px] font-black uppercase tracking-wider py-2.5">
             ${daysOfWeek.map((d, idx) => `
-              <div class="${idx >= 5 ? 'text-blue-600' : ''}">${d}</div>
+              <div class="${idx >= 5 ? theme.weekdayWeekendText : ''}">${d}</div>
             `).join('')}
           </div>
 
           <!-- Días / Celdas -->
-          <div class="grid grid-cols-7 divide-x divide-y divide-slate-100 bg-slate-50/30">
+          <div class="grid grid-cols-7 divide-x divide-y ${theme.desktopGridDivide}">
             ${cells.map(cell => {
               const count = cell.appointments.length;
               const isExpanded = this.ownerCalendarExpandedDays && this.ownerCalendarExpandedDays.has(cell.dateKey);
@@ -5627,24 +6187,24 @@ class App {
 
               return `
                 <div 
-                  class="cal-day-cell min-h-[115px] sm:min-h-[135px] p-1.5 sm:p-2 flex flex-col justify-between transition-all duration-200 ${cell.isCurrentMonth ? 'bg-white hover:bg-blue-50/20 cursor-pointer' : 'bg-slate-50/50 opacity-40'} ${cell.isToday ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/20' : ''} ${isExpanded ? 'z-20 ring-2 ring-indigo-500 shadow-xl bg-white scale-[1.02] rounded-2xl' : ''}" 
+                  class="cal-day-cell min-h-[120px] lg:min-h-[135px] p-2 flex flex-col justify-between transition-all duration-200 ${cell.isCurrentMonth ? 'bg-white/90 hover:bg-white cursor-pointer shadow-2xs' : 'bg-slate-50/50 opacity-40'} ${cell.isToday ? theme.desktopCellToday : ''} ${isExpanded ? 'z-20 ring-2 ring-indigo-500 shadow-xl bg-white scale-[1.02] rounded-2xl' : ''}" 
                   data-date="${cell.dateKey}"
                   title="${cell.isCurrentMonth ? `Click para agregar reserva manual el ${this.formatDateDMY(cell.dateKey)}` : ''}"
                 >
                   <!-- Header del Día -->
                   <div class="flex items-center justify-between gap-1 mb-1 shrink-0">
-                    <span class="text-xs font-black ${cell.isToday ? 'w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-xs' : (cell.isCurrentMonth ? 'text-slate-800' : 'text-slate-400')}">
+                    <span class="text-xs font-black ${cell.isToday ? 'w-6 h-6 rounded-full ' + theme.desktopTodayBadge + ' flex items-center justify-center shadow-xs' : (cell.isCurrentMonth ? 'text-slate-800' : 'text-slate-400')}">
                       ${cell.dayNumber}
                     </span>
                     ${count > 0 ? `
-                      <span class="px-1.5 py-0.5 rounded-md ${isExpanded ? 'bg-indigo-600 text-white' : 'bg-blue-100 text-blue-800'} text-[10px] font-black" title="${count} reserva${count > 1 ? 's' : ''}">
+                      <span class="px-1.5 py-0.5 rounded-md ${isExpanded ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-800'} text-[10px] font-black" title="${count} reserva${count > 1 ? 's' : ''}">
                         ${count} ${count === 1 ? 'cita' : 'citas'}
                       </span>
                     ` : ''}
                   </div>
 
                   <!-- Lista de Chips de Citas con Scroll Interno -->
-                  <div class="space-y-1 flex-1 overflow-y-auto pr-0.5 custom-scrollbar max-h-[110px] sm:max-h-[140px] ${isExpanded ? 'max-h-[260px] sm:max-h-[340px]' : ''}">
+                  <div class="space-y-1 flex-1 overflow-y-auto pr-0.5 custom-scrollbar max-h-[110px] lg:max-h-[140px] ${isExpanded ? 'max-h-[260px] lg:max-h-[340px]' : ''}">
                     ${visibleApts.map(apt => {
                       let chipStyle = 'bg-blue-50 text-blue-900 border-blue-200/90 hover:bg-blue-100';
                       let dotColor = 'bg-blue-500';
@@ -5661,16 +6221,16 @@ class App {
 
                       return `
                         <div 
-                          class="cal-apt-chip p-1 sm:p-1.5 rounded-lg border ${chipStyle} text-[10px] font-semibold transition-all shadow-2xs hover:scale-[1.02] cursor-pointer"
+                          class="cal-apt-chip p-1.5 rounded-lg border ${chipStyle} text-[10px] font-semibold transition-all shadow-2xs hover:scale-[1.02] cursor-pointer"
                           data-apt-id="${apt.id}"
                           title="Click para ver detalle y gestionar cita de ${this.escapeHtml(apt.clientName)}"
                         >
                           <div class="flex items-center justify-between gap-1">
-                            <span class="font-bold font-mono text-[9px] sm:text-[10px]">${this.formatTime12h(apt.time)}</span>
+                            <span class="font-bold font-mono text-[10px]">${this.formatTime12h(apt.time)}</span>
                             <span class="w-1.5 h-1.5 rounded-full ${dotColor} shrink-0"></span>
                           </div>
-                          <div class="truncate font-extrabold text-[10px] sm:text-[11px] leading-tight text-slate-900">${this.escapeHtml(apt.clientName)}</div>
-                          <div class="truncate text-[9px] text-slate-500 hidden sm:block">${this.escapeHtml(apt.serviceName)}</div>
+                          <div class="truncate font-extrabold text-[11px] leading-tight text-slate-900">${this.escapeHtml(apt.clientName)}</div>
+                          <div class="truncate text-[9px] text-slate-500">${this.escapeHtml(apt.serviceName)}</div>
                         </div>
                       `;
                     }).join('')}
@@ -5681,7 +6241,7 @@ class App {
                     <div class="pt-1 shrink-0">
                       <button 
                         type="button" 
-                        class="cal-toggle-day-btn w-full py-1 px-1.5 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer ${isExpanded ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-2xs'}"
+                        class="cal-toggle-day-btn w-full py-1 px-1.5 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer ${isExpanded ? 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300' : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-2xs'}"
                         data-date="${cell.dateKey}"
                         title="${isExpanded ? 'Contraer citas' : `Ver todas las ${count} citas de este día`}"
                       >
@@ -5697,7 +6257,8 @@ class App {
         </div>
 
         <div class="text-[11px] text-slate-500 flex items-center justify-between flex-wrap gap-2 px-1">
-          <span>💡 <strong>Consejo:</strong> Haz clic sobre cualquier cita para ver sus detalles completos, aceptar, completar o reprogramar. Haz clic en un día vacío para agendar una reserva manual.</span>
+          <span>💡 <strong>Consejo:</strong> Toca cualquier cita para ver sus detalles completos, aceptar, completar o reprogramar. Toca un día vacío para agendar una reserva manual.</span>
+          <span class="text-[10px] text-slate-400 font-medium">Tema activo: <strong>${theme.name}</strong></span>
         </div>
       </div>
     `;
@@ -8053,6 +8614,26 @@ class App {
       this.renderCurrentView();
     });
 
+    // Seleccionar día en vista móvil de calendario
+    document.querySelectorAll('.cal-mobile-day-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dateKey = btn.getAttribute('data-date');
+        if (dateKey) {
+          this.ownerCalendarSelectedDate = dateKey;
+          this.renderCurrentView();
+        }
+      });
+    });
+
+    // Agendar cita rápida en fecha seleccionada desde móvil
+    document.querySelectorAll('.cal-mobile-quick-add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dateStr = btn.getAttribute('data-date') || this.ownerCalendarSelectedDate || this.getTodayDateString();
+        this.bookingState.selectedDate = dateStr;
+        this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
+      });
+    });
+
     // Click en chip de cita en calendario para abrir modal de detalle
     document.querySelectorAll('.cal-apt-chip').forEach(chip => {
       chip.addEventListener('click', (e) => {
@@ -8066,7 +8647,7 @@ class App {
       });
     });
 
-    // Click en celda de día para crear cita rápida en esa fecha
+    // Click en celda de día para crear cita rápida en esa fecha (Escritorio)
     document.querySelectorAll('.cal-day-cell').forEach(cell => {
       cell.addEventListener('click', (e) => {
         if (e.target.closest('.cal-apt-chip') || e.target.closest('button')) return;
@@ -8107,10 +8688,35 @@ class App {
       });
     });
 
+    // Selector de Tema Pastel del Calendario
+    document.querySelectorAll('.cal-theme-swatch-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const themeId = btn.getAttribute('data-theme');
+        if (themeId && App.CALENDAR_PASTEL_THEMES[themeId]) {
+          this.ownerCalendarTheme = themeId;
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('reservas_calendar_theme', themeId);
+          }
+          this.renderCurrentView();
+        }
+      });
+    });
+
     // Filtro por Especialista en Agenda
     const staffFilterSelect = document.getElementById('owner-staff-filter-select');
     staffFilterSelect?.addEventListener('change', (e) => {
       this.ownerStaffFilter = e.target.value;
+      this.renderCurrentView();
+    });
+
+    // Selector de Ordenamiento de Citas en Vista Lista
+    const sortOrderSelect = document.getElementById('owner-sort-order-select');
+    sortOrderSelect?.addEventListener('change', (e) => {
+      this.ownerAppointmentSort = e.target.value;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('reservas_owner_sort_order', e.target.value);
+      }
       this.renderCurrentView();
     });
 
@@ -8677,6 +9283,7 @@ class App {
             </div>
 
             <!-- Clientes -->
+            <div class=
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
               <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
                 <i class="fas fa-users"></i>

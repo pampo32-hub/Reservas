@@ -125,10 +125,25 @@ html, body, button, a, input, select, textarea {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Evitar zoom automático desagradable en iOS Safari al tocar inputs */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="tel"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Ocultar barra de desplazamiento sin perder el scroll táctil */
 .scrollbar-none, .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
 .scrollbar-none::-webkit-scrollbar, .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -136,9 +151,9 @@ html, body, button, a, input, select, textarea {
 
 /* Efecto de pulsación táctil nativa en botones móviles */
 @media (max-width: 768px) {
-  .app-touch-btn:active {
-    transform: scale(0.94);
-    transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  .app-touch-btn:active, button:active:not([disabled]) {
+    transform: scale(0.96);
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -157,17 +172,31 @@ html, body, button, a, input, select, textarea {
 @media (max-width: 640px) {
   .mobile-bottom-sheet {
     animation: slideUpMobile 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
   }
 }
 
-/* Soporte para notch y barra de inicio inferior (Safe Area Insets) */
-.pb-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+/* Soporte completo para notch, barra superior e inferior (Safe Area Insets) */
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 0.5rem);
 }
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
+}
+.pl-safe {
+  padding-left: max(env(safe-area-inset-left, 0px), 0.5rem);
+}
+.pr-safe {
+  padding-right: max(env(safe-area-inset-right, 0px), 0.5rem);
+}
+
 .bottom-nav-blur {
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 /* Custom mini scrollbar for calendar day cells */
@@ -185,4 +214,25 @@ html, body, button, a, input, select, textarea {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Ajustes de fluidez en móvil para botones y tarjetas */
+@media (max-width: 640px) {
+  .mobile-card-full {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  .mobile-btn-stack {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .mobile-btn-stack > button,
+  .mobile-btn-stack > a {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 

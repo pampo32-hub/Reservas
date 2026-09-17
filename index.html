@@ -2,7 +2,7 @@
 <html lang="es" class="h-full bg-slate-50">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Reservas CR - Directorio de Negocios y Citas Online</title>
   
   <!-- Tailwind CSS CDN -->
@@ -46,16 +46,16 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
-<body class="min-h-full flex flex-col antialiased text-slate-900 bg-slate-50">
+<body class="min-h-full flex flex-col antialiased text-slate-900 bg-slate-50 selection:bg-blue-600 selection:text-white">
 
   <!-- Navbar Container -->
   <div id="navbar-container"></div>
 
   <!-- Main Dynamic View Container -->
-  <main id="main-content" class="flex-1"></main>
+  <main id="main-content" class="flex-1 pb-24 md:pb-12"></main>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200/80 py-8 px-4 text-center text-xs text-slate-500">
+  <footer id="app-footer" class="bg-white border-t border-slate-200/80 py-8 px-4 text-center text-xs text-slate-500 mb-14 md:mb-0">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
         <img src="/src/assets/logo.png" alt="Reservas CR Logo" class="w-7 h-7 rounded-lg object-contain shadow-2xs">
@@ -65,11 +65,14 @@
     </div>
   </footer>
 
+  <!-- Barra de Navegación Móvil Inferior Flotante -->
+  <div id="mobile-bottom-nav-container"></div>
+
   <!-- Modal Container -->
   <div id="modal-container"></div>
 
   <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
+  <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
 
   <!-- App Script (ES Module) -->
   <script type="module" src="/src/app.js"></script>
