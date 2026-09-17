@@ -2119,6 +2119,143 @@ class StorageService {
     if (endDate) params.append('endDate', endDate);
     return `${this.apiBase}/developer/export/appointments-excel?${params.toString()}`;
   }
+
+  // ==========================================
+  // MÉTODOS DE NOTIFICACIONES PUSH MÓVILES
+  // ==========================================
+
+  isPushSupported() {
+    return typeof window !== 'undefined' && 
+      'serviceWorker' in navigator && 
+      'PushManager' in window && 
+      'Notification' in window;
+  }
+
+  getPushPermission() {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    return Notification.permission; // 'default' | 'granted' | 'denied'
+  }
+
+  async getVapidPublicKey() {
+    const res = await fetch(`${this.apiBase}/push/vapid-public-key`);
+    if (!res.ok) throw new Error('No se pudo obtener la clave VAPID pública');
+    const data = await res.json();
+    return data.publicKey;
+  }
+
+  async checkPushSubscriptionStatus() {
+    if (!this.isPushSupported()) {
+      return { supported: false, isSubscribed: false, permission: 'unsupported' };
+    }
+    const permission = Notification.permission;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      return {
+        supported: true,
+        isSubscribed: Boolean(sub),
+        permission,
+        subscription: sub
+      };
+    } catch (e) {
+      console.warn('Error verificando estado de suscripción push:', e);
+      return { supported: true, isSubscribed: false, permission, error: e.message };
+    }
+  }
+
+  async registerPushForBusiness(businessId) {
+    if (!this.isPushSupported()) {
+      throw new Error('Tu navegador o dispositivo no soporta notificaciones Push directas.');
+    }
+
+    // 1. Solicitar permiso al usuario
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      throw new Error('Permiso de notificaciones denegado. Puedes habilitarlo en los ajustes de tu navegador.');
+    }
+
+    // 2. Obtener clave VAPID
+    const publicKey = await this.getVapidPublicKey();
+    if (!publicKey) {
+      throw new Error('El servidor no proveyó una clave pública de notificaciones.');
+    }
+
+    // 3. Convertir clave VAPID
+    const convertedKey = this._urlBase64ToUint8Array(publicKey);
+
+    // 4. Suscribir en el Service Worker
+    const reg = await navigator.serviceWorker.ready;
+    let subscription = await reg.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: convertedKey
+      });
+    }
+
+    // 5. Enviar al backend para guardar en PostgreSQL
+    const res = await fetch(`${this.apiBase}/push/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessId,
+        subscription: subscription.toJSON()
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error registrando suscripción en el servidor.');
+    return { success: true, subscription };
+  }
+
+  async unregisterPushForBusiness(businessId) {
+    if (!this.isPushSupported()) return { success: true };
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.getSubscription();
+      if (subscription) {
+        await fetch(`${this.apiBase}/push/unsubscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId,
+            endpoint: subscription.endpoint
+          })
+        });
+        await subscription.unsubscribe();
+      }
+      return { success: true };
+    } catch (e) {
+      console.warn('Error al desuscribir notificaciones push:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async sendTestPushNotification(businessId) {
+    const res = await fetch(`${this.apiBase}/push/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al enviar notificación de prueba');
+    return data;
+  }
+
+  _urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 }
 
 export const storage = new StorageService();

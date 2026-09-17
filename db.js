@@ -259,6 +259,20 @@ export async function initDatabase() {
       );
     `);
 
+    // 12. Crear tabla de suscripciones Web Push para notificaciones móviles
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_push_subscriptions (
+        id VARCHAR(64) PRIMARY KEY,
+        business_id VARCHAR(50) REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        endpoint TEXT NOT NULL,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        user_agent TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(business_id, endpoint)
+      );
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';

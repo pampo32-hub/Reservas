@@ -4422,6 +4422,9 @@ class App {
           </div>
         </div>
 
+        <!-- Web Push Notifications Status / Action Banner -->
+        <div id="push-notification-container"></div>
+
         <!-- Metric Stat Cards -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -4550,6 +4553,134 @@ class App {
     });
 
     this.setupDashboardTabEvents(currentBiz);
+    this.updatePushNotificationBanner(currentBiz);
+  }
+
+  // --- GESTIÓN DE NOTIFICACIONES PUSH MÓVILES (WEB PUSH) ---
+  async updatePushNotificationBanner(currentBiz) {
+    const container = document.getElementById('push-notification-container');
+    if (!container || !currentBiz) return;
+
+    if (!storage.isPushSupported()) {
+      // Navegador no compatible con Web Push
+      container.innerHTML = `
+        <div class="mb-6 bg-slate-100 text-slate-700 p-4 rounded-2xl border border-slate-200 text-xs flex items-center gap-3">
+          <i class="fas fa-info-circle text-slate-400 text-base shrink-0"></i>
+          <div>
+            <span class="font-bold">Notificaciones Push:</span> Para recibir alertas directas de nuevas reservas en tu celular, abre <strong>reservascr.app</strong> desde Google Chrome o instala la aplicación móvil (PWA).
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const status = await storage.checkPushSubscriptionStatus();
+
+    if (status.isSubscribed && status.permission === 'granted') {
+      // Dispositivo activado y listo
+      container.innerHTML = `
+        <div class="mb-6 bg-gradient-to-r from-emerald-950/90 via-emerald-900/90 to-teal-950 text-white p-4 sm:p-5 rounded-2xl shadow-sm border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center shrink-0 text-emerald-400 text-lg">
+              <i class="fas fa-bell"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-sm text-emerald-100 flex items-center gap-2">
+                  Notificaciones Móviles Activadas en este Dispositivo
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                </h4>
+              </div>
+              <p class="text-xs text-emerald-200/80 mt-0.5">Recibirás una alerta en tu pantalla con cada nueva reserva que hagan tus clientes.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end flex-wrap">
+            <button id="btn-test-push-notification" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer">
+              <i class="fas fa-paper-plane"></i>
+              <span>Probar Notificación</span>
+            </button>
+            <button id="btn-disable-push-notifications" title="Desactivar notificaciones en este dispositivo" class="px-3 py-2 text-emerald-300 hover:text-rose-300 hover:bg-rose-900/30 text-xs font-medium rounded-xl transition-all cursor-pointer flex items-center gap-1">
+              <i class="fas fa-bell-slash"></i>
+              <span>Desactivar</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btn-test-push-notification')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-test-push-notification');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...';
+        }
+        try {
+          await storage.sendTestPushNotification(currentBiz.id);
+          this.showToast('🔔 Notificación de prueba enviada. ¡Revisa la barra de notificaciones de tu teléfono o navegador!', 'success');
+        } catch (err) {
+          this.showToast('Error enviando notificación: ' + err.message, 'error');
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> <span>Probar Notificación</span>';
+          }
+        }
+      });
+
+      document.getElementById('btn-disable-push-notifications')?.addEventListener('click', async () => {
+        if (confirm('¿Deseas desactivar las notificaciones push en este dispositivo?')) {
+          await storage.unregisterPushForBusiness(currentBiz.id);
+          this.showToast('Notificaciones push desactivadas en este dispositivo.', 'info');
+          this.updatePushNotificationBanner(currentBiz);
+        }
+      });
+
+    } else {
+      // No está suscrito o permiso no solicitado
+      container.innerHTML = `
+        <div class="mb-6 bg-gradient-to-r from-indigo-950 via-slate-900 to-blue-950 text-white p-4 sm:p-5 rounded-2xl shadow-md border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+          <div class="flex items-center gap-3.5">
+            <div class="w-11 h-11 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0 text-indigo-300 text-lg">
+              <i class="fas fa-mobile-screen-button"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-sm text-white">¿Quieres recibir alertas de reservas en tu celular?</h4>
+                <span class="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">Recomendado</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">Activa las notificaciones automáticas para enterarte al instante cada vez que un cliente reserve una cita.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+            <button id="btn-enable-push-notifications" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fas fa-bell"></i>
+              <span>Activar Notificaciones en mi Celular</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btn-enable-push-notifications')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-enable-push-notifications');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Solicitando permiso...';
+        }
+        try {
+          await storage.registerPushForBusiness(currentBiz.id);
+          this.showToast('✅ ¡Notificaciones push activadas con éxito!', 'success');
+          // Enviar inmediatamente una notificación de confirmación
+          await storage.sendTestPushNotification(currentBiz.id).catch(() => {});
+          this.updatePushNotificationBanner(currentBiz);
+        } catch (err) {
+          console.error('Error al activar notificaciones:', err);
+          this.showToast(err.message || 'No se pudieron activar las notificaciones', 'error');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-bell"></i> <span>Activar Notificaciones en mi Celular</span>';
+          }
+        }
+      });
+    }
   }
 
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
@@ -8914,6 +9045,7 @@ class App {
                       <span class="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
                         <i class="fas fa-check-circle text-emerald-600"></i> ${activeBusinessesCount} Activos
                       </span>
+                      <span class="px-3 py-1.5 bg-am
                       <span class="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
                         <i class="fas fa-eye-slash text-amber-600"></i> ${hiddenBusinessesCount} Ocultos
                       </span>

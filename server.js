@@ -22,6 +22,13 @@ import {
   buildBookingConfirmationText, 
   formatMetaPhone 
 } from './whatsappService.js';
+import { 
+  initPushService, 
+  getVapidPublicKey, 
+  savePushSubscription, 
+  removePushSubscription, 
+  sendPushToBusiness 
+} from './pushService.js';
 
 dotenv.config();
 
@@ -1940,6 +1947,23 @@ app.post('/api/appointments', async (req, res) => {
                 console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
               });
           }
+
+          // 3. Enviar Notificación Push Móvil a los celulares/dispositivos suscritos del comercio
+          sendPushToBusiness(pool, a.businessId, {
+            title: '🔔 ¡Nueva Reserva Recibida!',
+            body: `${a.clientName} ha reservado "${a.serviceName}" para el ${a.date} a las ${a.time}.`,
+            icon: '/src/assets/reservas_cr_clean_badge_1.jpg',
+            badge: '/src/assets/reservas_cr_clean_badge_1.jpg',
+            data: {
+              url: `/#/owner-dashboard?tab=calendar&appointmentId=${newId}`,
+              appointmentId: newId,
+              businessId: a.businessId
+            }
+          }).then(pushRes => {
+            console.log(`📱 [Web Push Auto] Resultado para cita #${createdAppointment.id}:`, pushRes?.delivered ? `${pushRes.delivered} entregados` : (pushRes?.total === 0 ? 'Sin dispositivos suscritos' : 'No entregado'));
+          }).catch(pushErr => {
+            console.error('⚠️ Error no bloqueante al enviar Push a comercio:', pushErr.message);
+          });
         })
         .catch(err => {
           console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
@@ -3757,6 +3781,71 @@ app.post('/api/developer/paypal-sync-plans', async (req, res) => {
   }
 });
 
+// ==========================================
+// ENDPOINTS DE NOTIFICACIONES PUSH MÓVILES (WEB PUSH)
+// ==========================================
+
+// 1. Obtener la clave pública VAPID para suscripción en el navegador
+app.get('/api/push/vapid-public-key', async (req, res) => {
+  try {
+    const key = await getVapidPublicKey(pool);
+    res.json({ publicKey: key });
+  } catch (error) {
+    console.error('Error obteniendo VAPID key:', error);
+    res.status(500).json({ error: 'Error al obtener clave pública Push' });
+  }
+});
+
+// 2. Registrar o renovar suscripción push de un comercio
+app.post('/api/push/subscribe', async (req, res) => {
+  try {
+    const { businessId, subscription } = req.body;
+    const userAgent = req.headers['user-agent'] || '';
+    if (!businessId || !subscription) {
+      return res.status(400).json({ error: 'Faltan datos de suscripción requeridos' });
+    }
+    const result = await savePushSubscription(pool, { businessId, subscription, userAgent });
+    res.json(result);
+  } catch (error) {
+    console.error('Error guardando suscripción push:', error);
+    res.status(500).json({ error: error.message || 'Error al guardar suscripción push' });
+  }
+});
+
+// 3. Eliminar suscripción push de un comercio
+app.post('/api/push/unsubscribe', async (req, res) => {
+  try {
+    const { businessId, endpoint } = req.body;
+    if (!businessId || !endpoint) {
+      return res.status(400).json({ error: 'Faltan datos para desuscribir' });
+    }
+    const result = await removePushSubscription(pool, { businessId, endpoint });
+    res.json(result);
+  } catch (error) {
+    console.error('Error eliminando suscripción push:', error);
+    res.status(500).json({ error: error.message || 'Error al desuscribir push' });
+  }
+});
+
+// 4. Enviar notificación de prueba al comercio
+app.post('/api/push/test', async (req, res) => {
+  try {
+    const { businessId } = req.body;
+    if (!businessId) {
+      return res.status(400).json({ error: 'ID de comercio requerido' });
+    }
+    const result = await sendPushToBusiness(pool, businessId, {
+      title: '🔔 ¡Prueba de Notificación Push!',
+      body: '¡Excelente! Tu celular y navegador están recibiendo notificaciones instantáneas de nuevas reservas.',
+      data: { url: '/#/owner-dashboard' }
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('Error enviando push de prueba:', error);
+    res.status(500).json({ error: error.message || 'Error al enviar notificación de prueba' });
+  }
+});
+
 // Middleware Catch-All para SPA (Cualquier ruta no capturada por API sirve index.html)
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {
@@ -3768,6 +3857,7 @@ app.get('*', (req, res) => {
 // Iniciar base de datos, servidor y worker de reseñas
 async function startServer() {
   await initDatabase();
+  await initPushService(pool);
   app.listen(PORT, () => {
     console.log(`🚀 Servidor de Reservas corriendo en http://localhost:${PORT}`);
     console.log(`🐘 Conectado a Neon PostgreSQL`);

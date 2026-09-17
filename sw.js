@@ -90,3 +90,87 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// ==========================================
+// PUSH NOTIFICATIONS (Notificaciones Push Móviles)
+// ==========================================
+
+self.addEventListener('push', (event) => {
+  console.log('📲 [SW] Evento Push recibido:', event);
+
+  let data = {
+    title: '🔔 ¡Nueva Notificación!',
+    body: 'Tienes una actualización en Reservas CR',
+    icon: '/src/assets/reservas_cr_clean_badge_1.jpg',
+    badge: '/src/assets/reservas_cr_clean_badge_1.jpg',
+    data: { url: '/#/owner-dashboard' }
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      data = { ...data, ...parsed };
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const notificationOptions = {
+    body: data.body,
+    icon: data.icon || '/src/assets/reservas_cr_clean_badge_1.jpg',
+    badge: data.badge || '/src/assets/reservas_cr_clean_badge_1.jpg',
+    vibrate: [200, 100, 200, 100, 200],
+    data: data.data || { url: '/#/owner-dashboard' },
+    tag: data.tag || `reserva-push-${Date.now()}`,
+    renotify: true,
+    requireInteraction: true,
+    actions: [
+      {
+        action: 'open_dashboard',
+        title: 'Ver en el Panel 📅'
+      },
+      {
+        action: 'close',
+        title: 'Cerrar'
+      }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, notificationOptions)
+  );
+});
+
+// Al pulsar sobre la notificación recibida
+self.addEventListener('notificationclick', (event) => {
+  console.log('👆 [SW] Notificación clickeada:', event.notification.tag, event.action);
+  event.notification.close();
+
+  if (event.action === 'close') {
+    return;
+  }
+
+  const targetUrl = (event.notification.data && event.notification.data.url) 
+    ? event.notification.data.url 
+    : '/#/owner-dashboard';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Si ya hay una pestaña abierta de Reservas CR, enfocarla y navegar
+      for (const client of clientList) {
+        if ('focus' in client) {
+          if (targetUrl && client.url.includes(self.location.origin)) {
+            client.navigate(targetUrl);
+            return client.focus();
+          }
+          return client.focus();
+        }
+      }
+      // Si no está abierta, abrir una nueva ventana
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+
