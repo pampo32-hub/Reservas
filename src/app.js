@@ -1932,7 +1932,6 @@ class App {
           </div>
         </section>
 
-        <!-- 3. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <!-- 2. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <section id="landing-demo-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
