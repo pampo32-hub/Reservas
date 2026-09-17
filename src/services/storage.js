@@ -14,6 +14,9 @@ const STORAGE_KEYS = {
 class StorageService {
   constructor() {
     this.apiBase = '/api';
+    this.businessesCache = [];
+    this.appointmentsCache = [];
+    this.blockedSlotsCache = [];
     const localBiz = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.BUSINESSES) : null;
     this.businessesCache = localBiz ? JSON.parse(localBiz) : INITIAL_BUSINESSES;
     const localApts = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.APPOINTMENTS) : null;
