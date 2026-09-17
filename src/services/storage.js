@@ -959,6 +959,14 @@ class StorageService {
       return data;
     }
     const staff = this.getBusinessStaffSync(businessId);
+    const biz = this.getBusinessById(businessId);
+    const plan = biz ? (biz.plan || 'free') : 'free';
+    if (plan === 'free' || plan === 'basic') {
+      throw new Error('La gestión de múltiples especialistas requiere el Plan Profesional ($18) o Plan Ilimitado ($35).');
+    }
+    if (plan === 'pro' && staff.length >= 5) {
+      throw new Error('Has alcanzado el límite de 5 especialistas del Plan Profesional. Actualiza al Plan Ilimitado para agregar más colaboradores.');
+    }
     const newMember = {
       id: `stf-${Date.now()}`,
       businessId,
