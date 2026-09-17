@@ -11807,22 +11807,21 @@ class App {
             </button>
           </div>
 
-          <!-- Body: Grid de Planes (Incluye Plan Prueba $5) -->
+          <!-- Body: Grid de los 4 Planes -->
           <div class="p-4 sm:p-5 overflow-y-auto flex-1 bg-slate-50">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4 items-stretch">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 items-stretch">
               ${plans.map(plan => {
                 const isCurrent = isOwnerContext && (currentPlanId === plan.id);
-                const isTest = plan.id === 'test';
                 const isFree = plan.id === 'free';
                 const isPro = plan.id === 'pro';
                 const isUnlimited = plan.id === 'unlimited';
 
                 return `
-                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isTest ? 'border-teal-500 shadow-md ring-1 ring-teal-500/30' : isFree ? 'border-emerald-400 shadow-md ring-1 ring-emerald-400/30' : isPro ? 'border-amber-400 shadow-md ring-1 ring-amber-400/30' : isUnlimited ? 'border-purple-300 shadow-xs' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-slate-400">
+                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isFree ? 'border-emerald-400 shadow-md ring-1 ring-emerald-400/30' : isPro ? 'border-amber-400 shadow-md ring-1 ring-amber-400/30' : isUnlimited ? 'border-purple-300 shadow-xs' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-slate-400">
                     
                     ${plan.badge ? `
                       <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isTest ? 'bg-teal-600 text-white font-black' : isFree ? 'bg-emerald-500 text-white font-black' : isPro ? 'bg-amber-400 text-slate-950 font-black' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isFree ? 'bg-emerald-500 text-white font-black' : isPro ? 'bg-amber-400 text-slate-950 font-black' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
                           ${plan.badge}
                         </span>
                       </div>
@@ -11832,8 +11831,8 @@ class App {
                       <!-- Nombre del Plan e Icono -->
                       <div class="flex items-center justify-between mb-1 mt-0.5">
                         <h4 class="text-base font-extrabold text-slate-900">${plan.name}</h4>
-                        <span class="w-7 h-7 rounded-lg ${isTest ? 'bg-teal-100 text-teal-700' : isFree ? 'bg-emerald-100 text-emerald-700' : isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
-                          <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : isTest ? 'fa-flask' : isFree ? 'fa-gift' : 'fa-rocket'}"></i>
+                        <span class="w-7 h-7 rounded-lg ${isFree ? 'bg-emerald-100 text-emerald-700' : isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
+                          <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : isFree ? 'fa-gift' : 'fa-rocket'}"></i>
                         </span>
                       </div>
 
@@ -11851,9 +11850,9 @@ class App {
                               ${plan.originalPriceUsd ? `
                                 <span class="text-xs sm:text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$${plan.originalPriceUsd}</span>
                               ` : ''}
-                              <span class="text-2xl sm:text-3xl font-black ${isTest ? 'text-teal-600' : isPro ? 'text-amber-600' : isUnlimited ? 'text-purple-600' : 'text-slate-900'}">$${plan.priceUsd}</span>
+                              <span class="text-2xl sm:text-3xl font-black ${isPro ? 'text-amber-600' : isUnlimited ? 'text-purple-600' : 'text-slate-900'}">$${plan.priceUsd}</span>
                               <span class="text-[10px] text-slate-500 font-bold uppercase">USD/mes</span>
-                              <span class="px-1.5 py-0.5 rounded-md ${isTest ? 'bg-teal-100 text-teal-800' : 'bg-rose-100 text-rose-700'} text-[9px] font-black uppercase tracking-tight">${isTest ? 'Prueba' : 'Lanzamiento'}</span>
+                              <span class="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[9px] font-black uppercase tracking-tight">Lanzamiento</span>
                             `}
                           </div>
                           <span class="text-[11px] text-slate-700 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
@@ -11864,7 +11863,7 @@ class App {
 
                       <!-- Capacidad / Límites -->
                       <div class="grid grid-cols-2 gap-1.5 mb-2.5">
-                        <div class="p-1.5 rounded-lg ${isTest ? 'bg-teal-50 text-teal-900 border border-teal-200' : isFree ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
+                        <div class="p-1.5 rounded-lg ${isFree ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
                           <i class="fas ${isUnlimited ? 'fa-infinity text-[9px]' : 'fa-calendar-check text-[9px]'}"></i>
                           <span class="truncate">${plan.bookingLimitLabel}</span>
                         </div>
@@ -11878,7 +11877,7 @@ class App {
                       <ul class="space-y-1.5 text-[11px] text-slate-600">
                         ${plan.features.slice(0, 5).map(f => `
                           <li class="flex items-start gap-1.5 leading-tight">
-                            <i class="fas fa-check-circle ${isTest ? 'text-teal-500' : 'text-emerald-500'} mt-0.5 text-[10px] flex-shrink-0"></i>
+                            <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px] flex-shrink-0"></i>
                             <span>${f}</span>
                           </li>
                         `).join('')}
@@ -11893,7 +11892,7 @@ class App {
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-btn w-full py-2.5 ${isTest ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-600/20' : isFree ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20' : isPro ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
+                          class="select-plan-btn w-full py-2.5 ${isFree ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20' : isPro ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
                           data-plan-id="${plan.id}"
                         >
                           <span>${isFree ? 'Elegir Plan Gratis' : `Elegir Plan ($${plan.priceUsd}/mes)`}</span>
