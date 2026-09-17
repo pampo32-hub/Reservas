@@ -4191,9 +4191,15 @@ class App {
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
-                    <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs" data-apt-id="${apt.id}">
-                      <i class="fas fa-star text-amber-500"></i> Calificar Atención
-                    </button>
+                    ${(apt.isReviewed || apt.reviewRating) ? `
+                      <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
+                        <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}★)
+                      </button>
+                    ` : `
+                      <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer" data-apt-id="${apt.id}">
+                        <i class="fas fa-star text-amber-500"></i> Calificar Atención
+                      </button>
+                    `}
                     <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1">
                       <i class="fas fa-check-circle"></i> Atendida
                     </span>

@@ -1680,7 +1680,13 @@ app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
 app.get('/api/businesses/:id/appointments', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM reservas_appointments WHERE business_id = $1 ORDER BY date DESC, time ASC', [id]);
+    const result = await pool.query(`
+      SELECT a.*, r.id as review_id, r.rating as review_rating, r.comment as review_comment
+      FROM reservas_appointments a
+      LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
+      WHERE a.business_id = $1 
+      ORDER BY a.date DESC, a.time ASC
+    `, [id]);
 
     const appointments = result.rows.map(a => ({
       id: a.id,
@@ -1699,6 +1705,9 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
       whatsappOptIn: a.whatsapp_opt_in !== false,
       staffId: a.staff_id || null,
       staffName: a.staff_name || '',
+      isReviewed: Boolean(a.review_id),
+      reviewRating: a.review_rating ? parseInt(a.review_rating, 10) : null,
+      reviewComment: a.review_comment || null,
       createdAt: a.created_at
     }));
 
@@ -1714,7 +1723,13 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   try {
     const { phone } = req.params;
     const { email } = req.query;
-    let query = 'SELECT a.*, b.name as business_name FROM reservas_appointments a LEFT JOIN reservas_businesses b ON a.business_id = b.id WHERE a.client_phone = $1';
+    let query = `
+      SELECT a.*, b.name as business_name, r.id as review_id, r.rating as review_rating, r.comment as review_comment
+      FROM reservas_appointments a 
+      LEFT JOIN reservas_businesses b ON a.business_id = b.id 
+      LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
+      WHERE a.client_phone = $1
+    `;
     const params = [phone];
 
     if (email && email.trim() !== '') {
@@ -1743,6 +1758,9 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       whatsappOptIn: a.whatsapp_opt_in !== false,
       staffId: a.staff_id || null,
       staffName: a.staff_name || '',
+      isReviewed: Boolean(a.review_id),
+      reviewRating: a.review_rating ? parseInt(a.review_rating, 10) : null,
+      reviewComment: a.review_comment || null,
       createdAt: a.created_at
     }));
 

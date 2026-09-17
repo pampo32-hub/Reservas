@@ -1668,6 +1668,18 @@ class StorageService {
       });
       const data = await res.json();
       if (res.ok) {
+        // Actualizar el estado de calificación de la cita localmente
+        if (reviewData.appointmentId) {
+          const appts = this.getAppointments();
+          const target = appts.find(a => String(a.id).toLowerCase() === String(reviewData.appointmentId).toLowerCase());
+          if (target) {
+            target.isReviewed = true;
+            target.reviewRating = parseInt(reviewData.rating, 10);
+            target.reviewComment = reviewData.comment || '';
+            localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appts));
+            this.appointmentsCache = appts;
+          }
+        }
         // Refrescar caché de comercios local
         await this.loadFromApi();
         return data;
