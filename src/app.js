@@ -4590,14 +4590,6 @@ class App {
           </div>
         </div>
 
-        <!-- Tabs Navigation con Scroll Táctil Suave y Sin Scrollbar -->
-        <div class="flex items-center gap-2 border-b border-slate-200 mb-6 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth">
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
-            <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
-          </button>
-          ${(!isFree && !isBasic) ? `
-            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
-              <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
         <!-- Tabs Navigation con Píldoras Segmentadas y Desplazamiento Suave -->
         <div class="bg-slate-100/90 p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-2xs mb-6">
           <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth custom-scrollbar">
@@ -4605,25 +4597,6 @@ class App {
               <i class="fas fa-calendar-alt text-xs"></i>
               <span>Agenda (${appointments.length})</span>
             </button>
-          ` : ''}
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="blocked-slots">
-            <i class="fas fa-calendar-times mr-1.5 text-rose-400"></i> Bloqueos y Horas
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="team">
-            <i class="fas fa-users-cog mr-1.5 text-indigo-500"></i> Equipo y Especialistas
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="services">
-            <i class="fas fa-tag mr-1.5"></i> Servicios y Precios (${currentBiz.services ? currentBiz.services.length : 0})
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="schedule">
-            <i class="fas fa-clock mr-1.5"></i> Horarios de Atención
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="profile">
-            <i class="fas fa-sliders-h mr-1.5 text-indigo-500"></i> Configurar Negocio
-          </button>
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="manual">
-            <i class="fas fa-book-open mr-1.5 text-amber-500"></i> Manual & Ayuda
-          </button>
             ${(!isFree && !isBasic) ? `
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="reports">
                 <i class="fas fa-chart-pie text-xs ${this.activeDashboardTab === 'reports' ? 'text-white' : 'text-emerald-500'}"></i>
