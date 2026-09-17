@@ -241,9 +241,11 @@ app.post('/api/auth/business/register', async (req, res) => {
     };
     const features = business.features || ['Sinpe Móvil', 'Atención Personalizada'];
 
-    const planId = business.plan || 'pro';
+    const planId = business.plan || 'free';
     const planPriceUsd = planId === 'free' ? 0 : (planId === 'unlimited' ? 35 : (planId === 'basic' ? 10 : 18));
     const bookingLimit = planId === 'free' ? 25 : (planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300));
+    const subStatus = planId === 'free' ? 'active' : (business.subscriptionStatus || 'pending_payment');
+    const payMethod = planId === 'free' ? 'free' : (business.paymentMethod || 'sinpe_movil');
     const socialLinks = business.socialLinks || business.social_links || {};
     const autoConfirm = business.autoConfirmAppointments !== undefined ? Boolean(business.autoConfirmAppointments) : true;
 
@@ -254,8 +256,8 @@ app.post('/api/auth/business/register', async (req, res) => {
         price_range, address, city, phone, email, description,
         image, cover_image, schedule, features, is_demo,
         plan, plan_price_usd, monthly_booking_limit, social_links,
-        auto_confirm_appointments
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+        auto_confirm_appointments, subscription_status, payment_method
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
     `, [
       newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
       5.0, 0, business.priceRange || '₡₡',
@@ -263,7 +265,7 @@ app.post('/api/auth/business/register', async (req, res) => {
       business.description || '', business.image || '', business.coverImage || '',
       JSON.stringify(schedule), JSON.stringify(features), false,
       planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks),
-      autoConfirm
+      autoConfirm, subStatus, payMethod
     ]);
 
     // Si es una categoría personalizada, registrar alerta para el Developer
@@ -948,9 +950,9 @@ app.get('/api/businesses', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
-      plan: b.plan || 'pro',
-      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18)),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.plan === 'basic' ? 150 : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300))),
+      plan: b.plan || 'free',
+      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 25)))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows
@@ -1004,9 +1006,9 @@ app.get('/api/businesses/:id', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
-      plan: b.plan || 'pro',
-      planPriceUsd: b.plan_price_usd ? parseFloat(b.plan_price_usd) : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18)),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.plan === 'basic' ? 150 : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300))),
+      plan: b.plan || 'free',
+      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 25)))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
@@ -1031,20 +1033,23 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
     const { id } = req.params;
     const { plan, planPriceUsd, monthlyBookingLimit } = req.body;
     
-    let priceUsd = 10;
-    let limit = 150;
+    let priceUsd = 0;
+    let limit = 25;
     if (plan === 'unlimited') {
       priceUsd = 35;
       limit = null;
     } else if (plan === 'pro') {
       priceUsd = 18;
       limit = 300;
-    } else {
+    } else if (plan === 'basic') {
       priceUsd = 10;
       limit = 150;
+    } else if (plan === 'free') {
+      priceUsd = 0;
+      limit = 25;
     }
 
-    const finalPrice = planPriceUsd ? parseFloat(planPriceUsd) : priceUsd;
+    const finalPrice = (planPriceUsd !== undefined && planPriceUsd !== null) ? parseFloat(planPriceUsd) : priceUsd;
     const finalLimit = monthlyBookingLimit !== undefined ? monthlyBookingLimit : limit;
 
     await pool.query(`
@@ -1357,8 +1362,8 @@ app.get('/api/businesses/:id/booking-usage', async (req, res) => {
     }
 
     const biz = bizRes.rows[0];
-    const plan = biz.plan || 'basic';
-    const limit = plan === 'unlimited' ? null : (plan === 'pro' ? ((biz.monthly_booking_limit && parseInt(biz.monthly_booking_limit, 10) > 300) ? parseInt(biz.monthly_booking_limit, 10) : 300) : (plan === 'basic' ? 150 : (biz.monthly_booking_limit ? parseInt(biz.monthly_booking_limit, 10) : 150)));
+    const plan = biz.plan || 'free';
+    const limit = plan === 'unlimited' ? null : (plan === 'free' ? 25 : (plan === 'basic' ? 150 : (plan === 'pro' ? ((biz.monthly_booking_limit && parseInt(biz.monthly_booking_limit, 10) > 300) ? parseInt(biz.monthly_booking_limit, 10) : 300) : (biz.monthly_booking_limit ? parseInt(biz.monthly_booking_limit, 10) : 25))));
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -1373,8 +1378,8 @@ app.get('/api/businesses/:id/booking-usage', async (req, res) => {
     const usagePercent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
 
     res.json({
-      plan: biz.plan || 'basic',
-      planPriceUsd: parseFloat(biz.plan_price_usd) || 10.00,
+      plan: biz.plan || 'free',
+      planPriceUsd: (biz.plan_price_usd !== null && biz.plan_price_usd !== undefined) ? parseFloat(biz.plan_price_usd) : (plan === 'free' ? 0 : (plan === 'unlimited' ? 35 : (plan === 'basic' ? 10 : 18))),
       monthlyBookingLimit: limit,
       usedThisMonth: used,
       remainingThisMonth: remaining,
@@ -3377,6 +3382,7 @@ app.post('/api/developer/activate-business-plan', async (req, res) => {
     }
 
     const planConfigMap = {
+      'free': { price: 0, limit: 25, name: 'Plan Gratis' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
       'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }

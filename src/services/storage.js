@@ -300,6 +300,7 @@ class StorageService {
     const idx = businesses.findIndex(b => b.id === businessId);
     if (idx >= 0) {
       const planConfigMap = {
+        'free': { price: 0, limit: 25, name: 'Plan Gratis' },
         'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
         'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
         'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
@@ -309,7 +310,7 @@ class StorageService {
       businesses[idx].planPriceUsd = p.price;
       businesses[idx].monthlyBookingLimit = p.limit;
       businesses[idx].subscriptionStatus = 'active';
-      businesses[idx].paymentMethod = 'sinpe_movil';
+      businesses[idx].paymentMethod = planId === 'free' ? 'free' : 'sinpe_movil';
       businesses[idx].subscriptionUpdatedAt = new Date().toISOString();
       localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
     }
@@ -627,7 +628,10 @@ class StorageService {
     
     // Normalizar límites y precios de planes para asegurar coherencia total
     return list.map(b => {
-      const plan = b.plan || 'basic';
+      const plan = b.plan || 'free';
+      if (plan === 'free') {
+        return { ...b, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
+      }
       if (plan === 'pro') {
         return { ...b, plan: 'pro', monthlyBookingLimit: (b.monthlyBookingLimit && b.monthlyBookingLimit > 300) ? b.monthlyBookingLimit : 300, planPriceUsd: 18.00 };
       }
@@ -1564,8 +1568,8 @@ class StorageService {
 
     // Fallback local
     const biz = this.getBusinessById(businessId);
-    const plan = this.getPlanById(biz ? biz.plan : 'basic');
-    const limit = plan ? plan.bookingLimit : 150;
+    const plan = this.getPlanById(biz ? (biz.plan || 'free') : 'free');
+    const limit = plan ? plan.bookingLimit : 25;
     
     const now = new Date();
     const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -1575,8 +1579,8 @@ class StorageService {
     const percent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
 
     return {
-      plan: plan ? plan.id : 'basic',
-      planPriceUsd: plan ? plan.priceUsd : 10.00,
+      plan: plan ? plan.id : 'free',
+      planPriceUsd: plan ? plan.priceUsd : 0,
       monthlyBookingLimit: limit,
       usedThisMonth: used,
       remainingThisMonth: remaining,

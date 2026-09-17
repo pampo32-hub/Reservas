@@ -1984,6 +1984,8 @@ class App {
               </div>
 
               <div class="pt-2">
+                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-sm shadow-md transition-all cursor-pointer">
+                  ¡Quiero esto en mi negocio! >
                 <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer">
                   🎁 ¡Quiero 15 Días de Prueba Pro Gratis! >
                 </button>
@@ -1993,7 +1995,7 @@ class App {
           </div>
         </section>
 
-        <!-- 3. 4 PILARES DE VALOR (VENTAJAS ESTRATÉGICAS) -->
+        <!-- 4. 4 PILARES DE VALOR (VENTAJAS ESTRATÉGICAS) -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span class="text-emerald-400 font-black text-xs uppercase tracking-wider">
@@ -2044,12 +2046,17 @@ class App {
           </div>
         </section>
 
-        <!-- 4. TABLA DE LOS 4 PLANES DE SUSCRIPCIÓN -->
+        <!-- 5. TABLA DE PLANES Y PRECIOS TRANSPARENTES -->
+        <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <!-- 5. TABLA DE LOS 4 PLANES DE SUSCRIPCIÓN -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
             <span class="text-amber-400 font-black text-xs uppercase tracking-wider">
+              <i class="fas fa-crown mr-1"></i> Precios Claros y Sin Sorpresas
               <i class="fas fa-crown mr-1"></i> Precios Transparentes y Sin Letra Pequeña
             </span>
+            <h2 class="text-2xl sm:text-4xl font-black text-white">Comienza hoy mismo sin riesgo</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Sin comisiones por cita. Prueba todas las funciones gratis.</p>
             <h2 class="text-2xl sm:text-4xl font-black text-white">Elige el plan perfecto para tu negocio</h2>
             <p class="text-xs sm:text-sm text-slate-400">Comienza 100% gratis o aprovecha los <strong>15 Días de Prueba del Plan Profesional</strong>.</p>
           </div>
@@ -2066,12 +2073,12 @@ class App {
                   <span class="text-3xl font-black text-white">₡0</span>
                   <span class="text-xs text-slate-400 font-bold">/ de por vida</span>
                 </div>
-                <p class="text-xs text-slate-400">Ideal para emprendedores independientes que están empezando.</p>
+                <p class="text-xs text-slate-400">Ideal para emprendedores independientes que están empezando a digitalizar su negocio.</p>
 
                 <ul class="space-y-2 text-xs text-slate-300 pt-2">
                   <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Hasta 25 reservas / mes</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> 1 especialista (dueño)</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Catálogo de 5 servicios</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Catálogo de hasta 5 servicios</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Tu propio link personalizado</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Cero tarjetas de crédito</li>
                 </ul>
@@ -2176,54 +2183,46 @@ class App {
           <div class="space-y-3">
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Mis clientes necesitan descargar una aplicación?</span>
                 <span>¿En qué consiste la prueba de 15 días gratis?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No, tus clientes no tienen que descargar nada pesado ni crear cuentas complicadas. Tocan tu link en Instagram o WhatsApp y reservan directamente en su navegador web en 10 segundos.
                 Al pre-registrarte recibes 15 días completos de acceso gratuito al <strong>Plan Profesional (Pro)</strong> a partir del lanzamiento oficial. Podrás probar las confirmaciones automáticas por WhatsApp, agregar hasta 5 especialistas y recibir citas sin pagar nada ni ingresar tarjeta de crédito.
               </p>
             </details>
 
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
                 <span>¿El Plan Gratis realmente es gratis de por vida?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
-                Sí, puedes usar el Plan Gratis para siempre sin costo. Te incluye hasta 25 citas mensuales y catálogo de hasta 5 servicios para tu negocio. Si en el futuro tu negocio crece y necesitas más citas o más empleados, puedes actualizar a Pro cuando quieras.
+                Sí, puedes usar el Plan Gratis para siempre sin costo alguno. Te incluye hasta 25 citas mensuales y catálogo de hasta 5 servicios para tu negocio. Si en el futuro tu negocio crece y necesitas más citas o más empleados, puedes actualizar a Pro cuando quieras.
               </p>
             </details>
 
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
+                <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Mis clientes necesitan descargar una aplicación?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                Sí. Desde tu panel de negocio puedes definir tus horarios de apertura, descansos y bloquear cualquier hora específica o día completo con un solo toque para que nadie pueda agendar en ese momento.
                 No, tus clientes no tienen que descargar nada pesado ni crear cuentas complicadas. Tocan tu link en Instagram o WhatsApp y reservan directamente en su navegador web en 10 segundos.
               </p>
             </details>
 
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Necesito tarjeta de crédito para registrarme?</span>
-                <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
-              </summary>
-              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis sin pagos previos.
-                ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
-              </p>
-            </details>
-
-            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
-              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
@@ -2238,7 +2237,7 @@ class App {
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis sin pagos previos.
+                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis o del plan gratis sin pagos previos.
               </p>
             </details>
           </div>
@@ -3956,17 +3955,18 @@ class App {
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
-    // Métricas del Plan de Suscripción ($10, $18, $35)
+    // Métricas del Plan de Suscripción ($0, $10, $18, $35)
     const currentMonth = new Date().toISOString().slice(0, 7);
     const monthAppointments = appointments.filter(a => (a.date || '').startsWith(currentMonth));
-    const currentPlanId = currentBiz.plan || 'basic';
-    const planConfig = storage.getPlanById(currentPlanId) || { id: 'basic', name: 'Plan Básico', priceUsd: 10, bookingLimit: 150 };
+    const currentPlanId = currentBiz.plan || 'free';
+    const planConfig = storage.getPlanById(currentPlanId) || { id: 'free', name: 'Plan Gratis', priceUsd: 0, bookingLimit: 25 };
+    const isFree = currentPlanId === 'free';
     const isBasic = currentPlanId === 'basic';
     const isPro = currentPlanId === 'pro';
     const isUnlimited = currentPlanId === 'unlimited';
 
-    // Si está en plan básico y tenía seleccionada la pestaña de reportes, devolver a agenda
-    if (isBasic && this.activeDashboardTab === 'reports') {
+    // Si está en plan gratis o básico y tenía seleccionada la pestaña de reportes, devolver a agenda
+    if ((isFree || isBasic) && this.activeDashboardTab === 'reports') {
       this.activeDashboardTab = 'appointments';
     }
 
@@ -3975,6 +3975,8 @@ class App {
       monthlyLimit = (currentBiz.monthlyBookingLimit && currentBiz.monthlyBookingLimit > 300) ? currentBiz.monthlyBookingLimit : 300;
     } else if (isBasic) {
       monthlyLimit = 150;
+    } else if (isFree) {
+      monthlyLimit = 25;
     } else if (isUnlimited) {
       monthlyLimit = null;
     } else if (currentBiz.monthlyBookingLimit !== undefined && currentBiz.monthlyBookingLimit !== null) {
@@ -4046,19 +4048,19 @@ class App {
         <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
           <div class="space-y-1.5 max-w-xl">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
-                <i class="fas ${currentPlanId === 'unlimited' ? 'fa-infinity' : currentPlanId === 'pro' ? 'fa-crown' : 'fa-check'}"></i>
+              <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                <i class="fas ${currentPlanId === 'unlimited' ? 'fa-infinity' : currentPlanId === 'pro' ? 'fa-crown' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
                 ${planConfig.name}
               </span>
-              <span class="text-xs text-amber-300 font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
-                $${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})
+              <span class="text-xs ${currentPlanId === 'free' ? 'text-emerald-300' : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
+                ${planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`}
               </span>
             </div>
             <h3 class="text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
             <p class="text-xs text-slate-300">
               ${isUnlimited 
                 ? `🚀 Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
-                : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas mensuales permitidas este mes.`}
+                : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas permitidas este mes.`}
             </p>
           </div>
 
@@ -4138,7 +4140,7 @@ class App {
           <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="appointments">
             <i class="fas fa-calendar-alt mr-1.5"></i> Agenda (${appointments.length})
           </button>
-          ${!isBasic ? `
+          ${(!isFree && !isBasic) ? `
             <button class="dash-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'}" data-tab="reports">
               <i class="fas fa-chart-pie mr-1.5 text-emerald-500"></i> Reportes e Ingresos
             </button>
@@ -5200,12 +5202,13 @@ class App {
 
   // --- SUB-CONTENIDO: REPORTES DE INGRESOS Y ESTADÍSTICAS DE CLIENTES FRECUENTES ---
   renderReportsTabContent(currentBiz, appointments) {
-    const plan = currentBiz.plan || 'basic';
+    const plan = currentBiz.plan || 'free';
+    const isFree = plan === 'free';
     const isBasic = plan === 'basic';
     const isPro = plan === 'pro';
     const isUnlimited = plan === 'unlimited';
 
-    if (isBasic) {
+    if (isFree || isBasic) {
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
           <div class="max-w-3xl mx-auto text-center py-6">
@@ -5215,8 +5218,7 @@ class App {
             <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Ilimitado</span>
             <h2 class="text-2xl font-black text-slate-900 mt-1">Reportes de Ingresos y Clientes Frecuentes</h2>
             <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
-              El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel/CSV, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
-              El <strong>Plan Básico ($10/mes)</strong> incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes que más visitan tu negocio, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
+              Tu plan actual (<strong>${isFree ? 'Plan Gratis (₡0)' : 'Plan Básico ($10/mes)'}</strong>) incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes frecuentes, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
@@ -5238,11 +5240,8 @@ class App {
 
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                 <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-2">
-                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-2">
                   <i class="fas fa-file-excel"></i>
                 </div>
-                <h4 class="text-xs font-bold text-slate-900">Exportación a CSV / Excel</h4>
-                <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes e ingresos para tu contabilidad.</p>
                 <h4 class="text-xs font-bold text-slate-900">Exportación a Excel & PDF</h4>
                 <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes, citas e ingresos en hojas de cálculo y PDF.</p>
               </div>
@@ -6366,12 +6365,13 @@ class App {
 
   // --- SUB-CONTENIDO: GESTIÓN DE EQUIPO Y ESPECIALISTAS ---
   renderTeamTabContent(currentBiz) {
-    const plan = currentBiz.plan || 'basic';
+    const plan = currentBiz.plan || 'free';
+    const isFree = plan === 'free';
     const isBasic = plan === 'basic';
     const isPro = plan === 'pro';
     const isUnlimited = plan === 'unlimited';
 
-    if (isBasic) {
+    if (isFree || isBasic) {
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
           <div class="max-w-3xl mx-auto text-center py-6">
@@ -6381,7 +6381,7 @@ class App {
             <span class="text-xs uppercase font-extrabold text-amber-600 tracking-wider">Función Premium</span>
             <h2 class="text-2xl font-black text-slate-900 mt-1">Gestión de Múltiples Especialistas</h2>
             <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
-              El <strong>Plan Básico ($10/mes)</strong> está optimizado para <strong>1 solo operador (Dueño)</strong>. Si cuentas con un equipo de trabajo (barberos, estilistas, terapeutas, manicuristas o médicos), sube de plan para que cada colaborador tenga su propia agenda y disponibilidad independiente.
+              Tu plan actual (<strong>${isFree ? 'Plan Gratis (₡0)' : 'Plan Básico ($10/mes)'}</strong>) está optimizado para <strong>1 solo operador (Dueño)</strong>. Si cuentas con un equipo de trabajo (barberos, estilistas, terapeutas, manicuristas o médicos), sube de plan para que cada colaborador tenga su propia agenda y disponibilidad independiente.
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
@@ -8753,7 +8753,6 @@ class App {
                               id="dev-test-phone-input" 
                               value="62297240" 
                               placeholder="Ej. 62297240 o +50662297240" 
-                              class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-em
                               class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                             >
                             <button 
@@ -10340,7 +10339,7 @@ class App {
     document.querySelectorAll('.biz-plan-card-label').forEach(label => {
       label.addEventListener('click', () => {
         document.querySelectorAll('.biz-plan-card-label').forEach(l => {
-          l.classList.remove('bg-indigo-950', 'border-blue-400', 'border-amber-400', 'border-purple-400', 'ring-2', 'ring-blue-400/30', 'ring-amber-400/30', 'ring-purple-400/30');
+          l.classList.remove('bg-indigo-950', 'border-emerald-400', 'border-blue-400', 'border-amber-400', 'border-purple-400', 'ring-2', 'ring-emerald-400/30', 'ring-blue-400/30', 'ring-amber-400/30', 'ring-purple-400/30');
           l.classList.add('bg-slate-800/80', 'border-slate-700');
         });
         const radio = label.querySelector('input[type="radio"]');
@@ -10349,9 +10348,21 @@ class App {
           const val = radio.value;
           label.classList.remove('bg-slate-800/80', 'border-slate-700');
           label.classList.add('bg-indigo-950', 'ring-2');
-          if (val === 'pro') label.classList.add('border-amber-400', 'ring-amber-400/30');
-          else if (val === 'unlimited') label.classList.add('border-purple-400', 'ring-purple-400/30');
-          else label.classList.add('border-blue-400', 'ring-blue-400/30');
+          if (val === 'free') {
+            label.classList.add('border-emerald-400', 'ring-emerald-400/30');
+            const freeNote = document.getElementById('biz-paymethod-free-note');
+            const payOptions = document.getElementById('biz-paymethod-options');
+            if (freeNote) { freeNote.classList.remove('hidden'); freeNote.classList.add('block'); }
+            if (payOptions) { payOptions.classList.add('hidden'); payOptions.classList.remove('block'); }
+          } else {
+            const freeNote = document.getElementById('biz-paymethod-free-note');
+            const payOptions = document.getElementById('biz-paymethod-options');
+            if (freeNote) { freeNote.classList.add('hidden'); freeNote.classList.remove('block'); }
+            if (payOptions) { payOptions.classList.remove('hidden'); payOptions.classList.add('block'); }
+            if (val === 'pro') label.classList.add('border-amber-400', 'ring-amber-400/30');
+            else if (val === 'unlimited') label.classList.add('border-purple-400', 'ring-purple-400/30');
+            else label.classList.add('border-blue-400', 'ring-blue-400/30');
+          }
         }
       });
     });
@@ -10980,7 +10991,7 @@ class App {
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full overflow-hidden border border-slate-200 my-auto max-h-[96vh] flex flex-col">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-200 my-auto max-h-[96vh] flex flex-col">
           
           <!-- Header Compacto -->
           <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 px-5 py-3.5 sm:px-6 sm:py-4 text-white flex items-center justify-between shrink-0 border-b border-indigo-900/50">
@@ -10989,27 +11000,28 @@ class App {
                 <i class="fas fa-fire text-amber-400 text-[10px]"></i> Precios de Prelanzamiento • Tarifa Congelada
               </div>
               <h3 class="text-base sm:text-xl font-black">Elige el plan ideal para tu comercio</h3>
-              <p class="text-xs text-slate-300 hidden sm:block">Asegura tu precio de preventa con descuento especial y 15 días gratis de bienvenida a partir del lanzamiento.</p>
+              <p class="text-xs text-slate-300 hidden sm:block">Asegura tu precio de preventa con descuento especial o comienza 100% gratis de por vida.</p>
             </div>
             <button id="close-plans-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-xs"></i>
             </button>
           </div>
 
-          <!-- Body: Grid de los 3 Planes -->
+          <!-- Body: Grid de los 4 Planes -->
           <div class="p-4 sm:p-5 overflow-y-auto flex-1 bg-slate-50">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 items-stretch">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 items-stretch">
               ${plans.map(plan => {
                 const isCurrent = isOwnerContext && (currentPlanId === plan.id);
+                const isFree = plan.id === 'free';
                 const isPro = plan.id === 'pro';
                 const isUnlimited = plan.id === 'unlimited';
 
                 return `
-                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isPro ? 'border-amber-400 shadow-md ring-1 ring-amber-400/30' : isUnlimited ? 'border-purple-300 shadow-xs' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-slate-400">
+                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isFree ? 'border-emerald-400 shadow-md ring-1 ring-emerald-400/30' : isPro ? 'border-amber-400 shadow-md ring-1 ring-amber-400/30' : isUnlimited ? 'border-purple-300 shadow-xs' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-slate-400">
                     
                     ${plan.badge ? `
                       <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isPro ? 'bg-amber-400 text-slate-950 font-black' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isFree ? 'bg-emerald-500 text-white font-black' : isPro ? 'bg-amber-400 text-slate-950 font-black' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
                           ${plan.badge}
                         </span>
                       </div>
@@ -11019,8 +11031,8 @@ class App {
                       <!-- Nombre del Plan e Icono -->
                       <div class="flex items-center justify-between mb-1 mt-0.5">
                         <h4 class="text-base font-extrabold text-slate-900">${plan.name}</h4>
-                        <span class="w-7 h-7 rounded-lg ${isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
-                          <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : 'fa-rocket'}"></i>
+                        <span class="w-7 h-7 rounded-lg ${isFree ? 'bg-emerald-100 text-emerald-700' : isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
+                          <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : isFree ? 'fa-gift' : 'fa-rocket'}"></i>
                         </span>
                       </div>
 
@@ -11030,22 +11042,28 @@ class App {
                       <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 mb-2.5">
                         <div class="flex items-baseline justify-between flex-wrap gap-1">
                           <div class="flex items-baseline gap-1.5 flex-wrap">
-                            ${plan.originalPriceUsd ? `
-                              <span class="text-xs sm:text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$${plan.originalPriceUsd}</span>
-                            ` : ''}
-                            <span class="text-2xl sm:text-3xl font-black ${isPro ? 'text-amber-600' : isUnlimited ? 'text-purple-600' : 'text-slate-900'}">$${plan.priceUsd}</span>
-                            <span class="text-[10px] text-slate-500 font-bold uppercase">USD/mes</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[9px] font-black uppercase tracking-tight">Lanzamiento</span>
+                            ${isFree ? `
+                              <span class="text-2xl sm:text-3xl font-black text-emerald-600">₡0</span>
+                              <span class="text-[10px] text-slate-500 font-bold uppercase">De por vida</span>
+                              <span class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase tracking-tight">100% Gratis</span>
+                            ` : `
+                              ${plan.originalPriceUsd ? `
+                                <span class="text-xs sm:text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$${plan.originalPriceUsd}</span>
+                              ` : ''}
+                              <span class="text-2xl sm:text-3xl font-black ${isPro ? 'text-amber-600' : isUnlimited ? 'text-purple-600' : 'text-slate-900'}">$${plan.priceUsd}</span>
+                              <span class="text-[10px] text-slate-500 font-bold uppercase">USD/mes</span>
+                              <span class="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[9px] font-black uppercase tracking-tight">Lanzamiento</span>
+                            `}
                           </div>
                           <span class="text-[11px] text-slate-700 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
-                            ~${this.formatColones(plan.priceCrc)} CRC
+                            ${isFree ? '₡0 CRC' : `~${this.formatColones(plan.priceCrc)} CRC`}
                           </span>
                         </div>
                       </div>
 
                       <!-- Capacidad / Límites -->
                       <div class="grid grid-cols-2 gap-1.5 mb-2.5">
-                        <div class="p-1.5 rounded-lg ${isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
+                        <div class="p-1.5 rounded-lg ${isFree ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
                           <i class="fas ${isUnlimited ? 'fa-infinity text-[9px]' : 'fa-calendar-check text-[9px]'}"></i>
                           <span class="truncate">${plan.bookingLimitLabel}</span>
                         </div>
@@ -11074,10 +11092,10 @@ class App {
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-btn w-full py-2.5 ${isPro ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
+                          class="select-plan-btn w-full py-2.5 ${isFree ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20' : isPro ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
                           data-plan-id="${plan.id}"
                         >
-                          <span>Elegir Plan ($${plan.priceUsd}/mes)</span>
+                          <span>${isFree ? 'Elegir Plan Gratis' : `Elegir Plan ($${plan.priceUsd}/mes)`}</span>
                           <i class="fas fa-arrow-right text-[10px]"></i>
                         </button>
                       `}
@@ -11092,7 +11110,7 @@ class App {
           <div class="px-5 py-2.5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 shrink-0">
             <div class="flex items-center gap-1.5">
               <i class="fas fa-gift text-amber-500 text-xs"></i>
-              <span class="text-slate-700 font-semibold">15 Días Gratis incluidos al pre-registrarte. Sin contratos forzosos.</span>
+              <span class="text-slate-700 font-semibold">15 Días Gratis de prueba del Plan Pro o Plan Gratis de por vida. Sin compromisos.</span>
             </div>
             <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica 🇨🇷</span>
           </div>
@@ -11106,13 +11124,19 @@ class App {
 
     // Acción: Seleccionar Plan
     document.querySelectorAll('.select-plan-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const planId = btn.getAttribute('data-plan-id');
         const bizUser = storage.getBusinessUser();
         const activeBizId = businessId || (bizUser ? bizUser.businessId : null);
         modalContainer.innerHTML = '';
 
         if (activeBizId) {
+          if (planId === 'free') {
+            await storage.updateBusinessPlan(activeBizId, 'free');
+            this.showToast('✅ ¡Plan cambiado a Plan Gratis de por vida exitosamente!', 'success');
+            this.renderCurrentView();
+            return;
+          }
           this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
         } else {
           this.showToast('Primero crea la cuenta de tu negocio para asociarle tu plan.', 'info');
