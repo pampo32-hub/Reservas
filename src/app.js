@@ -1928,97 +1928,6 @@ class App {
           </div>
         </section>
 
-        <!-- 2. CALCULADORA INTERACTIVA DE AHORRO -->
-        <section id="landing-calculator-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-          <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl border border-slate-800 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="text-center max-w-2xl mx-auto mb-8 space-y-2">
-              <span class="text-emerald-400 font-black text-xs uppercase tracking-wider">
-                <i class="fas fa-calculator mr-1"></i> Calculadora Interactiva de Rendimiento
-              </span>
-              <h2 class="text-2xl sm:text-4xl font-black text-white">¿Cuánto tiempo y dinero estás perdiendo?</h2>
-              <p class="text-xs sm:text-sm text-slate-400">Calcula cuánto ganas al automatizar la gestión de tus citas con Reservas CR.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              
-              <!-- Controles Interactivos -->
-              <div class="space-y-6 bg-slate-950/80 p-6 rounded-2xl border border-slate-800/80">
-                <!-- Slider Citas Diarias -->
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="calc-daily-appointments" class="text-xs sm:text-sm font-bold text-slate-300">Citas atendidas al día:</label>
-                    <span id="calc-daily-val" class="px-3 py-1 rounded-xl bg-blue-500/20 text-cyan-400 font-black text-sm border border-cyan-500/30">15 citas</span>
-                  </div>
-                  <input type="range" id="calc-daily-appointments" min="5" max="50" step="1" value="15" class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
-                  <div class="flex justify-between text-[11px] text-slate-400 mt-1">
-                    <span>5 citas</span>
-                    <span>25 citas</span>
-                    <span>50 citas</span>
-                  </div>
-                </div>
-
-                <!-- Input Precio Promedio -->
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="calc-price-service" class="text-xs sm:text-sm font-bold text-slate-300">Precio promedio por servicio (₡):</label>
-                    <span id="calc-price-val" class="text-xs text-slate-400 font-semibold">₡12,000</span>
-                  </div>
-                  <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₡</span>
-                    <input type="number" id="calc-price-service" value="12000" step="1000" min="2000" max="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-8 pr-4 text-white font-bold text-sm focus:outline-none focus:border-cyan-400">
-                  </div>
-                </div>
-
-                <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
-                  <i class="fas fa-lightbulb text-amber-400 text-sm mt-0.5 flex-shrink-0"></i>
-                  <span>Un negocio promedio gasta <strong>3.5 minutos por cliente</strong> respondiendo mensajes y coordinando turnos en WhatsApp.</span>
-                </div>
-              </div>
-
-              <!-- Resultados en Tiempo Real -->
-              <div class="space-y-4">
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-900 border border-blue-500/30 shadow-lg">
-                  <div class="flex items-center gap-3 mb-1">
-                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-cyan-400 flex items-center justify-center text-lg">
-                      <i class="fas fa-hourglass-half"></i>
-                    </div>
-                    <div>
-                      <span class="text-xs text-slate-400 font-bold block">Tiempo libre recuperado</span>
-                      <h4 id="calc-hours-saved" class="text-2xl font-black text-cyan-300">22 horas al mes</h4>
-                    </div>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-2">Horas que dejas de pasar pegado al teléfono y puedes usar para atender más clientes o descansar.</p>
-                </div>
-
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/30 shadow-lg">
-                  <div class="flex items-center gap-3 mb-1">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
-                      <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div>
-                      <span class="text-xs text-slate-400 font-bold block">Citas adicionales fuera de horario</span>
-                      <h4 id="calc-extra-bookings" class="text-2xl font-black text-emerald-400">+93 citas / mes</h4>
-                    </div>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-2">Captadas mientras duermes gracias a que el cliente puede reservar a las 11:00 PM o domingos sin esperar respuesta.</p>
-                </div>
-
-                <div class="text-center pt-2">
-                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-emerald-500/20 cursor-pointer">
-                    ¡Quiero recuperar mi tiempo ahora! >
-                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer">
-                    🎁 ¡Pre-registrarme con 15 Días de Prueba Pro Gratis! >
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        <!-- 3. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <!-- 2. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <section id="landing-demo-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
@@ -2427,22 +2336,12 @@ class App {
 
   // --- EVENTOS Y LÓGICA DE LA LANDING DE NEGOCIOS ---
   initBusinessLandingEvents() {
-    // 1. Botones de Registro
-    const openRegister = () => this.renderAuthModal({ mode: 'register', role: 'business' });
-    document.getElementById('landing-hero-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-demo-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
-    document.getElementById('landing-plan-pro-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'pro' }));
-    document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openRegister);
     // 1. Botones Principales que dirigen al Pre-registro con 15 Días de Prueba Pro
     const openPreRegister = () => this.renderPreRegisterModal('pro');
     document.getElementById('landing-hero-register-btn')?.addEventListener('click', openPreRegister);
-    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openPreRegister);
     document.getElementById('landing-demo-register-btn')?.addEventListener('click', openPreRegister);
     document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openPreRegister);
 
-    // 2. Smooth Scroll to Demo
     // 2. Botones de Planes Específicos
     document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => {
       this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
@@ -2459,34 +2358,6 @@ class App {
     document.getElementById('landing-scroll-demo-btn')?.addEventListener('click', () => {
       document.getElementById('landing-demo-section')?.scrollIntoView({ behavior: 'smooth' });
     });
-
-    // 3. Calculadora Interactiva de Ahorro
-    const dailyInput = document.getElementById('calc-daily-appointments');
-    const priceInput = document.getElementById('calc-price-service');
-    const dailyValSpan = document.getElementById('calc-daily-val');
-    const priceValSpan = document.getElementById('calc-price-val');
-    const hoursSavedEl = document.getElementById('calc-hours-saved');
-    const extraBookingsEl = document.getElementById('calc-extra-bookings');
-
-    const recalculateSavings = () => {
-      const daily = parseInt(dailyInput?.value || 15, 10);
-      const price = parseInt(priceInput?.value || 12000, 10);
-
-      if (dailyValSpan) dailyValSpan.textContent = `${daily} citas`;
-      if (priceValSpan) priceValSpan.textContent = `₡${price.toLocaleString('es-CR')}`;
-
-      // Ahorro de tiempo: 3.5 minutos por cliente x 25 días laborales / 60 min
-      const hoursSavedMonth = Math.round((daily * 3.5 * 25) / 60);
-      if (hoursSavedEl) hoursSavedEl.textContent = `${hoursSavedMonth} horas al mes`;
-
-      // Citas adicionales estimadas fuera de horario (~25% de volumen mensual)
-      const monthlyAppointments = daily * 25;
-      const extraBookings = Math.round(monthlyAppointments * 0.25);
-      if (extraBookingsEl) extraBookingsEl.textContent = `+${extraBookings} citas / mes`;
-    };
-
-    dailyInput?.addEventListener('input', recalculateSavings);
-    priceInput?.addEventListener('input', recalculateSavings);
 
     // 4. Simulador de Reserva Demo Interactiva
     let selectedDemoService = 'Corte & Barba VIP';
@@ -5051,6 +4922,11 @@ class App {
           </div>
 
           <form id="edit-profile-form" class="space-y-6 text-xs sm:text-sm">
+            <!-- Sección Fotos con Guía de Medidas -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-5">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fas fa-images text-blue-600"></i> Fotos y Banners del Comercio
+              </h3>
             <!-- Sección Fotos con Guía de Medidas y Carga desde PC/Móvil -->
             <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-6">
               <div class="flex items-center justify-between border-b border-slate-200 pb-3">
@@ -5063,6 +4939,9 @@ class App {
               </div>
 
               <!-- Banner de Portada -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <label class="font-bold text-slate-700">Banner / Portada Principal</label>
               <div class="space-y-3">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
@@ -5070,11 +4949,28 @@ class App {
                     <p class="text-[11px] text-slate-500">Aparece en el encabezado de la página de tu negocio.</p>
                   </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 1200 x 450 px (16:6)
                     <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 1200 x 450 px (16:6)
                   </span>
                 </div>
+                <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="URL de la imagen de portada (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
+                <!-- Preview Banner -->
+                <div class="h-32 w-full rounded-xl overflow-hidden bg-slate-200 border border-slate-300 relative">
+                  <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image}" alt="Vista previa banner" class="w-full h-full object-cover">
+                  <span class="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">Vista previa del banner</span>
 
                 <!-- Preview Banner & Trigger Button -->
+                <div class="space-y-2">
+                  <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
+                    <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
+                      <i class="fas fa-camera text-2xl"></i>
+                      <span class="text-xs font-bold">Cambiar imagen de portada</span>
+                      <span class="text-[10px] text-slate-200">Clic para seleccionar desde tu PC o celular</span>
+                    </div>
+                    <span class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] px-2.5 py-1 rounded-lg font-medium pointer-events-none">
+                      <i class="fas fa-eye mr-1"></i> Vista previa
+                    </span>
                 <div class="h-36 sm:h-44 w-full rounded-2xl overflow-hidden bg-slate-200 border-2 border-dashed border-slate-300 relative group cursor-pointer" id="banner-dropzone">
                   <img id="preview-cover-img" src="${currentBiz.coverImage || currentBiz.image || 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=1200'}" alt="Vista previa banner" class="w-full h-full object-cover">
                   <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 backdrop-blur-xs">
@@ -5087,6 +4983,16 @@ class App {
                   </span>
                 </div>
 
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
+                    <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                      <i class="fas fa-upload"></i>
+                      <span>Subir Banner desde PC / Celular</span>
+                    </button>
+                    <span id="cover-upload-status" class="text-xs text-emerald-600 font-bold hidden items-center gap-1">
+                      <i class="fas fa-check-circle"></i> Imagen cargada y optimizada
+                    </span>
+                  </div>
                 <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="upload-biz-cover-file" accept="image/*" class="hidden">
                   <button type="button" id="btn-trigger-upload-cover" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
@@ -5098,6 +5004,11 @@ class App {
                   </span>
                 </div>
 
+                  <div class="pt-1">
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
+                      <span>O ingresa el enlace URL de la imagen directamente:</span>
+                    </div>
+                    <input type="text" id="edit-biz-cover" value="${currentBiz.coverImage || ''}" placeholder="https://ejemplo.com/portada.jpg" class="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
                 <div class="pt-1">
                   <div class="flex items-center justify-between text-[11px] text-slate-500 mb-1">
                     <span>O ingresa el enlace URL de la imagen directamente:</span>
@@ -5107,6 +5018,9 @@ class App {
               </div>
 
               <!-- Foto de Perfil / Logo -->
+              <div class="space-y-2 pt-3 border-t border-slate-200">
+                <div class="flex items-center justify-between">
+                  <label class="font-bold text-slate-700">Foto de Perfil / Logo Cuadrado</label>
               <div class="space-y-3 pt-4 border-t border-slate-200">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <div>
@@ -5114,9 +5028,15 @@ class App {
                     <p class="text-[11px] text-slate-500">Se muestra en la tarjeta de búsqueda, directorio y logo principal.</p>
                   </div>
                   <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-200">
+                    <i class="fas fa-ruler-combined mr-1"></i> Medida: 800 x 800 px (1:1)
                     <i class="fas fa-ruler-combined mr-1"></i> Recomendado: 800 x 800 px (1:1)
                   </span>
                 </div>
+                <input type="text" id="edit-biz-image" value="${currentBiz.image || ''}" placeholder="URL del logo o foto de perfil (https://...)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl">
+                <!-- Preview Logo -->
+                <div class="flex items-center gap-3">
+                  <img id="preview-logo-img" src="${currentBiz.image}" alt="Vista previa logo" class="w-16 h-16 rounded-2xl object-cover border border-slate-300">
+                  <span class="text-xs text-slate-500">Se muestra en las tarjetas de búsqueda del directorio.</span>
 
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   <!-- Avatar Preview / Trigger -->
@@ -10742,6 +10662,7 @@ class App {
               <!-- FORM 4: REGISTRO NUEVO NEGOCIO (RÁPIDO Y SENCILLO) -->
               <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
                 
+... [truncated for diff preview]
                 <!-- 1. SELECCIÓN DE PLAN DE SUSCRIPCIÓN -->
                 <div class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
                   <div class="flex items-center justify-between">
