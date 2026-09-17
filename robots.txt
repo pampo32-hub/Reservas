@@ -1,0 +1,20 @@
+# Robots.txt para Reservas CR
+# https://reservascr.com
+
+User-agent: *
+Allow: /
+Allow: /unete
+Allow: /manual-comercios
+Allow: /manual-comercios-pdf
+Allow: /negocio/
+Allow: /public/
+
+# Bloquear paneles privados y APIs de administración
+Disallow: /panel-negocio
+Disallow: /developer
+Disallow: /mis-reservas
+Disallow: /calificar/
+Disallow: /api/
+
+# Ubicación del Sitemap oficial para Google y otros motores de búsqueda
+Sitemap: https://reservascr.com/sitemap.xml
