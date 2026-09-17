@@ -628,7 +628,7 @@ class StorageService {
     
     // Normalizar límites y precios de planes para asegurar coherencia total
     return list.map(b => {
-      const plan = b.plan || 'free';
+      const plan = b.plan || 'pro';
       if (plan === 'free') {
         return { ...b, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
       }

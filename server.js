@@ -950,9 +950,9 @@ app.get('/api/businesses', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
-      plan: b.plan || 'free',
+      plan: b.plan || 'pro',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 25)))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows
@@ -1006,9 +1006,9 @@ app.get('/api/businesses/:id', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
-      plan: b.plan || 'free',
+      plan: b.plan || 'pro',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 25)))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
