@@ -1770,97 +1770,7 @@ class App {
           </div>
         </section>
 
-        <!-- 2. CALCULADORA INTERACTIVA DE AHORRO -->
-        <section id="landing-calculator-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-          <div class="bg-gradient-to-b from-slate-900 to-slate-950 rounded-3xl border border-slate-800 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
-            <div class="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div class="text-center max-w-2xl mx-auto mb-8 space-y-2">
-              <span class="text-emerald-400 font-black text-xs uppercase tracking-wider">
-                <i class="fas fa-calculator mr-1"></i> Calculadora Interactiva de Rendimiento
-              </span>
-              <h2 class="text-2xl sm:text-4xl font-black text-white">¿Cuánto tiempo y dinero estás perdiendo?</h2>
-              <p class="text-xs sm:text-sm text-slate-400">Calcula cuánto ganas al automatizar la gestión de tus citas con Reservas CR.</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              
-              <!-- Controles Interactivos -->
-              <div class="space-y-6 bg-slate-950/80 p-6 rounded-2xl border border-slate-800/80">
-                <!-- Slider Citas Diarias -->
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="calc-daily-appointments" class="text-xs sm:text-sm font-bold text-slate-300">Citas atendidas al día:</label>
-                    <span id="calc-daily-val" class="px-3 py-1 rounded-xl bg-blue-500/20 text-cyan-400 font-black text-sm border border-cyan-500/30">15 citas</span>
-                  </div>
-                  <input type="range" id="calc-daily-appointments" min="5" max="50" step="1" value="15" class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400">
-                  <div class="flex justify-between text-[11px] text-slate-400 mt-1">
-                    <span>5 citas</span>
-                    <span>25 citas</span>
-                    <span>50 citas</span>
-                  </div>
-                </div>
-
-                <!-- Input Precio Promedio -->
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <label for="calc-price-service" class="text-xs sm:text-sm font-bold text-slate-300">Precio promedio por servicio (₡):</label>
-                    <span id="calc-price-val" class="text-xs text-slate-400 font-semibold">₡12,000</span>
-                  </div>
-                  <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₡</span>
-                    <input type="number" id="calc-price-service" value="12000" step="1000" min="2000" max="150000" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-8 pr-4 text-white font-bold text-sm focus:outline-none focus:border-cyan-400">
-                  </div>
-                </div>
-
-                <div class="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 flex items-start gap-2.5">
-                  <i class="fas fa-lightbulb text-amber-400 text-sm mt-0.5 flex-shrink-0"></i>
-                  <span>Un negocio promedio gasta <strong>3.5 minutos por cliente</strong> respondiendo mensajes y coordinando turnos en WhatsApp.</span>
-                </div>
-              </div>
-
-              <!-- Resultados en Tiempo Real -->
-              <div class="space-y-4">
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-900 border border-blue-500/30 shadow-lg">
-                  <div class="flex items-center gap-3 mb-1">
-                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-cyan-400 flex items-center justify-center text-lg">
-                      <i class="fas fa-hourglass-half"></i>
-                    </div>
-                    <div>
-                      <span class="text-xs text-slate-400 font-bold block">Tiempo libre recuperado</span>
-                      <h4 id="calc-hours-saved" class="text-2xl font-black text-cyan-300">22 horas al mes</h4>
-                    </div>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-2">Horas que dejas de pasar pegado al teléfono y puedes usar para atender más clientes o descansar.</p>
-                </div>
-
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/30 shadow-lg">
-                  <div class="flex items-center gap-3 mb-1">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
-                      <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div>
-                      <span class="text-xs text-slate-400 font-bold block">Citas adicionales fuera de horario</span>
-                      <h4 id="calc-extra-bookings" class="text-2xl font-black text-emerald-400">+93 citas / mes</h4>
-                    </div>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-2">Captadas mientras duermes gracias a que el cliente puede reservar a las 11:00 PM o domingos sin esperar respuesta.</p>
-                </div>
-
-                <div class="text-center pt-2">
-                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-emerald-500/20 cursor-pointer">
-                    ¡Quiero recuperar mi tiempo ahora! >
-                  <button id="landing-calc-register-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm transition-all shadow-md shadow-amber-500/20 cursor-pointer">
-                    🎁 ¡Pre-registrarme con 15 Días de Prueba Pro Gratis! >
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        <!-- 3. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
+        <!-- 2. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <section id="landing-demo-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
             <span class="text-cyan-400 font-black text-xs uppercase tracking-wider">
@@ -2216,49 +2126,61 @@ class App {
           <div class="space-y-3">
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Mis clientes necesitan descargar una aplicación?</span>
                 <span>¿En qué consiste la prueba de 15 días gratis?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No, tus clientes no tienen que descargar nada pesado ni crear cuentas complicadas. Tocan tu link en Instagram o WhatsApp y reservan directamente en su navegador web en 10 segundos.
                 Al pre-registrarte recibes 15 días completos de acceso gratuito al <strong>Plan Profesional (Pro)</strong> a partir del lanzamiento oficial. Podrás probar las confirmaciones automáticas por WhatsApp, agregar hasta 5 especialistas y recibir citas sin pagar nada ni ingresar tarjeta de crédito.
               </p>
             </details>
 
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
                 <span>¿El Plan Gratis realmente es gratis de por vida?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
                 Sí, puedes usar el Plan Gratis para siempre sin costo. Te incluye hasta 25 citas mensuales y catálogo de hasta 5 servicios para tu negocio. Si en el futuro tu negocio crece y necesitas más citas o más empleados, puedes actualizar a Pro cuando quieras.
               </p>
             </details>
 
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
                 <span>¿Mis clientes necesitan descargar una aplicación?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                Sí. Desde tu panel de negocio puedes definir tus horarios de apertura, descansos y bloquear cualquier hora específica o día completo con un solo toque para que nadie pueda agendar en ese momento.
                 No, tus clientes no tienen que descargar nada pesado ni crear cuentas complicadas. Tocan tu link en Instagram o WhatsApp y reservan directamente en su navegador web en 10 segundos.
               </p>
             </details>
 
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿Necesito tarjeta de crédito para registrarme?</span>
                 <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
                 <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis sin pagos previos.
                 ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                Sí. Desde tu panel de negocio puedes definir tus horarios de apertura, descansos y bloquear cualquier hora específica o día completo con un solo toque para que nadie pueda agendar en ese momento.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
+              <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
+                <span>¿Necesito tarjeta de crédito para registrarme?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-3 leading-relaxed">
+                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis sin pagos previos.
               </p>
             </details>
           </div>
@@ -2273,8 +2195,6 @@ class App {
               Pre-regístrate hoy y asegura tus <strong>15 Días de Prueba Gratis del Plan Pro</strong> sin ningún compromiso.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
-              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
-                <i class="fas fa-rocket mr-2"></i> Crear Mi Cuenta Gratis Ahora
               <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
                 🎁 Pre-registrarme con 15 Días Pro Gratis
               </button>
@@ -2290,22 +2210,12 @@ class App {
 
   // --- EVENTOS Y LÓGICA DE LA LANDING DE NEGOCIOS ---
   initBusinessLandingEvents() {
-    // 1. Botones de Registro
-    const openRegister = () => this.renderAuthModal({ mode: 'register', role: 'business' });
-    document.getElementById('landing-hero-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-demo-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
-    document.getElementById('landing-plan-pro-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'pro' }));
-    document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openRegister);
     // 1. Botones Principales que dirigen al Pre-registro con 15 Días de Prueba Pro
     const openPreRegister = () => this.renderPreRegisterModal('pro');
     document.getElementById('landing-hero-register-btn')?.addEventListener('click', openPreRegister);
-    document.getElementById('landing-calc-register-btn')?.addEventListener('click', openPreRegister);
     document.getElementById('landing-demo-register-btn')?.addEventListener('click', openPreRegister);
     document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openPreRegister);
 
-    // 2. Smooth Scroll to Demo
     // 2. Botones de Planes Específicos
     document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => {
       this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
@@ -2322,34 +2232,6 @@ class App {
     document.getElementById('landing-scroll-demo-btn')?.addEventListener('click', () => {
       document.getElementById('landing-demo-section')?.scrollIntoView({ behavior: 'smooth' });
     });
-
-    // 3. Calculadora Interactiva de Ahorro
-    const dailyInput = document.getElementById('calc-daily-appointments');
-    const priceInput = document.getElementById('calc-price-service');
-    const dailyValSpan = document.getElementById('calc-daily-val');
-    const priceValSpan = document.getElementById('calc-price-val');
-    const hoursSavedEl = document.getElementById('calc-hours-saved');
-    const extraBookingsEl = document.getElementById('calc-extra-bookings');
-
-    const recalculateSavings = () => {
-      const daily = parseInt(dailyInput?.value || 15, 10);
-      const price = parseInt(priceInput?.value || 12000, 10);
-
-      if (dailyValSpan) dailyValSpan.textContent = `${daily} citas`;
-      if (priceValSpan) priceValSpan.textContent = `₡${price.toLocaleString('es-CR')}`;
-
-      // Ahorro de tiempo: 3.5 minutos por cliente x 25 días laborales / 60 min
-      const hoursSavedMonth = Math.round((daily * 3.5 * 25) / 60);
-      if (hoursSavedEl) hoursSavedEl.textContent = `${hoursSavedMonth} horas al mes`;
-
-      // Citas adicionales estimadas fuera de horario (~25% de volumen mensual)
-      const monthlyAppointments = daily * 25;
-      const extraBookings = Math.round(monthlyAppointments * 0.25);
-      if (extraBookingsEl) extraBookingsEl.textContent = `+${extraBookings} citas / mes`;
-    };
-
-    dailyInput?.addEventListener('input', recalculateSavings);
-    priceInput?.addEventListener('input', recalculateSavings);
 
     // 4. Simulador de Reserva Demo Interactiva
     let selectedDemoService = 'Corte & Barba VIP';
