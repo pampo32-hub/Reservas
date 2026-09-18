@@ -55,15 +55,14 @@ app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
   res.sendFile(htmlPath);
 });
 
-// Rutas directas para Landing B2B de Negocios
-app.get(['/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio'], (req, res) => {
-  res.redirect('/#/unete');
+// Rutas directas para Landing B2B de Negocios y Ambiente de Pruebas
+app.get([
+  '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
+  '/pruebas', '/planes-prueba', '/test-planes', '/planes-test', '/demo-planes'
+], (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rutas directas para Ambiente de Pruebas de Planes (₡5 y ₡10)
-app.get(['/pruebas', '/planes-prueba', '/test-planes', '/planes-test'], (req, res) => {
-  res.redirect('/#/pruebas');
-});
 
 
 // Sitemap y Robots para Indexación en Google / Search Console

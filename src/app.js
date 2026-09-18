@@ -574,10 +574,6 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialUrl);
     }
 
-    this.renderHeader();
-    this.renderMobileBottomNav();
-    this.renderCurrentView();
-    this.setupGlobalEvents();
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -1370,6 +1366,11 @@ class App {
           <button type="button" class="open-terms-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Términos y Condiciones</button>
           <span class="text-slate-300">•</span>
           <button type="button" class="open-privacy-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Privacidad</button>
+          <span class="text-slate-300">•</span>
+          <button type="button" id="footer-test-plans-btn" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 font-bold border border-emerald-500/30 transition-all cursor-pointer text-[11px] flex items-center gap-1" title="Entorno de pruebas SINPE Móvil (₡5 y ₡10)">
+            <i class="fas fa-flask text-emerald-600"></i>
+            <span>Pruebas SINPE (₡5/₡10)</span>
+          </button>
           ${bizUser ? `
             <span class="text-slate-300">•</span>
             <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer flex items-center gap-1.5 font-bold shadow-2xs animate-fade-in" title="Abrir y descargar Manual de Usuario en PDF">
@@ -1390,6 +1391,10 @@ class App {
         </div>
       </div>
     `;
+
+    document.getElementById('footer-test-plans-btn')?.addEventListener('click', () => {
+      this.navigateTo('business-test-pricing');
+    });
   }
 
   // --- BARRA DE NAVEGACIÓN MÓVIL INFERIOR (ESTILO APP NATIVA - EXCLUSIVO CELULARES Y TABLETS) ---
