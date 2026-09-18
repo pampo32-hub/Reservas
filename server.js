@@ -29,6 +29,7 @@ import {
   removePushSubscription, 
   sendPushToBusiness 
 } from './pushService.js';
+import { parseSinpeEmail } from './src/services/sinpeParser.js';
 
 dotenv.config();
 
@@ -4031,6 +4032,39 @@ app.get('/api/sinpe/transactions', async (req, res) => {
   } catch (error) {
     console.error('Error en /api/sinpe/transactions:', error);
     res.status(500).json({ error: error.message || 'Error al obtener transacciones SINPE.' });
+  }
+});
+
+// 4. Webhook Inbound para Correos Reenviados (Cloudflare Email Routing, SendGrid, Mailgun, Hotmail Rule)
+app.post('/api/webhooks/sinpe-inbound', async (req, res) => {
+  try {
+    const { from, subject, text, html, body } = req.body;
+    const parsed = parseSinpeEmail(subject, text || body, html, from);
+
+    if (!parsed.isSinpe || parsed.amountCrc <= 0) {
+      console.log('ℹ️ [SINPE Inbound Webhook] Correo recibido pero no es una notificación de pago SINPE.');
+      return res.json({ received: true, isSinpe: false });
+    }
+
+    const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+    await pool.query(`
+      INSERT INTO reservas_sinpe_transactions 
+      (id, reference_number, sender_phone, sender_name, amount_crc, origin_bank, target_phone, detail, status, raw_data, received_at)
+      VALUES ($1, $2, $3, $4, $5, $6, '71433852', $7, 'unclaimed', $8, NOW())
+      ON CONFLICT (reference_number) DO UPDATE 
+      SET amount_crc = EXCLUDED.amount_crc, sender_phone = EXCLUDED.sender_phone, raw_data = EXCLUDED.raw_data
+    `, [txId, parsed.referenceNumber, parsed.senderPhone, parsed.senderName, parsed.amountCrc, parsed.originBank, parsed.detail, JSON.stringify({ from, subject, summary: parsed.rawSummary })]);
+
+    console.log(`⚡ [SINPE Inbound Webhook] ¡SINPE de ₡${parsed.amountCrc} registrado con éxito! Ref: ${parsed.referenceNumber}, Tel: ${parsed.senderPhone}, Banco: ${parsed.originBank}`);
+
+    res.json({
+      success: true,
+      transaction: parsed
+    });
+  } catch (error) {
+    console.error('Error en /api/webhooks/sinpe-inbound:', error);
+    res.status(500).json({ error: error.message || 'Error al procesar webhook de SINPE' });
   }
 });
 

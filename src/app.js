@@ -3149,12 +3149,26 @@ class App {
       }
     });
 
+    // 3. Manejador para iniciar prueba de plan ₡5 o ₡10
+    const handleTestPlanSelection = (planId) => {
+      const bizUser = storage.getBusinessUser();
+      if (bizUser && bizUser.businessId) {
+        // Si el usuario ya está conectado como negocio, abrir modal de pago SINPE directo con el plan de prueba
+        this.renderSinpePaymentModal({ businessId: bizUser.businessId, planId });
+      } else {
+        // Si no tiene negocio conectado, abrir el registro de negocio preseleccionando el plan de prueba
+        this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
+      }
+    };
+
     // 3. Abrir Modal de Verificación en Vivo para Plan ₡5 o ₡10
     document.getElementById('btn-select-test-plan-5')?.addEventListener('click', () => {
+      handleTestPlanSelection('test_5');
       this.renderSinpeVerificationModal({ planId: 'test_5', amount: 5, planName: 'Plan Micro Test' });
     });
 
     document.getElementById('btn-select-test-plan-10')?.addEventListener('click', () => {
+      handleTestPlanSelection('test_10');
       this.renderSinpeVerificationModal({ planId: 'test_10', amount: 10, planName: 'Plan Test Pro' });
     });
   }
@@ -9112,6 +9126,7 @@ class App {
                 <input type="date" id="blocked-slots-date-picker" value="${selectedDate}" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
               </div>
 
+              <button id="
               <button id="btn-next-day" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors text-xs font-bold cursor-pointer" title="Día Siguiente">
                 <i class="fas fa-chevron-right"></i>
               </button>
