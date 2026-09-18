@@ -56,10 +56,12 @@ app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
   res.sendFile(htmlPath);
 });
 
-// Rutas directas para Landing B2B de Negocios y Ambiente de Pruebas
+// Rutas directas para Landing B2B de Negocios, Directorio y Ambiente de Pruebas
 app.get([
-  '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
-  '/pruebas', '/planes-prueba', '/test-planes', '/planes-test', '/demo-planes'
+  '/', '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
+  '/directorio', '/explorar', '/catalogo', '/buscar', '/comercios',
+  '/pruebas', '/planes-prueba', '/test-planes', '/planes-test', '/demo-planes',
+  '/mis-reservas', '/panel-negocio', '/developer'
 ], (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });

@@ -613,13 +613,15 @@ class App {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
-        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
+        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
       }
       case 'review-booking': {
         const aptId = params.appointmentId || this.selectedAppointmentId;
         const query = params.rating ? `?rating=${params.rating}` : '';
         return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/';
       }
+      case 'directory':
+        return '/directorio';
       case 'business-landing':
         return '/unete';
       case 'business-test-pricing':
@@ -638,9 +640,8 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
-      case 'directory':
       default:
-        return '/';
+        return '/unete';
     }
   }
 
@@ -655,10 +656,13 @@ class App {
 
     // 0. Revisar si la ruta viene directo en el pathname (URLs limpias sin #)
     if (pathname && pathname !== '/' && pathname !== '') {
+      if (/^\/?(directorio|explorar|catalogo|buscar|comercios|negocios-locales)$/i.test(pathname)) {
+        return { view: 'directory', params: {} };
+      }
       if (/^\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)$/i.test(pathname)) {
         return { view: 'business-test-pricing', params: {} };
       }
-      if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)$/i.test(pathname)) {
+      if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)$/i.test(pathname)) {
         return { view: 'business-landing', params: {} };
       }
       const pathBizMatch = pathname.match(/^\/?negocio\/([^/?#]+)/i);
@@ -691,7 +695,7 @@ class App {
       }
       if (/^\/?(login|acceso|entrar|soy-negocio)$/i.test(pathname)) {
         setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
-        return { view: 'directory', params: {} };
+        return { view: 'business-landing', params: {} };
       }
     }
 
@@ -708,9 +712,8 @@ class App {
       };
     }
 
-    // 2. Ruta raíz vacía
+    // 2. Ruta raíz vacía (Lanza directamente la Landing B2B /unete)
     if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
-      // Si la URL es la raíz pero hay una vista guardada en sessionStorage, podemos restaurarla si es un dashboard activo
       if (typeof sessionStorage !== 'undefined') {
         const savedView = sessionStorage.getItem('reservas_current_view');
         const savedOwnerTab = sessionStorage.getItem('reservas_active_owner_tab') || 'appointments';
@@ -729,8 +732,11 @@ class App {
         if (savedView === 'business-detail' && savedBizId) {
           return { view: 'business-detail', params: { businessId: savedBizId } };
         }
+        if (savedView === 'directory') {
+          return { view: 'directory', params: {} };
+        }
       }
-      return { view: 'directory', params: {} };
+      return { view: 'business-landing', params: {} };
     }
 
     // 3. Revisar hash #/calificar/apt-xxx?rating=5 o #calificar/apt-xxx
@@ -809,13 +815,18 @@ class App {
       return { view: 'developer-dashboard', params: { tab } };
     }
 
-    // 9. Acceso directo por URL en hash
-    if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
-      setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+    // 9. Directorio o Catálogo en hash
+    if (/^#\/?(directorio|explorar|catalogo|buscar|comercios)/i.test(cleanHash)) {
       return { view: 'directory', params: {} };
     }
 
-    return { view: 'directory', params: {} };
+    // 10. Acceso directo por URL en hash
+    if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
+      setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+      return { view: 'business-landing', params: {} };
+    }
+
+    return { view: 'business-landing', params: {} };
   }
 
   // --- NAVEGACIÓN ---

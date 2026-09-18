@@ -125,3 +125,4 @@ function stripHtml(html = '') {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
