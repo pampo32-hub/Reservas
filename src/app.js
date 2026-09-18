@@ -937,9 +937,19 @@ class App {
           const apt = payload.appointment;
           console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
 
-          // 1. Guardar ID de cita recién llegada para animarla con acomodo y resplandor
+          // 1. Guardar ID de cita recién llegada e insertar inmediatamente en memoria local para render instantáneo
           if (apt && apt.id) {
             this.newlyArrivedAppointmentId = apt.id;
+
+            try {
+              const curApts = storage.getAppointments();
+              if (!curApts.some(a => a.id === apt.id)) {
+                const updated = [apt, ...curApts];
+                storage.appointmentsCache = updated;
+                localStorage.setItem('reservas_cr_appointments', JSON.stringify(updated));
+              }
+            } catch (errLocal) {}
+
             if (apt.date) {
               this.ownerCalendarSelectedDate = apt.date;
               const dateParts = apt.date.split('-').map(Number);
@@ -950,7 +960,13 @@ class App {
             clearTimeout(this.newlyArrivedTimer);
             this.newlyArrivedTimer = setTimeout(() => {
               this.newlyArrivedAppointmentId = null;
-            }, 9000);
+              if (this.currentView === 'owner-dashboard') {
+                const mainContent = document.getElementById('main-content');
+                if (mainContent) {
+                  this.renderOwnerDashboardView(mainContent);
+                }
+              }
+            }, 12000);
           }
 
           // 2. Reproducir sonido de campana
@@ -963,14 +979,27 @@ class App {
           const aptDate = apt.date ? this.formatDateDMY(apt.date) : '';
           this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
 
-          // 4. Sincronizar appointments cache de Neon
-          await storage.getAppointmentsByBusinessAsync(activeBizId);
-
-          // 5. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda en tiempo real
+          // 4. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda de inmediato
           if (this.currentView === 'owner-dashboard') {
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
-              this.renderBusinessDashboard(mainContent);
+              await this.renderOwnerDashboardView(mainContent);
+              setTimeout(() => {
+                const newCard = document.getElementById(`apt-card-${apt.id}`) || document.querySelector(`[data-apt-id="${apt.id}"]`);
+                if (newCard) {
+                  newCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+              }, 100);
+            }
+          }
+
+          // 5. Sincronizar en segundo plano con la base de datos remota
+          await storage.getAppointmentsByBusinessAsync(activeBizId);
+
+          if (this.currentView === 'owner-dashboard') {
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+              await this.renderOwnerDashboardView(mainContent);
             }
           }
         } catch (err) {
@@ -983,7 +1012,7 @@ class App {
         if (this.currentView === 'owner-dashboard') {
           const mainContent = document.getElementById('main-content');
           if (mainContent) {
-            this.renderBusinessDashboard(mainContent);
+            await this.renderOwnerDashboardView(mainContent);
           }
         }
       });
@@ -1026,7 +1055,13 @@ class App {
               clearTimeout(this.newlyArrivedTimer);
               this.newlyArrivedTimer = setTimeout(() => {
                 this.newlyArrivedAppointmentId = null;
-              }, 9000);
+                if (this.currentView === 'owner-dashboard') {
+                  const mainContent = document.getElementById('main-content');
+                  if (mainContent) {
+                    this.renderOwnerDashboardView(mainContent);
+                  }
+                }
+              }, 12000);
             }
 
             this.playNotificationChime();
@@ -1037,7 +1072,7 @@ class App {
             if (this.currentView === 'owner-dashboard') {
               const mainContent = document.getElementById('main-content');
               if (mainContent) {
-                this.renderBusinessDashboard(mainContent);
+                await this.renderOwnerDashboardView(mainContent);
               }
             }
           }
@@ -4596,6 +4631,10 @@ class App {
   // ==========================================
   // VISTA 3: PANEL DE DUEÑO DE NEGOCIO (DASHBOARD)
   // ==========================================
+  renderBusinessDashboard(container) {
+    return this.renderOwnerDashboardView(container);
+  }
+
   async renderOwnerDashboardView(container) {
     const bizUser = storage.getBusinessUser();
     if (!bizUser) {
@@ -4609,6 +4648,11 @@ class App {
       this.navigateTo('directory');
       return;
     }
+
+    // Asegurar que la conexión de tiempo real SSE esté siempre activa
+    try {
+      this.initRealtimePush();
+    } catch (e) {}
 
     // Sincronizar citas frescas del backend para este negocio
     await storage.getAppointmentsByBusinessAsync(currentBiz.id);

@@ -254,27 +254,30 @@ html, body, button, a, input, select, textarea {
 @keyframes slotInHighlight {
   0% {
     opacity: 0;
-    transform: translateY(-16px) scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    transform: translateY(-20px) scale(0.92);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.9);
+    background-color: #d1fae5 !important;
   }
-  40% {
+  35% {
     opacity: 1;
     transform: translateY(0) scale(1.02);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.4), 0 10px 20px -5px rgba(16, 185, 129, 0.25);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.45), 0 14px 28px -4px rgba(16, 185, 129, 0.3);
+    background-color: #ecfdf5 !important;
   }
-  75% {
-    transform: scale(1);
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  70% {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
   }
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07);
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.06);
   }
 }
 
 .animate-slot-in-glow {
-  animation: slotInHighlight 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  z-index: 10;
+  animation: slotInHighlight 2.5s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  z-index: 20 !important;
   position: relative;
 }
+
