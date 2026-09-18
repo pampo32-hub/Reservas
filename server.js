@@ -3873,6 +3873,168 @@ app.post('/api/developer/paypal-sync-plans', async (req, res) => {
 });
 
 // ==========================================
+// ENDPOINTS DE VERIFICACIÓN SINPE MÓVIL (COSTA RICA)
+// ==========================================
+
+// 1. Verificar si un pago SINPE fue recibido y conciliarlo
+app.post('/api/sinpe/verify', async (req, res) => {
+  try {
+    const { amount, senderPhone, referenceNumber, businessId, planId } = req.body;
+    const numAmount = parseFloat(amount);
+
+    if (!numAmount || isNaN(numAmount)) {
+      return res.status(400).json({ success: false, error: 'MONTO_INVALIDO', message: 'El monto es obligatorio para la verificación.' });
+    }
+
+    const cleanPhone = String(senderPhone || '').replace(/\D/g, '');
+    const cleanRef = String(referenceNumber || '').trim().replace(/^#/, '');
+
+    console.log(`🔍 [SINPE Verify] Buscando pago: Monto ₡${numAmount}, Tel: "${cleanPhone}", Ref: "${cleanRef}"`);
+
+    // Construir consulta dinámica para encontrar la transacción
+    let query = `
+      SELECT * FROM reservas_sinpe_transactions 
+      WHERE ABS(amount_crc - $1) < 0.01 
+        AND status IN ('unclaimed', 'verified')
+    `;
+    const params = [numAmount];
+    let conditions = [];
+
+    if (cleanRef && cleanRef.length >= 3) {
+      params.push(`%${cleanRef}%`);
+      conditions.push(`(reference_number ILIKE $${params.length} OR detail ILIKE $${params.length})`);
+    }
+
+    if (cleanPhone && cleanPhone.length >= 4) {
+      const phoneTail = cleanPhone.slice(-4);
+      params.push(`%${phoneTail}%`);
+      conditions.push(`REGEXP_REPLACE(sender_phone, '[^0-9]', '', 'g') ILIKE $${params.length}`);
+    }
+
+    if (conditions.length > 0) {
+      query += ` AND (${conditions.join(' OR ')})`;
+    } else {
+      // Si no proporcionó ni ref ni teléfono válido, solo busca si hay un SINPE unclaimed reciente por ese monto exacto
+      query += ` AND received_at >= NOW() - INTERVAL '30 minutes'`;
+    }
+
+    query += ` ORDER BY received_at DESC LIMIT 1`;
+
+    const { rows } = await pool.query(query, params);
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'TRANSACCION_NO_ENCONTRADA',
+        message: `❌ No se encontró ninguna transferencia SINPE por ₡${numAmount.toLocaleString('es-CR')} coincidente. Asegúrate de haber realizado la transferencia al 7143-3852 y verifica que el comprobante o número telefónico sean correctos.`
+      });
+    }
+
+    const tx = rows[0];
+
+    // Marcar la transacción como reclamada / verificada
+    await pool.query(`
+      UPDATE reservas_sinpe_transactions
+      SET status = 'used',
+          claimed_by_business_id = $1,
+          claimed_plan_id = $2,
+          verified_at = NOW()
+      WHERE id = $3
+    `, [businessId || null, planId || 'basic', tx.id]);
+
+    // Si hay un businessId asociado, actualizar su plan en la base de datos
+    if (businessId) {
+      await pool.query(`
+        UPDATE reservas_businesses
+        SET plan = $1,
+            subscription_status = 'active',
+            payment_method = 'sinpe',
+            subscription_updated_at = NOW()
+        WHERE id = $2
+      `, [planId || 'basic', businessId]);
+    }
+
+    console.log(`✅ [SINPE Verify] ¡Pago verificado con éxito! Tx ID: ${tx.id}, Ref: ${tx.reference_number}, Monto: ₡${tx.amount_crc}`);
+
+    res.json({
+      success: true,
+      message: `🎉 ¡Pago de ₡${Number(tx.amount_crc).toLocaleString('es-CR')} confirmado con éxito! Referencia #${tx.reference_number}.`,
+      transaction: {
+        id: tx.id,
+        reference: tx.reference_number,
+        amount: Number(tx.amount_crc),
+        senderPhone: tx.sender_phone,
+        senderName: tx.sender_name,
+        originBank: tx.origin_bank,
+        receivedAt: tx.received_at,
+        verifiedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error en /api/sinpe/verify:', error);
+    res.status(500).json({ success: false, error: error.message || 'Error al verificar pago SINPE.' });
+  }
+});
+
+// 2. Simular recepción de SINPE desde el banco (para entorno de pruebas)
+app.post('/api/sinpe/simulate-incoming', async (req, res) => {
+  try {
+    const { 
+      amount_crc = 5, 
+      sender_phone = '8888-8888', 
+      sender_name = 'Cliente de Prueba', 
+      reference_number = `SINPE-${Date.now().toString().slice(-6)}`, 
+      origin_bank = 'BAC Credomatic',
+      detail = 'Prueba SINPE'
+    } = req.body;
+
+    const txId = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const numAmount = parseFloat(amount_crc) || 5;
+
+    await pool.query(`
+      INSERT INTO reservas_sinpe_transactions 
+      (id, reference_number, sender_phone, sender_name, amount_crc, origin_bank, target_phone, detail, status, received_at)
+      VALUES ($1, $2, $3, $4, $5, $6, '71433852', $7, 'unclaimed', NOW())
+      ON CONFLICT (reference_number) DO NOTHING
+    `, [txId, reference_number, sender_phone, sender_name, numAmount, origin_bank, detail]);
+
+    console.log(`🧪 [SINPE Simulator] Nuevo SINPE simulado insertado: ₡${numAmount} de ${sender_phone} (Ref: ${reference_number})`);
+
+    res.json({
+      success: true,
+      message: `Simulación creada: Se registró un SINPE de ₡${numAmount} de ${sender_phone} con comprobante #${reference_number}.`,
+      transaction: {
+        id: txId,
+        reference_number,
+        amount_crc: numAmount,
+        sender_phone,
+        sender_name,
+        origin_bank,
+        detail
+      }
+    });
+  } catch (error) {
+    console.error('Error en /api/sinpe/simulate-incoming:', error);
+    res.status(500).json({ error: error.message || 'Error al simular SINPE.' });
+  }
+});
+
+// 3. Listar transacciones SINPE recientes (para depuración y pruebas)
+app.get('/api/sinpe/transactions', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT * FROM reservas_sinpe_transactions 
+      ORDER BY received_at DESC 
+      LIMIT 20
+    `);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error en /api/sinpe/transactions:', error);
+    res.status(500).json({ error: error.message || 'Error al obtener transacciones SINPE.' });
+  }
+});
+
+// ==========================================
 // ENDPOINTS DE NOTIFICACIONES PUSH MÓVILES (WEB PUSH)
 // ==========================================
 

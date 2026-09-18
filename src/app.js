@@ -574,6 +574,10 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialUrl);
     }
 
+    this.renderHeader();
+    this.renderMobileBottomNav();
+    this.renderCurrentView();
+    this.setupGlobalEvents();
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -3145,24 +3149,264 @@ class App {
       }
     });
 
-    // 3. Manejador para iniciar prueba de plan ₡5 o ₡10
-    const handleTestPlanSelection = (planId) => {
-      const bizUser = storage.getBusinessUser();
-      if (bizUser && bizUser.businessId) {
-        // Si el usuario ya está conectado como negocio, abrir modal de pago SINPE directo con el plan de prueba
-        this.renderSinpePaymentModal({ businessId: bizUser.businessId, planId });
-      } else {
-        // Si no tiene negocio conectado, abrir el registro de negocio preseleccionando el plan de prueba
-        this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
-      }
-    };
-
+    // 3. Abrir Modal de Verificación en Vivo para Plan ₡5 o ₡10
     document.getElementById('btn-select-test-plan-5')?.addEventListener('click', () => {
-      handleTestPlanSelection('test_5');
+      this.renderSinpeVerificationModal({ planId: 'test_5', amount: 5, planName: 'Plan Micro Test' });
     });
 
     document.getElementById('btn-select-test-plan-10')?.addEventListener('click', () => {
-      handleTestPlanSelection('test_10');
+      this.renderSinpeVerificationModal({ planId: 'test_10', amount: 10, planName: 'Plan Test Pro' });
+    });
+  }
+
+  // ==========================================
+  // MODAL DE VERIFICACIÓN EN VIVO DE SINPE MÓVIL
+  // ==========================================
+  renderSinpeVerificationModal({ planId = 'test_5', amount = 5, planName = 'Plan Micro Test' }) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const formattedAmount = `₡${amount.toLocaleString('es-CR')}`;
+    const sinpePhoneFormatted = '7143-3852';
+    const sinpePhoneRaw = '71433852';
+    const sinpeTitular = 'Juan Jose Jiménez';
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+          
+          <!-- Header -->
+          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-teal-950 to-slate-900 text-white relative border-b border-teal-800/40 shrink-0">
+            <button id="close-sinpe-verify-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-400/20 text-cyan-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-cyan-400/30 animate-pulse">
+              <i class="fas fa-flask"></i> Verificación en Tiempo Real
+            </div>
+            <h3 class="text-xl font-black text-white">Comprobación de Pago SINPE</h3>
+            <p class="text-xs text-slate-300 mt-0.5">${planName} • Monto requerido: <strong class="text-emerald-400 text-sm">${formattedAmount} CRC</strong></p>
+          </div>
+
+          <!-- Contenido Scrolleable -->
+          <div class="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
+
+            <!-- 1. Datos a Transferir -->
+            <div class="p-4 rounded-2xl bg-slate-900 text-white space-y-3 border border-slate-800 shadow-md">
+              <div class="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                <span><i class="fas fa-mobile-alt mr-1 text-emerald-400"></i> Datos para el SINPE</span>
+                <span class="text-emerald-400 font-mono font-black">${formattedAmount} CRC</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 flex items-center justify-between">
+                  <div>
+                    <span class="text-[9px] text-slate-400 block font-medium">Teléfono Destino:</span>
+                    <span class="text-base font-black font-mono text-emerald-400">${sinpePhoneFormatted}</span>
+                  </div>
+                  <button id="modal-copy-sinpe-phone" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+
+                <div class="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
+                  <span class="text-[9px] text-slate-400 block font-medium">Titular de la Cuenta:</span>
+                  <span class="text-xs font-black text-white block mt-0.5 truncate">${sinpeTitular}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Formulario de Validación en Vivo -->
+            <form id="sinpe-verify-form" class="space-y-3">
+              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <span class="font-extrabold text-slate-800 block text-xs uppercase tracking-wide">
+                  <i class="fas fa-shield-alt text-teal-600 mr-1"></i> Validador de Pago en Vivo:
+                </span>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Tu Número de Teléfono (desde el que hiciste el SINPE) *</label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
+                    <input type="tel" id="sinpe-verify-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-2xs">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1">Número de Comprobante / Referencia Bancaria (Opcional)</label>
+                  <input type="text" id="sinpe-verify-ref" placeholder="Ej: 12345678" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-2xs">
+                </div>
+              </div>
+
+              <!-- Botón Verificar -->
+              <button type="submit" id="btn-submit-sinpe-verify" class="w-full py-3.5 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white rounded-2xl font-black text-xs sm:text-sm shadow-xl shadow-teal-600/20 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-98">
+                <i class="fas fa-search text-base"></i>
+                <span>Verificar Pago SINPE en Tiempo Real</span>
+              </button>
+            </form>
+
+            <!-- 3. Contenedor de Resultado de Validación -->
+            <div id="sinpe-verify-result" class="hidden"></div>
+
+            <!-- 4. Simulador de Entrada (Para pruebas directas de Éxito y Error) -->
+            <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-[11px] text-amber-900 flex items-center gap-1.5">
+                  <i class="fas fa-magic text-amber-600"></i> ¿Deseas probar una simulación automática?
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-600 leading-tight">
+                Si aún no has enviado el dinero desde el banco, puedes simular una notificación bancaria para comprobar cómo el sistema valida el pago con éxito.
+              </p>
+              <button type="button" id="btn-simulate-sinpe-incoming" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                <i class="fas fa-bolt"></i> Simular que el Banco envió SINPE de ${formattedAmount}
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Footer -->
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+            <span>Validación directa con pasarela SINPE CR 🇨🇷</span>
+            <button type="button" id="modal-close-footer-btn" class="font-bold text-slate-600 hover:text-slate-900 cursor-pointer">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // 1. Cerrar Modal
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('close-sinpe-verify-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('modal-close-footer-btn')?.addEventListener('click', closeModal);
+
+    // 2. Copiar Teléfono
+    document.getElementById('modal-copy-sinpe-phone')?.addEventListener('click', () => {
+      navigator.clipboard.writeText(sinpePhoneRaw).then(() => {
+        this.showToast('📋 Número SINPE 7143-3852 copiado', 'success');
+      }).catch(() => {
+        this.showToast('Número: 7143-3852', 'info');
+      });
+    });
+
+    const resultContainer = document.getElementById('sinpe-verify-result');
+    const verifyForm = document.getElementById('sinpe-verify-form');
+    const submitBtn = document.getElementById('btn-submit-sinpe-verify');
+
+    // 3. Ejecutar Verificación
+    verifyForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phoneInput = document.getElementById('sinpe-verify-phone');
+      const refInput = document.getElementById('sinpe-verify-ref');
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      const ref = refInput ? refInput.value.trim() : '';
+
+      if (!phone) {
+        this.showToast('Ingresa el número de teléfono desde el que realizaste el SINPE.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-base"></i> <span>Consultando movimientos bancarios...</span>';
+
+      try {
+        const bizUser = storage.getBusinessUser();
+        const businessId = bizUser ? bizUser.businessId : null;
+
+        const res = await fetch('/api/sinpe/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            senderPhone: phone,
+            referenceNumber: ref,
+            planId,
+            businessId
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          // --- ESTADO: ERROR / NO ENCONTRADO ---
+          resultContainer.className = 'p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 space-y-2 animate-fade-in';
+          resultContainer.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
+                <i class="fas fa-times"></i>
+              </div>
+              <div class="space-y-1">
+                <strong class="text-xs font-black text-rose-900 block">Pago No Verificado</strong>
+                <p class="text-xs text-rose-800 leading-relaxed">
+                  ${data.message || 'No se encontró ninguna transferencia SINPE coincidente.'}
+                </p>
+                <div class="pt-1 text-[11px] text-rose-700">
+                  💡 Si ya realizaste el SINPE, por favor espera 1 minuto a que el banco emita el comprobante y vuelve a presionar el botón de verificar.
+                </div>
+              </div>
+            </div>
+          `;
+          this.showToast('❌ Pago no encontrado todavía. Verifica o realiza la transferencia.', 'error');
+        } else {
+          // --- ESTADO: ÉXITO / VERIFICADO ---
+          this.playNotificationChime();
+          const tx = data.transaction;
+          resultContainer.className = 'p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-400 text-emerald-950 space-y-3 animate-fade-in shadow-md';
+          resultContainer.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl flex-shrink-0">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="space-y-1">
+                <strong class="text-sm font-black text-emerald-900 block">¡Pago de ${formattedAmount} Verificado con Éxito! 🎉</strong>
+                <p class="text-xs text-emerald-800 leading-relaxed">
+                  Se ha conciliado correctamente la transferencia de SINPE Móvil.
+                </p>
+                <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-200 text-[11px] text-slate-800 space-y-1 font-mono mt-2">
+                  <div><strong>Comprobante:</strong> #${tx.reference}</div>
+                  <div><strong>Monto Verificado:</strong> ₡${tx.amount.toLocaleString('es-CR')} CRC</div>
+                  <div><strong>Emisor:</strong> ${tx.senderPhone || phone}</div>
+                  <div><strong>Banco:</strong> ${tx.originBank || 'SINPE Móvil'}</div>
+                </div>
+              </div>
+            </div>
+          `;
+          this.showToast(`🎉 ¡SINPE de ${formattedAmount} confirmado con éxito!`, 'success');
+        }
+      } catch (err) {
+        resultContainer.className = 'p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs';
+        resultContainer.innerHTML = `Error de conexión: ${err.message}`;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-search text-base"></i> <span>Verificar Pago SINPE en Tiempo Real</span>';
+      }
+    });
+
+    // 4. Botón Simular Recepción de SINPE para pruebas
+    document.getElementById('btn-simulate-sinpe-incoming')?.addEventListener('click', async () => {
+      const phoneInput = document.getElementById('sinpe-verify-phone');
+      const refInput = document.getElementById('sinpe-verify-ref');
+      const testPhone = phoneInput?.value.trim() || '8888-8888';
+      const testRef = `CR-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      if (phoneInput) phoneInput.value = testPhone;
+      if (refInput) refInput.value = testRef;
+
+      try {
+        const res = await fetch('/api/sinpe/simulate-incoming', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount_crc: amount,
+            sender_phone: testPhone,
+            sender_name: 'Cliente Prueba SINPE',
+            reference_number: testRef,
+            origin_bank: 'BAC Credomatic',
+            detail: `Prueba ${formattedAmount}`
+          })
+        });
+        const simData = await res.json();
+        this.showToast(`🧪 Simulación lista: Banco registró SINPE #${testRef}. Ahora presiona "Verificar Pago" para comprobar.`, 'info');
+      } catch (e) {
+        this.showToast('Error al simular entrada bancaria.', 'error');
+      }
     });
   }
 

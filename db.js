@@ -238,6 +238,27 @@ export async function initDatabase() {
       );
     `);
 
+    // 11. Crear tabla de transacciones SINPE Móvil
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_sinpe_transactions (
+        id VARCHAR(100) PRIMARY KEY,
+        reference_number VARCHAR(100) UNIQUE,
+        sender_phone VARCHAR(50),
+        sender_name VARCHAR(255),
+        amount_crc NUMERIC(10,2) NOT NULL,
+        origin_bank VARCHAR(100) DEFAULT 'SINPE Móvil CR',
+        target_phone VARCHAR(50) DEFAULT '71433852',
+        detail TEXT DEFAULT '',
+        status VARCHAR(50) DEFAULT 'unclaimed',
+        claimed_by_business_id VARCHAR(50) DEFAULT NULL,
+        claimed_plan_id VARCHAR(50) DEFAULT NULL,
+        raw_data JSONB DEFAULT '{}',
+        received_at TIMESTAMP DEFAULT NOW(),
+        verified_at TIMESTAMP DEFAULT NULL
+      );
+    `);
+
+
     await client.query(`
       ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS email VARCHAR(150) DEFAULT '';
       ALTER TABLE reservas_pre_registrations ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
