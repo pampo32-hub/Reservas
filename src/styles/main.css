@@ -6,10 +6,25 @@
   --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-body {
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
   font-family: var(--font-main);
   background-color: #f8fafc;
   color: #0f172a;
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  position: relative;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#main-content, #navbar-container, footer {
+  width: 100% !important;
+  max-width: 100% !important;
   overflow-x: hidden;
 }
 

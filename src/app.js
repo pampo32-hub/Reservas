@@ -4440,9 +4440,9 @@ class App {
     const percentUsed = isUnlimitedLimit ? 0 : Math.min(100, Math.round((usageCount / (monthlyLimit || 1)) * 100));
 
     container.innerHTML = `
-      <div class="animate-fade-in pb-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <div class="animate-fade-in pb-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 w-full max-w-full overflow-hidden">
         <!-- Top Bar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs mb-6 w-full max-w-full overflow-hidden">
           <div class="flex items-center gap-4">
             <img src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${currentBiz.name}" class="w-16 h-16 rounded-2xl object-cover border border-slate-200 shadow-sm">
             <div>
@@ -4472,7 +4472,7 @@ class App {
 
         <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
         ${(currentBiz.subscriptionStatus === 'pending_sinpe' || currentBiz.subscription_status === 'pending_sinpe') ? `
-          <div class="bg-amber-500/10 border-2 border-amber-400 p-4 sm:p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md">
+          <div class="bg-amber-500/10 border-2 border-amber-400 p-4 sm:p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md w-full max-w-full overflow-hidden">
             <div class="flex items-center gap-3.5">
               <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
                 <i class="fas fa-clock"></i>
@@ -4497,7 +4497,7 @@ class App {
         ` : ''}
 
         <!-- Banner de Suscripción y Cuota Mensual -->
-        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 w-full max-w-full overflow-hidden">
           <div class="space-y-1.5 max-w-xl">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
@@ -4591,8 +4591,8 @@ class App {
         </div>
 
         <!-- Tabs Navigation con Píldoras Segmentadas y Desplazamiento Suave -->
-        <div class="bg-slate-100/90 p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-2xs mb-6">
-          <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth custom-scrollbar">
+        <div class="bg-slate-100/90 p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-2xs mb-6 w-full max-w-full overflow-hidden">
+          <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 sm:pb-0 scroll-smooth no-scrollbar">
             <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="appointments">
               <i class="fas fa-calendar-alt text-xs"></i>
               <span>Agenda (${appointments.length})</span>
@@ -4631,7 +4631,7 @@ class App {
         </div>
 
         <!-- Dynamic Tab Content -->
-        <div id="dashboard-tab-content">
+        <div id="dashboard-tab-content" class="w-full max-w-full overflow-hidden">
           ${this.renderDashboardTabContent(currentBiz, appointments)}
         </div>
       </div>
@@ -5002,38 +5002,38 @@ class App {
           </div>
 
           <!-- Filtros de Estado, Selector de Vista (Lista / Calendario) y Botón de Bloqueo Rápido -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 flex-wrap">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-5 w-full">
+            <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 scroll-smooth no-scrollbar w-full lg:w-auto -mx-1 px-1">
               <!-- Switcher Vista Lista vs Calendario -->
               <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs shrink-0 mr-1">
-                <button id="view-mode-list-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.ownerAgendaViewMode === 'list' ? 'bg-white text-blue-700 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}" title="Ver agenda en formato lista/tabla">
+                <button id="view-mode-list-btn" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${this.ownerAgendaViewMode === 'list' ? 'bg-white text-blue-700 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}" title="Ver agenda en formato lista/tabla">
                   <i class="fas fa-list-ul"></i>
                   <span>Lista</span>
                 </button>
-                <button id="view-mode-calendar-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.ownerAgendaViewMode === 'calendar' ? 'bg-white text-blue-700 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}" title="Ver agenda en cuadrícula de calendario">
+                <button id="view-mode-calendar-btn" class="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${this.ownerAgendaViewMode === 'calendar' ? 'bg-white text-blue-700 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'}" title="Ver agenda en cuadrícula de calendario">
                   <i class="fas fa-calendar-alt"></i>
                   <span>Calendario</span>
                 </button>
               </div>
 
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
+              <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
                 Todas (${appointments.length})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
+              <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'pending' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="pending">
                 ⏳ Pendientes (${pendingCount})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
+              <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
                 ✅ Confirmadas (${confirmedCount})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
+              <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
                 🎉 Completadas (${completedCount})
               </button>
-              <button class="owner-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
+              <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
                 ❌ Canceladas (${cancelledCount})
               </button>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
+            <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
               <button id="quick-manage-slots-btn" class="w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm shadow-blue-500/20 flex-shrink-0 cursor-pointer">
                 <i class="fas fa-calendar-times"></i> Bloquear / Liberar Horas
               </button>
@@ -5045,20 +5045,20 @@ class App {
             ${this.renderOwnerCalendarView(currentBiz, appointments, filteredAppointments, businessStaff)}
           ` : `
             <!-- BARRA DESTACADA DE ORDENAMIENTO Y FILTROS (VISTA LISTA) -->
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 mb-5 shadow-2xs">
-              <div class="flex items-center gap-2 text-xs font-bold text-slate-700">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 mb-5 shadow-2xs w-full max-w-full overflow-hidden">
+              <div class="flex items-center gap-2 text-xs font-bold text-slate-700 shrink-0">
                 <i class="fas fa-list-check text-blue-600 text-sm"></i>
                 <span>Mostrando <strong class="text-blue-600 font-extrabold">${filteredAppointments.length}</strong> de ${appointments.length} citas</span>
               </div>
 
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                 <!-- Selector de Ordenamiento -->
-                <div class="flex items-center justify-between sm:justify-start gap-2 bg-white px-3.5 py-2 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all shadow-2xs">
-                  <label for="owner-sort-order-select" class="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap">
+                <div class="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-2 rounded-xl border-2 border-blue-200 hover:border-blue-400 transition-all shadow-2xs w-full sm:w-auto overflow-hidden">
+                  <label for="owner-sort-order-select" class="text-xs font-black text-slate-700 flex items-center gap-1.5 whitespace-nowrap shrink-0">
                     <i class="fas fa-arrow-down-short-wide text-blue-600"></i>
                     <span>Ordenar por:</span>
                   </label>
-                  <select id="owner-sort-order-select" class="bg-transparent text-xs font-extrabold text-blue-700 focus:outline-none cursor-pointer">
+                  <select id="owner-sort-order-select" class="bg-transparent text-xs font-extrabold text-blue-700 focus:outline-none cursor-pointer truncate max-w-[190px] sm:max-w-none">
                     <option value="date-asc" ${sortOrder === 'date-asc' ? 'selected' : ''}>📅 Fecha y Hora de Cita</option>
                     <option value="arrival-desc" ${sortOrder === 'arrival-desc' ? 'selected' : ''}>🕒 Orden de Llegada (Nuevas primero)</option>
                     <option value="arrival-asc" ${sortOrder === 'arrival-asc' ? 'selected' : ''}>⏳ Orden de Llegada (Antiguas primero)</option>
@@ -5067,12 +5067,12 @@ class App {
 
                 <!-- Filtro de Especialista si tiene colaboradores -->
                 ${businessStaff.length > 0 ? `
-                  <div class="flex items-center justify-between sm:justify-start gap-2 bg-white px-3.5 py-2 rounded-xl border border-slate-200 hover:border-slate-300 transition-all shadow-2xs">
-                    <label for="owner-staff-filter-select" class="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
+                  <div class="flex items-center justify-between sm:justify-start gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 hover:border-slate-300 transition-all shadow-2xs w-full sm:w-auto overflow-hidden">
+                    <label for="owner-staff-filter-select" class="text-xs font-bold text-slate-500 flex items-center gap-1.5 whitespace-nowrap shrink-0">
                       <i class="fas fa-user-tag text-indigo-600"></i>
                       <span>Especialista:</span>
                     </label>
-                    <select id="owner-staff-filter-select" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+                    <select id="owner-staff-filter-select" class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer truncate max-w-[190px] sm:max-w-none">
                       <option value="all" ${staffFilter === 'all' ? 'selected' : ''}>Todos los Especialistas</option>
                       <option value="unassigned" ${staffFilter === 'unassigned' ? 'selected' : ''}>Sin Asignar / General</option>
                       ${businessStaff.map(st => `
