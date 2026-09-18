@@ -622,6 +622,8 @@ class App {
       }
       case 'business-landing':
         return '/unete';
+      case 'business-test-pricing':
+        return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
       case 'owner-dashboard':
@@ -653,6 +655,9 @@ class App {
 
     // 0. Revisar si la ruta viene directo en el pathname (URLs limpias sin #)
     if (pathname && pathname !== '/' && pathname !== '') {
+      if (/^\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)$/i.test(pathname)) {
+        return { view: 'business-test-pricing', params: {} };
+      }
       if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)$/i.test(pathname)) {
         return { view: 'business-landing', params: {} };
       }
@@ -774,6 +779,11 @@ class App {
     // 5.1 Landing Exclusiva para Negocios en hash
     if (/^#\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)/i.test(cleanHash)) {
       return { view: 'business-landing', params: {} };
+    }
+
+    // 5.2 Landing de Pruebas de Planes (₡5 y ₡10) en hash
+    if (/^#\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)/i.test(cleanHash)) {
+      return { view: 'business-test-pricing', params: {} };
     }
 
     // 6. Mis citas en hash
@@ -937,6 +947,7 @@ class App {
           const apt = payload.appointment;
           console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
 
+          // 1. Guardar ID de cita recién llegada para animarla con acomodo y resplandor
           // 1. Guardar ID de cita recién llegada e insertar inmediatamente en memoria local para render instantáneo
           if (apt && apt.id) {
             this.newlyArrivedAppointmentId = apt.id;
@@ -966,7 +977,7 @@ class App {
                   this.renderOwnerDashboardView(mainContent);
                 }
               }
-            }, 12000);
+            }, 9000);
           }
 
           // 2. Reproducir sonido de campana
@@ -979,6 +990,7 @@ class App {
           const aptDate = apt.date ? this.formatDateDMY(apt.date) : '';
           this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
 
+          // 4. Sincronizar appointments cache de Neon
           // 4. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda de inmediato
           if (this.currentView === 'owner-dashboard') {
             const mainContent = document.getElementById('main-content');
@@ -996,9 +1008,11 @@ class App {
           // 5. Sincronizar en segundo plano con la base de datos remota
           await storage.getAppointmentsByBusinessAsync(activeBizId);
 
+          // 5. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda en tiempo real
           if (this.currentView === 'owner-dashboard') {
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
+              this.renderBusinessDashboard(mainContent);
               await this.renderOwnerDashboardView(mainContent);
             }
           }
@@ -1012,6 +1026,7 @@ class App {
         if (this.currentView === 'owner-dashboard') {
           const mainContent = document.getElementById('main-content');
           if (mainContent) {
+            this.renderBusinessDashboard(mainContent);
             await this.renderOwnerDashboardView(mainContent);
           }
         }
@@ -1061,7 +1076,7 @@ class App {
                     this.renderOwnerDashboardView(mainContent);
                   }
                 }
-              }, 12000);
+              }, 9000);
             }
 
             this.playNotificationChime();
@@ -1072,6 +1087,7 @@ class App {
             if (this.currentView === 'owner-dashboard') {
               const mainContent = document.getElementById('main-content');
               if (mainContent) {
+                this.renderBusinessDashboard(mainContent);
                 await this.renderOwnerDashboardView(mainContent);
               }
             }
@@ -1490,6 +1506,9 @@ class App {
         break;
       case 'business-landing':
         this.renderBusinessLandingView(main);
+        break;
+      case 'business-test-pricing':
+        this.renderBusinessTestPricingView(main);
         break;
       case 'business-detail':
         this.renderBusinessDetailView(main);
@@ -2805,6 +2824,340 @@ class App {
           confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer';
         }, 5000);
       }
+    });
+  }
+
+  // ==========================================
+  // VISTA 1.6: LANDING DE PRUEBAS SINPE MÓVIL (/pruebas)
+  // ==========================================
+  renderBusinessTestPricingView(container) {
+    const testPlans = storage.getTestSubscriptionPlans ? storage.getTestSubscriptionPlans() : [
+      {
+        id: 'test_5',
+        name: 'Plan Micro Test',
+        badge: 'Prueba SINPE ₡5',
+        priceCrc: 5,
+        priceUsd: 0.01,
+        interval: 'pago de prueba',
+        bookingLimitLabel: '50 reservas de prueba',
+        staffLimitLabel: 'Hasta 2 especialistas',
+        tagline: 'Plan exclusivo para probar pasarelas y validaciones automáticas de SINPE Móvil con ₡5.',
+        features: [
+          'Monto de prueba simbólico de ₡5 colones',
+          'Validación y conciliación instantánea por SINPE',
+          'Confirmación de reserva inmediata por correo y WhatsApp',
+          'Hasta 50 citas simuladas de prueba',
+          'Acceso completo a la agenda y calendario'
+        ],
+        popular: false,
+        color: 'emerald'
+      },
+      {
+        id: 'test_10',
+        name: 'Plan Test Pro',
+        badge: 'Prueba SINPE ₡10',
+        priceCrc: 10,
+        priceUsd: 0.02,
+        interval: 'pago de prueba',
+        bookingLimitLabel: '100 reservas de prueba',
+        staffLimitLabel: 'Hasta 5 especialistas',
+        tagline: 'Plan de prueba profesional con todas las funciones activas y pago de ₡10 colones.',
+        features: [
+          'Monto de prueba simbólico de ₡10 colones',
+          'Validación de comprobante en vivo y Webhook',
+          'Todas las funciones del Plan Profesional activadas',
+          'Gestión de equipo y especialistas múltiples',
+          'Exportación de reportes a Excel y PDF'
+        ],
+        popular: true,
+        color: 'cyan'
+      }
+    ];
+
+    container.innerHTML = `
+      <div class="animate-fade-in bg-slate-950 text-slate-100 min-h-screen pb-24 overflow-hidden select-none">
+        
+        <!-- 1. BARRA SUPERIOR DE CONTEXTO DE PRUEBA -->
+        <div class="bg-gradient-to-r from-cyan-950 via-slate-900 to-emerald-950 border-b border-cyan-500/30 px-4 py-2.5">
+          <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-black uppercase text-[10px] tracking-wider border border-cyan-400/30 animate-pulse">
+                <i class="fas fa-flask"></i> Entorno de Pruebas
+              </span>
+              <span class="text-slate-300 hidden sm:inline">Ambiente seguro para pruebas de pago con <strong>SINPE Móvil Costa Rica 🇨🇷</strong></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="test-back-directory-btn" class="px-3 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-bold transition-all text-xs flex items-center gap-1 cursor-pointer">
+                <i class="fas fa-arrow-left text-[10px]"></i> Volver al Directorio
+              </button>
+              <button id="test-view-official-plans-btn" class="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all text-xs flex items-center gap-1 cursor-pointer">
+                <i class="fas fa-crown text-[10px] text-amber-300"></i> Ver Planes Oficiales (/unete)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. HERO SECTION -->
+        <section class="relative pt-10 pb-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center space-y-6">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-black uppercase tracking-wider">
+            <i class="fas fa-vial"></i> Testing & Validación de Pasarela
+          </div>
+
+          <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+            Pruebas de Pago con <br class="hidden sm:inline">
+            <span class="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">SINPE Móvil 🇨🇷</span>
+          </h1>
+
+          <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            Realiza pagos reales de prueba por <strong>₡5 o ₡10 colones</strong> para comprobar la conciliación automática, la verificación de comprobantes y la activación inmediata en tiempo real.
+          </p>
+
+          <!-- Banner Informativo -->
+          <div class="max-w-2xl mx-auto p-4 rounded-2xl bg-slate-900/90 border border-cyan-500/20 shadow-xl text-left flex items-start gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
+              <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="text-xs text-slate-300 space-y-1">
+              <span class="font-extrabold text-cyan-300 block text-sm">¿Cómo funciona esta prueba?</span>
+              <p>1. Elige cualquiera de los 2 planes de prueba abajo (<strong>₡5</strong> o <strong>₡10</strong> colones).</p>
+              <p>2. Se abrirá la ventana con el número oficial de SINPE Móvil (<strong>7143-3852</strong> a nombre de Juan Jose Jiménez).</p>
+              <p>3. Realizas la transferencia desde tu app bancaria y envías la confirmación para activar.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. PLANES DE PRUEBA (₡5 Y ₡10) -->
+        <section class="py-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 items-stretch">
+            
+            <!-- PLAN 1: ₡5 COLONES -->
+            <div class="relative rounded-3xl bg-slate-900/90 border-2 border-emerald-500/50 p-6 sm:p-8 flex flex-col justify-between shadow-2xl shadow-emerald-500/10 hover:border-emerald-400 transition-all">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-black text-xs uppercase tracking-wider border border-emerald-500/30">
+                    <i class="fas fa-microscope mr-1"></i> Plan Micro Test
+                  </span>
+                  <span class="text-xs text-emerald-400 font-bold">Monto Simbólico</span>
+                </div>
+
+                <div>
+                  <div class="flex items-baseline gap-1">
+                    <span class="text-4xl sm:text-5xl font-black text-white">₡5</span>
+                    <span class="text-slate-400 text-xs font-semibold">CRC / prueba</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-2">Prueba rápida de transferencia de ₡5 colones para validar pasarela SINPE.</p>
+                </div>
+
+                <div class="h-px bg-slate-800"></div>
+
+                <ul class="space-y-2.5 text-xs text-slate-300">
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 flex-shrink-0"></i>
+                    <span>Monto exacto de prueba: <strong>₡5 colones</strong></span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 flex-shrink-0"></i>
+                    <span>Validación y captura de comprobante bancario</span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 flex-shrink-0"></i>
+                    <span>Notificación de confirmación por WhatsApp</span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 flex-shrink-0"></i>
+                    <span>Hasta 50 citas simuladas en agenda</span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 flex-shrink-0"></i>
+                    <span>Hasta 2 especialistas configurados</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="pt-6">
+                <button id="btn-select-test-plan-5" class="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer transition-transform transform hover:scale-105 active:scale-95">
+                  <i class="fas fa-flask text-base"></i>
+                  <span>Probar SINPE con ₡5 Colones</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- PLAN 2: ₡10 COLONES -->
+            <div class="relative rounded-3xl bg-slate-900/90 border-2 border-cyan-500/60 p-6 sm:p-8 flex flex-col justify-between shadow-2xl shadow-cyan-500/15 hover:border-cyan-400 transition-all">
+              <div class="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow-md">
+                🔥 Test Pro Completo
+              </div>
+
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-black text-xs uppercase tracking-wider border border-cyan-500/30">
+                    <i class="fas fa-bolt mr-1"></i> Plan Test Pro
+                  </span>
+                  <span class="text-xs text-cyan-300 font-bold">Flujo Completo</span>
+                </div>
+
+                <div>
+                  <div class="flex items-baseline gap-1">
+                    <span class="text-4xl sm:text-5xl font-black text-white">₡10</span>
+                    <span class="text-slate-400 text-xs font-semibold">CRC / prueba</span>
+                  </div>
+                  <p class="text-xs text-slate-400 mt-2">Prueba exhaustiva con ₡10 colones activando todas las herramientas profesionales.</p>
+                </div>
+
+                <div class="h-px bg-slate-800"></div>
+
+                <ul class="space-y-2.5 text-xs text-slate-300">
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-cyan-400 flex-shrink-0"></i>
+                    <span>Monto exacto de prueba: <strong>₡10 colones</strong></span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-cyan-400 flex-shrink-0"></i>
+                    <span>Todas las funciones del <strong>Plan Profesional</strong></span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-cyan-400 flex-shrink-0"></i>
+                    <span>Simulación de alerta push y correo instantáneo</span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-cyan-400 flex-shrink-0"></i>
+                    <span>Hasta 100 citas de prueba habilitadas</span>
+                  </li>
+                  <li class="flex items-center gap-2.5">
+                    <i class="fas fa-check-circle text-cyan-400 flex-shrink-0"></i>
+                    <span>Hasta 5 especialistas y control de horarios</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="pt-6">
+                <button id="btn-select-test-plan-10" class="w-full py-4 px-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm shadow-xl shadow-cyan-500/30 flex items-center justify-center gap-2 cursor-pointer transition-transform transform hover:scale-105 active:scale-95">
+                  <i class="fas fa-bolt text-base"></i>
+                  <span>Probar SINPE con ₡10 Colones</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 4. DATOS DIRECTOS DE SINPE MÓVIL PARA LA PRUEBA -->
+        <section class="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+          <div class="rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                  <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div>
+                  <h3 class="font-black text-white text-base sm:text-lg">Datos Oficiales para el SINPE Móvil</h3>
+                  <p class="text-xs text-slate-400">Utiliza estos datos desde la app de tu banco favorito en Costa Rica</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">En Vivo</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Teléfono SINPE Móvil</span>
+                <div class="flex items-center justify-between">
+                  <span class="font-black text-lg text-emerald-400 font-mono">7143-3852</span>
+                  <button id="test-copy-sinpe-phone-btn" class="p-1.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer" title="Copiar número">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nombre del Titular</span>
+                <span class="font-black text-sm text-white block mt-1">Juan Jose Jiménez</span>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Detalle / Pase</span>
+                <span class="font-black text-xs text-cyan-400 block mt-1">Prueba ₡5 o Prueba ₡10</span>
+              </div>
+            </div>
+
+            <!-- Pasos rápidos -->
+            <div class="bg-slate-950/50 rounded-2xl p-4 border border-slate-800/80 space-y-2 text-xs text-slate-400">
+              <span class="font-bold text-slate-300 block text-xs">Instrucciones de Verificación:</span>
+              <p>• Abre la app de tu banco (BAC Credomatic, Banco Nacional, Banco de Costa Rica, Promerica, Scotiabank, Wink, etc.).</p>
+              <p>• Realiza la transferencia de <strong>₡5</strong> o <strong>₡10</strong> al número <strong>7143-3852</strong>.</p>
+              <p>• Toca el botón <strong>"Probar SINPE con ₡5"</strong> o <strong>"Probar SINPE con ₡10"</strong> arriba para registrar el comprobante o enviar el WhatsApp de confirmación directa.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. PREGUNTAS FRECUENTES SOBRE LAS PRUEBAS -->
+        <section class="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+          <h2 class="text-xl sm:text-2xl font-black text-white text-center mb-6">Preguntas sobre las Pruebas de SINPE</h2>
+          <div class="space-y-3 max-w-3xl mx-auto">
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4 cursor-pointer">
+              <summary class="font-bold text-white text-xs sm:text-sm flex justify-between items-center list-none">
+                <span>¿Qué pasa después de hacer la transferencia de ₡5 o ₡10?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-2.5 leading-relaxed">
+                El sistema de reservas recibe el comprobante por WhatsApp o por correo electrónico y activa automáticamente el plan de pruebas seleccionado en tu cuenta o comercio de demostración.
+              </p>
+            </details>
+
+            <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4 cursor-pointer">
+              <summary class="font-bold text-white text-xs sm:text-sm flex justify-between items-center list-none">
+                <span>¿Puedo probar con cualquier banco de Costa Rica?</span>
+                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+              </summary>
+              <p class="text-xs text-slate-400 mt-2.5 leading-relaxed">
+                Sí, cualquier entidad financiera costarricense afiliada al sistema SINPE del Banco Central de Costa Rica (BCCR) funciona de inmediato.
+              </p>
+            </details>
+          </div>
+        </section>
+
+      </div>
+    `;
+
+    this.initBusinessTestPricingEvents();
+  }
+
+  // --- EVENTOS DE LA LANDING DE PRUEBAS (/pruebas) ---
+  initBusinessTestPricingEvents() {
+    // 1. Navegación
+    document.getElementById('test-back-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+    document.getElementById('test-view-official-plans-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
+
+    // 2. Copiar Teléfono SINPE
+    document.getElementById('test-copy-sinpe-phone-btn')?.addEventListener('click', () => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText('71433852').then(() => {
+          this.showToast('📋 Número SINPE 7143-3852 copiado al portapapeles', 'success');
+        }).catch(() => {
+          this.showToast('Número SINPE: 7143-3852', 'info');
+        });
+      } else {
+        this.showToast('Número SINPE: 7143-3852', 'info');
+      }
+    });
+
+    // 3. Manejador para iniciar prueba de plan ₡5 o ₡10
+    const handleTestPlanSelection = (planId) => {
+      const bizUser = storage.getBusinessUser();
+      if (bizUser && bizUser.businessId) {
+        // Si el usuario ya está conectado como negocio, abrir modal de pago SINPE directo con el plan de prueba
+        this.renderSinpePaymentModal({ businessId: bizUser.businessId, planId });
+      } else {
+        // Si no tiene negocio conectado, abrir el registro de negocio preseleccionando el plan de prueba
+        this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: planId });
+      }
+    };
+
+    document.getElementById('btn-select-test-plan-5')?.addEventListener('click', () => {
+      handleTestPlanSelection('test_5');
+    });
+
+    document.getElementById('btn-select-test-plan-10')?.addEventListener('click', () => {
+      handleTestPlanSelection('test_10');
     });
   }
 
@@ -8942,6 +9295,7 @@ class App {
     // Selector de Tema Pastel del Calendario
     document.querySelectorAll('.cal-theme-swatch-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.stopPropagation()
         e.stopPropagation();
         const themeId = btn.getAttribute('data-theme');
         if (themeId && CALENDAR_PASTEL_THEMES[themeId]) {

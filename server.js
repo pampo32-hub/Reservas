@@ -60,6 +60,12 @@ app.get(['/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/n
   res.redirect('/#/unete');
 });
 
+// Rutas directas para Ambiente de Pruebas de Planes (₡5 y ₡10)
+app.get(['/pruebas', '/planes-prueba', '/test-planes', '/planes-test'], (req, res) => {
+  res.redirect('/#/pruebas');
+});
+
+
 // Sitemap y Robots para Indexación en Google / Search Console
 app.get(['/sitemap.xml', '/sitemap'], async (req, res) => {
   try {

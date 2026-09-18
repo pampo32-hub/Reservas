@@ -1,5 +1,6 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, COSTA_RICA_PROVINCES } from '../data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, COSTA_RICA_PROVINCES } from '../data/initialData.js';
+
 
 const STORAGE_KEYS = {
   BUSINESSES: 'directorio_businesses_v1',
@@ -1513,15 +1514,23 @@ class StorageService {
   }
 
   // ==========================================
-  // PLANES DE SUSCRIPCIÓN ($6, $15, $25)
+  // PLANES DE SUSCRIPCIÓN ($6, $15, $25) Y PLANES DE PRUEBA (₡5, ₡10)
   // ==========================================
   getSubscriptionPlans() {
     return SUBSCRIPTION_PLANS;
   }
 
+  getTestSubscriptionPlans() {
+    return TEST_SUBSCRIPTION_PLANS;
+  }
+
+  getAllPlans() {
+    return [...SUBSCRIPTION_PLANS, ...TEST_SUBSCRIPTION_PLANS];
+  }
+
   getPlanById(planId) {
-    const plans = this.getSubscriptionPlans();
-    return plans.find(p => p.id === planId) || plans[0];
+    const plans = this.getAllPlans();
+    return plans.find(p => p.id === planId) || SUBSCRIPTION_PLANS[0];
   }
 
   async updateBusinessPlan(businessId, planId) {

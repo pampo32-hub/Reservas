@@ -98,6 +98,55 @@ export const SUBSCRIPTION_PLANS = [
   }
 ];
 
+export const TEST_SUBSCRIPTION_PLANS = [
+  {
+    id: 'test_5',
+    name: 'Plan Micro Test',
+    badge: 'Prueba SINPE ₡5',
+    priceUsd: 0.01,
+    originalPriceUsd: 10,
+    priceCrc: 5,
+    interval: 'pago de prueba',
+    bookingLimit: 50,
+    bookingLimitLabel: '50 reservas de prueba',
+    staffLimit: 2,
+    staffLimitLabel: 'Hasta 2 especialistas',
+    tagline: 'Plan exclusivo para probar pasarelas y validaciones automáticas de SINPE Móvil con ₡5.',
+    features: [
+      'Monto de prueba simbólico de ₡5 colones',
+      'Validación y conciliación instantánea por SINPE',
+      'Confirmación de reserva inmediata por correo y WhatsApp',
+      'Hasta 50 citas simuladas de prueba',
+      'Acceso completo a la agenda y calendario'
+    ],
+    popular: false,
+    color: 'emerald'
+  },
+  {
+    id: 'test_10',
+    name: 'Plan Test Pro',
+    badge: 'Prueba SINPE ₡10',
+    priceUsd: 0.02,
+    originalPriceUsd: 18,
+    priceCrc: 10,
+    interval: 'pago de prueba',
+    bookingLimit: 100,
+    bookingLimitLabel: '100 reservas de prueba',
+    staffLimit: 5,
+    staffLimitLabel: 'Hasta 5 especialistas',
+    tagline: 'Plan de prueba profesional con todas las funciones activas y pago de ₡10 colones.',
+    features: [
+      'Monto de prueba simbólico de ₡10 colones',
+      'Validación de comprobante en vivo y Webhook',
+      'Todas las funciones del Plan Profesional activadas',
+      'Gestión de equipo y especialistas múltiples',
+      'Exportación de reportes a Excel y PDF'
+    ],
+    popular: true,
+    color: 'cyan'
+  }
+];
+
 export const INITIAL_CATEGORIES = [
   { id: 'all', name: 'Todas las Categorías', icon: 'fa-store' },
   { id: 'belleza', name: 'Belleza y Barbería', icon: 'fa-scissors' },
