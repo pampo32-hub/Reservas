@@ -613,7 +613,6 @@ class App {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
-        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
         return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
       }
       case 'review-booking': {
@@ -629,10 +628,6 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
-      case 'owner-dashboard':
-        return '/panel-negocio';
-      case 'developer-dashboard':
-        return '/developer';
       case 'owner-dashboard': {
         const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
         return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
@@ -641,9 +636,7 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
-      case 'directory':
       default:
-        return '/';
         return '/unete';
     }
   }
@@ -665,7 +658,6 @@ class App {
       if (/^\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)$/i.test(pathname)) {
         return { view: 'business-test-pricing', params: {} };
       }
-      if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)$/i.test(pathname)) {
       if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)$/i.test(pathname)) {
         return { view: 'business-landing', params: {} };
       }
@@ -688,18 +680,15 @@ class App {
         return { view: 'my-client-bookings', params: {} };
       }
       if (/^\/?(panel-negocio|dashboard|owner)$/i.test(pathname)) {
-        return { view: 'owner-dashboard', params: {} };
         const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
         return { view: 'owner-dashboard', params: { tab } };
       }
       if (/^\/?(developer|developer-dashboard|admin)$/i.test(pathname)) {
-        return { view: 'developer-dashboard', params: {} };
         const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
         return { view: 'developer-dashboard', params: { tab } };
       }
       if (/^\/?(login|acceso|entrar|soy-negocio)$/i.test(pathname)) {
         setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
-        return { view: 'directory', params: {} };
         return { view: 'business-landing', params: {} };
       }
     }
@@ -717,7 +706,6 @@ class App {
       };
     }
 
-    // 2. Ruta raíz vacía
     // 2. Ruta raíz vacía (Lanza directamente la Landing B2B /unete)
     if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
       // Si la URL es la raíz pero hay una vista guardada en sessionStorage, podemos restaurarla si es un dashboard activo
@@ -743,7 +731,6 @@ class App {
           return { view: 'directory', params: {} };
         }
       }
-      return { view: 'directory', params: {} };
       return { view: 'business-landing', params: {} };
     }
 
@@ -791,7 +778,7 @@ class App {
     }
 
     // 5.1 Landing Exclusiva para Negocios en hash
-    if (/^#\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)/i.test(cleanHash)) {
+    if (/^#\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)/i.test(cleanHash)) {
       return { view: 'business-landing', params: {} };
     }
 
@@ -801,13 +788,12 @@ class App {
     }
 
     // 6. Mis citas en hash
-    if (/^#\/?(mis-reservas|mis-reservas|cliente)/i.test(cleanHash)) {
+    if (/^#\/?(mis-reservas|cliente)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
 
     // 7. Panel negocio en hash
     if (/^#\/?(panel-negocio|dashboard|owner)/i.test(cleanHash)) {
-      return { view: 'owner-dashboard', params: {} };
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
       const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
@@ -816,14 +802,12 @@ class App {
 
     // 8. Developer en hash
     if (/^#\/?(developer|developer-dashboard|admin)/i.test(cleanHash)) {
-      return { view: 'developer-dashboard', params: {} };
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
       const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
       return { view: 'developer-dashboard', params: { tab } };
     }
 
-    // 9. Acceso directo por URL en hash
     // 9. Directorio o Catálogo en hash
     if (/^#\/?(directorio|explorar|catalogo|buscar|comercios)/i.test(cleanHash)) {
       return { view: 'directory', params: {} };
@@ -832,11 +816,9 @@ class App {
     // 10. Acceso directo por URL en hash
     if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
       setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
-      return { view: 'directory', params: {} };
       return { view: 'business-landing', params: {} };
     }
 
-    return { view: 'directory', params: {} };
     return { view: 'business-landing', params: {} };
   }
 
@@ -1747,6 +1729,7 @@ class App {
 
             <!-- Barra de Administración Rápida de Negocios (Solo visible para Developer / SuperAdmin) -->
             ${isDev ? `
+              <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
               <div class="pt-2 border-t border-slate-100 grid grid-cols-4 gap-1.5 bg-slate-50 p-2 rounded-2xl">
                 <!-- 0. Verificar / Desverificar -->
                 <button 
@@ -1764,6 +1747,7 @@ class App {
                 <!-- 1. Bloquear / Desbloquear -->
                 <button 
                   type="button"
+                  class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   class="card-toggle-block-btn py-2 px-1 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
@@ -1771,29 +1755,34 @@ class App {
                   title="${isBlocked ? 'Desbloquear negocio' : 'Bloquear negocio'}"
                 >
                   <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'} text-xs"></i>
+                  <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
                   <span class="truncate">${isBlocked ? 'Desbloq.' : 'Bloquear'}</span>
                 </button>
 
                 <!-- 2. Modificar -->
                 <button 
                   type="button"
+                  class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   class="card-edit-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   data-biz-id="${biz.id}"
                   title="Modificar y editar información del negocio"
                 >
                   <i class="fas fa-edit text-xs"></i>
+                  <span>Modificar</span>
                   <span>Editar</span>
                 </button>
 
                 <!-- 3. Eliminar -->
                 <button 
                   type="button"
+                  class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   class="card-delete-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   title="Eliminar este negocio permanentemente"
                 >
                   <i class="fas fa-trash-alt text-xs"></i>
+                  <span>Eliminar</span>
                   <span>Borrar</span>
                 </button>
               </div>
@@ -3581,6 +3570,8 @@ class App {
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
                 ` : `
+                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
                   <span class="px-3 py-1 rounded-full bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider shadow-md border border-slate-700">
                     <i class="fas fa-store mr-1 text-slate-400"></i> Comercio Registrado
                   </span>
@@ -8903,6 +8894,7 @@ class App {
               <div id="staff-custom-schedule-box" class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 ${!hasCustomSchedule ? 'hidden' : ''}">
                 <!-- Días laborables -->
                 <div>
+                  <span class="block text-[11px] font-bold text-slate-600
                   <span class="block text-[11px] font-bold text-slate-600 mb-1.5">Días que labora:</span>
                   <div class="flex items-center gap-1.5 flex-wrap">
                     ${dayLabels.map(d => `

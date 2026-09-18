@@ -56,14 +56,26 @@ app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
   res.sendFile(htmlPath);
 });
 
+// Rutas directas para Landing B2B de Negocios
+app.get(['/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio'], (req, res) => {
+  res.redirect('/#/unete');
+// Rutas directas para Landing B2B de Negocios y Ambiente de Pruebas
+// Rutas directas para Landing B2B de Negocios, Directorio y Ambiente de Pruebas
 // Rutas directas para Landing B2B de Negocios, Directorio, Pruebas y Panel
 app.get([
+  '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
+  '/pruebas', '/planes-prueba', '/test-planes', '/planes-test', '/demo-planes'
   '/', '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
   '/directorio', '/explorar', '/catalogo', '/buscar', '/comercios',
   '/pruebas', '/planes-prueba', '/test-planes', '/planes-test', '/demo-planes',
   '/mis-reservas', '/panel-negocio', '/developer'
 ], (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Rutas directas para Ambiente de Pruebas de Planes (₡5 y ₡10)
+app.get(['/pruebas', '/planes-prueba', '/test-planes', '/planes-test'], (req, res) => {
+  res.redirect('/#/pruebas');
 });
 
 
@@ -1049,6 +1061,9 @@ app.get('/api/businesses', async (req, res) => {
       plan: b.plan || 'pro',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
       monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
+      plan: b.plan || 'basic',
+      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       subscriptionStatus: b.subscription_status,
@@ -1248,6 +1263,8 @@ app.put('/api/businesses/:id', async (req, res) => {
         plan = COALESCE($16, plan),
         is_blocked = COALESCE($17, is_blocked),
         block_reason = COALESCE($18, block_reason),
+        is_hidden = COALESCE($19, is_hidden)
+      WHERE id = $20
         is_hidden = COALESCE($19, is_hidden),
         is_verified = COALESCE($20, is_verified)
       WHERE id = $21
@@ -2494,6 +2511,7 @@ app.get('/api/developer/businesses', async (req, res) => {
       ownerEmail: row.owner_email,
       servicesCount: parseInt(row.services_count, 10) || 0,
       appointmentsCount: parseInt(row.appointments_count, 10) || 0,
+      isDemo: row.is_demo,
       isDemo: Boolean(row.is_demo),
       isHidden: Boolean(row.is_hidden),
       isBlocked: Boolean(row.is_blocked),
