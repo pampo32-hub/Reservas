@@ -217,6 +217,21 @@ class App {
     return `${hour}:${minute} ${period}`;
   }
 
+  parseTimeToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    const str = String(timeStr).trim().toUpperCase();
+    const isPM = str.includes('PM');
+    const isAM = str.includes('AM');
+    const cleanNumbers = str.replace(/[^0-9:]/g, '');
+    const parts = cleanNumbers.split(':');
+    let h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
+    if (isPM && h < 12) h += 12;
+    if (isAM && h === 12) h = 0;
+    return h * 60 + m;
+  }
+
+
   formatDateDMY(dateStr) {
     if (!dateStr) return '';
     const clean = String(dateStr).trim();
@@ -922,20 +937,36 @@ class App {
           const apt = payload.appointment;
           console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
 
-          // 1. Reproducir sonido de campana
+          // 1. Guardar ID de cita recién llegada para animarla con acomodo y resplandor
+          if (apt && apt.id) {
+            this.newlyArrivedAppointmentId = apt.id;
+            if (apt.date) {
+              this.ownerCalendarSelectedDate = apt.date;
+              const dateParts = apt.date.split('-').map(Number);
+              if (dateParts.length === 3 && !isNaN(dateParts[0]) && !isNaN(dateParts[1])) {
+                this.ownerCalendarCurrentMonth = new Date(dateParts[0], dateParts[1] - 1, 1);
+              }
+            }
+            clearTimeout(this.newlyArrivedTimer);
+            this.newlyArrivedTimer = setTimeout(() => {
+              this.newlyArrivedAppointmentId = null;
+            }, 9000);
+          }
+
+          // 2. Reproducir sonido de campana
           this.playNotificationChime();
 
-          // 2. Notificación Toast Flotante
+          // 3. Notificación Toast Flotante
           const cliName = apt.clientName || 'Cliente';
           const srvName = apt.serviceName || 'Servicio';
           const aptTime = apt.time ? this.formatTime12h(apt.time) : '';
           const aptDate = apt.date ? this.formatDateDMY(apt.date) : '';
           this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
 
-          // 3. Sincronizar appointments cache de Neon
+          // 4. Sincronizar appointments cache de Neon
           await storage.getAppointmentsByBusinessAsync(activeBizId);
 
-          // 4. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda en tiempo real
+          // 5. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda en tiempo real
           if (this.currentView === 'owner-dashboard') {
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
@@ -982,8 +1013,23 @@ class App {
           const newApts = freshApts.filter(a => !prevIds.has(a.id));
           if (newApts.length > 0) {
             console.log('⚡ [AutoSync Fallback] Nuevas citas detectadas:', newApts);
-            this.playNotificationChime();
             const first = newApts[0];
+            if (first && first.id) {
+              this.newlyArrivedAppointmentId = first.id;
+              if (first.date) {
+                this.ownerCalendarSelectedDate = first.date;
+                const dateParts = first.date.split('-').map(Number);
+                if (dateParts.length === 3 && !isNaN(dateParts[0]) && !isNaN(dateParts[1])) {
+                  this.ownerCalendarCurrentMonth = new Date(dateParts[0], dateParts[1] - 1, 1);
+                }
+              }
+              clearTimeout(this.newlyArrivedTimer);
+              this.newlyArrivedTimer = setTimeout(() => {
+                this.newlyArrivedAppointmentId = null;
+              }, 9000);
+            }
+
+            this.playNotificationChime();
             const fTime = first.time ? this.formatTime12h(first.time) : '';
             const fDate = first.date ? this.formatDateDMY(first.date) : '';
             this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${first.clientName} agendó "${first.serviceName}" para ${fDate} (${fTime})`, 'success');
@@ -5082,7 +5128,7 @@ class App {
         filteredAppointments = [...filteredAppointments].sort((a, b) => {
           const dateComp = (a.date || '').localeCompare(b.date || '');
           if (dateComp !== 0) return dateComp;
-          return (a.time || '').localeCompare(b.time || '');
+          return this.parseTimeToMinutes(a.time) - this.parseTimeToMinutes(b.time);
         });
       }
 
@@ -5256,13 +5302,21 @@ class App {
             ` : `
               <!-- 1. VISTA MÓVIL: Tarjetas Nativas para Celulares (< md) -->
               <div class="block md:hidden space-y-3.5">
-                ${filteredAppointments.map(apt => `
-                  <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 shadow-xs space-y-3">
+                ${filteredAppointments.map(apt => {
+                  const isNewlyArrived = this.newlyArrivedAppointmentId && String(this.newlyArrivedAppointmentId) === String(apt.id);
+                  return `
+                  <div class="p-4 rounded-2xl ${isNewlyArrived ? 'animate-slot-in-glow border-emerald-400 bg-emerald-50/80 ring-2 ring-emerald-400/90 shadow-md' : 'bg-slate-50 border-slate-200'} border shadow-xs space-y-3">
+                    ${isNewlyArrived ? `
+                      <div class="flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs mb-1">
+                        <i class="fas fa-sparkles text-emerald-600 animate-pulse"></i>
+                        <span>✨ ¡Nueva reserva en vivo! Acomodada cronológicamente</span>
+                      </div>
+                    ` : ''}
                     <!-- Cabecera Tarjeta Móvil -->
                     <div class="flex items-start justify-between gap-2">
                       <div>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900 text-xs font-black font-mono">
-                          <i class="far fa-clock text-blue-600"></i> ${this.formatTime12h(apt.time)}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${isNewlyArrived ? 'bg-emerald-100 text-emerald-950 border border-emerald-300' : 'bg-blue-100 text-blue-900'} text-xs font-black font-mono">
+                          <i class="far fa-clock ${isNewlyArrived ? 'text-emerald-700' : 'text-blue-600'}"></i> ${this.formatTime12h(apt.time)}
                         </span>
                         <div class="text-[11px] font-bold text-slate-500 mt-1">${this.formatDateDMY(apt.date)}</div>
                         ${(sortOrder.startsWith('arrival') && apt.createdAt) ? `
@@ -5347,7 +5401,8 @@ class App {
                       </div>
                     </div>
                   </div>
-                `).join('')}
+                `;
+                }).join('')}
               </div>
 
               <!-- 2. VISTA ESCRITORIO: Tabla Completa (>= md) -->
@@ -5365,11 +5420,18 @@ class App {
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
-                    ${filteredAppointments.map(apt => `
-                      <tr class="hover:bg-slate-50/80 transition-colors">
+                    ${filteredAppointments.map(apt => {
+                      const isNewlyArrived = this.newlyArrivedAppointmentId && String(this.newlyArrivedAppointmentId) === String(apt.id);
+                      return `
+                      <tr class="${isNewlyArrived ? 'bg-emerald-50/90 ring-2 ring-emerald-400 font-medium animate-slot-in-glow' : 'hover:bg-slate-50/80'} transition-colors">
                         <td class="py-3.5 px-4 font-bold text-slate-900">
+                          ${isNewlyArrived ? `
+                            <span class="inline-flex items-center gap-1 text-[10px] bg-emerald-600 text-white font-extrabold px-2 py-0.5 rounded-md mb-1 animate-pulse">
+                              <i class="fas fa-sparkles text-[9px]"></i> ¡Nueva Reserva en Vivo!
+                            </span>
+                          ` : ''}
                           <div>${this.formatDateDMY(apt.date)}</div>
-                          <div class="text-blue-600 text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
+                          <div class="${isNewlyArrived ? 'text-emerald-700 font-bold' : 'text-blue-600'} text-[11px] font-mono">${this.formatTime12h(apt.time)} (${apt.serviceDuration}m)</div>
                           ${(sortOrder.startsWith('arrival') && apt.createdAt) ? `
                             <div class="text-[9.5px] text-slate-400 font-normal mt-0.5">
                               <i class="fas fa-history text-[8px] text-blue-500"></i> Creada: ${new Date(apt.createdAt).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
@@ -5452,7 +5514,8 @@ class App {
                           </div>
                         </td>
                       </tr>
-                    `).join('')}
+                    `;
+                    }).join('')}
                   </tbody>
                 </table>
               </div>
@@ -5980,7 +6043,7 @@ class App {
       const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const dayApts = filteredAppointments
         .filter(a => a.date === dateKey)
-        .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+        .sort((a, b) => this.parseTimeToMinutes(a.time) - this.parseTimeToMinutes(b.time));
 
       cells.push({
         dayNumber: d,
@@ -6009,7 +6072,7 @@ class App {
     // Citas del día seleccionado en móvil
     const mobileSelectedDayApts = filteredAppointments
       .filter(a => a.date === selectedMobileDate)
-      .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      .sort((a, b) => this.parseTimeToMinutes(a.time) - this.parseTimeToMinutes(b.time));
 
     return `
       <div class="calendar-view-container space-y-4 animate-fade-in p-3 sm:p-5 rounded-3xl border ${theme.containerClass} backdrop-blur-xs transition-colors duration-300">
@@ -6162,17 +6225,24 @@ class App {
               <div class="space-y-3">
                 ${mobileSelectedDayApts.map(apt => {
                   const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '');
+                  const isNewlyArrived = this.newlyArrivedAppointmentId && String(this.newlyArrivedAppointmentId) === String(apt.id);
                   let statusBadge = '<span class="badge-status badge-status-confirmed text-[10px]">Confirmada</span>';
                   if (apt.status === 'pending') statusBadge = '<span class="badge-status badge-status-pending text-[10px]">Pendiente</span>';
                   else if (apt.status === 'completed') statusBadge = '<span class="badge-status badge-status-completed text-[10px]">Completada</span>';
                   else if (apt.status === 'cancelled') statusBadge = '<span class="badge-status badge-status-cancelled text-[10px]">Cancelada</span>';
 
                   return `
-                    <div class="p-4 rounded-2xl border border-slate-200/90 bg-slate-50/60 hover:bg-white transition-all space-y-3 shadow-2xs">
+                    <div class="p-4 rounded-2xl border ${isNewlyArrived ? 'animate-slot-in-glow border-emerald-400 bg-emerald-50/80 ring-2 ring-emerald-400/90 shadow-md' : 'border-slate-200/90 bg-slate-50/60'} hover:bg-white transition-all space-y-3 shadow-2xs">
+                      ${isNewlyArrived ? `
+                        <div class="flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs mb-1">
+                          <i class="fas fa-sparkles text-emerald-600 animate-pulse"></i>
+                          <span>✨ ¡Nueva reserva en vivo! Acomodada cronológicamente</span>
+                        </div>
+                      ` : ''}
                       <div class="flex items-start justify-between gap-2">
                         <div>
                           <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-black text-sm text-slate-900 font-mono bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-1">
+                            <span class="font-black text-sm text-slate-900 font-mono ${isNewlyArrived ? 'bg-emerald-100 text-emerald-950 border-emerald-300' : 'bg-white text-slate-900 border-slate-200'} px-2.5 py-1 rounded-lg border shadow-2xs flex items-center gap-1">
                               <i class="far fa-clock text-slate-400 text-xs"></i>
                               <span>${this.formatTime12h(apt.time)}</span>
                             </span>
@@ -6302,6 +6372,7 @@ class App {
                   <!-- Lista de Chips de Citas con Scroll Interno -->
                   <div class="space-y-1 flex-1 overflow-y-auto pr-0.5 custom-scrollbar max-h-[110px] lg:max-h-[140px] ${isExpanded ? 'max-h-[260px] lg:max-h-[340px]' : ''}">
                     ${visibleApts.map(apt => {
+                      const isNewlyArrived = this.newlyArrivedAppointmentId && String(this.newlyArrivedAppointmentId) === String(apt.id);
                       let chipStyle = 'bg-blue-50 text-blue-900 border-blue-200/90 hover:bg-blue-100';
                       let dotColor = 'bg-blue-500';
                       if (apt.status === 'pending') {
@@ -6315,11 +6386,16 @@ class App {
                         dotColor = 'bg-rose-500';
                       }
 
+                      if (isNewlyArrived) {
+                        chipStyle = 'bg-emerald-100 text-emerald-950 border-emerald-400 ring-2 ring-emerald-500/90 animate-slot-in-glow font-bold shadow-md';
+                        dotColor = 'bg-emerald-600 animate-ping';
+                      }
+
                       return `
                         <div 
                           class="cal-apt-chip p-1.5 rounded-lg border ${chipStyle} text-[10px] font-semibold transition-all shadow-2xs hover:scale-[1.02] cursor-pointer"
                           data-apt-id="${apt.id}"
-                          title="Click para ver detalle y gestionar cita de ${this.escapeHtml(apt.clientName)}"
+                          title="${isNewlyArrived ? '✨ ¡Nueva cita recién llegada!' : 'Click para ver detalle y gestionar cita de ' + this.escapeHtml(apt.clientName)}"
                         >
                           <div class="flex items-center justify-between gap-1">
                             <span class="font-bold font-mono text-[10px]">${this.formatTime12h(apt.time)}</span>

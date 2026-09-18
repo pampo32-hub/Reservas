@@ -250,4 +250,31 @@ html, body, button, a, input, select, textarea {
   }
 }
 
+/* Animación de entrada y acomodo suave de nuevas reservas en vivo */
+@keyframes slotInHighlight {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(0) scale(1.02);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.4), 0 10px 20px -5px rgba(16, 185, 129, 0.25);
+  }
+  75% {
+    transform: scale(1);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.07);
+  }
+}
 
+.animate-slot-in-glow {
+  animation: slotInHighlight 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 10;
+  position: relative;
+}
