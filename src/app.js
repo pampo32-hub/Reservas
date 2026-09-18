@@ -176,6 +176,11 @@ class App {
     this.activeDevTab = 'alerts'; // 'alerts' | 'businesses' | 'clients' | 'appointments'
     this.devSearchQuery = '';
     this.devBizFilter = 'all'; // 'all' | 'active' | 'hidden' | 'blocked' | 'real' | 'demo'
+
+    // Conexión Realtime (SSE) y Notificaciones Push en Vivo
+    this.realtimeEventSource = null;
+    this.realtimeBusinessId = null;
+    this.realtimePollingInterval = null;
   }
 
   getTodayDateString() {
@@ -567,7 +572,6 @@ class App {
       console.error('Error inicializando vista:', err);
     }
 
-    // Sincronizar datos frescos del servidor y refrescar
     // Sincronizar datos frescos del servidor y refrescar conservando la vista actual
     try {
       if (storage.initAsync) {
@@ -578,6 +582,14 @@ class App {
       }
     } catch (err) {
       console.warn('Storage sync warning:', err);
+    }
+
+    // Inicializar canal push en tiempo real (SSE) y auto-sync en vivo para la agenda
+    try {
+      this.initRealtimePush();
+      this.startBackgroundAutoSync();
+    } catch (e) {
+      console.warn('Realtime init notice:', e);
     }
   }
 
@@ -826,6 +838,9 @@ class App {
     this.renderHeader();
     this.renderMobileBottomNav();
     this.renderCurrentView();
+    if (view === 'owner-dashboard') {
+      this.initRealtimePush();
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -835,6 +850,154 @@ class App {
     } else {
       this.navigateTo('directory');
     }
+  }
+
+  // --- SONIDO DE ALERTA DE NUEVA RESERVA EN VIVO (WEB AUDIO API CHIME) ---
+  playNotificationChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      
+      const playTone = (freq, start, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.22, start);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + duration);
+      };
+
+      const now = ctx.currentTime;
+      playTone(587.33, now, 0.22);        // D5
+      playTone(880.00, now + 0.11, 0.35);  // A5
+      playTone(1174.66, now + 0.24, 0.65); // D6
+    } catch (e) {
+      console.warn('Audio chime warning:', e);
+    }
+  }
+
+  // --- CONEXIÓN REALTIME PUSH (SERVER-SENT EVENTS) ---
+  initRealtimePush() {
+    const bizUser = storage.getBusinessUser();
+    const activeBizId = (bizUser && bizUser.businessId) || storage.getActiveBusinessId();
+    
+    if (!activeBizId) {
+      if (this.realtimeEventSource) {
+        this.realtimeEventSource.close();
+        this.realtimeEventSource = null;
+        this.realtimeBusinessId = null;
+      }
+      return;
+    }
+
+    if (this.realtimeEventSource && this.realtimeBusinessId === activeBizId) {
+      return; // Conexión activa para este negocio
+    }
+
+    if (this.realtimeEventSource) {
+      this.realtimeEventSource.close();
+    }
+
+    this.realtimeBusinessId = activeBizId;
+
+    try {
+      const url = `/api/realtime/stream?businessId=${encodeURIComponent(activeBizId)}`;
+      this.realtimeEventSource = new EventSource(url);
+
+      this.realtimeEventSource.addEventListener('connected', () => {
+        console.log(`⚡ [Realtime SSE] Conectado en vivo al comercio: ${activeBizId}`);
+      });
+
+      this.realtimeEventSource.addEventListener('appointment_created', async (e) => {
+        try {
+          const payload = JSON.parse(e.data);
+          const apt = payload.appointment;
+          console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
+
+          // 1. Reproducir sonido de campana
+          this.playNotificationChime();
+
+          // 2. Notificación Toast Flotante
+          const cliName = apt.clientName || 'Cliente';
+          const srvName = apt.serviceName || 'Servicio';
+          const aptTime = apt.time ? this.formatTime12h(apt.time) : '';
+          const aptDate = apt.date ? this.formatDateDMY(apt.date) : '';
+          this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
+
+          // 3. Sincronizar appointments cache de Neon
+          await storage.getAppointmentsByBusinessAsync(activeBizId);
+
+          // 4. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda en tiempo real
+          if (this.currentView === 'owner-dashboard') {
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+              this.renderBusinessDashboard(mainContent);
+            }
+          }
+        } catch (err) {
+          console.error('Error procesando evento SSE:', err);
+        }
+      });
+
+      this.realtimeEventSource.addEventListener('appointment_updated', async () => {
+        await storage.getAppointmentsByBusinessAsync(activeBizId);
+        if (this.currentView === 'owner-dashboard') {
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) {
+            this.renderBusinessDashboard(mainContent);
+          }
+        }
+      });
+
+      this.realtimeEventSource.onerror = () => {
+        // EventSource intentará reconectar automáticamente
+      };
+    } catch (e) {
+      console.warn('Error iniciando EventSource SSE:', e);
+    }
+  }
+
+  // --- SINCRONIZACIÓN AUTOMÁTICA EN SEGUNDO PLANO (FALLBACK RESILIENTE) ---
+  startBackgroundAutoSync() {
+    if (this.realtimePollingInterval) return;
+    this.realtimePollingInterval = setInterval(async () => {
+      const bizUser = storage.getBusinessUser();
+      const activeBizId = (bizUser && bizUser.businessId) || storage.getActiveBusinessId();
+      if (!activeBizId) return;
+
+      try {
+        const prevApts = storage.getAppointmentsByBusiness(activeBizId);
+        const prevIds = new Set(prevApts.map(a => a.id));
+        const freshApts = await storage.getAppointmentsByBusinessAsync(activeBizId);
+
+        if (prevIds.size > 0 && freshApts && freshApts.length > prevIds.size) {
+          const newApts = freshApts.filter(a => !prevIds.has(a.id));
+          if (newApts.length > 0) {
+            console.log('⚡ [AutoSync Fallback] Nuevas citas detectadas:', newApts);
+            this.playNotificationChime();
+            const first = newApts[0];
+            const fTime = first.time ? this.formatTime12h(first.time) : '';
+            const fDate = first.date ? this.formatDateDMY(first.date) : '';
+            this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${first.clientName} agendó "${first.serviceName}" para ${fDate} (${fTime})`, 'success');
+
+            if (this.currentView === 'owner-dashboard') {
+              const mainContent = document.getElementById('main-content');
+              if (mainContent) {
+                this.renderBusinessDashboard(mainContent);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }, 8000);
   }
 
   // --- NOTIFICACIONES TOAST ---
@@ -4943,6 +5106,9 @@ class App {
               ${(currentBiz.plan === 'pro' || currentBiz.plan === 'unlimited') ? `
                 <button id="dash-export-excel-btn" class="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-excel text-emerald-600"></i> Exportar a Excel (.xlsx)
+                </button>
+                <button id="dash-export-csv-btn" class="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                  <i class="fas fa-file-csv text-purple-600"></i> Exportar (CSV)
                 </button>
                 <button id="dash-export-pdf-btn" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
                   <i class="fas fa-file-pdf text-rose-600"></i> Descargar Reporte PDF

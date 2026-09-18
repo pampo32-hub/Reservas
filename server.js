@@ -79,6 +79,69 @@ app.get('/robots.txt', (req, res) => {
 });
 
 // ==========================================
+// CANAL REALTIME EN VIVO (SERVER-SENT EVENTS - SSE)
+// ==========================================
+const sseBusinessClients = new Map(); // businessId -> Set of express response objects
+
+function broadcastBusinessSSE(businessId, eventType, data) {
+  if (!businessId) return;
+  const clients = sseBusinessClients.get(businessId);
+  if (clients && clients.size > 0) {
+    const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+    clients.forEach(clientRes => {
+      try {
+        clientRes.write(payload);
+      } catch (e) {
+        clients.delete(clientRes);
+      }
+    });
+    console.log(`⚡ [Realtime SSE] Notificación '${eventType}' enviada en vivo a ${clients.size} sesión(es) del negocio ${businessId}.`);
+  }
+}
+
+// Endpoint de conexión SSE para pantalla de comercio
+app.get('/api/realtime/stream', (req, res) => {
+  const { businessId } = req.query;
+  if (!businessId) {
+    return res.status(400).json({ error: 'Falta businessId para conectar el canal en tiempo real.' });
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  if (!sseBusinessClients.has(businessId)) {
+    sseBusinessClients.set(businessId, new Set());
+  }
+  sseBusinessClients.get(businessId).add(res);
+
+  // Handshake inicial
+  res.write(`event: connected\ndata: ${JSON.stringify({ status: 'connected', businessId, timestamp: new Date().toISOString() })}\n\n`);
+
+  // Mantener viva la conexión con ping cada 20 segundos
+  const keepAliveInterval = setInterval(() => {
+    try {
+      res.write(': keep-alive\n\n');
+    } catch (err) {
+      clearInterval(keepAliveInterval);
+    }
+  }, 20000);
+
+  req.on('close', () => {
+    clearInterval(keepAliveInterval);
+    const clients = sseBusinessClients.get(businessId);
+    if (clients) {
+      clients.delete(res);
+      if (clients.size === 0) {
+        sseBusinessClients.delete(businessId);
+      }
+    }
+  });
+});
+
+// ==========================================
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
 
@@ -1916,6 +1979,13 @@ app.post('/api/appointments', async (req, res) => {
       autoConfirmed: isAutoConfirm
     };
 
+    // Emitir inmediatamente al canal en tiempo real (SSE) para actualizar pantallas de comercio en vivo sin F5
+    broadcastBusinessSSE(a.businessId, 'appointment_created', {
+      appointment: createdAppointment,
+      businessId: a.businessId,
+      message: `¡Nueva cita agendada por ${a.clientName || 'un cliente'}!`
+    });
+
     // Notificaciones automáticas de citas (Email y WhatsApp)
     const ENABLE_BOOKING_NOTIFICATIONS = process.env.ENABLE_BOOKING_NOTIFICATIONS !== 'false';
 
@@ -2238,6 +2308,15 @@ app.put('/api/appointments/:id', async (req, res) => {
       }
     }
 
+    if (prevApt && prevApt.business_id) {
+      broadcastBusinessSSE(prevApt.business_id, 'appointment_updated', {
+        appointmentId: id,
+        date: a.date || prevApt.date,
+        time: a.time || prevApt.time,
+        status: a.status || prevApt.status
+      });
+    }
+
     res.json({ success: true, message: 'Cita actualizada y reprogramada correctamente' });
   } catch (error) {
     console.error('Error actualizando cita:', error);
@@ -2255,6 +2334,13 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
     const prevApt = prevAptRes.rows[0];
 
     await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, id]);
+
+    if (prevApt && prevApt.business_id) {
+      broadcastBusinessSSE(prevApt.business_id, 'appointment_updated', {
+        appointmentId: id,
+        status: status
+      });
+    }
 
     // 1. Si pasó a confirmed desde pending/otro estado, disparar notificaciones automáticamente
     let notificationsSent = false;
