@@ -255,6 +255,31 @@ class StorageService {
     return { success: true, isBlocked, blockReason: reason };
   }
 
+  async toggleBusinessVerification(businessId, isVerified) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/verify`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isVerified: Boolean(isVerified) })
+        });
+        if (res.ok) {
+          await this.loadFromApi();
+          return await res.json();
+        }
+      } catch (e) {
+        console.error('Error actualizando verificación:', e);
+      }
+    }
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx >= 0) {
+      businesses[idx].isVerified = Boolean(isVerified);
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    }
+    return { success: true, isVerified: Boolean(isVerified) };
+  }
+
   async deleteBusinessByDeveloper(businessId) {
     if (this.isOnlineApi) {
       try {

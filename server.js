@@ -56,7 +56,7 @@ app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
   res.sendFile(htmlPath);
 });
 
-// Rutas directas para Landing B2B de Negocios, Directorio y Ambiente de Pruebas
+// Rutas directas para Landing B2B de Negocios, Directorio, Pruebas y Panel
 app.get([
   '/', '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
   '/directorio', '/explorar', '/catalogo', '/buscar', '/comercios',
@@ -65,7 +65,6 @@ app.get([
 ], (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
-
 
 
 // Sitemap y Robots para Indexación en Google / Search Console
@@ -1046,12 +1045,10 @@ app.get('/api/businesses', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
+      isVerified: Boolean(b.is_verified),
       plan: b.plan || 'pro',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
       monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
-      plan: b.plan || 'basic',
-      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       subscriptionStatus: b.subscription_status,
@@ -1104,6 +1101,7 @@ app.get('/api/developer/businesses', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
+      isVerified: Boolean(b.is_verified),
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
       monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
@@ -1162,6 +1160,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
+      isVerified: Boolean(b.is_verified),
       plan: b.plan || 'pro',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
       monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
@@ -1249,8 +1248,9 @@ app.put('/api/businesses/:id', async (req, res) => {
         plan = COALESCE($16, plan),
         is_blocked = COALESCE($17, is_blocked),
         block_reason = COALESCE($18, block_reason),
-        is_hidden = COALESCE($19, is_hidden)
-      WHERE id = $20
+        is_hidden = COALESCE($19, is_hidden),
+        is_verified = COALESCE($20, is_verified)
+      WHERE id = $21
     `, [
       b.name !== undefined ? b.name : null,
       b.category !== undefined ? b.category : null,
@@ -1271,6 +1271,7 @@ app.put('/api/businesses/:id', async (req, res) => {
       b.isBlocked !== undefined ? Boolean(b.isBlocked) : null,
       b.blockReason !== undefined ? b.blockReason : null,
       b.isHidden !== undefined ? Boolean(b.isHidden) : null,
+      b.isVerified !== undefined ? Boolean(b.isVerified) : null,
       id
     ]);
 
@@ -2493,11 +2494,11 @@ app.get('/api/developer/businesses', async (req, res) => {
       ownerEmail: row.owner_email,
       servicesCount: parseInt(row.services_count, 10) || 0,
       appointmentsCount: parseInt(row.appointments_count, 10) || 0,
-      isDemo: row.is_demo,
       isDemo: Boolean(row.is_demo),
       isHidden: Boolean(row.is_hidden),
       isBlocked: Boolean(row.is_blocked),
       blockReason: row.block_reason || '',
+      isVerified: Boolean(row.is_verified),
       createdAt: row.created_at
     })));
   } catch (error) {
@@ -2698,6 +2699,23 @@ app.patch('/api/developer/businesses/:id/block', async (req, res) => {
   } catch (error) {
     console.error('Error actualizando estado de bloqueo del comercio:', error);
     res.status(500).json({ error: 'Error al actualizar estado de bloqueo del comercio.' });
+  }
+});
+
+// 8.5. Alternar Verificación Oficial de Comercio por Developer
+app.patch('/api/developer/businesses/:id/verify', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isVerified } = req.body;
+    await pool.query('UPDATE reservas_businesses SET is_verified = $1 WHERE id = $2', [Boolean(isVerified), id]);
+    res.json({ 
+      success: true, 
+      message: isVerified ? 'Comercio marcado como VERIFICADO oficialmente.' : 'Verificación de comercio retirada (estado pendiente).',
+      isVerified: Boolean(isVerified)
+    });
+  } catch (error) {
+    console.error('Error actualizando verificación del comercio:', error);
+    res.status(500).json({ error: 'Error al actualizar verificación del comercio.' });
   }
 });
 

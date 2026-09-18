@@ -613,6 +613,7 @@ class App {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
+        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
         return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
       }
       case 'review-booking': {
@@ -640,7 +641,9 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
+      case 'directory':
       default:
+        return '/';
         return '/unete';
     }
   }
@@ -662,6 +665,7 @@ class App {
       if (/^\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)$/i.test(pathname)) {
         return { view: 'business-test-pricing', params: {} };
       }
+      if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)$/i.test(pathname)) {
       if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)$/i.test(pathname)) {
         return { view: 'business-landing', params: {} };
       }
@@ -695,6 +699,7 @@ class App {
       }
       if (/^\/?(login|acceso|entrar|soy-negocio)$/i.test(pathname)) {
         setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+        return { view: 'directory', params: {} };
         return { view: 'business-landing', params: {} };
       }
     }
@@ -712,8 +717,10 @@ class App {
       };
     }
 
+    // 2. Ruta raíz vacía
     // 2. Ruta raíz vacía (Lanza directamente la Landing B2B /unete)
     if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
+      // Si la URL es la raíz pero hay una vista guardada en sessionStorage, podemos restaurarla si es un dashboard activo
       if (typeof sessionStorage !== 'undefined') {
         const savedView = sessionStorage.getItem('reservas_current_view');
         const savedOwnerTab = sessionStorage.getItem('reservas_active_owner_tab') || 'appointments';
@@ -736,6 +743,7 @@ class App {
           return { view: 'directory', params: {} };
         }
       }
+      return { view: 'directory', params: {} };
       return { view: 'business-landing', params: {} };
     }
 
@@ -815,6 +823,7 @@ class App {
       return { view: 'developer-dashboard', params: { tab } };
     }
 
+    // 9. Acceso directo por URL en hash
     // 9. Directorio o Catálogo en hash
     if (/^#\/?(directorio|explorar|catalogo|buscar|comercios)/i.test(cleanHash)) {
       return { view: 'directory', params: {} };
@@ -823,9 +832,11 @@ class App {
     // 10. Acceso directo por URL en hash
     if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
       setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+      return { view: 'directory', params: {} };
       return { view: 'business-landing', params: {} };
     }
 
+    return { view: 'directory', params: {} };
     return { view: 'business-landing', params: {} };
   }
 
@@ -1627,6 +1638,8 @@ class App {
     const isUnlimited = biz.plan === 'unlimited';
     const isPro = biz.plan === 'pro';
     const isBlocked = Boolean(biz.isBlocked);
+    const isVerified = Boolean(biz.isVerified);
+    const isDemo = Boolean(biz.isDemo);
     const isDev = Boolean(storage.getDeveloperUser());
 
     return `
@@ -1642,11 +1655,19 @@ class App {
               <span class="bg-rose-600 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-rose-400 animate-pulse">
                 <i class="fas fa-ban"></i> Negocio Bloqueado
               </span>
-            ` : `
+            ` : isVerified ? `
+              <span class="bg-emerald-600 text-white backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1 shadow-md border border-emerald-400/50">
+                <i class="fas fa-shield-alt text-emerald-200"></i> Comercio Verificado
+              </span>
+            ` : isDemo ? `
               <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
                 <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
               </span>
-            `}
+            ` : isDev ? `
+              <span class="bg-amber-500/90 text-slate-950 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1 shadow-md border border-amber-300/60">
+                <i class="fas fa-clock text-slate-900"></i> Sin Verificar
+              </span>
+            ` : ''}
             <span class="bg-white/95 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-bold text-slate-800 shadow-sm">
               ${this.escapeHtml(biz.categoryLabel || biz.category)}
             </span>
@@ -1726,41 +1747,54 @@ class App {
 
             <!-- Barra de Administración Rápida de Negocios (Solo visible para Developer / SuperAdmin) -->
             ${isDev ? `
-              <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
+              <div class="pt-2 border-t border-slate-100 grid grid-cols-4 gap-1.5 bg-slate-50 p-2 rounded-2xl">
+                <!-- 0. Verificar / Desverificar -->
+                <button 
+                  type="button"
+                  class="card-toggle-verify-btn py-2 px-1 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isVerified ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-300'}"
+                  data-biz-id="${biz.id}"
+                  data-biz-name="${this.escapeHtml(biz.name)}"
+                  data-is-verified="${isVerified}"
+                  title="${isVerified ? 'Quitar verificación' : 'Marcar como Comercio Verificado Oficialmente'}"
+                >
+                  <i class="fas ${isVerified ? 'fa-shield-alt' : 'fa-check-circle'} text-xs"></i>
+                  <span class="truncate">${isVerified ? 'Verificado' : 'Verificar'}</span>
+                </button>
+
                 <!-- 1. Bloquear / Desbloquear -->
                 <button 
                   type="button"
-                  class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
+                  class="card-toggle-block-btn py-2 px-1 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   data-is-blocked="${isBlocked}"
                   title="${isBlocked ? 'Desbloquear negocio' : 'Bloquear negocio'}"
                 >
                   <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'} text-xs"></i>
-                  <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
+                  <span class="truncate">${isBlocked ? 'Desbloq.' : 'Bloquear'}</span>
                 </button>
 
                 <!-- 2. Modificar -->
                 <button 
                   type="button"
-                  class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                  class="card-edit-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   data-biz-id="${biz.id}"
                   title="Modificar y editar información del negocio"
                 >
                   <i class="fas fa-edit text-xs"></i>
-                  <span>Modificar</span>
+                  <span>Editar</span>
                 </button>
 
                 <!-- 3. Eliminar -->
                 <button 
                   type="button"
-                  class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                  class="card-delete-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   title="Eliminar este negocio permanentemente"
                 >
                   <i class="fas fa-trash-alt text-xs"></i>
-                  <span>Eliminar</span>
+                  <span>Borrar</span>
                 </button>
               </div>
             ` : ''}
@@ -2074,6 +2108,33 @@ class App {
         btn.addEventListener('click', () => {
           const bId = btn.getAttribute('data-business-id');
           this.navigateTo('business-detail', { businessId: bId });
+        });
+      });
+
+      // 0. Verificar / Desverificar negocio desde la tarjeta (Developer)
+      document.querySelectorAll('.card-toggle-verify-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const bizId = btn.getAttribute('data-biz-id');
+          const bizName = btn.getAttribute('data-biz-name');
+          const isCurrentlyVerified = btn.getAttribute('data-is-verified') === 'true';
+
+          const newStatus = !isCurrentlyVerified;
+          const msg = newStatus 
+            ? `¿Deseas marcar a "${bizName}" como COMERCIO VERIFICADO OFICIALMENTE?\n\nSe mostrará la insignia verde de verificación en todo el directorio.`
+            : `¿Deseas QUITAR la insignia de verificación oficial a "${bizName}"?`;
+
+          if (confirm(msg)) {
+            try {
+              btn.disabled = true;
+              await storage.toggleBusinessVerification(bizId, newStatus);
+              this.showToast(newStatus ? `✅ "${bizName}" ahora es un Comercio Verificado.` : `ℹ️ Verificación retirada para "${bizName}".`, 'success');
+              updateLiveSearch();
+            } catch (err) {
+              this.showToast(err.message || 'Error al actualizar verificación.', 'error');
+              btn.disabled = false;
+            }
+          }
         });
       });
 
@@ -3507,13 +3568,21 @@ class App {
                   <span class="px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-ban mr-1"></i> Comercio Suspendido
                   </span>
+                ` : biz.isVerified ? `
+                  <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-md flex items-center gap-1.5 border border-emerald-400/50">
+                    <i class="fas fa-shield-alt text-emerald-200"></i> Comercio Verificado
+                  </span>
+                ` : biz.isDemo ? `
+                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
+                  </span>
                 ` : biz.isHidden ? `
                   <span class="px-3 py-1 rounded-full bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-md">
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
                 ` : `
-                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
-                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
+                  <span class="px-3 py-1 rounded-full bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider shadow-md border border-slate-700">
+                    <i class="fas fa-store mr-1 text-slate-400"></i> Comercio Registrado
                   </span>
                 `}
                 <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold uppercase tracking-wider">
@@ -5328,10 +5397,16 @@ class App {
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Panel Administrador</span>
-                ${currentBiz.isDemo ? `
+                ${currentBiz.isVerified ? `
+                  <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1 shadow-2xs">
+                    <i class="fas fa-check-circle text-emerald-600"></i> Comercio Verificado
+                  </span>
+                ` : currentBiz.isDemo ? `
                   <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio de Muestra</span>
                 ` : `
-                  <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio Verificado</span>
+                  <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-amber-200 flex items-center gap-1" title="El equipo de administración aún no ha otorgado la insignia de verificado a este local">
+                    <i class="fas fa-clock text-amber-600"></i> Verificación Pendiente
+                  </span>
                 `}
               </div>
               <h1 class="text-xl font-extrabold text-slate-900">${currentBiz.name}</h1>
@@ -8844,6 +8919,7 @@ class App {
                   <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Hora Inicio</label>
                     <input type="time" id="staff-open-time" value="${stSchedule.openTime || '08:00'}" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+       
                   </div>
                   <div>
                     <label class="block text-[11px] font-bold text-slate-600 mb-1">Hora Fin</label>
@@ -10059,6 +10135,8 @@ class App {
       const blockedBusinessesCount = businesses.filter(b => b.isBlocked).length;
       const realBusinessesCount = businesses.filter(b => !b.isDemo).length;
       const demoBusinessesCount = businesses.filter(b => b.isDemo).length;
+      const verifiedBusinessesCount = businesses.filter(b => b.isVerified).length;
+      const unverifiedBusinessesCount = businesses.filter(b => !b.isVerified).length;
 
       let devBusinessesList = businesses;
       if (this.devBizFilter === 'active') {
@@ -10071,6 +10149,10 @@ class App {
         devBusinessesList = businesses.filter(b => !b.isDemo);
       } else if (this.devBizFilter === 'demo') {
         devBusinessesList = businesses.filter(b => b.isDemo);
+      } else if (this.devBizFilter === 'verified') {
+        devBusinessesList = businesses.filter(b => b.isVerified);
+      } else if (this.devBizFilter === 'unverified') {
+        devBusinessesList = businesses.filter(b => !b.isVerified);
       }
 
       // Filtrado por buscador
@@ -10577,26 +10659,22 @@ class App {
                 <div class="space-y-5">
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <h3 class="text-base font-bold text-slate-800">Directorio General de Comercios</h3>
-                      <p class="text-xs text-slate-500">Listado completo de comercios de muestra y registrados con contacto de dueños.</p>
                       <h3 class="text-base font-bold text-slate-900">Directorio General de Comercios</h3>
-                      <p class="text-xs text-slate-500">Administra todos los comercios: ocúltalos de la página de inicio, bloquéalos o elimínalos.</p>
+                      <p class="text-xs text-slate-500">Administra todos los comercios: verifica comercios reales, ocúltalos de la portada, bloquéalos o modifícalos.</p>
                     </div>
 
                     <!-- Mini resumen en badges -->
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
-                        <i class="fas fa-check-circle text-emerald-600"></i> ${activeBusinessesCount} Activos
+                        <i class="fas fa-shield-alt text-emerald-600"></i> ${verifiedBusinessesCount} Verificados
                       </span>
-                      <span class="px-3 py-1.5 bg-am
                       <span class="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
-                        <i class="fas fa-eye-slash text-amber-600"></i> ${hiddenBusinessesCount} Ocultos
+                        <i class="fas fa-clock text-amber-600"></i> ${unverifiedBusinessesCount} Sin Verificar
                       </span>
                       <span class="px-3 py-1.5 bg-rose-50 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs">
                         <i class="fas fa-ban text-rose-600"></i> ${blockedBusinessesCount} Bloqueados
                       </span>
                     </div>
-     
                   </div>
 
                   <!-- Chips de filtrado rápido por estado/tipo -->
@@ -10604,21 +10682,25 @@ class App {
                     <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="all">
                       Todos (${businesses.length})
                     </button>
-                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'active' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="active">
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'verified' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="verified">
+                      <i class="fas fa-shield-alt mr-1"></i> Verificados (${verifiedBusinessesCount})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'unverified' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="unverified">
+                      <i class="fas fa-clock mr-1"></i> Sin Verificar (${unverifiedBusinessesCount})
+                    </button>
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'active' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="active">
                       <i class="fas fa-check-circle mr-1"></i> Activos (${activeBusinessesCount})
                     </button>
-                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'hidden' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="hidden">
-                      <i class="fas fa-ey
-                      <i class="fas fa-eye-slash mr-1"></i> Ocultos en Inicio (${hiddenBusinessesCount})
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'hidden' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="hidden">
+                      <i class="fas fa-eye-slash mr-1"></i> Ocultos (${hiddenBusinessesCount})
                     </button>
                     <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'blocked' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="blocked">
                       <i class="fas fa-ban mr-1"></i> Bloqueados (${blockedBusinessesCount})
                     </button>
-                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'real' ? 'bg-blue-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="real">
-           
-                      Registrados Reales (${realBusinessesCount})
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'real' ? 'bg-teal-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="real">
+                      Reales (${realBusinessesCount})
                     </button>
-                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'demo' ? 'bg-purple-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="demo">
+                    <button class="dev-biz-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${this.devBizFilter === 'demo' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-filter="demo">
                       Muestra (${demoBusinessesCount})
                     </button>
                   </div>
@@ -10626,8 +10708,7 @@ class App {
                   ${filteredBusinesses.length === 0 ? `
                     <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
                       <i class="fas fa-store-slash text-3xl mb-2"></i>
-                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios con esa búsqueda</p>
-                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios en esta categoría o búsqueda</p>
+                      <p class="text-sm font-bold text-slate-700">No se encontraron comercios en esta categoría o filtro</p>
                     </div>
                   ` : `
                     <div class="overflow-x-auto">
@@ -10636,12 +10717,12 @@ class App {
                           <tr>
                             <th class="p-3">Comercio</th>
                             <th class="p-3">Categoría</th>
+                            <th class="p-3">Verificación</th>
                             <th class="p-3">Plan Activo</th>
                             <th class="p-3">Ubicación / Contacto</th>
                             <th class="p-3">Dueño / Correo</th>
                             <th class="p-3">Servicios</th>
                             <th class="p-3">Estado</th>
-                            <th class="p-3">Tipo</th>
                             <th class="p-3 text-right">Acciones Developer</th>
                           </tr>
                         </thead>
@@ -10650,21 +10731,32 @@ class App {
                             <tr class="hover:bg-slate-50/80 transition-colors ${b.isBlocked ? 'bg-rose-50/30' : b.isHidden ? 'bg-amber-50/30' : ''}">
                               <td class="p-3">
                                 <div class="flex items-center gap-3">
-                                  <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${b.name}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
+                                  <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(b.name)}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
                                   <div>
-                                    <span class="font-bold text-slate-900 block text-sm">${b.name}</span>
+                                    <span class="font-bold text-slate-900 block text-sm">${this.escapeHtml(b.name)}</span>
                                     <span class="text-[10px] text-slate-400 font-mono">ID: ${b.id}</span>
                                   </div>
                                 </div>
                               </td>
                               <td class="p-3">
-                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${b.categoryLabel || b.category}</span>
+                                <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${this.escapeHtml(b.categoryLabel || b.category)}</span>
+                              </td>
+                              <td class="p-3 whitespace-nowrap">
+                                ${b.isVerified ? `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+                                    <i class="fas fa-shield-alt text-emerald-600"></i> Verificado
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    <i class="fas fa-clock text-amber-600"></i> Pendiente
+                                  </span>
+                                `}
                               </td>
                               <td class="p-3 whitespace-nowrap">
                                 <select 
                                   class="dev-change-plan-select text-xs font-bold px-2.5 py-1.5 rounded-xl border cursor-pointer transition-all shadow-2xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${b.plan === 'unlimited' ? 'bg-purple-100 text-purple-900 border-purple-300' : (b.plan === 'basic' ? 'bg-blue-50 text-blue-900 border-blue-200' : (b.plan === 'free' ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-amber-100 text-amber-900 border-amber-300'))}" 
                                   data-id="${b.id}" 
-                                  data-name="${b.name}"
+                                  data-name="${this.escapeHtml(b.name)}"
                                 >
                                   <option value="free" ${b.plan === 'free' ? 'selected' : ''}>🎁 Gratis (₡0 • 25)</option>
                                   <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>🔹 Básico ($10 • 150)</option>
@@ -10673,12 +10765,12 @@ class App {
                                 </select>
                               </td>
                               <td class="p-3">
-                                <span class="block text-slate-800 font-semibold">${b.city || 'Costa Rica'}</span>
-                                <span class="text-[10px] text-slate-400">${b.phone || 'Sin teléfono'}</span>
+                                <span class="block text-slate-800 font-semibold">${this.escapeHtml(b.city || 'Costa Rica')}</span>
+                                <span class="text-[10px] text-slate-400">${this.escapeHtml(b.phone || 'Sin teléfono')}</span>
                               </td>
                               <td class="p-3">
-                                <span class="block text-slate-800">${b.ownerName || (b.isDemo ? 'Demo Admin' : 'Registrado')}</span>
-                                <span class="text-[10px] text-slate-400">${b.ownerEmail || b.email || 'N/A'}</span>
+                                <span class="block text-slate-800">${this.escapeHtml(b.ownerName || (b.isDemo ? 'Demo Admin' : 'Registrado'))}</span>
+                                <span class="text-[10px] text-slate-400">${this.escapeHtml(b.ownerEmail || b.email || 'N/A')}</span>
                               </td>
                               <td class="p-3">
                                 <span class="font-bold text-slate-800">${b.servicesCount !== undefined ? b.servicesCount : (b.services ? b.services.length : 0)} servicios</span>
@@ -10698,51 +10790,56 @@ class App {
                                   </span>
                                 `}
                               </td>
-                              <td class="p-3 whitespace-nowrap">
-                                ${b.isDemo ? `
-                                  <span class="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded">Muestra</span>
-                                ` : `
-                                  <span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded">Real</span>
-                                `}
-                              </td>
                               <td class="p-3 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
+                                  <!-- Verificar / Desverificar Oficialmente -->
+                                  ${b.isVerified ? `
+                                    <button class="dev-toggle-verify-btn px-2.5 py-1.5 bg-emerald-100 hover:bg-rose-100 text-emerald-900 hover:text-rose-900 border border-emerald-300 hover:border-rose-300 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${b.id}" data-action="unverify" data-name="${this.escapeHtml(b.name)}" title="Quitar insignia de verificado">
+                                      <i class="fas fa-shield-alt text-emerald-600"></i>
+                                      <span>Verificado</span>
+                                    </button>
+                                  ` : `
+                                    <button class="dev-toggle-verify-btn px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${b.id}" data-action="verify" data-name="${this.escapeHtml(b.name)}" title="Otorgar insignia oficial de Comercio Verificado">
+                                      <i class="fas fa-check-circle"></i>
+                                      <span>Verificar</span>
+                                    </button>
+                                  `}
+
                                   <!-- Ver en Directorio -->
-                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all" data-id="${b.id}" title="Ver página del comercio">
+                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all cursor-pointer" data-id="${b.id}" title="Ver página del comercio">
                                     <i class="fas fa-external-link-alt text-xs"></i>
                                   </button>
 
                                   <!-- Modificar / Editar Negocio -->
-                                  <button class="dev-edit-biz-btn px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${b.id}" data-name="${b.name}" title="Modificar datos completos del negocio">
+                                  <button class="dev-edit-biz-btn px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${b.id}" data-name="${this.escapeHtml(b.name)}" title="Modificar datos completos del negocio">
                                     <i class="fas fa-edit text-xs"></i>
                                     <span>Modificar</span>
                                   </button>
 
                                   <!-- Ocultar / Mostrar en Inicio -->
                                   ${b.isHidden ? `
-                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="show" data-name="${b.name}" title="Hacer visible en la página principal">
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${b.id}" data-action="show" data-name="${this.escapeHtml(b.name)}" title="Hacer visible en la página principal">
                                       <i class="fas fa-eye text-emerald-600"></i> Mostrar
                                     </button>
                                   ` : `
-                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hov
-                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="hide" data-name="${b.name}" title="Ocultar de la página principal">
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" data-id="${b.id}" data-action="hide" data-name="${this.escapeHtml(b.name)}" title="Ocultar de la página principal">
                                       <i class="fas fa-eye-slash text-amber-600"></i> Ocultar
                                     </button>
                                   `}
 
                                   <!-- Bloquear / Desbloquear -->
                                   ${b.isBlocked ? `
-                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs" data-id="${b.id}" data-action="unblock" data-name="${b.name}" title="Desbloquear este comercio">
+                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${b.id}" data-action="unblock" data-name="${this.escapeHtml(b.name)}" title="Desbloquear este comercio">
                                       <i class="fas fa-unlock text-emerald-600"></i> Desbloquear
                                     </button>
                                   ` : `
-                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1" data-id="${b.id}" data-action="block" data-name="${b.name}" title="Bloquear / Suspender reservas">
+                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" data-id="${b.id}" data-action="block" data-name="${this.escapeHtml(b.name)}" title="Bloquear / Suspender reservas">
                                       <i class="fas fa-ban text-rose-600"></i> Bloquear
                                     </button>
                                   `}
 
                                   <!-- Eliminar definitivamente -->
-                                  <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-xl transition-all" data-id="${b.id}" data-name="${b.name}" title="Eliminar Comercio Permanentemente">
+                                  <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-xl transition-all cursor-pointer" data-id="${b.id}" data-name="${this.escapeHtml(b.name)}" title="Eliminar Comercio Permanentemente">
                                     <i class="fas fa-trash-alt text-xs"></i>
                                   </button>
                                 </div>
@@ -11844,6 +11941,37 @@ class App {
             await storage.dismissCategoryAlert(alertId);
             this.showToast('Alerta marcada como revisada.', 'success');
             this.renderDeveloperDashboardView(container);
+          }
+        });
+      });
+
+      // Alternar Verificación Oficial de Comercio (Developer)
+      document.querySelectorAll('.dev-toggle-verify-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const bizId = e.currentTarget.getAttribute('data-id');
+          const action = e.currentTarget.getAttribute('data-action');
+          const bizName = e.currentTarget.getAttribute('data-name');
+          const isVerified = action === 'verify';
+
+          const confirmMsg = isVerified 
+            ? `¿Deseas verificar oficialmente a "${bizName}"?\n\nSe activará la insignia oficial de "Comercio Verificado" en todo el directorio y su perfil público.`
+            : `¿Deseas retirar la verificación oficial a "${bizName}"?`;
+
+          if (confirm(confirmMsg)) {
+            try {
+              btn.disabled = true;
+              await storage.toggleBusinessVerification(bizId, isVerified);
+              this.showToast(
+                isVerified 
+                  ? `✅ El comercio "${bizName}" ahora está VERIFICADO oficialmente.` 
+                  : `ℹ️ Se retiró la verificación de "${bizName}".`,
+                'success'
+              );
+              this.renderDeveloperDashboardView(container);
+            } catch (err) {
+              this.showToast(err.message || 'Error al actualizar verificación.', 'error');
+              btn.disabled = false;
+            }
           }
         });
       });
@@ -14011,6 +14139,20 @@ class App {
               <input type="text" id="edit-biz-reason" value="${this.escapeHtml(biz.blockReason || '')}" placeholder="Ej. Suspensión administrativa temporal..." class="w-full px-3.5 py-2 bg-rose-50 border border-rose-200 rounded-xl text-rose-900 text-xs">
             </div>
 
+            <!-- Verificación Oficial de Comercio (Developer / SuperAdmin) -->
+            <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shadow-xs flex-shrink-0">
+                  <i class="fas fa-shield-alt"></i>
+                </div>
+                <div>
+                  <label for="edit-biz-verified" class="font-extrabold text-emerald-950 text-xs block cursor-pointer">Comercio Verificado Oficialmente</label>
+                  <span class="text-[11px] text-emerald-800">Muestra la insignia verde de verificación oficial en la tarjeta del directorio y en su perfil público.</span>
+                </div>
+              </div>
+              <input type="checkbox" id="edit-biz-verified" ${biz.isVerified ? 'checked' : ''} class="w-5 h-5 text-emerald-600 rounded-md border-slate-300 focus:ring-emerald-500 cursor-pointer">
+            </div>
+
             <!-- Botones de Acción -->
             <div class="pt-4 flex items-center justify-end gap-2 border-t border-slate-100">
               <button type="button" id="cancel-edit-biz-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
@@ -14104,6 +14246,7 @@ class App {
       const selectedCatObj = categories.find(c => c.id === selectedCatId);
       const isBlockedVal = document.getElementById('edit-biz-status')?.value === 'blocked';
       const isHiddenVal = document.getElementById('edit-biz-visibility')?.value === 'hidden';
+      const isVerifiedVal = Boolean(document.getElementById('edit-biz-verified')?.checked);
       const selectedPlan = document.getElementById('edit-biz-plan')?.value;
 
       const updated = {
@@ -14121,7 +14264,8 @@ class App {
         plan: selectedPlan,
         isBlocked: isBlockedVal,
         blockReason: isBlockedVal ? (document.getElementById('edit-biz-reason')?.value.trim() || 'Suspensión administrativa') : '',
-        isHidden: isHiddenVal
+        isHidden: isHiddenVal,
+        isVerified: isVerifiedVal
       };
 
       try {
