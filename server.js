@@ -4049,8 +4049,19 @@ app.post('/api/sinpe/verify', async (req, res) => {
     }
 
     const tx = rows[0];
+    const txAmount = parseFloat(tx.amount_crc) || 0;
 
-    // 5. Marcar la transacción como 'used' para que NUNCA vuelva a ser utilizada
+    // 5. VALIDACIÓN ESTRICTA DE MONTO: El comprobante y el monto solicitado deben coincidir exactamente
+    if (numAmount > 0 && Math.abs(txAmount - numAmount) > 0.01) {
+      console.warn(`⚠️ [SINPE Verify] Discrepancia de monto: Comprobante #${tx.reference_number} es por ₡${txAmount}, pero se requiere ₡${numAmount}`);
+      return res.status(400).json({
+        success: false,
+        error: 'MONTO_NO_COINCIDE',
+        message: `❌ El comprobante #${tx.reference_number} corresponde a una transferencia por ₡${Number(txAmount).toLocaleString('es-CR')}, pero el monto requerido para esta transacción es de ₡${Number(numAmount).toLocaleString('es-CR')}. Los montos deben coincidir exactamente.`
+      });
+    }
+
+    // 6. Marcar la transacción como 'used' para que NUNCA vuelva a ser utilizada
     await pool.query(`
       UPDATE reservas_sinpe_transactions
       SET status = 'used',
