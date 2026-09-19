@@ -3924,6 +3924,8 @@ app.post('/api/sinpe/verify', async (req, res) => {
     const cleanRef = String(referenceNumber || '').trim().replace(/^[#:\.\-\s]+/, '');
     const cleanPhone = String(senderPhone || '').replace(/\D/g, '');
 
+    if (!numAmount || isNaN(numAmount)) {
+      return res.status(400).json({ success: false, error: 'MONTO_INVALIDO', message: 'El monto es obligatorio para la verificación.' });
     console.log(`🔍 [SINPE Verify] Verificando comprobante: Ref: "${cleanRef}", Monto: ₡${numAmount || 0}, Tel: "${cleanPhone}"`);
 
     if (!cleanRef && (!numAmount || isNaN(numAmount))) {
@@ -3934,6 +3936,8 @@ app.post('/api/sinpe/verify', async (req, res) => {
       });
     }
 
+    const cleanPhone = String(senderPhone || '').replace(/\D/g, '');
+    const cleanRef = String(referenceNumber || '').trim().replace(/^#/, '');
     // 1. Primero intentar escanear el correo al vuelo por si acaba de entrar
     try {
       const { checkSinpeEmailsOnce } = await import('./sinpeImapService.js');
@@ -3942,8 +3946,13 @@ app.post('/api/sinpe/verify', async (req, res) => {
       console.warn('⚠️ [SINPE Verify] Escaneo en caliente omitido:', scanErr.message);
     }
 
+    console.log(`🔍 [SINPE Verify] Buscando pago: Monto ₡${numAmount}, Tel: "${cleanPhone}", Ref: "${cleanRef}"`);
     let rows = [];
 
+    // Construir consulta dinámica para encontrar la transacción
+    let query = `
+      SELECT * FROM reservas_sinpe_transactions 
+      WHERE ABS(amount_crc - $1) < 0.01 
     // 2. Búsqueda principal: Por número de comprobante directo
     if (cleanRef && cleanRef.length >= 3) {
       const refQuery = `
@@ -3955,6 +3964,13 @@ app.post('/api/sinpe/verify', async (req, res) => {
           OR raw_data::text ILIKE $1
         )
         AND status IN ('unclaimed', 'verified')
+    `;
+    const params = [numAmount];
+    let conditions = [];
+
+    if (cleanRef && cleanRef.length >= 3) {
+      params.push(`%${cleanRef}%`);
+      conditions.push(`(reference_number ILIKE $${params.length} OR detail ILIKE $${params.length})`);
         ORDER BY received_at DESC
         LIMIT 1
       `;
@@ -3962,6 +3978,11 @@ app.post('/api/sinpe/verify', async (req, res) => {
       rows = refRes.rows;
     }
 
+    if (cleanPhone && cleanPhone.length >= 4) {
+      const phoneTail = cleanPhone.slice(-4);
+      params.push(`%${phoneTail}%`);
+      conditions.push(`REGEXP_REPLACE(sender_phone, '[^0-9]', '', 'g') ILIKE $${params.length}`);
+    }
     // 3. Búsqueda secundaria: Por monto y teléfono o monto reciente (solo si no se envió comprobante)
     if (rows.length === 0 && numAmount > 0) {
       let query = `
@@ -3971,6 +3992,11 @@ app.post('/api/sinpe/verify', async (req, res) => {
       `;
       const params = [numAmount];
 
+    if (conditions.length > 0) {
+      query += ` AND (${conditions.join(' OR ')})`;
+    } else {
+      // Si no proporcionó ni ref ni teléfono válido, solo busca si hay un SINPE unclaimed reciente por ese monto exacto
+      query += ` AND received_at >= NOW() - INTERVAL '30 minutes'`;
       if (cleanPhone && cleanPhone.length >= 4) {
         const phoneTail = cleanPhone.slice(-4);
         params.push(`%${phoneTail}%`);
@@ -3984,10 +4010,15 @@ app.post('/api/sinpe/verify', async (req, res) => {
       rows = amountRes.rows;
     }
 
+    query += ` ORDER BY received_at DESC LIMIT 1`;
+
+    const { rows } = await pool.query(query, params);
+
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'TRANSACCION_NO_ENCONTRADA',
+        message: `❌ No se encontró ninguna transferencia SINPE por ₡${numAmount.toLocaleString('es-CR')} coincidente. Asegúrate de haber realizado la transferencia al 7143-3852 y verifica que el comprobante o número telefónico sean correctos.`
         message: cleanRef 
           ? `❌ No se encontró ningún SINPE pendiente con el comprobante #${cleanRef}. Si acabas de realizar la transferencia, espera unos 10-20 segundos a que el banco emita la notificación y presiona "Verificar" nuevamente.`
           : `❌ No se encontró ninguna transferencia SINPE reciente por ₡${(numAmount || 0).toLocaleString('es-CR')}. Por favor ingresa el número de comprobante.`
