@@ -3934,6 +3934,15 @@ app.post('/api/sinpe/verify', async (req, res) => {
       });
     }
 
+    // 1. Escanear buzón en caliente por si el correo acaba de llegar
+    try {
+      const { checkSinpeEmailsOnce } = await import('./sinpeImapService.js');
+      await checkSinpeEmailsOnce();
+    } catch (scanErr) {
+      console.warn('⚠️ [SINPE Verify] Escaneo en caliente omitido:', scanErr.message);
+    }
+
+    // 2. REGLA ESTRICTA: Si el comprobante ya fue usado previamente, rechazarlo de inmediato
     // 1. REGLA ESTRICTA: Si el comprobante ya fue usado previamente, rechazarlo de inmediato (ultrarrápido <10ms)
     if (cleanRef && cleanRef.length >= 3) {
       const usedCheck = await pool.query(`
@@ -3956,6 +3965,7 @@ app.post('/api/sinpe/verify', async (req, res) => {
 
     let rows = [];
 
+    // 3. Búsqueda principal: Comprobante disponible (unclaimed o verified)
     // 2. Búsqueda instantánea en Base de Datos (en 5ms)
     if (cleanRef && cleanRef.length >= 3) {
       const refQuery = `

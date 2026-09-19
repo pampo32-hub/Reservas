@@ -10,7 +10,7 @@ let isChecking = false;
 let pollingTimer = null;
 
 const getImapConfig = () => {
-  const cleanPassword = (process.env.SINPE_EMAIL_PASSWORD || '').replace(/\s+/g, '');
+  const cleanPassword = (process.env.SINPE_EMAIL_PASSWORD || 'nbanoxskrwrgwwvy').replace(/\s+/g, '');
   return {
     imap: {
       user: process.env.SINPE_EMAIL_USER || 'pampo32@gmail.com',
@@ -47,8 +47,8 @@ export async function checkSinpeEmailsOnce() {
       return;
     }
 
-    // Consultamos los últimos 25 correos por rango de secuencia (ultra rápido en ~1s)
-    const startSeq = Math.max(1, totalMessages - 24);
+    // Consultamos los últimos 30 correos por rango de secuencia (ultra rápido en ~1s)
+    const startSeq = Math.max(1, totalMessages - 29);
     const searchCriteria = [`${startSeq}:${totalMessages}`];
     
     const fetchOptions = {
@@ -66,6 +66,7 @@ export async function checkSinpeEmailsOnce() {
           const rawHeader = headerPart ? headerPart.body : {};
           const subject = Array.isArray(rawHeader.subject) ? rawHeader.subject[0] : (rawHeader.subject || '');
           const from = Array.isArray(rawHeader.from) ? rawHeader.from[0] : (rawHeader.from || '');
+          const to = Array.isArray(rawHeader.to) ? rawHeader.to[0] : (rawHeader.to || '');
 
           const allPart = msg.parts.find(p => p.which === '' || p.which === 'TEXT');
           let bodyText = '';
@@ -77,48 +78,35 @@ export async function checkSinpeEmailsOnce() {
             bodyHtml = parsed.html || '';
           }
 
-          const fullContent = `${subject} ${bodyText} ${from}`.toLowerCase();
-          const isBankLike = fullContent.includes('sinpe') || 
-                             fullContent.includes('bac') || 
-                             fullContent.includes('bncr') || 
-                             fullContent.includes('banco') || 
-                             fullContent.includes('transferencia') || 
-                             fullContent.includes('comprobante') ||
-                             fullContent.includes('pase') ||
-                             fullContent.includes('wink') ||
-                             fullContent.includes('promerica') ||
-                             fullContent.includes('scotiabank');
+          const parsedSinpe = parseSinpeEmail(subject, bodyText, bodyHtml, from);
 
-          if (isBankLike) {
-            const parsedSinpe = parseSinpeEmail(subject, bodyText, bodyHtml, from);
+          if (parsedSinpe.isSinpe && parsedSinpe.amountCrc > 0 && parsedSinpe.referenceNumber) {
+            const txId = `sinpe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            
+            const insertResult = await pool.query(`
+              INSERT INTO reservas_sinpe_transactions 
+                (id, reference_number, sender_phone, sender_name, amount_crc, origin_bank, target_phone, detail, status, raw_data, received_at)
+              VALUES 
+                ($1, $2, $3, $4, $5, $6, '71433852', $7, 'unclaimed', $8, NOW())
+              ON CONFLICT (reference_number) DO UPDATE
+                SET amount_crc = EXCLUDED.amount_crc,
+                    origin_bank = EXCLUDED.origin_bank,
+                    detail = EXCLUDED.detail,
+                    sender_name = COALESCE(EXCLUDED.sender_name, reservas_sinpe_transactions.sender_name)
+              RETURNING id, reference_number, amount_crc, status
+            `, [
+              txId, 
+              parsedSinpe.referenceNumber, 
+              parsedSinpe.senderPhone, 
+              parsedSinpe.senderName, 
+              parsedSinpe.amountCrc, 
+              parsedSinpe.originBank, 
+              parsedSinpe.detail, 
+              JSON.stringify({ from, to, subject, summary: parsedSinpe.rawSummary })
+            ]);
 
-            if (parsedSinpe.isSinpe && parsedSinpe.amountCrc > 0 && parsedSinpe.referenceNumber) {
-              const txId = `sinpe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-              
-              const insertResult = await pool.query(`
-                INSERT INTO reservas_sinpe_transactions 
-                  (id, reference_number, sender_phone, sender_name, amount_crc, origin_bank, target_phone, detail, status, raw_data, received_at)
-                VALUES 
-                  ($1, $2, $3, $4, $5, $6, '71433852', $7, 'unclaimed', $8, NOW())
-                ON CONFLICT (reference_number) DO UPDATE
-                  SET sender_phone = COALESCE(EXCLUDED.sender_phone, reservas_sinpe_transactions.sender_phone),
-                      sender_name = COALESCE(EXCLUDED.sender_name, reservas_sinpe_transactions.sender_name),
-                      detail = COALESCE(EXCLUDED.detail, reservas_sinpe_transactions.detail)
-                RETURNING id, reference_number, amount_crc, status
-              `, [
-                txId, 
-                parsedSinpe.referenceNumber, 
-                parsedSinpe.senderPhone, 
-                parsedSinpe.senderName, 
-                parsedSinpe.amountCrc, 
-                parsedSinpe.originBank, 
-                parsedSinpe.detail, 
-                JSON.stringify({ from, subject, summary: parsedSinpe.rawSummary })
-              ]);
-
-              if (insertResult.rowCount > 0) {
-                console.log(`💵 [SINPE IMAP] Notificación registrada: ₡${parsedSinpe.amountCrc} de ${parsedSinpe.senderName} (${parsedSinpe.senderPhone}) | Ref: #${parsedSinpe.referenceNumber} | Banco: ${parsedSinpe.originBank}`);
-              }
+            if (insertResult.rowCount > 0) {
+              console.log(`💵 [SINPE IMAP] Notificación registrada: ₡${parsedSinpe.amountCrc} de ${parsedSinpe.senderName} (${parsedSinpe.senderPhone}) | Ref: #${parsedSinpe.referenceNumber} | Banco: ${parsedSinpe.originBank}`);
             }
           }
         } catch (msgErr) {
@@ -140,10 +128,10 @@ export async function checkSinpeEmailsOnce() {
 
 /**
  * Inicia el polling recurrente del servicio IMAP
- * @param {number} intervalMs Intervalo en milisegundos (por defecto 15 segundos)
+ * @param {number} intervalMs Intervalo en milisegundos (por defecto 5 segundos)
  */
 export function startSinpeImapWorker(intervalMs = 5000) {
-  console.log(`🚀 [SINPE IMAP] Lector automático de SINPE iniciado (revisión ultra rápida cada ${intervalMs / 1000}s)`);
+  console.log(`🚀 [SINPE IMAP] Lector automático de SINPE iniciado (revisión cada ${intervalMs / 1000}s)`);
   
   checkSinpeEmailsOnce();
 
@@ -160,4 +148,3 @@ export function stopSinpeImapWorker() {
     console.log('🛑 [SINPE IMAP] Servicio de lectura detenido.');
   }
 }
-
