@@ -111,8 +111,21 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
     detail = detailMatch[1].trim();
   }
 
+  const isBankEmail = cleanFrom.includes('bac') || 
+                      cleanFrom.includes('bncr') || 
+                      cleanFrom.includes('bancobcr') || 
+                      cleanFrom.includes('promerica') || 
+                      cleanFrom.includes('scotiabank') || 
+                      cleanFrom.includes('coopenae') || 
+                      cleanFrom.includes('davivienda') || 
+                      cleanFrom.includes('banco') || 
+                      cleanFrom.includes('sinpe') ||
+                      fullText.toLowerCase().includes('sinpe móvil') ||
+                      fullText.toLowerCase().includes('transferencia sinpe') ||
+                      fullText.toLowerCase().includes('comprobante de transferencia');
+
   return {
-    isSinpe: !!amountCrc || fullText.toLowerCase().includes('sinpe') || fullText.toLowerCase().includes('transferencia'),
+    isSinpe: isBankEmail && amountCrc > 0 && !!referenceNumber,
     amountCrc: amountCrc || 0,
     senderPhone: senderPhone || '',
     senderName: senderName || 'Cliente SINPE',
