@@ -30,6 +30,7 @@ import {
   sendPushToBusiness 
 } from './pushService.js';
 import { parseSinpeEmail } from './src/services/sinpeParser.js';
+import { startSinpeImapWorker } from './sinpeImapService.js';
 
 dotenv.config();
 
@@ -4191,6 +4192,13 @@ async function startServer() {
     setInterval(processPendingReviewEmails, 5 * 60 * 1000);
     // Ejecutar chequeo inicial 10 segundos después del arranque
     setTimeout(processPendingReviewEmails, 10000);
+
+    // Iniciar worker de lectura automática de SINPE Móvil (cada 15 segundos)
+    try {
+      startSinpeImapWorker(15000);
+    } catch (sinpeErr) {
+      console.warn('⚠️ No se pudo iniciar el worker de SINPE IMAP:', sinpeErr.message);
+    }
   });
 }
 

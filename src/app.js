@@ -613,6 +613,7 @@ class App {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
+        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
         return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
       }
       case 'review-booking': {
@@ -628,6 +629,10 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
+      case 'owner-dashboard':
+        return '/panel-negocio';
+      case 'developer-dashboard':
+        return '/developer';
       case 'owner-dashboard': {
         const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
         return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
@@ -636,7 +641,9 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
+      case 'directory':
       default:
+        return '/';
         return '/unete';
     }
   }
@@ -658,6 +665,7 @@ class App {
       if (/^\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)$/i.test(pathname)) {
         return { view: 'business-test-pricing', params: {} };
       }
+      if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)$/i.test(pathname)) {
       if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)$/i.test(pathname)) {
         return { view: 'business-landing', params: {} };
       }
@@ -680,15 +688,18 @@ class App {
         return { view: 'my-client-bookings', params: {} };
       }
       if (/^\/?(panel-negocio|dashboard|owner)$/i.test(pathname)) {
+        return { view: 'owner-dashboard', params: {} };
         const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
         return { view: 'owner-dashboard', params: { tab } };
       }
       if (/^\/?(developer|developer-dashboard|admin)$/i.test(pathname)) {
+        return { view: 'developer-dashboard', params: {} };
         const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
         return { view: 'developer-dashboard', params: { tab } };
       }
       if (/^\/?(login|acceso|entrar|soy-negocio)$/i.test(pathname)) {
         setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+        return { view: 'directory', params: {} };
         return { view: 'business-landing', params: {} };
       }
     }
@@ -706,8 +717,10 @@ class App {
       };
     }
 
+    // 2. Ruta raíz vacía
     // 2. Ruta raíz vacía (Lanza directamente la Landing B2B /unete)
     if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
+      // Si la URL es la raíz pero hay una vista guardada en sessionStorage, podemos restaurarla si es un dashboard activo
       if (typeof sessionStorage !== 'undefined') {
         const savedView = sessionStorage.getItem('reservas_current_view');
         const savedOwnerTab = sessionStorage.getItem('reservas_active_owner_tab') || 'appointments';
@@ -730,6 +743,7 @@ class App {
           return { view: 'directory', params: {} };
         }
       }
+      return { view: 'directory', params: {} };
       return { view: 'business-landing', params: {} };
     }
 
@@ -777,6 +791,7 @@ class App {
     }
 
     // 5.1 Landing Exclusiva para Negocios en hash
+    if (/^#\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio)/i.test(cleanHash)) {
     if (/^#\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)/i.test(cleanHash)) {
       return { view: 'business-landing', params: {} };
     }
@@ -787,12 +802,14 @@ class App {
     }
 
     // 6. Mis citas en hash
+    if (/^#\/?(mis-reservas|mis-reservas|cliente)/i.test(cleanHash)) {
     if (/^#\/?(mis-reservas|cliente)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
 
     // 7. Panel negocio en hash
     if (/^#\/?(panel-negocio|dashboard|owner)/i.test(cleanHash)) {
+      return { view: 'owner-dashboard', params: {} };
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
       const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
@@ -801,12 +818,14 @@ class App {
 
     // 8. Developer en hash
     if (/^#\/?(developer|developer-dashboard|admin)/i.test(cleanHash)) {
+      return { view: 'developer-dashboard', params: {} };
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
       const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
       return { view: 'developer-dashboard', params: { tab } };
     }
 
+    // 9. Acceso directo por URL en hash
     // 9. Directorio o Catálogo en hash
     if (/^#\/?(directorio|explorar|catalogo|buscar|comercios)/i.test(cleanHash)) {
       return { view: 'directory', params: {} };
@@ -815,9 +834,11 @@ class App {
     // 10. Acceso directo por URL en hash
     if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
       setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
+      return { view: 'directory', params: {} };
       return { view: 'business-landing', params: {} };
     }
 
+    return { view: 'directory', params: {} };
     return { view: 'business-landing', params: {} };
   }
 
@@ -1636,6 +1657,7 @@ class App {
               <span class="bg-rose-600 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1 shadow-lg border border-rose-400 animate-pulse">
                 <i class="fas fa-ban"></i> Negocio Bloqueado
               </span>
+            ` : `
             ` : isVerified ? `
               <span class="bg-emerald-600 text-white backdrop-blur-md px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1 shadow-md border border-emerald-400/50">
                 <i class="fas fa-shield-alt text-emerald-200"></i> Comercio Verificado
@@ -1644,6 +1666,7 @@ class App {
               <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
                 <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
               </span>
+            `}
             ` : isDev ? `
               <span class="bg-amber-500/90 text-slate-950 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1 shadow-md border border-amber-300/60">
                 <i class="fas fa-clock text-slate-900"></i> Sin Verificar
@@ -1728,6 +1751,7 @@ class App {
 
             <!-- Barra de Administración Rápida de Negocios (Solo visible para Developer / SuperAdmin) -->
             ${isDev ? `
+              <div class="pt-2 border-t border-slate-100 grid grid-cols-3 gap-1.5 bg-slate-50 p-2 rounded-2xl">
               <div class="pt-2 border-t border-slate-100 grid grid-cols-4 gap-1.5 bg-slate-50 p-2 rounded-2xl">
                 <!-- 0. Verificar / Desverificar -->
                 <button 
@@ -1745,6 +1769,7 @@ class App {
                 <!-- 1. Bloquear / Desbloquear -->
                 <button 
                   type="button"
+                  class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   class="card-toggle-block-btn py-2 px-1 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
@@ -1752,29 +1777,34 @@ class App {
                   title="${isBlocked ? 'Desbloquear negocio' : 'Bloquear negocio'}"
                 >
                   <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'} text-xs"></i>
+                  <span class="truncate">${isBlocked ? 'Desbloquear' : 'Bloquear'}</span>
                   <span class="truncate">${isBlocked ? 'Desbloq.' : 'Bloquear'}</span>
                 </button>
 
                 <!-- 2. Modificar -->
                 <button 
                   type="button"
+                  class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   class="card-edit-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   data-biz-id="${biz.id}"
                   title="Modificar y editar información del negocio"
                 >
                   <i class="fas fa-edit text-xs"></i>
+                  <span>Modificar</span>
                   <span>Editar</span>
                 </button>
 
                 <!-- 3. Eliminar -->
                 <button 
                   type="button"
+                  class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   class="card-delete-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   title="Eliminar este negocio permanentemente"
                 >
                   <i class="fas fa-trash-alt text-xs"></i>
+                  <span>Eliminar</span>
                   <span>Borrar</span>
                 </button>
               </div>
@@ -5380,6 +5410,7 @@ class App {
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Panel Administrador</span>
+                ${currentBiz.isDemo ? `
                 ${currentBiz.isVerified ? `
                   <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2.5 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1 shadow-2xs">
                     <i class="fas fa-check-circle text-emerald-600"></i> Comercio Verificado
@@ -5387,6 +5418,7 @@ class App {
                 ` : currentBiz.isDemo ? `
                   <span class="bg-purple-100 text-purple-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio de Muestra</span>
                 ` : `
+                  <span class="bg-emerald-100 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md">Comercio Verificado</span>
                   <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-md border border-amber-200 flex items-center gap-1" title="El equipo de administración aún no ha otorgado la insignia de verificado a este local">
                     <i class="fas fa-clock text-amber-600"></i> Verificación Pendiente
                   </span>
