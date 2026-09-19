@@ -3942,7 +3942,7 @@ app.post('/api/sinpe/verify', async (req, res) => {
       console.warn('⚠️ [SINPE Verify] Escaneo en caliente omitido:', scanErr.message);
     }
 
-    // 1. REGLA ESTRICTA: Si el comprobante ya fue usado previamente, rechazarlo de inmediato
+    // 2. REGLA ESTRICTA: Si el comprobante ya fue usado previamente, rechazarlo de inmediato
     if (cleanRef && cleanRef.length >= 3) {
       const strippedRef = cleanRef.replace(/^0+/, '');
       const usedCheck = await pool.query(`
@@ -3970,7 +3970,7 @@ app.post('/api/sinpe/verify', async (req, res) => {
 
     let rows = [];
 
-    // 2. Búsqueda principal: Comprobante disponible (unclaimed o verified) con coincidencia exacta
+    // 3. Búsqueda principal: Comprobante disponible (unclaimed o verified) con coincidencia exacta
     if (cleanRef && cleanRef.length >= 3) {
       const strippedRef = cleanRef.replace(/^0+/, '');
       const refQuery = `

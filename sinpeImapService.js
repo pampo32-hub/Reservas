@@ -47,7 +47,7 @@ export async function checkSinpeEmailsOnce() {
       return;
     }
 
-    // Consultamos los últimos 30 correos por rango de secuencia (ultra rápido en ~1s)
+    // Consultamos los últimos 30 correos por rango de secuencia
     const startSeq = Math.max(1, totalMessages - 29);
     const searchCriteria = [`${startSeq}:${totalMessages}`];
     
@@ -64,9 +64,9 @@ export async function checkSinpeEmailsOnce() {
         try {
           const headerPart = msg.parts.find(p => p.which === 'HEADER');
           const rawHeader = headerPart ? headerPart.body : {};
-          const subject = Array.isArray(rawHeader.subject) ? rawHeader.subject[0] : (rawHeader.subject || '');
-          const from = Array.isArray(rawHeader.from) ? rawHeader.from[0] : (rawHeader.from || '');
-          const to = Array.isArray(rawHeader.to) ? rawHeader.to[0] : (rawHeader.to || '');
+          let subject = Array.isArray(rawHeader.subject) ? rawHeader.subject[0] : (rawHeader.subject || '');
+          let from = Array.isArray(rawHeader.from) ? rawHeader.from[0] : (rawHeader.from || '');
+          let to = Array.isArray(rawHeader.to) ? rawHeader.to[0] : (rawHeader.to || '');
 
           const allPart = msg.parts.find(p => p.which === '' || p.which === 'TEXT');
           let bodyText = '';
@@ -76,6 +76,9 @@ export async function checkSinpeEmailsOnce() {
             const parsed = await simpleParser(allPart.body);
             bodyText = parsed.text || '';
             bodyHtml = parsed.html || '';
+            if (parsed.subject) subject = parsed.subject;
+            if (parsed.from && parsed.from.text) from = parsed.from.text;
+            if (parsed.to && parsed.to.text) to = parsed.to.text;
           }
 
           const parsedSinpe = parseSinpeEmail(subject, bodyText, bodyHtml, from);
@@ -128,9 +131,9 @@ export async function checkSinpeEmailsOnce() {
 
 /**
  * Inicia el polling recurrente del servicio IMAP
- * @param {number} intervalMs Intervalo en milisegundos (por defecto 5 segundos)
+ * @param {number} intervalMs Intervalo en milisegundos (por defecto 15 segundos)
  */
-export function startSinpeImapWorker(intervalMs = 5000) {
+export function startSinpeImapWorker(intervalMs = 15000) {
   console.log(`🚀 [SINPE IMAP] Lector automático de SINPE iniciado (revisión cada ${intervalMs / 1000}s)`);
   
   checkSinpeEmailsOnce();

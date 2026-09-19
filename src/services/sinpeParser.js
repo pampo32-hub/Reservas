@@ -1,41 +1,67 @@
 /**
- * Parser de Notificaciones Bancarias de SINPE Móvil (Costa Rica)
+ * Parser de Notificaciones Bancarias de SINPE Móvil (Costa Rica) y Correos de Prueba
  * Extrae montos en colones, teléfonos emisores, comprobantes y banco de origen.
  */
 
 export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from = '') {
   const fullText = `${subject}\n${bodyText}\n${stripHtml(bodyHtml)}`.trim();
   const cleanFrom = String(from || '').toLowerCase();
+  const lowerText = fullText.toLowerCase();
 
+  // 1. Detección de Banco
   let detectedBank = 'SINPE Móvil CR';
-  if (cleanFrom.includes('bac') || fullText.toLowerCase().includes('bac credomatic') || fullText.toLowerCase().includes('bac san jose')) {
+  if (cleanFrom.includes('bac') || lowerText.includes('bac credomatic') || lowerText.includes('bac san jose')) {
     detectedBank = 'BAC Credomatic';
-  } else if (cleanFrom.includes('bncr') || fullText.toLowerCase().includes('banco nacional') || fullText.toLowerCase().includes('bn móvil')) {
+  } else if (cleanFrom.includes('bncr') || lowerText.includes('banco nacional') || lowerText.includes('bn móvil') || lowerText.includes('bn movil')) {
     detectedBank = 'Banco Nacional (BNCR)';
-  } else if (cleanFrom.includes('bancobcr') || cleanFrom.includes('bcr') || fullText.toLowerCase().includes('banco de costa rica')) {
+  } else if (cleanFrom.includes('bancobcr') || cleanFrom.includes('bcr') || lowerText.includes('banco de costa rica')) {
     detectedBank = 'Banco de Costa Rica (BCR)';
-  } else if (cleanFrom.includes('promerica') || fullText.toLowerCase().includes('promerica')) {
+  } else if (cleanFrom.includes('promerica') || lowerText.includes('promerica')) {
     detectedBank = 'Banco Promerica';
-  } else if (cleanFrom.includes('scotiabank') || fullText.toLowerCase().includes('scotiabank')) {
+  } else if (cleanFrom.includes('scotiabank') || lowerText.includes('scotiabank')) {
     detectedBank = 'Scotiabank';
-  } else if (cleanFrom.includes('wink') || cleanFrom.includes('coopenae') || fullText.toLowerCase().includes('wink')) {
+  } else if (cleanFrom.includes('davivienda') || lowerText.includes('davivienda')) {
+    detectedBank = 'Davivienda';
+  } else if (cleanFrom.includes('wink') || cleanFrom.includes('coopenae') || lowerText.includes('wink')) {
     detectedBank = 'Wink (Coopenae)';
+  } else if (cleanFrom.includes('hotmail') || cleanFrom.includes('gmail') || cleanFrom.includes('yahoo') || cleanFrom.includes('outlook')) {
+    detectedBank = 'Prueba / Personal';
   }
 
-  // 1. Extraer Monto en Colones (₡)
+  // 2. Extraer Monto en Colones (₡)
   let amountCrc = null;
   const amountPatterns = [
-    /monto\s*(?:transferido|acreditado|recibido)?\s*[:#]?\s*₡?\s*([0-9]+(?:[,.][0-9]+)*)\s*(?:colones|crc)?/i,
-    /₡\s*([0-9]+(?:[,.][0-9]{2,3})*(?:\.[0-9]{2})?)/i,
-    /(?:CRC|colones)\s*([0-9.,]+)/i,
-    /([0-9]+(?:[,.][0-9]+)*)\s*(?:colones|CRC)/i
+    // "monto: 5", "monto transferido: ₡5,000.00", "monto: 5 colones", "monto: 5 crc"
+    /(?:monto|importe|valor|cantidad|transferido|acreditado|recibido)\s*(?:transferido|acreditado|recibido)?\s*[:#=\-]?\s*₡?\s*([0-9]+(?:[,.][0-9]+)*)\s*(?:colones|crc|¢)?/i,
+    // "₡ 5,000.00" or "₡5"
+    /₡\s*([0-9]+(?:[,.][0-9]+)*)/i,
+    // "5000 CRC" or "5 colones"
+    /([0-9]+(?:[,.][0-9]+)*)\s*(?:colones|crc|¢)/i,
+    // "CRC 5,000" or "colones: 5000"
+    /(?:crc|colones)\s*[:#=\-]?\s*([0-9]+(?:[,.][0-9]+)*)/i
   ];
 
   for (const regex of amountPatterns) {
     const match = fullText.match(regex);
     if (match && match[1]) {
-      const cleanNumStr = match[1].replace(/,/g, '').trim();
-      const parsedNum = parseFloat(cleanNumStr);
+      let numStr = match[1].trim();
+      if (numStr.includes('.') && numStr.includes(',')) {
+        if (numStr.indexOf('.') < numStr.indexOf(',')) {
+          // 5.000,00
+          numStr = numStr.replace(/\./g, '').replace(',', '.');
+        } else {
+          // 5,000.00
+          numStr = numStr.replace(/,/g, '');
+        }
+      } else if (numStr.includes(',')) {
+        const parts = numStr.split(',');
+        if (parts[1] && parts[1].length === 2) {
+          numStr = parts[0] + '.' + parts[1];
+        } else {
+          numStr = numStr.replace(/,/g, '');
+        }
+      }
+      const parsedNum = parseFloat(numStr);
       if (!isNaN(parsedNum) && parsedNum > 0) {
         amountCrc = parsedNum;
         break;
@@ -43,10 +69,10 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
     }
   }
 
-  // 2. Extraer Teléfono Emisor (8 dígitos en Costa Rica: prefijo 2, 4, 5, 6, 7, 8)
+  // 3. Extraer Teléfono Emisor (8 dígitos)
   let senderPhone = null;
   const phonePatterns = [
-    /(?:tel[eé]fono|origen|celular|m[oó]vil|de|remitente|emisor)\s*[:#]?\s*(?:\+?506\s*[-.]?)?([245678]\d{3}[-\s.]?\d{4})/i,
+    /(?:tel[eé]fono|origen|celular|m[oó]vil|remitente|emisor)\s*[:#=\-]?\s*(?:\+?506\s*[-.]?)?([245678]\d{3}[-\s.]?\d{4})/i,
     /(?:\+?506\s*[-.]?)?([245678]\d{3}[-\s.]?\d{4})/i
   ];
 
@@ -61,75 +87,86 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
     }
   }
 
-  // 3. Extraer Número de Comprobante / Referencia
+  // 4. Extraer Número de Comprobante / Referencia
   let referenceNumber = null;
+  const ignoreWords = new Set([
+    'de', 'la', 'el', 'en', 'un', 'una', 'por', 'con', 'para',
+    'transferencia', 'transferencias', 'pago', 'pagos', 'deposito', 'depósito',
+    'sinpe', 'movil', 'móvil', 'banco', 'bac', 'bncr', 'bcr', 'promerica',
+    'colones', 'colon', 'crc', 'monto', 'saldo', 'cuenta', 'tarjeta',
+    'destinatario', 'remitente', 'cliente', 'fecha', 'hora', 'detalle', 'motivo',
+    'notificacion', 'notificación', 'comprobante', 'referencia'
+  ]);
+
   const refPatterns = [
-    /(?:n[uú]mero\s*de\s*comprobante|n[uú]mero\s*de\s*referencia|n[uú]mero\s*de\s*transacci[oó]n|comprobante|referencia|documento|autorizaci[oó]n|transacci[oó]n|folio|ref|trf|pase)\s*[:#\.\-]?\s*([A-Za-z0-9\-_]{3,30})/i,
+    /(?:n[uú]mero\s*(?:de\s*)?|n[o°º]\.?\s*(?:de\s*)?|c[oó]digo\s*(?:de\s*)?)?(?:comprobante|referencia|transacci[oó]n|autorizaci[oó]n|operaci[oó]n|documento|folio|confirmaci[oó]n|trf|ref|pase|doc|aut)(?:\s+de\s+(?:transferencia|pago|operaci[oó]n|dep[oó]sito|transacci[oó]n))?\s*[:#=\.\-]?\s*([A-Za-z0-9\-_]{3,35})/i,
     /#\s*([A-Za-z0-9\-_]{3,24})/,
-    /(?:SINPE|TRF|DOC|REF|AUT)[-_]?([0-9]{4,20})/i
+    /(?:SINPE|TRF|DOC|REF|AUT)[-_]?([0-9]{3,20})/i
   ];
 
   for (const regex of refPatterns) {
     const match = fullText.match(regex);
     if (match && match[1]) {
-      const candidate = match[1].trim().replace(/^[#:\.\-\s]+/, '');
-      if (candidate.length >= 3 && !['colon', 'colones', 'banco', 'sinpe', 'cuenta', 'monto', 'destinatario'].includes(candidate.toLowerCase())) {
+      const candidate = match[1].trim().replace(/^[#:\.\-=\s]+/, '');
+      if (candidate.length >= 3 && !ignoreWords.has(candidate.toLowerCase())) {
         referenceNumber = candidate;
         break;
       }
     }
   }
 
-  // Si no se detectó número de referencia explícito pero hay palabras clave
+  // Fallback: si no se extrajo con prefijo, buscar si hay números de 3 a 16 dígitos en el texto
   if (!referenceNumber) {
-    const generalNumMatch = fullText.match(/\b([0-9]{6,14})\b/);
-    if (generalNumMatch && generalNumMatch[1]) {
-      referenceNumber = generalNumMatch[1];
-    } else {
-      referenceNumber = `SINPE-${Date.now().toString().slice(-6)}`;
+    const standaloneMatch = fullText.match(/\b([0-9]{3,16})\b/g);
+    if (standaloneMatch) {
+      for (const candidate of standaloneMatch) {
+        if (
+          candidate !== '2026' && 
+          candidate !== '2025' && 
+          candidate !== '506' &&
+          candidate !== String(amountCrc) &&
+          (!senderPhone || !senderPhone.replace(/\D/g, '').includes(candidate))
+        ) {
+          referenceNumber = candidate;
+          break;
+        }
+      }
     }
   }
 
-  // 4. Extraer Nombre del Emisor
+  // 5. Extraer Nombre del Emisor
   let senderName = null;
   const namePatterns = [
-    /(?:de parte de|enviado por|titular|nombre del cliente|ordenante)\s*[:#]?\s*([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{3,40})/i
+    /(?:de\s+parte\s+de|enviado\s+por|titular|nombre\s+del\s+cliente|ordenante|remitente)\s*[:#=\-]?\s*([A-Za-zÁÉÍÓÚáéíóúñÑ\s]{3,40})/i
   ];
 
   for (const regex of namePatterns) {
     const match = fullText.match(regex);
     if (match && match[1]) {
-      senderName = match[1].trim().replace(/\s+/g, ' ');
-      break;
+      const candidateName = match[1].trim().replace(/\s+/g, ' ');
+      if (!ignoreWords.has(candidateName.toLowerCase())) {
+        senderName = candidateName;
+        break;
+      }
     }
   }
 
-  // 5. Extraer Detalle o Motivo
+  // 6. Extraer Detalle o Motivo
   let detail = '';
-  const detailMatch = fullText.match(/(?:motivo|detalle|pase|concepto|descripci[oó]n)\s*[:#]?\s*([^\n\r<]{3,80})/i);
+  const detailMatch = fullText.match(/(?:motivo|detalle|pase|concepto|descripci[oó]n|asunto)\s*[:#=\-]?\s*([^\n\r<]{2,80})/i);
   if (detailMatch && detailMatch[1]) {
     detail = detailMatch[1].trim();
   }
 
-  const isBankEmail = cleanFrom.includes('bac') || 
-                      cleanFrom.includes('bncr') || 
-                      cleanFrom.includes('bancobcr') || 
-                      cleanFrom.includes('promerica') || 
-                      cleanFrom.includes('scotiabank') || 
-                      cleanFrom.includes('coopenae') || 
-                      cleanFrom.includes('davivienda') || 
-                      cleanFrom.includes('banco') || 
-                      cleanFrom.includes('sinpe') ||
-                      fullText.toLowerCase().includes('sinpe móvil') ||
-                      fullText.toLowerCase().includes('transferencia sinpe') ||
-                      fullText.toLowerCase().includes('comprobante de transferencia');
+  // Es SINPE válido si tiene un monto positivo y un número de comprobante/referencia
+  const isSinpe = Boolean(amountCrc && amountCrc > 0 && referenceNumber);
 
   return {
-    isSinpe: Boolean(amountCrc && amountCrc > 0 && referenceNumber),
+    isSinpe,
     amountCrc: amountCrc || 0,
     senderPhone: senderPhone || '',
     senderName: senderName || 'Cliente SINPE',
-    referenceNumber,
+    referenceNumber: referenceNumber || '',
     originBank: detectedBank,
     detail,
     rawSummary: subject || fullText.slice(0, 120)
