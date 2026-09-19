@@ -715,7 +715,6 @@ class App {
 
     // 2. Ruta raíz vacía
     if (!cleanHash || cleanHash === '#' || cleanHash === '#/' || cleanHash === '#!/') {
-      // Si la URL es la raíz pero hay una vista guardada en sessionStorage, podemos restaurarla si es un dashboard activo
       if (typeof sessionStorage !== 'undefined') {
         const savedView = sessionStorage.getItem('reservas_current_view');
         const savedOwnerTab = sessionStorage.getItem('reservas_active_owner_tab') || 'appointments';
@@ -3300,13 +3299,12 @@ class App {
             <!-- 2. Formulario de Validación en Vivo -->
             <form id="sinpe-verify-form" class="space-y-3">
               <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                <span class="font-extrabold text-slate-800 block text-xs uppercase tracking-wide">
-                  <i class="fas fa-shield-alt text-teal-600 mr-1"></i> Validador de Pago en Vivo:
-                  <i class="fas fa-shield-alt text-teal-600 mr-1"></i> Validar por Comprobante Bancario:
+                <span class="font-extrabold text-slate-800 block text-xs uppercase tracking-wide flex items-center gap-1.5">
+                  <i class="fas fa-shield-alt text-teal-600"></i>
+                  <span>Validar por Comprobante Bancario:</span>
                 </span>
 
                 <div>
-                  <label class="block font-bold text-slate-700 mb-1">Tu Número de Teléfono (desde el que hiciste el SINPE) *</label>
                   <label class="block font-black text-slate-900 mb-1 text-xs">
                     <i class="fas fa-receipt text-teal-600 mr-1"></i> Número de Comprobante / Referencia *
                   </label>
@@ -3318,21 +3316,14 @@ class App {
                   <label class="block font-bold text-slate-700 mb-1 text-xs">Número de Teléfono Emisor (Opcional)</label>
                   <div class="relative">
                     <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
-                    <input type="tel" id="sinpe-verify-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-2xs">
                     <input type="tel" id="sinpe-verify-phone" placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-2xs">
                   </div>
-                </div>
-
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Número de Comprobante / Referencia Bancaria (Opcional)</label>
-                  <input type="text" id="sinpe-verify-ref" placeholder="Ej: 12345678" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-2xs">
                 </div>
               </div>
 
               <!-- Botón Verificar -->
               <button type="submit" id="btn-submit-sinpe-verify" class="w-full py-3.5 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white rounded-2xl font-black text-xs sm:text-sm shadow-xl shadow-teal-600/20 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-98">
                 <i class="fas fa-search text-base"></i>
-                <span>Verificar Pago SINPE en Tiempo Real</span>
                 <span>Verificar Comprobante SINPE</span>
               </button>
             </form>
@@ -3348,11 +3339,9 @@ class App {
                 </span>
               </div>
               <p class="text-[11px] text-slate-600 leading-tight">
-                Si aún no has enviado el dinero desde el banco, puedes simular una notificación bancaria para comprobar cómo el sistema valida el pago con éxito.
                 Si aún no has enviado el dinero desde el banco, puedes simular una notificación bancaria para comprobar cómo el sistema valida el comprobante.
               </p>
               <button type="button" id="btn-simulate-sinpe-incoming" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
-                <i class="fas fa-bolt"></i> Simular que el Banco envió SINPE de ${formattedAmount}
                 <i class="fas fa-bolt"></i> Simular Comprobante de ${formattedAmount}
               </button>
             </div>
@@ -3361,7 +3350,6 @@ class App {
 
           <!-- Footer -->
           <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
-            <span>Validación directa con pasarela SINPE CR 🇨🇷</span>
             <span>Validación directa por comprobante SINPE CR 🇨🇷</span>
             <button type="button" id="modal-close-footer-btn" class="font-bold text-slate-600 hover:text-slate-900 cursor-pointer">Cerrar</button>
           </div>
@@ -3473,7 +3461,7 @@ class App {
         resultContainer.innerHTML = `Error de conexión: ${err.message}`;
       } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-search text-base"></i> <span>Verificar Pago SINPE en Tiempo Real</span>';
+        submitBtn.innerHTML = '<i class="fas fa-search text-base"></i> <span>Verificar Comprobante SINPE</span>';
       }
     });
 
@@ -8787,6 +8775,7 @@ class App {
             </button>
           </div>
 
+          <!-- Fo
           <!-- Form Body -->
           <form id="staff-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
             <!-- Nombre y Cargo -->
