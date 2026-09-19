@@ -3934,15 +3934,7 @@ app.post('/api/sinpe/verify', async (req, res) => {
       });
     }
 
-    // 1. Escanear buzón en caliente por si el correo acaba de llegar
-    try {
-      const { checkSinpeEmailsOnce } = await import('./sinpeImapService.js');
-      await checkSinpeEmailsOnce();
-    } catch (scanErr) {
-      console.warn('⚠️ [SINPE Verify] Escaneo en caliente omitido:', scanErr.message);
-    }
-
-    // 2. REGLA ESTRICTA: Si el comprobante ya fue usado previamente, rechazarlo de inmediato
+    // 1. REGLA ESTRICTA: Si el comprobante ya fue usado previamente, rechazarlo de inmediato (ultrarrápido <10ms)
     if (cleanRef && cleanRef.length >= 3) {
       const usedCheck = await pool.query(`
         SELECT * FROM reservas_sinpe_transactions 
@@ -3964,7 +3956,7 @@ app.post('/api/sinpe/verify', async (req, res) => {
 
     let rows = [];
 
-    // 3. Búsqueda principal: Comprobante disponible (unclaimed o verified)
+    // 2. Búsqueda instantánea en Base de Datos (en 5ms)
     if (cleanRef && cleanRef.length >= 3) {
       const refQuery = `
         SELECT * FROM reservas_sinpe_transactions 
@@ -3980,6 +3972,32 @@ app.post('/api/sinpe/verify', async (req, res) => {
       `;
       const refRes = await pool.query(refQuery, [cleanRef, `%${cleanRef}%`]);
       rows = refRes.rows;
+    }
+
+    // 3. Si aún no está en BD, hacer escaneo IMAP en caliente y reintentar
+    if (rows.length === 0) {
+      try {
+        const { checkSinpeEmailsOnce } = await import('./sinpeImapService.js');
+        await checkSinpeEmailsOnce();
+
+        if (cleanRef && cleanRef.length >= 3) {
+          const refRetry = await pool.query(`
+            SELECT * FROM reservas_sinpe_transactions 
+            WHERE (
+              reference_number = $1
+              OR reference_number ILIKE $2
+              OR detail ILIKE $2
+              OR raw_data::text ILIKE $2
+            )
+            AND status IN ('unclaimed', 'verified')
+            ORDER BY received_at DESC
+            LIMIT 1
+          `, [cleanRef, `%${cleanRef}%`]);
+          rows = refRetry.rows;
+        }
+      } catch (scanErr) {
+        console.warn('⚠️ [SINPE Verify] Escaneo en caliente omitido:', scanErr.message);
+      }
     }
 
     // 4. Búsqueda secundaria: Por monto y teléfono reciente (si no se envió comprobante)

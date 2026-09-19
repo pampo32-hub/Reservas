@@ -142,8 +142,8 @@ export async function checkSinpeEmailsOnce() {
  * Inicia el polling recurrente del servicio IMAP
  * @param {number} intervalMs Intervalo en milisegundos (por defecto 15 segundos)
  */
-export function startSinpeImapWorker(intervalMs = 15000) {
-  console.log(`🚀 [SINPE IMAP] Lector automático de SINPE iniciado (revisión cada ${intervalMs / 1000}s)`);
+export function startSinpeImapWorker(intervalMs = 5000) {
+  console.log(`🚀 [SINPE IMAP] Lector automático de SINPE iniciado (revisión ultra rápida cada ${intervalMs / 1000}s)`);
   
   checkSinpeEmailsOnce();
 
