@@ -125,7 +125,7 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
                       fullText.toLowerCase().includes('comprobante de transferencia');
 
   return {
-    isSinpe: isBankEmail && amountCrc > 0 && !!referenceNumber,
+    isSinpe: Boolean(amountCrc && amountCrc > 0 && referenceNumber),
     amountCrc: amountCrc || 0,
     senderPhone: senderPhone || '',
     senderName: senderName || 'Cliente SINPE',
