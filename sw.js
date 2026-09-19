@@ -1,5 +1,5 @@
 // Service Worker para Reservas CR (PWA)
-const CACHE_NAME = 'reservascr-pwa-v3';
+const CACHE_NAME = 'reservascr-pwa-v4';
 
 const STATIC_ASSETS = [
   './',
