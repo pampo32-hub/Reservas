@@ -160,3 +160,4 @@ export function stopSinpeImapWorker() {
     console.log('🛑 [SINPE IMAP] Servicio de lectura detenido.');
   }
 }
+

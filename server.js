@@ -3921,52 +3921,76 @@ app.post('/api/sinpe/verify', async (req, res) => {
   try {
     const { amount, senderPhone, referenceNumber, businessId, planId } = req.body;
     const numAmount = parseFloat(amount);
-
-    if (!numAmount || isNaN(numAmount)) {
-      return res.status(400).json({ success: false, error: 'MONTO_INVALIDO', message: 'El monto es obligatorio para la verificación.' });
-    }
-
+    const cleanRef = String(referenceNumber || '').trim().replace(/^[#:\.\-\s]+/, '');
     const cleanPhone = String(senderPhone || '').replace(/\D/g, '');
-    const cleanRef = String(referenceNumber || '').trim().replace(/^#/, '');
 
-    console.log(`🔍 [SINPE Verify] Buscando pago: Monto ₡${numAmount}, Tel: "${cleanPhone}", Ref: "${cleanRef}"`);
+    console.log(`🔍 [SINPE Verify] Verificando comprobante: Ref: "${cleanRef}", Monto: ₡${numAmount || 0}, Tel: "${cleanPhone}"`);
 
-    // Construir consulta dinámica para encontrar la transacción
-    let query = `
-      SELECT * FROM reservas_sinpe_transactions 
-      WHERE ABS(amount_crc - $1) < 0.01 
-        AND status IN ('unclaimed', 'verified')
-    `;
-    const params = [numAmount];
-    let conditions = [];
+    if (!cleanRef && (!numAmount || isNaN(numAmount))) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'COMPROBANTE_REQUERIDO', 
+        message: 'Por favor ingresa el número de comprobante emitido por el banco para validar el pago.' 
+      });
+    }
 
+    // 1. Primero intentar escanear el correo al vuelo por si acaba de entrar
+    try {
+      const { checkSinpeEmailsOnce } = await import('./sinpeImapService.js');
+      await checkSinpeEmailsOnce();
+    } catch (scanErr) {
+      console.warn('⚠️ [SINPE Verify] Escaneo en caliente omitido:', scanErr.message);
+    }
+
+    let rows = [];
+
+    // 2. Búsqueda principal: Por número de comprobante directo
     if (cleanRef && cleanRef.length >= 3) {
-      params.push(`%${cleanRef}%`);
-      conditions.push(`(reference_number ILIKE $${params.length} OR detail ILIKE $${params.length})`);
+      const refQuery = `
+        SELECT * FROM reservas_sinpe_transactions 
+        WHERE (
+          reference_number ILIKE $1 
+          OR reference_number ILIKE $2
+          OR detail ILIKE $1
+          OR raw_data::text ILIKE $1
+        )
+        AND status IN ('unclaimed', 'verified')
+        ORDER BY received_at DESC
+        LIMIT 1
+      `;
+      const refRes = await pool.query(refQuery, [`%${cleanRef}%`, cleanRef]);
+      rows = refRes.rows;
     }
 
-    if (cleanPhone && cleanPhone.length >= 4) {
-      const phoneTail = cleanPhone.slice(-4);
-      params.push(`%${phoneTail}%`);
-      conditions.push(`REGEXP_REPLACE(sender_phone, '[^0-9]', '', 'g') ILIKE $${params.length}`);
+    // 3. Búsqueda secundaria: Por monto y teléfono o monto reciente (solo si no se envió comprobante)
+    if (rows.length === 0 && numAmount > 0) {
+      let query = `
+        SELECT * FROM reservas_sinpe_transactions 
+        WHERE ABS(amount_crc - $1) < 0.01 
+          AND status IN ('unclaimed', 'verified')
+      `;
+      const params = [numAmount];
+
+      if (cleanPhone && cleanPhone.length >= 4) {
+        const phoneTail = cleanPhone.slice(-4);
+        params.push(`%${phoneTail}%`);
+        query += ` AND REGEXP_REPLACE(sender_phone, '[^0-9]', '', 'g') ILIKE $${params.length}`;
+      } else {
+        query += ` AND received_at >= NOW() - INTERVAL '45 minutes'`;
+      }
+
+      query += ` ORDER BY received_at DESC LIMIT 1`;
+      const amountRes = await pool.query(query, params);
+      rows = amountRes.rows;
     }
-
-    if (conditions.length > 0) {
-      query += ` AND (${conditions.join(' OR ')})`;
-    } else {
-      // Si no proporcionó ni ref ni teléfono válido, solo busca si hay un SINPE unclaimed reciente por ese monto exacto
-      query += ` AND received_at >= NOW() - INTERVAL '30 minutes'`;
-    }
-
-    query += ` ORDER BY received_at DESC LIMIT 1`;
-
-    const { rows } = await pool.query(query, params);
 
     if (rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'TRANSACCION_NO_ENCONTRADA',
-        message: `❌ No se encontró ninguna transferencia SINPE por ₡${numAmount.toLocaleString('es-CR')} coincidente. Asegúrate de haber realizado la transferencia al 7143-3852 y verifica que el comprobante o número telefónico sean correctos.`
+        message: cleanRef 
+          ? `❌ No se encontró ningún SINPE pendiente con el comprobante #${cleanRef}. Si acabas de realizar la transferencia, espera unos 10-20 segundos a que el banco emita la notificación y presiona "Verificar" nuevamente.`
+          : `❌ No se encontró ninguna transferencia SINPE reciente por ₡${(numAmount || 0).toLocaleString('es-CR')}. Por favor ingresa el número de comprobante.`
       });
     }
 
