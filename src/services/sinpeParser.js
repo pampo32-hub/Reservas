@@ -8,6 +8,21 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
   const cleanFrom = String(from || '').toLowerCase();
   const lowerText = fullText.toLowerCase();
 
+  // Descartar inmediatamente remitentes conocidos que no son transferencias ni bancos
+  const ignoredSenders = ['uber', 'netflix', 'spotify', 'google', 'render', 'microsoft', 'resend', 'facebook', 'instagram', 'apple', 'amazon', 'adobe', 'steam'];
+  if (ignoredSenders.some(ign => cleanFrom.includes(ign))) {
+    return {
+      isSinpe: false,
+      amountCrc: 0,
+      senderPhone: '',
+      senderName: '',
+      referenceNumber: '',
+      originBank: 'Ignorado',
+      detail: '',
+      rawSummary: subject || ''
+    };
+  }
+
   // 1. Detección de Banco
   let detectedBank = 'SINPE Móvil CR';
   if (cleanFrom.includes('bac') || lowerText.includes('bac credomatic') || lowerText.includes('bac san jose')) {
