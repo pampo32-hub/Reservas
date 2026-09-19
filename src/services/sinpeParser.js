@@ -18,6 +18,7 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
     detectedBank = 'Banco Promerica';
   } else if (cleanFrom.includes('scotiabank') || fullText.toLowerCase().includes('scotiabank')) {
     detectedBank = 'Scotiabank';
+  } else if (cleanFrom.includes('wink') || fullText.toLowerCase().includes('wink')) {
   } else if (cleanFrom.includes('wink') || cleanFrom.includes('coopenae') || fullText.toLowerCase().includes('wink')) {
     detectedBank = 'Wink (Coopenae)';
   }
@@ -25,9 +26,11 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
   // 1. Extraer Monto en Colones (₡)
   let amountCrc = null;
   const amountPatterns = [
+    /monto\s*(?:transferido|acreditado|recibido)?\s*[:#]?\s*₡\s*([0-9.,]+)/i,
     /monto\s*(?:transferido|acreditado|recibido)?\s*[:#]?\s*₡?\s*([0-9]+(?:[,.][0-9]+)*)\s*(?:colones|crc)?/i,
     /₡\s*([0-9]+(?:[,.][0-9]{2,3})*(?:\.[0-9]{2})?)/i,
     /(?:CRC|colones)\s*([0-9.,]+)/i,
+    /([0-9.,]+)\s*(?:colones|CRC)/i
     /([0-9]+(?:[,.][0-9]+)*)\s*(?:colones|CRC)/i
   ];
 
@@ -64,6 +67,11 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
   // 3. Extraer Número de Comprobante / Referencia
   let referenceNumber = null;
   const refPatterns = [
+    /(?:comprobante|referencia|documento|autorizaci[oó]n|num(?:\.|ero)?\s*(?:de)?\s*(?:transacci[oó]n|comprobante|referencia)?)\s*[:#]?\s*([A-Za-z0-9\-_]{4,24})/i,
+    /#\s*([A-Za-z0-9\-_]{4,20})/,
+    /(?:SINPE|TRF|DOC)[-_]?([0-9]{5,15})/i
+    /(?:comprobante|referencia|documento|autorizaci[oó]n|transacci[oó]n|num(?:\.|ero)?\s*(?:de)?\s*(?:transacci[oó]n|comprobante|referencia|documento|deposito|depósito)?|folio|ref|trf|n[uú]mero\s*de\s*pase|pase)\s*[:#\.\-]?\s*([A-Za-z0-9\-_]{3,30})/i,
+    /(?:comprobante\s*(?:electr[oó]nico|bancario)?\s*[:#\.\-]?\s*)([0-9A-Za-z\-_]+)/i,
     /(?:n[uú]mero\s*de\s*comprobante|n[uú]mero\s*de\s*referencia|n[uú]mero\s*de\s*transacci[oó]n|comprobante|referencia|documento|autorizaci[oó]n|transacci[oó]n|folio|ref|trf|pase)\s*[:#\.\-]?\s*([A-Za-z0-9\-_]{3,30})/i,
     /#\s*([A-Za-z0-9\-_]{3,24})/,
     /(?:SINPE|TRF|DOC|REF|AUT)[-_]?([0-9]{4,20})/i
@@ -72,7 +80,10 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
   for (const regex of refPatterns) {
     const match = fullText.match(regex);
     if (match && match[1]) {
+      referenceNumber = match[1].trim();
+      break;
       const candidate = match[1].trim().replace(/^[#:\.\-\s]+/, '');
+      if (candidate.length >= 3 && !['colon', 'colones', 'banco', 'sinpe', 'cuenta', 'monto'].includes(candidate.toLowerCase())) {
       if (candidate.length >= 3 && !['colon', 'colones', 'banco', 'sinpe', 'cuenta', 'monto', 'destinatario'].includes(candidate.toLowerCase())) {
         referenceNumber = candidate;
         break;
@@ -80,8 +91,12 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
     }
   }
 
+  // Si no se detectó número de referencia, generamos un identificador basado en hash/timestamp
+  // Si no se detectó número de referencia explícito pero hay palabras clave de banco
   // Si no se detectó número de referencia explícito pero hay palabras clave
   if (!referenceNumber) {
+    referenceNumber = `SINPE-${Date.now().toString().slice(-6)}`;
+    // Intentar buscar cualquier secuencia numérica de 6 a 12 dígitos en el correo
     const generalNumMatch = fullText.match(/\b([0-9]{6,14})\b/);
     if (generalNumMatch && generalNumMatch[1]) {
       referenceNumber = generalNumMatch[1];
@@ -112,6 +127,7 @@ export function parseSinpeEmail(subject = '', bodyText = '', bodyHtml = '', from
   }
 
   return {
+    isSinpe: !!amountCrc || fullText.toLowerCase().includes('sinpe'),
     isSinpe: !!amountCrc || fullText.toLowerCase().includes('sinpe') || fullText.toLowerCase().includes('transferencia'),
     amountCrc: amountCrc || 0,
     senderPhone: senderPhone || '',
@@ -133,3 +149,4 @@ function stripHtml(html = '') {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
