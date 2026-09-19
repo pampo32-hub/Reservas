@@ -47,8 +47,6 @@ export async function checkSinpeEmailsOnce() {
       return;
     }
 
-    // Consultamos únicamente los últimos 15 correos por rango de secuencia (ultra rápido)
-    const startSeq = Math.max(1, totalMessages - 14);
     // Consultamos los últimos 25 correos por rango de secuencia (ultra rápido en ~1s)
     const startSeq = Math.max(1, totalMessages - 24);
     const searchCriteria = [`${startSeq}:${totalMessages}`];

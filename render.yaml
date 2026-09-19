@@ -11,3 +11,17 @@ services:
         value: postgresql://neondb_owner:npg_DGXRwl4kBtC7@ep-shy-firefly-b5sbjmrd-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       - key: NODE_ENV
         value: production
+      - key: SINPE_IMAP_HOST
+        value: imap.gmail.com
+      - key: SINPE_IMAP_PORT
+        value: "993"
+      - key: SINPE_EMAIL_USER
+        value: pampo32@gmail.com
+      - key: SINPE_EMAIL_PASSWORD
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
