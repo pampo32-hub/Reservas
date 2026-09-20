@@ -574,6 +574,10 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialUrl);
     }
 
+    this.renderHeader();
+    this.renderMobileBottomNav();
+    this.renderCurrentView();
+    this.setupGlobalEvents();
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -609,11 +613,13 @@ class App {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
+        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
         return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
       }
       case 'review-booking': {
         const aptId = params.appointmentId || this.selectedAppointmentId;
         const query = params.rating ? `?rating=${params.rating}` : '';
+        return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/';
         return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/directorio';
       }
       case 'directory':
@@ -624,6 +630,10 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
+      case 'owner-dashboard':
+        return '/panel-negocio';
+      case 'developer-dashboard':
+        return '/developer';
       case 'owner-dashboard': {
         const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
         return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
@@ -632,7 +642,10 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
+      case 'directory':
       default:
+        return '/';
+        return '/unete';
         return '/directorio';
     }
   }
@@ -1817,8 +1830,11 @@ class App {
         <!-- 1. Banner Principal: Acceso Anticipado / Cupos de Prelanzamiento -->
         ${SHOW_PREREGISTER_BANNER ? `
         <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-amber-500/30">
           <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-blue-500/30">
             <!-- Efectos de Neón y Luces de Fondo -->
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
             <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1829,10 +1845,14 @@ class App {
                 
                 <!-- Badge Animado -->
                 <div class="flex items-center gap-2 flex-wrap">
+                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/50 shadow-sm shadow-amber-500/10">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
                   <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                     <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
                   </span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                    <i class="fas fa-check-circle text-emerald-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-400/30">
                     <i class="fas fa-check-circle text-blue-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   </span>
@@ -1840,6 +1860,7 @@ class App {
 
                 <!-- Titular de Impacto -->
                 <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">15 Días Gratis</span> a partir del lanzamiento!
                   ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
@@ -1849,6 +1870,8 @@ class App {
 
                 <!-- Beneficios Destacados -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-amber-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fas fa-gift"></i>
@@ -1867,6 +1890,8 @@ class App {
                       <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
                     </div>
                   </div>
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-emerald-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fab fa-whatsapp"></i>
@@ -1882,8 +1907,10 @@ class App {
                 <div class="pt-2 flex flex-wrap items-center gap-3">
                   <button 
                     id="banner-prereg-btn" 
+                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer animate-pulse"
                     class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
+                    <i class="fas fa-gift text-slate-950 text-base"></i>
                     <i class="fas fa-gift text-blue-300 text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
@@ -1891,6 +1918,7 @@ class App {
                     id="banner-view-plans-btn" 
                     class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
+                    <i class="fas fa-tags text-indigo-300"></i>
                     <i class="fas fa-tags text-blue-300"></i>
                     <span>Ver Planes & Precios</span>
                   </button>
@@ -1900,17 +1928,21 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
+                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-amber-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                 <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-sm font-black shadow-md shadow-amber-500/20">
                       <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
                         <h4 class="text-xs font-black text-white leading-none">Tu Negocio Aquí</h4>
+                        <p class="text-[10px] text-amber-300/90 font-medium mt-0.5">reservascr.app</p>
                         <p class="text-[10px] text-blue-300 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/40">Preventa</span>
                     <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
                   </div>
 
@@ -1920,10 +1952,12 @@ class App {
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Reservas Online</span>
                       </div>
+                      <span class="text-emerald-400 font-bold text-[11px]">24/7</span>
                       <span class="text-blue-400 font-bold text-[11px]">24/7</span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
                         <i class="fab fa-whatsapp text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">WhatsApp Auto</span>
                       </div>
@@ -1931,13 +1965,17 @@ class App {
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <i class="fas fa-ban text-rose-400 text-xs"></i>
                         <i class="fas fa-shield-alt text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Tarjeta requerida</span>
                       </div>
+                      <span class="text-emerald-400 font-black text-[11px]">NO (Gratis)</span>
                       <span class="text-blue-300 font-black text-[11px]">NO (Gratis)</span>
                     </div>
                   </div>
 
+                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border border-amber-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-amber-300 shadow-xs">
+                    <i class="fas fa-gift text-sm text-amber-400"></i>
                   <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-blue-300 shadow-xs">
                     <i class="fas fa-gift text-sm text-blue-400"></i>
                     <span>15 DÍAS GRATIS AL ESTRENO</span>
@@ -3214,259 +3252,10 @@ class App {
   }
 
   // ==========================================
-  // MODAL DE VERIFICACIÓN EN VIVO DE SINPE MÓVIL
+  // MODAL DE VERIFICACIÓN EN VIVO DE SINPE MÓVIL (ALIAS UNIFICADO)
   // ==========================================
-  renderSinpeVerificationModal({ planId = 'test_5', amount = 5, planName = 'Plan Micro Test' }) {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    const formattedAmount = `₡${amount.toLocaleString('es-CR')}`;
-    const sinpePhoneFormatted = '7143-3852';
-    const sinpePhoneRaw = '71433852';
-    const sinpeTitular = 'Juan Jose Jiménez';
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
-          
-          <!-- Header -->
-          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-teal-950 to-slate-900 text-white relative border-b border-teal-800/40 shrink-0">
-            <button id="close-sinpe-verify-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
-            </button>
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-400/20 text-cyan-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-cyan-400/30 animate-pulse">
-              <i class="fas fa-flask"></i> Verificación en Tiempo Real
-            </div>
-            <h3 class="text-xl font-black text-white">Comprobación de Pago SINPE</h3>
-            <p class="text-xs text-slate-300 mt-0.5">${planName} • Monto requerido: <strong class="text-emerald-400 text-sm">${formattedAmount} CRC</strong></p>
-          </div>
-
-          <!-- Contenido Scrolleable -->
-          <div class="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
-
-            <!-- 1. Datos a Transferir -->
-            <div class="p-4 rounded-2xl bg-slate-900 text-white space-y-3 border border-slate-800 shadow-md">
-              <div class="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                <span><i class="fas fa-mobile-alt mr-1 text-emerald-400"></i> Datos para el SINPE</span>
-                <span class="text-emerald-400 font-mono font-black">${formattedAmount} CRC</span>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div class="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 flex items-center justify-between">
-                  <div>
-                    <span class="text-[9px] text-slate-400 block font-medium">Teléfono Destino:</span>
-                    <span class="text-base font-black font-mono text-emerald-400">${sinpePhoneFormatted}</span>
-                  </div>
-                  <button id="modal-copy-sinpe-phone" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer">
-                    <i class="fas fa-copy"></i>
-                  </button>
-                </div>
-
-                <div class="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700">
-                  <span class="text-[9px] text-slate-400 block font-medium">Titular de la Cuenta:</span>
-                  <span class="text-xs font-black text-white block mt-0.5 truncate">${sinpeTitular}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- 2. Formulario de Validación en Vivo -->
-            <form id="sinpe-verify-form" class="space-y-3">
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                <span class="font-extrabold text-slate-800 block text-xs uppercase tracking-wide flex items-center gap-1.5">
-                  <i class="fas fa-shield-alt text-teal-600"></i>
-                  <span>Validar Comprobante Bancario:</span>
-                </span>
-
-                <div>
-                  <label class="block font-black text-slate-900 mb-1 text-xs">
-                    <i class="fas fa-receipt text-teal-600 mr-1"></i> Número de Comprobante / Referencia *
-                  </label>
-                  <input type="text" id="sinpe-verify-ref" required placeholder="Ej: 002763, 12345678, etc." class="w-full px-3.5 py-2.5 bg-white border-2 border-teal-500 rounded-xl text-sm font-black text-slate-900 focus:ring-2 focus:ring-teal-600 focus:outline-none shadow-2xs font-mono">
-                  <span class="text-[10px] text-slate-500 mt-1 block">Escribe el número de comprobante o documento que aparece en tu comprobante bancario.</span>
-                </div>
-
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1 text-xs">Número de Teléfono Emisor (Opcional)</label>
-                  <div class="relative">
-                    <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
-                    <input type="tel" id="sinpe-verify-phone" placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-2xs">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Botón Verificar -->
-              <button type="submit" id="btn-submit-sinpe-verify" class="w-full py-3.5 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white rounded-2xl font-black text-xs sm:text-sm shadow-xl shadow-teal-600/20 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-98">
-                <i class="fas fa-search text-base"></i>
-                <span>Verificar Comprobante SINPE</span>
-              </button>
-            </form>
-
-            <!-- 3. Contenedor de Resultado de Validación -->
-            <div id="sinpe-verify-result" class="hidden"></div>
-
-            <!-- 4. Simulador de Entrada (Para pruebas directas) -->
-            <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="font-extrabold text-[11px] text-amber-900 flex items-center gap-1.5">
-                  <i class="fas fa-magic text-amber-600"></i> ¿Deseas probar una simulación automática?
-                </span>
-              </div>
-              <p class="text-[11px] text-slate-600 leading-tight">
-                Si aún no has enviado el dinero desde el banco, puedes simular una notificación bancaria para comprobar cómo el sistema valida el comprobante.
-              </p>
-              <button type="button" id="btn-simulate-sinpe-incoming" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
-                <i class="fas fa-bolt"></i> Simular Comprobante de ${formattedAmount}
-              </button>
-            </div>
-
-          </div>
-
-          <!-- Footer -->
-          <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
-            <span>Validación directa por comprobante SINPE CR 🇨🇷</span>
-            <button type="button" id="modal-close-footer-btn" class="font-bold text-slate-600 hover:text-slate-900 cursor-pointer">Cerrar</button>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // 1. Cerrar Modal
-    const closeModal = () => { modalContainer.innerHTML = ''; };
-    document.getElementById('close-sinpe-verify-modal-btn')?.addEventListener('click', closeModal);
-    document.getElementById('modal-close-footer-btn')?.addEventListener('click', closeModal);
-
-    // 2. Copiar Teléfono
-    document.getElementById('modal-copy-sinpe-phone')?.addEventListener('click', () => {
-      navigator.clipboard.writeText(sinpePhoneRaw).then(() => {
-        this.showToast('📋 Número SINPE 7143-3852 copiado', 'success');
-      }).catch(() => {
-        this.showToast('Número: 7143-3852', 'info');
-      });
-    });
-
-    const resultContainer = document.getElementById('sinpe-verify-result');
-    const verifyForm = document.getElementById('sinpe-verify-form');
-    const submitBtn = document.getElementById('btn-submit-sinpe-verify');
-
-    // 3. Ejecutar Verificación
-    verifyForm?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const phoneInput = document.getElementById('sinpe-verify-phone');
-      const refInput = document.getElementById('sinpe-verify-ref');
-      const phone = phoneInput ? phoneInput.value.trim() : '';
-      const ref = refInput ? refInput.value.trim() : '';
-
-      if (!ref) {
-        this.showToast('Por favor escribe el número de comprobante emitido por tu banco.', 'error');
-        refInput?.focus();
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-base"></i> <span>Verificando comprobante...</span>';
-
-      try {
-        const bizUser = storage.getBusinessUser();
-        const businessId = bizUser ? bizUser.businessId : null;
-
-        const res = await fetch('/api/sinpe/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount,
-            senderPhone: phone,
-            referenceNumber: ref,
-            planId,
-            businessId
-          })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          // --- ESTADO: ERROR / NO ENCONTRADO ---
-          resultContainer.className = 'p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 space-y-2 animate-fade-in';
-          resultContainer.innerHTML = `
-            <div class="flex items-start gap-3">
-              <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
-                <i class="fas fa-times"></i>
-              </div>
-              <div class="space-y-1">
-                <strong class="text-xs font-black text-rose-900 block">Pago No Verificado</strong>
-                <p class="text-xs text-rose-800 leading-relaxed">
-                  ${data.message || 'No se encontró ninguna transferencia SINPE coincidente.'}
-                </p>
-                <div class="pt-1 text-[11px] text-rose-700">
-                  💡 Si ya realizaste el SINPE, por favor espera 1 minuto a que el banco emita el comprobante y vuelve a presionar el botón de verificar.
-                </div>
-              </div>
-            </div>
-          `;
-          this.showToast('❌ Pago no encontrado todavía. Verifica o realiza la transferencia.', 'error');
-        } else {
-          // --- ESTADO: ÉXITO / VERIFICADO ---
-          this.playNotificationChime();
-          const tx = data.transaction;
-          resultContainer.className = 'p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-400 text-emerald-950 space-y-3 animate-fade-in shadow-md';
-          resultContainer.innerHTML = `
-            <div class="flex items-start gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl flex-shrink-0">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <div class="space-y-1">
-                <strong class="text-sm font-black text-emerald-900 block">¡Pago de ${formattedAmount} Verificado con Éxito! 🎉</strong>
-                <p class="text-xs text-emerald-800 leading-relaxed">
-                  Se ha conciliado correctamente la transferencia de SINPE Móvil.
-                </p>
-                <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-200 text-[11px] text-slate-800 space-y-1 font-mono mt-2">
-                  <div><strong>Comprobante:</strong> #${tx.reference}</div>
-                  <div><strong>Monto Verificado:</strong> ₡${tx.amount.toLocaleString('es-CR')} CRC</div>
-                  <div><strong>Emisor:</strong> ${tx.senderPhone || phone}</div>
-                  <div><strong>Banco:</strong> ${tx.originBank || 'SINPE Móvil'}</div>
-                </div>
-              </div>
-            </div>
-          `;
-          this.showToast(`🎉 ¡SINPE de ${formattedAmount} confirmado con éxito!`, 'success');
-        }
-      } catch (err) {
-        resultContainer.className = 'p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs';
-        resultContainer.innerHTML = `Error de conexión: ${err.message}`;
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-search text-base"></i> <span>Verificar Comprobante SINPE</span>';
-      }
-    });
-
-    // 4. Botón Simular Recepción de SINPE para pruebas
-    document.getElementById('btn-simulate-sinpe-incoming')?.addEventListener('click', async () => {
-      const phoneInput = document.getElementById('sinpe-verify-phone');
-      const refInput = document.getElementById('sinpe-verify-ref');
-      const testPhone = phoneInput?.value.trim() || '8888-8888';
-      const testRef = `CR-${Math.floor(100000 + Math.random() * 900000)}`;
-
-      if (phoneInput) phoneInput.value = testPhone;
-      if (refInput) refInput.value = testRef;
-
-      try {
-        const res = await fetch('/api/sinpe/simulate-incoming', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount_crc: amount,
-            sender_phone: testPhone,
-            sender_name: 'Cliente Prueba SINPE',
-            reference_number: testRef,
-            origin_bank: 'BAC Credomatic',
-            detail: `Prueba ${formattedAmount}`
-          })
-        });
-        const simData = await res.json();
-        this.showToast(`🧪 Simulación lista: Banco registró SINPE #${testRef}. Ahora presiona "Verificar Pago" para comprobar.`, 'info');
-      } catch (e) {
-        this.showToast('Error al simular entrada bancaria.', 'error');
-      }
-    });
+  renderSinpeVerificationModal({ planId = 'test_5', amount = 5, planName = 'Plan Micro Test', businessId = null } = {}) {
+    return this.renderSinpePaymentModal({ planId, amount, planName, businessId });
   }
 
   // ==========================================
@@ -3554,6 +3343,8 @@ class App {
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
                 ` : `
+                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
                   <span class="px-3 py-1 rounded-full bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider shadow-md border border-slate-700">
                     <i class="fas fa-store mr-1 text-slate-400"></i> Comercio Registrado
                   </span>
@@ -5216,6 +5007,9 @@ class App {
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
+                    <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs" data-apt-id="${apt.id}">
+                      <i class="fas fa-star text-amber-500"></i> Calificar Atención
+                    </button>
                     ${(apt.isReviewed || apt.reviewRating) ? `
                       <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
                         <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}★)
@@ -8816,6 +8610,7 @@ class App {
             <!-- WhatsApp y Foto Avatar -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
+                <label class="block
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Teléfono / WhatsApp (Opcional)
                 </label>
@@ -13572,13 +13367,13 @@ class App {
 
   // ==========================================
   // ==========================================
-  // MODAL DE PAGO CON SINPE MÓVIL (COSTA RICA)
+  // MODAL DE PAGO Y VERIFICACIÓN EN TIEMPO REAL CON SINPE MÓVIL
   // ==========================================
-  async renderSinpePaymentModal({ businessId, planId = 'basic' }) {
+  async renderSinpePaymentModal({ businessId = null, planId = 'basic', amount = null, planName = null } = {}) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const plan = storage.getPlanById(planId) || { id: 'basic', name: 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' };
+    const plan = storage.getPlanById(planId) || { id: planId, name: planName || 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' };
     
     // Si es Plan Gratis, activar de inmediato sin solicitar pago
     if (plan.id === 'free' || plan.priceUsd === 0 || planId === 'free') {
@@ -13593,141 +13388,331 @@ class App {
       return;
     }
 
-    const biz = businessId ? storage.getBusinessById(businessId) : null;
+    const bizUser = storage.getBusinessUser();
+    const activeBizId = businessId || (bizUser ? bizUser.businessId : null);
+    const biz = activeBizId ? storage.getBusinessById(activeBizId) : null;
     const bizName = biz ? biz.name : 'Mi Negocio';
+    const initialPhone = biz && biz.phone ? biz.phone.replace(/[^0-9]/g, '').slice(-8) : '';
+    
+    const activePlanName = planName || plan.name;
+    const exactAmountCrc = amount !== null && amount !== undefined ? amount : (plan.priceCrc || Math.round(plan.priceUsd * 530));
+    const formattedAmount = `₡${Number(exactAmountCrc).toLocaleString('es-CR')}`;
+    const amountUsd = plan.priceUsd ? `$${plan.priceUsd} USD` : '';
+
     const sinpePhoneFormatted = '7143-3852';
     const sinpePhoneRaw = '71433852';
     const sinpeTitular = 'Juan Jose Jiménez';
-    const amountCrc = this.formatColones(plan.priceCrc || (plan.priceUsd * 530));
-    const amountUsd = `$${plan.priceUsd} USD`;
 
-    const whatsappMessage = `Hola Juan José, adjunto comprobante SINPE Móvil por ${amountCrc} para activar el ${plan.name} (${amountUsd}) del comercio "${bizName}"${businessId ? ` (ID: ${businessId})` : ''}.`;
-    const whatsappUrl = `https://wa.me/50671433852?text=${encodeURIComponent(whatsappMessage)}`;
+    const isTestPlan = planId === 'test_5' || planId === 'test_10' || exactAmountCrc <= 100;
+    const isDev = Boolean(storage.getDeveloperUser());
 
     modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col">
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
           
           <!-- Header -->
-          <div class="p-6 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white relative border-b border-blue-900/40">
+          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white relative border-b border-blue-900/40 shrink-0">
             <button id="close-sinpe-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-xs"></i>
             </button>
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30">
-              <i class="fas fa-mobile-alt"></i> Pago Oficial Costa Rica 🇨🇷
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30 animate-pulse">
+              <i class="fas fa-shield-alt"></i> Verificación Automática en Tiempo Real
             </div>
-            <h3 class="text-xl font-black text-white">Pago con SINPE Móvil</h3>
-            <p class="text-xs text-slate-300 mt-0.5">Activa tu suscripción de forma rápida y directa.</p>
+            <h3 class="text-xl font-black text-white">Pago y Activación con SINPE Móvil</h3>
+            <p class="text-xs text-slate-300 mt-0.5">${activePlanName} ${amountUsd ? `(${amountUsd})` : ''} &bull; Monto requerido: <strong class="text-blue-300 font-bold text-sm">${formattedAmount} CRC</strong></p>
           </div>
 
-          <!-- Resumen del Plan -->
-          <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
-            <div class="flex items-center justify-between">
-              <span class="text-slate-600 font-semibold">Comercio:</span>
-              <strong class="text-slate-900 font-black">${this.escapeHtml(bizName)}</strong>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-slate-600 font-semibold">Plan Seleccionado:</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-950 font-bold">${plan.name}</span>
-            </div>
-            <div class="flex items-center justify-between">
-              <span class="text-slate-600 font-semibold">Monto a Transferir:</span>
-              <span class="text-base font-black text-blue-700">${amountCrc} CRC <span class="text-xs font-normal text-slate-500">(${amountUsd})</span></span>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-500">
-              <span>Frecuencia:</span>
-              <span class="font-bold text-slate-700">Mensual (30 Días)</span>
-            </div>
-          </div>
+          <!-- Contenido Scrolleable -->
+          <div class="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
 
-          <!-- Datos de Transferencia SINPE Móvil -->
-          <div class="p-5 space-y-4 text-xs">
-            <div class="p-4 rounded-2xl bg-slate-950 text-white space-y-3 shadow-md border border-slate-800">
-              <div class="flex items-center justify-between text-slate-400 text-[11px] uppercase tracking-wider font-bold">
-                <span><i class="fas fa-university mr-1 text-blue-400"></i> Datos del SINPE Móvil</span>
-                <span class="text-blue-400">Paso 1 de 2</span>
+            <!-- 1. Datos del Comercio y Plan -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 font-medium">Comercio a activar:</span>
+                <strong class="text-slate-900 font-black">${this.escapeHtml(bizName)}</strong>
               </div>
-              
-              <!-- Número SINPE con Copiado -->
-              <div class="flex items-center justify-between bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                <div>
-                  <span class="text-[10px] text-slate-400 block font-medium">Número de Teléfono:</span>
-                  <span class="text-lg font-mono font-black text-blue-400 tracking-wider" id="sinpe-phone-display">${sinpePhoneFormatted}</span>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 font-medium">Plan seleccionado:</span>
+                <span class="px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-950 font-bold text-[11px]">${activePlanName}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-500 font-medium">Monto exacto a transferir:</span>
+                <span class="text-base font-black text-blue-700">${formattedAmount} CRC ${amountUsd ? `<span class="text-xs font-normal text-slate-500">(${amountUsd})</span>` : ''}</span>
+              </div>
+            </div>
+
+            <!-- 2. Datos para realizar el SINPE -->
+            <div class="p-4 rounded-2xl bg-slate-950 text-white space-y-3 border border-slate-800 shadow-md">
+              <div class="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                <span><i class="fas fa-mobile-alt mr-1 text-blue-400"></i> Datos del SINPE Móvil Oficial</span>
+                <span class="text-blue-400 font-mono font-black">${formattedAmount} CRC</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span class="text-[9px] text-slate-400 block font-medium">Teléfono Destino:</span>
+                    <span class="text-base font-black font-mono text-blue-400">${sinpePhoneFormatted}</span>
+                  </div>
+                  <button type="button" id="modal-copy-sinpe-phone" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer">
+                    <i class="fas fa-copy"></i>
+                  </button>
                 </div>
-                <button id="copy-sinpe-phone-btn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs">
-                  <i class="fas fa-copy"></i>
-                  <span>Copiar</span>
+
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">
+                  <span class="text-[9px] text-slate-400 block font-medium">Titular de la Cuenta:</span>
+                  <span class="text-xs font-black text-white block mt-0.5 truncate">${sinpeTitular}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Formulario de Validación en Vivo -->
+            <form id="sinpe-verify-form" class="space-y-3">
+              <div class="p-4 bg-blue-50/50 border border-blue-200 rounded-2xl space-y-3">
+                <span class="font-extrabold text-slate-900 block text-xs uppercase tracking-wide flex items-center gap-1.5">
+                  <i class="fas fa-check-circle text-blue-600"></i>
+                  <span>Ingresa los datos de tu comprobante bancario:</span>
+                </span>
+
+                <div>
+                  <label class="block font-black text-slate-900 mb-1 text-xs">
+                    <i class="fas fa-receipt text-blue-600 mr-1"></i> Número de Comprobante / Referencia *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="sinpe-verify-ref" 
+                    required 
+                    placeholder="Ej: 002763, 12345678, etc." 
+                    class="w-full px-3.5 py-2.5 bg-white border-2 border-blue-500 rounded-xl text-sm font-black text-slate-900 focus:ring-2 focus:ring-blue-600 focus:outline-none shadow-2xs font-mono"
+                    autocomplete="off"
+                  >
+                  <span class="text-[10px] text-slate-500 mt-1 block">Escribe el número de documento o comprobante que te da la app de tu banco tras enviar el SINPE.</span>
+                </div>
+
+                <div>
+                  <label class="block font-bold text-slate-700 mb-1 text-xs">Número de Teléfono Emisor (Opcional)</label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
+                    <input 
+                      type="tel" 
+                      id="sinpe-verify-phone" 
+                      value="${initialPhone}" 
+                      placeholder="8888-8888" 
+                      class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs"
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botón Verificar -->
+              <button 
+                type="submit" 
+                id="btn-submit-sinpe-verify" 
+                class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-black text-xs sm:text-sm shadow-xl shadow-blue-950/25 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-98"
+              >
+                <i class="fas fa-search text-base text-blue-300"></i>
+                <span>Verificar Comprobante SINPE</span>
+              </button>
+            </form>
+
+            <!-- 4. Contenedor de Resultado de Validación -->
+            <div id="sinpe-verify-result" class="hidden"></div>
+
+            <!-- 5. Simulador opcional para entornos de prueba / dev -->
+            ${(isTestPlan || isDev) ? `
+              <div class="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="font-extrabold text-[11px] text-amber-900 flex items-center gap-1.5">
+                    <i class="fas fa-magic text-amber-600"></i> Simulación Instantánea de Prueba
+                  </span>
+                </div>
+                <p class="text-[11px] text-slate-600 leading-tight">
+                  Puedes simular la recepción bancaria para probar la conciliación automática en tiempo real.
+                </p>
+                <button type="button" id="btn-simulate-sinpe-incoming" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs">
+                  <i class="fas fa-bolt"></i> Simular Comprobante de ${formattedAmount}
                 </button>
               </div>
+            ` : ''}
 
-              <!-- Titular -->
-              <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                <span class="text-[10px] text-slate-400 block font-medium">Nombre del Titular:</span>
-                <span class="text-sm font-black text-white">${sinpeTitular}</span>
-              </div>
-            </div>
-
-            <!-- Paso 2: Instrucción de WhatsApp -->
-            <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 text-blue-950 space-y-2">
-              <div class="flex items-start gap-2.5">
-                <i class="fab fa-whatsapp text-blue-600 text-lg flex-shrink-0 mt-0.5"></i>
-                <div class="space-y-1">
-                  <span class="font-black text-xs block text-slate-900 uppercase tracking-wide">Paso 2: Envío de Comprobante</span>
-                  <p class="text-xs text-slate-700 leading-relaxed">
-                    Cuando realices el SINPE envía el comprobante de pago al mismo número de WhatsApp del SINPE (<strong>${sinpePhoneFormatted}</strong>) para la activación de la cuenta.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Botones de Acción -->
-            <div class="space-y-2 pt-1">
-              <a 
-                href="${whatsappUrl}" 
-                target="_blank" 
-                id="sinpe-send-whatsapp-btn" 
-                class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-950/25 transition-all cursor-pointer"
-              >
-                <i class="fab fa-whatsapp text-base"></i>
-                <span>Enviar Comprobante por WhatsApp</span>
-                <i class="fas fa-arrow-right text-xs"></i>
-              </a>
-
-              <button 
-                id="sinpe-done-btn" 
-                class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-all cursor-pointer"
-              >
-                Entendido, ya realicé la transferencia
-              </button>
-            </div>
           </div>
 
           <!-- Footer -->
-          <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 text-center text-[11px] text-slate-400">
-            Tu plan se activará en cuanto el comprobante sea verificado.
+          <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+            <span>Validación y activación automática SINPE CR 🇨🇷</span>
+            <button type="button" id="close-sinpe-footer-btn" class="font-bold text-slate-600 hover:text-slate-900 cursor-pointer">Cerrar</button>
           </div>
         </div>
       </div>
     `;
 
-    document.getElementById('close-sinpe-modal-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
+    // 1. Cerrar Modal
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('close-sinpe-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('close-sinpe-footer-btn')?.addEventListener('click', closeModal);
 
-    document.getElementById('sinpe-done-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-      this.showToast('¡Comprobante en proceso de verificación! Te contactaremos por WhatsApp.', 'success');
-      if (this.currentView === 'owner-dashboard') {
-        this.renderCurrentView();
-      }
-    });
-
-    document.getElementById('copy-sinpe-phone-btn')?.addEventListener('click', () => {
+    // 2. Copiar Teléfono
+    document.getElementById('modal-copy-sinpe-phone')?.addEventListener('click', () => {
       navigator.clipboard.writeText(sinpePhoneRaw).then(() => {
-        this.showToast('¡Número SINPE copiado: 7143-3852!', 'success');
+        this.showToast('📋 Número SINPE 7143-3852 copiado', 'success');
       }).catch(() => {
         this.showToast('Número: 7143-3852', 'info');
       });
+    });
+
+    const resultContainer = document.getElementById('sinpe-verify-result');
+    const verifyForm = document.getElementById('sinpe-verify-form');
+    const submitBtn = document.getElementById('btn-submit-sinpe-verify');
+
+    // 3. Ejecutar Verificación
+    verifyForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const phoneInput = document.getElementById('sinpe-verify-phone');
+      const refInput = document.getElementById('sinpe-verify-ref');
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      const ref = refInput ? refInput.value.trim() : '';
+
+      if (!ref) {
+        this.showToast('Por favor escribe el número de comprobante emitido por tu banco.', 'error');
+        refInput?.focus();
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-base"></i> <span>Verificando comprobante en el banco...</span>';
+      }
+
+      try {
+        const res = await fetch('/api/sinpe/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: exactAmountCrc,
+            senderPhone: phone,
+            referenceNumber: ref,
+            planId: plan.id,
+            businessId: activeBizId
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          // --- ESTADO: ERROR / NO ENCONTRADO ---
+          resultContainer.className = 'p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-rose-950 space-y-2 animate-fade-in';
+          resultContainer.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
+                <i class="fas fa-times"></i>
+              </div>
+              <div class="space-y-1">
+                <strong class="text-xs font-black text-rose-900 block">Pago No Verificado</strong>
+                <p class="text-xs text-rose-800 leading-relaxed">
+                  ${data.message || 'No se encontró ninguna transferencia SINPE coincidente con este comprobante y monto.'}
+                </p>
+                <div class="pt-1 text-[11px] text-rose-700">
+                  💡 Si ya realizaste el SINPE, por favor espera unos 10-20 segundos a que el banco emita el comprobante y vuelve a presionar el botón de verificar.
+                </div>
+              </div>
+            </div>
+          `;
+          this.showToast('❌ Comprobante no encontrado todavía. Verifica o espera unos segundos.', 'error');
+        } else {
+          // --- ESTADO: ÉXITO / VERIFICADO ---
+          this.playNotificationChime();
+          const tx = data.transaction;
+
+          // Actualizar plan en almacenamiento local
+          if (activeBizId) {
+            try {
+              await storage.updateBusinessPlan(activeBizId, plan.id);
+            } catch (upErr) {
+              console.warn('Sync plan warning:', upErr);
+            }
+          }
+
+          resultContainer.className = 'p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-400 text-emerald-950 space-y-3 animate-fade-in shadow-md';
+          resultContainer.innerHTML = `
+            <div class="flex items-start gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl flex-shrink-0">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="space-y-1 flex-1">
+                <strong class="text-sm font-black text-emerald-900 block">¡Pago de ${formattedAmount} Verificado con Éxito! 🎉</strong>
+                <p class="text-xs text-emerald-800 leading-relaxed">
+                  Se ha conciliado correctamente la transferencia de SINPE Móvil y se ha activado tu <strong>${activePlanName}</strong>.
+                </p>
+                <div class="bg-white/90 p-3 rounded-xl border border-emerald-200 text-[11px] text-slate-800 space-y-1 font-mono mt-2">
+                  <div><strong>Comprobante:</strong> #${tx.reference}</div>
+                  <div><strong>Monto Verificado:</strong> ₡${tx.amount.toLocaleString('es-CR')} CRC</div>
+                  <div><strong>Emisor:</strong> ${tx.senderPhone || phone || 'Registrado'}</div>
+                  <div><strong>Banco:</strong> ${tx.originBank || 'SINPE Móvil CR'}</div>
+                </div>
+
+                <div class="pt-2">
+                  <button id="sinpe-finish-success-btn" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5">
+                    <i class="fas fa-arrow-right"></i>
+                    <span>Continuar al Panel de Control</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          document.getElementById('sinpe-finish-success-btn')?.addEventListener('click', () => {
+            modalContainer.innerHTML = '';
+            this.renderHeader();
+            if (activeBizId) {
+              this.navigateTo('owner-dashboard');
+            } else {
+              this.renderCurrentView();
+            }
+          });
+
+          this.showToast(`🎉 ¡SINPE de ${formattedAmount} confirmado con éxito! Plan ${activePlanName} activado.`, 'success');
+          this.renderHeader();
+        }
+      } catch (err) {
+        resultContainer.className = 'p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs';
+        resultContainer.innerHTML = `Error de conexión: ${err.message}`;
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-search text-base text-blue-300"></i> <span>Verificar Comprobante SINPE</span>';
+        }
+      }
+    });
+
+    // 4. Botón Simular Recepción de SINPE (para entornos de prueba)
+    document.getElementById('btn-simulate-sinpe-incoming')?.addEventListener('click', async () => {
+      const phoneInput = document.getElementById('sinpe-verify-phone');
+      const refInput = document.getElementById('sinpe-verify-ref');
+      const testPhone = phoneInput?.value.trim() || '8888-8888';
+      const testRef = `CR-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      if (phoneInput) phoneInput.value = testPhone;
+      if (refInput) refInput.value = testRef;
+
+      try {
+        const res = await fetch('/api/sinpe/simulate-incoming', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: exactAmountCrc,
+            senderPhone: testPhone,
+            referenceNumber: testRef,
+            originBank: 'BAC Credomatic'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          this.showToast(`⚡ Comprobante #${testRef} simulado. Verificando automáticamente...`, 'info');
+          verifyForm?.dispatchEvent(new Event('submit'));
+        }
+      } catch (simErr) {
+        console.warn('Simulation error:', simErr);
+      }
     });
   }
 
