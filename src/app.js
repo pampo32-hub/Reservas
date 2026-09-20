@@ -1178,12 +1178,16 @@ class App {
 
             ${!clientUser && !bizUser && !devUser ? `
               <!-- Botón Pre-Registro 15 Días Gratis (Móvil) -->
+              <button id="mobile-top-prereg-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 border border-amber-300 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0" title="Pre-regístrate y obtén 15 Días Gratis">
+                <i class="fas fa-gift text-slate-950 text-xs"></i>
               <button id="mobile-top-prereg-btn" class="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1.5 app-touch-btn cursor-pointer shrink-0" title="Pre-regístrate y obtén 15 Días Gratis">
                 <i class="fas fa-gift text-blue-200 text-xs"></i>
                 <span>15 Días Gratis</span>
               </button>
 
               <!-- Botón Únete / Para Negocios (Móvil) -->
+              <button id="mobile-top-landing-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-xs flex items-center gap-1 app-touch-btn shrink-0" title="Para Negocios">
+                <i class="fas fa-rocket text-xs"></i>
               <button id="mobile-top-landing-btn" class="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 border border-blue-500/30 shadow-xs flex items-center gap-1.5 app-touch-btn shrink-0 cursor-pointer" title="Para Negocios">
                 <i class="fas fa-rocket text-blue-400 text-xs"></i>
                 <span>Negocios</span>
@@ -1204,12 +1208,17 @@ class App {
             </button>
 
             <!-- Botón Únete / Para Negocios (Desktop) -->
+            <button id="nav-landing-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-blue-600 via-sky-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 shadow-sm shadow-cyan-500/20 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 ${this.currentView === 'business-landing' ? 'ring-2 ring-emerald-400 ring-offset-2' : ''}" title="Conoce la plataforma para tu negocio">
+              <i class="fas fa-rocket text-xs"></i>
             <button id="nav-landing-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 hover:from-slate-900 hover:to-blue-800 border border-blue-500/30 shadow-sm shadow-blue-950/20 flex items-center gap-2 transition-all cursor-pointer transform hover:scale-105 active:scale-98 ${this.currentView === 'business-landing' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}" title="Conoce la plataforma para tu negocio">
               <i class="fas fa-rocket text-blue-400 text-xs"></i>
               <span>¿Tienes un Negocio? Únete</span>
             </button>
 
             <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
+            <button id="nav-prereg-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-slate-950 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 shadow-sm shadow-amber-500/20 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
+              <i class="fas fa-gift text-slate-950 text-xs"></i>
+              <span>🎁 Pre-Registro 15 Días Gratis</span>
             <button id="nav-prereg-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-2 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
               <i class="fas fa-gift text-blue-200 text-xs"></i>
               <span>Pre-Registro 15 Días Gratis</span>
@@ -1222,6 +1231,8 @@ class App {
             </button>
 
             <!-- Planes y Precios -->
+            <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
+              <i class="fas fa-crown text-amber-600 text-xs"></i>
             <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/80 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
               <i class="fas fa-crown text-blue-600 text-xs"></i>
               <span>Planes & Precios</span>
@@ -1844,7 +1855,6 @@ class App {
               <!-- Columna Principal de Texto e Incentivos -->
               <div class="lg:col-span-8 space-y-4 text-left">
                 
-                <!-- Badge Animado -->
                 <!-- Badges Superiores -->
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
@@ -13045,21 +13055,37 @@ class App {
 
             <!-- Selección de Plan de Interés (4 Planes) -->
             <div>
-              <label class="block font-black text-slate-800 mb-1.5">Plan de mayor interés (Tarifa congelada tras tus 15 días gratis Pro):</label>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                ${plans.map(p => `
-                  <label class="cursor-pointer">
-                    <input type="radio" name="prereg-plan" value="${p.id}" class="sr-only peer" ${p.id === selectedPlanId ? 'checked' : ''}>
-                    <div class="p-2.5 rounded-xl border-2 border-slate-200 bg-white peer-checked:border-blue-600 peer-checked:bg-blue-50/50 peer-checked:shadow-sm text-center transition-all flex flex-col items-center justify-between h-full">
-                      <span class="font-black text-slate-900 text-[11px] block truncate w-full">${p.name}</span>
-                      <div class="flex items-center justify-center gap-1 my-0.5 flex-wrap">
-                        ${p.originalPriceUsd ? `<span class="text-[10px] text-slate-400 line-through decoration-rose-500 decoration-1 font-bold">$${p.originalPriceUsd}</span>` : ''}
-                        <span class="text-blue-600 font-black text-sm">${p.priceUsd === 0 ? 'Gratis' : '$' + p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">${p.priceUsd === 0 ? '' : '/mes'}</span></span>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block font-black text-slate-800">Plan de mayor interés (Tarifa congelada tras tus 15 días gratis Pro):</label>
+                <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 hidden sm:inline-block">Selecciona una opción</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="prereg-plans-selector-grid">
+                ${plans.map(p => {
+                  const isSelected = p.id === selectedPlanId;
+                  return `
+                    <label class="cursor-pointer prereg-plan-label block select-none" data-plan-id="${p.id}">
+                      <input type="radio" name="prereg-plan" value="${p.id}" class="sr-only prereg-plan-radio" ${isSelected ? 'checked' : ''}>
+                      <div class="prereg-plan-card p-2.5 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-between h-full relative cursor-pointer ${isSelected ? 'border-blue-600 bg-gradient-to-b from-blue-50 via-blue-50/80 to-indigo-50/60 shadow-md shadow-blue-500/20 ring-2 ring-blue-500/30' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs'}">
+                        
+                        <!-- Badge Check Activo -->
+                        <div class="prereg-plan-badge absolute -top-1.5 -right-1.5 ${isSelected ? 'flex' : 'hidden'} items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold shadow-xs">
+                          <i class="fas fa-check text-[9px]"></i>
+                        </div>
+
+                        <span class="prereg-plan-name font-black text-[11px] block truncate w-full transition-colors ${isSelected ? 'text-blue-950 font-black' : 'text-slate-700 font-bold'}">${p.name}</span>
+                        
+                        <div class="flex items-center justify-center gap-1 my-1 flex-wrap">
+                          ${p.originalPriceUsd ? `<span class="text-[10px] text-slate-400 line-through decoration-rose-500 decoration-1 font-bold">$${p.originalPriceUsd}</span>` : ''}
+                          <span class="prereg-plan-price font-black text-sm transition-colors ${isSelected ? 'text-blue-600' : 'text-slate-900'}">
+                            ${p.priceUsd === 0 ? 'Gratis' : '$' + p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">${p.priceUsd === 0 ? '' : '/mes'}</span>
+                          </span>
+                        </div>
+                        
+                        <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' res.'}</span>
                       </div>
-                      <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' res.'}</span>
-                    </div>
-                  </label>
-                `).join('')}
+                    </label>
+                  `;
+                }).join('')}
               </div>
             </div>
 
@@ -13077,6 +13103,50 @@ class App {
         </div>
       </div>
     `;
+
+    // Handler de selección reactiva de planes con cambio de color y badge
+    const planRadios = modalContainer.querySelectorAll('.prereg-plan-radio');
+    const updatePlanSelectionVisuals = (activePlanId) => {
+      modalContainer.querySelectorAll('.prereg-plan-label').forEach(label => {
+        const planId = label.dataset.planId;
+        const isCurrent = planId === activePlanId;
+        const card = label.querySelector('.prereg-plan-card');
+        const badge = label.querySelector('.prereg-plan-badge');
+        const nameEl = label.querySelector('.prereg-plan-name');
+        const priceEl = label.querySelector('.prereg-plan-price');
+
+        if (card) {
+          if (isCurrent) {
+            card.className = 'prereg-plan-card p-2.5 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-between h-full relative cursor-pointer border-blue-600 bg-gradient-to-b from-blue-50 via-blue-50/80 to-indigo-50/60 shadow-md shadow-blue-500/20 ring-2 ring-blue-500/30';
+          } else {
+            card.className = 'prereg-plan-card p-2.5 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-between h-full relative cursor-pointer border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs';
+          }
+        }
+        if (badge) {
+          if (isCurrent) {
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+          } else {
+            badge.classList.remove('flex');
+            badge.classList.add('hidden');
+          }
+        }
+        if (nameEl) {
+          nameEl.className = `prereg-plan-name font-black text-[11px] block truncate w-full transition-colors ${isCurrent ? 'text-blue-950 font-black' : 'text-slate-700 font-bold'}`;
+        }
+        if (priceEl) {
+          priceEl.className = `prereg-plan-price font-black text-sm transition-colors ${isCurrent ? 'text-blue-600' : 'text-slate-900'}`;
+        }
+      });
+    };
+
+    planRadios.forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          updatePlanSelectionVisuals(e.target.value);
+        }
+      });
+    });
 
     document.getElementById('close-prereg-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
