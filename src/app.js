@@ -2323,70 +2323,76 @@ class App {
   // ==========================================
   renderBusinessLandingView(container) {
     container.innerHTML = `
-      <div class="animate-fade-in bg-slate-950 text-slate-100 min-h-screen pb-24 overflow-hidden select-none">
+      <div class="animate-fade-in bg-slate-950 text-slate-100 min-h-screen pb-24 overflow-hidden select-none relative">
         
+        <!-- AURORA BOREALIS ANIMATED BACKGROUND (GOOGLE STITCH STYLE) -->
+        <div class="aurora-bg-container">
+          <div class="aurora-blob aurora-blob-emerald"></div>
+          <div class="aurora-blob aurora-blob-cyan"></div>
+          <div class="aurora-blob aurora-blob-purple"></div>
+        </div>
+
         <!-- 1. HERO SECTION PRINCIPAL -->
-        <section class="relative pt-12 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
-          <!-- Luces ambientales de fondo -->
-          <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-r from-blue-600/20 via-cyan-500/20 to-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute top-1/3 -right-32 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
-          <div class="absolute top-1/2 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div class="relative z-10 text-center max-w-4xl mx-auto space-y-6">
-            
-            <!-- Badge Superior -->
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/40 text-cyan-300 text-xs font-black uppercase tracking-wider shadow-lg shadow-cyan-500/10 animate-fade-in">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-              <span>🚀 PLATAFORMA OFICIAL PARA NEGOCIOS • COSTA RICA 🇨🇷</span>
-            </div>
-
-            <!-- Titular de Impacto -->
-            <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.15] tracking-tight">
-              Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">24/7</span> con confirmación por WhatsApp
-            </h1>
-
-            <!-- Subtítulo -->
-            <p class="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
-              Elimina los mensajes interminables de WhatsApp, reduce las ausencias y ten tu propio enlace profesional listo para tu biografía de Instagram y TikTok.
-            </p>
-
-            <!-- 3 Badges de Confianza -->
-            <div class="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs sm:text-sm font-bold text-slate-200">
-              <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                <i class="fas fa-bolt text-emerald-400"></i>
-                <span>0% Comisiones por Cita</span>
+        <section class="relative pt-10 pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto z-10">
+          
+          <!-- CONTENEDOR HERO CON BORDE DE LUZ ANIMADO (BORDER BEAM GOOGLE STITCH) -->
+          <div class="stitch-border-beam-box max-w-4xl mx-auto">
+            <div class="stitch-border-beam-inner text-center space-y-6">
+              
+              <!-- Badge Superior -->
+              <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/40 text-cyan-300 text-xs font-black uppercase tracking-wider shadow-lg shadow-cyan-500/10 animate-fade-in">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>🚀 PLATAFORMA OFICIAL PARA NEGOCIOS • COSTA RICA 🇨🇷</span>
               </div>
-              <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                <i class="fab fa-whatsapp text-emerald-400 text-base"></i>
-                <span>WhatsApp Automático</span>
+
+              <!-- Titular de Impacto -->
+              <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.15] tracking-tight">
+                Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">24/7</span> con confirmación por WhatsApp
+              </h1>
+
+              <!-- Subtítulo -->
+              <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
+                Elimina los mensajes interminables de WhatsApp, reduce las ausencias y ten tu propio enlace profesional listo para tu biografía de Instagram y TikTok.
+              </p>
+
+              <!-- 3 Badges de Confianza -->
+              <div class="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs sm:text-sm font-bold text-slate-200">
+                <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
+                  <i class="fas fa-bolt text-emerald-400"></i>
+                  <span>0% Comisiones por Cita</span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
+                  <i class="fab fa-whatsapp text-emerald-400 text-base"></i>
+                  <span>WhatsApp Automático</span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
+                  <i class="fas fa-clock text-cyan-400"></i>
+                  <span>Configuración en 2 Minutos</span>
+                </div>
               </div>
-              <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                <i class="fas fa-clock text-cyan-400"></i>
-                <span>Configuración en 2 Minutos</span>
+
+              <!-- Botones de Acción Primarios -->
+              <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <button id="landing-hero-register-btn" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-black text-base shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
+                  <i class="fas fa-rocket text-lg"></i>
+                  <span>Registrar Mi Negocio Gratis</span>
+                </button>
+                <button id="landing-scroll-demo-btn" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer">
+                  <i class="fas fa-play-circle text-cyan-400 text-lg"></i>
+                  <span>Probar Demo en Vivo</span>
+                </button>
               </div>
-            </div>
 
-            <!-- Botones de Acción Primarios -->
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
-              <button id="landing-hero-register-btn" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-base shadow-xl shadow-cyan-500/25 flex items-center justify-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
-                <i class="fas fa-rocket text-lg"></i>
-                <span>Registrar Mi Negocio Gratis</span>
-              </button>
-              <button id="landing-scroll-demo-btn" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer">
-                <i class="fas fa-play-circle text-cyan-400 text-lg"></i>
-                <span>Probar Demo en Vivo</span>
-              </button>
-            </div>
+              <!-- Pequeño recordatorio de prueba gratis -->
+              <p class="text-xs text-slate-400">
+                ✨ <strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
+              </p>
+              <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm">
+                <span class="text-base">🎁</span>
+                <span><strong>Pre-registro Especial:</strong> Obtén <strong>15 Días de Prueba Gratis del Plan Profesional (Pro)</strong> a partir del lanzamiento. ¡Sin tarjeta ni pagos hoy!</span>
+              </div>
 
-            <!-- Pequeño recordatorio de prueba gratis -->
-            <p class="text-xs text-slate-400">
-              ✨ <strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
-            </p>
-            <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm">
-              <span class="text-base">🎁</span>
-              <span><strong>Pre-registro Especial:</strong> Obtén <strong>15 Días de Prueba Gratis del Plan Profesional (Pro)</strong> a partir del lanzamiento. ¡Sin tarjeta ni pagos hoy!</span>
             </div>
-
           </div>
         </section>
 

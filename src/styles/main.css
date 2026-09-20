@@ -237,3 +237,123 @@ input:focus, select:focus, textarea:focus {
 .animate-energy-pulse {
   animation: energyPulse 4s ease-in-out infinite;
 }
+
+/* ==========================================================================
+   AURORA BOREALIS BACKGROUND (GOOGLE STITCH STYLE)
+   ========================================================================== */
+.aurora-bg-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.45;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.aurora-blob-emerald {
+  top: -15%;
+  left: 20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, #00D166 0%, rgba(0, 109, 50, 0.4) 65%, transparent 80%);
+  animation: auroraFlow1 18s ease-in-out infinite alternate;
+}
+
+.aurora-blob-cyan {
+  bottom: -15%;
+  right: 12%;
+  width: 650px;
+  height: 650px;
+  background: radial-gradient(circle, #00E5FF 0%, rgba(0, 98, 158, 0.4) 65%, transparent 80%);
+  animation: auroraFlow2 22s ease-in-out infinite alternate;
+}
+
+.aurora-blob-purple {
+  top: 35%;
+  left: 50%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #74FF9A 0%, rgba(0, 83, 36, 0.4) 65%, transparent 80%);
+  animation: auroraFlow3 20s ease-in-out infinite alternate;
+}
+
+@keyframes auroraFlow1 {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(70px, 50px, 0) scale(1.18) rotate(120deg); }
+  100% { transform: translate3d(-50px, 20px, 0) scale(0.92) rotate(240deg); }
+}
+
+@keyframes auroraFlow2 {
+  0% { transform: translate3d(0, 0, 0) scale(1.05) rotate(0deg); }
+  50% { transform: translate3d(-60px, -40px, 0) scale(0.9) rotate(-140deg); }
+  100% { transform: translate3d(40px, 30px, 0) scale(1.2) rotate(-280deg); }
+}
+
+@keyframes auroraFlow3 {
+  0% { transform: translate3d(-50%, -50%, 0) scale(0.95); }
+  50% { transform: translate3d(-40%, -60%, 0) scale(1.2); }
+  100% { transform: translate3d(-60%, -40%, 0) scale(0.9); }
+}
+
+/* ==========================================================================
+   BORDER BEAM / GLOWING CONTOUR LIGHT TRACER (GOOGLE STITCH STYLE)
+   ========================================================================== */
+.stitch-border-beam-box {
+  position: relative;
+  border-radius: 2.25rem;
+  padding: 1.5px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.7);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 50px -10px rgba(0, 209, 102, 0.2);
+}
+
+.stitch-border-beam-box::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 260deg,
+    rgba(0, 229, 255, 0.4) 300deg,
+    #00D166 330deg,
+    #74FF9A 348deg,
+    #FFFFFF 360deg
+  );
+  animation: borderBeamRotate 4.5s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 0 12px #00D166);
+}
+
+.stitch-border-beam-inner {
+  position: relative;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 0%, rgba(15, 23, 42, 0.94) 0%, rgba(2, 6, 23, 0.98) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: calc(2.25rem - 1.5px);
+  padding: 3.5rem 2rem;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes borderBeamRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
