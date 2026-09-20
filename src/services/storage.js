@@ -689,6 +689,21 @@ class StorageService {
   }
 
   async saveBusiness(businessData) {
+    // 1. Guardar de inmediato en caché local y localStorage
+    const businesses = this.getBusinesses();
+    const existingIndex = businesses.findIndex(b => b.id === businessData.id);
+    if (existingIndex >= 0) {
+      businesses[existingIndex] = { ...businesses[existingIndex], ...businessData };
+    } else {
+      businesses.push({
+        ...businessData,
+        id: businessData.id || `biz-${Date.now()}`
+      });
+    }
+    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+    this.businessesCache = businesses;
+
+    // 2. Persistir en API remota (Neon PostgreSQL) si está disponible
     if (this.isOnlineApi) {
       try {
         const existing = this.getBusinessById(businessData.id);
@@ -706,24 +721,11 @@ class StorageService {
           });
         }
         await this.loadFromApi();
-        return businessData.id;
       } catch (e) {
         console.error('Error guardando en API Neon:', e);
       }
     }
 
-    const businesses = this.getBusinesses();
-    const existingIndex = businesses.findIndex(b => b.id === businessData.id);
-    if (existingIndex >= 0) {
-      businesses[existingIndex] = { ...businesses[existingIndex], ...businessData };
-    } else {
-      businesses.push({
-        ...businessData,
-        id: businessData.id || `biz-${Date.now()}`
-      });
-    }
-    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
-    this.businessesCache = businesses;
     return businessData.id;
   }
 

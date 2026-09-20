@@ -6499,15 +6499,15 @@ class App {
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
-                  <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <label id="slot-duration-label-15" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                  <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
                   <div>
                     <span class="block text-xs font-bold text-slate-900">Cada 15 Minutos</span>
                     <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:15, 8:30, 8:45...</span>
                   </div>
                 </label>
-                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
-                  <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
+                <label id="slot-duration-label-30" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                  <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
                   <div>
                     <span class="block text-xs font-bold text-slate-900">Cada 30 Minutos (Estándar)</span>
                     <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:30, 9:00, 9:30...</span>
@@ -6771,6 +6771,7 @@ class App {
                   <span>${this.formatDateFullSpanish(selectedMobileDate)}</span>
                 </h4>
               </div>
+              <div>
               <div class="flex items-center gap-2">
                 <button 
                   type="button" 
@@ -6794,6 +6795,7 @@ class App {
                   <i class="fas fa-calendar-check ${theme.accentText}"></i>
                 </div>
                 <h5 class="font-bold text-slate-800 text-xs sm:text-sm">No hay citas agendadas para este día</h5>
+                <p class="text-[11px] sm:text-xs text-slate-500 max-w-xs mx-auto">Selecciona otro día en el calendario superior para revisar las citas programadas.</p>
                 <p class="text-[11px] sm:text-xs text-slate-500 max-w-xs mx-auto">Toca el botón a continuación para agendar una reserva manual en esta fecha.</p>
                 <button 
                   type="button" 
@@ -9147,8 +9149,6 @@ class App {
                 <span class="w-3.5 h-3.5 rounded-full bg-rose-500 ring-4 ring-rose-200 flex-shrink-0"></span>
                 <div>
                   <span class="text-xs font-black block">Bloqueados</span>
-                  <span class="text-[10
-... [truncated for diff preview]
                   <span class="text-[10px] text-rose-700">Pausados por ti</span>
                 </div>
               </div>
@@ -9803,6 +9803,31 @@ class App {
       this.renderCurrentView();
     });
 
+    // Selector interactivo de intervalo de turnos (15 min vs 30 min)
+    document.querySelectorAll('input[name="slot_duration"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const selectedVal = parseInt(radio.value, 10);
+        const label15 = document.getElementById('slot-duration-label-15');
+        const label30 = document.getElementById('slot-duration-label-30');
+        const activeClasses = ['bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs'];
+        const inactiveClasses = ['bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50'];
+
+        if (label15 && label30) {
+          if (selectedVal === 15) {
+            label15.classList.remove(...inactiveClasses);
+            label15.classList.add(...activeClasses);
+            label30.classList.remove(...activeClasses);
+            label30.classList.add(...inactiveClasses);
+          } else {
+            label30.classList.remove(...inactiveClasses);
+            label30.classList.add(...activeClasses);
+            label15.classList.remove(...activeClasses);
+            label15.classList.add(...inactiveClasses);
+          }
+        }
+      });
+    });
+
     const scheduleForm = document.getElementById('schedule-form');
     scheduleForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -9815,6 +9840,7 @@ class App {
       const slotDuration = slotDurationInput ? parseInt(slotDurationInput.value, 10) : (currentBiz.schedule?.slotDuration || 30);
 
       currentBiz.schedule = {
+        ...(currentBiz.schedule || {}),
         days: selectedDays,
         openTime,
         closeTime,
@@ -9824,7 +9850,7 @@ class App {
       };
 
       await storage.saveBusiness(currentBiz);
-      this.showToast('Horarios actualizados exitosamente.', 'success');
+      this.showToast('Horarios e intervalo de turnos guardados exitosamente.', 'success');
       this.renderCurrentView();
     });
 
