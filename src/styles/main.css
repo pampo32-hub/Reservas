@@ -1,26 +1,30 @@
 /* ==========================================================================
-   ZENITH • DIGITAL SANCTUARY DESIGN SYSTEM (THE BREATHABLE INTERFACE)
+   THE LUMINOUS ENGINE • DIGITAL FLUIDITY & RESOURCE INTELLIGENCE DESIGN SYSTEM
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-  --color-surface-base: #F8F9F3;
-  --color-surface-nest: #ECEFE8;
-  --color-surface-low: #F2F4ED;
-  --color-surface-card: #FFFFFF;
-  --color-primary: #55624D;
-  --color-primary-container: #98A68E;
-  --color-primary-dark: #3E4B3A;
-  --color-secondary: #755754;
-  --color-secondary-container: #FED7D2;
-  --color-on-surface: #191C18;
-  --color-on-surface-variant: #444841;
-  --color-outline: #757870;
-  --color-outline-ghost: rgba(197, 200, 190, 0.35);
+  --color-surface: #F8F9FF;
+  --color-surface-container-low: #EFF4FF;
+  --color-surface-container: #E5EEFF;
+  --color-surface-container-highest: #D3E4FE;
+  --color-surface-container-lowest: #FFFFFF;
 
-  --font-headline: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-primary: #006D32;
+  --color-primary-container: #00D166;
+  --color-primary-fixed: #74FF9A;
+  
+  --color-secondary: #00629E;
+  --color-secondary-container: #B3E5FC;
+
+  --color-on-surface: #0B1C30;
+  --color-on-surface-variant: #414754;
+  --color-outline: #727782;
+  --color-outline-variant: rgba(187, 203, 185, 0.22);
+
+  --font-headline: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 *, *::before, *::after {
@@ -29,7 +33,7 @@
 
 html, body {
   font-family: var(--font-body);
-  background-color: var(--color-surface-base);
+  background-color: var(--color-surface);
   color: var(--color-on-surface);
   margin: 0;
   padding: 0;
@@ -43,105 +47,102 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-h1, h2, h3, h4, .font-headline {
+h1, h2, h3, h4, .font-headline, .font-display {
   font-family: var(--font-headline);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
-/* Background Subtle Gradients & Atmospheric Glow */
-.bg-zenith-gradient, body {
-  background-color: #F8F9F3;
+/* Luminous Atmospheric Energy Canvas */
+.bg-luminous-gradient, body {
+  background-color: #F8F9FF;
   background-image: 
-    radial-gradient(circle at 90% 10%, rgba(254, 215, 210, 0.45) 0%, transparent 40%),
-    radial-gradient(circle at 10% 85%, rgba(152, 166, 142, 0.22) 0%, transparent 45%);
+    radial-gradient(circle at 85% 12%, rgba(0, 209, 102, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 12% 88%, rgba(0, 98, 158, 0.10) 0%, transparent 48%);
   background-attachment: fixed;
 }
 
-/* Glassmorphism & Translucent Pills */
+/* Glassmorphism Navigation & Floating Panels */
 .glass-pill {
-  background: rgba(248, 250, 243, 0.82) !important;
+  background: rgba(248, 249, 255, 0.85) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(236, 239, 232, 0.75) !important;
+  border: 1px solid rgba(229, 238, 255, 0.8) !important;
 }
 
 .glass-header {
-  background: rgba(248, 250, 243, 0.88) !important;
+  background: rgba(248, 249, 255, 0.88) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid rgba(225, 227, 220, 0.6) !important;
+  border-bottom: 1px solid rgba(211, 228, 254, 0.6) !important;
 }
 
-/* Ambient Soft Shadows */
+/* Ambient Diffused Shadows (Tinted with on-surface #0B1C30) */
 .shadow-ambient {
-  box-shadow: 0 20px 40px -10px rgba(85, 98, 77, 0.06) !important;
+  box-shadow: 0 24px 44px -12px rgba(11, 28, 48, 0.06) !important;
 }
 
 .shadow-zenith {
-  box-shadow: 0 10px 30px rgba(85, 98, 77, 0.04) !important;
+  box-shadow: 0 14px 34px rgba(11, 28, 48, 0.04) !important;
 }
 
-.shadow-fab {
-  box-shadow: 0 12px 28px -6px rgba(62, 75, 58, 0.35) !important;
+.shadow-luminous-glow {
+  box-shadow: 0 0 28px rgba(0, 209, 102, 0.28) !important;
 }
 
-/* Card Overrides (Soft Touches, Organic Curves) */
-.rounded-3xl {
-  border-radius: 1.875rem !important;
-}
-
-.rounded-2xl {
-  border-radius: 1.25rem !important;
-}
-
-/* No-Line Rule & Soft Ghost Borders */
+/* The No-Line Rule: Soft Ghost Borders & Background Shifts */
 .border-slate-100, .border-slate-200, .border-slate-300 {
-  border-color: rgba(197, 200, 190, 0.38) !important;
+  border-color: rgba(187, 203, 185, 0.25) !important;
 }
 
-/* Signature Primary Gradient Buttons */
+/* Signature Primary Luminous Gradient (Energy Flow) */
 .bg-gradient-primary, 
-.btn-zenith-primary {
-  background: linear-gradient(135deg, #55624D 0%, #98A68E 100%) !important;
+.btn-luminous-primary,
+.view-biz-btn {
+  background: linear-gradient(135deg, #006D32 0%, #00B354 100%) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 8px 20px -4px rgba(85, 98, 77, 0.25) !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 109, 50, 0.35) !important;
   border: none !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.btn-zenith-primary:hover {
-  background: linear-gradient(135deg, #3E4B3A 0%, #788A70 100%) !important;
-}
-
-/* Slot selection styles */
-.time-slot-btn {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 1rem !important;
-  border: 1px solid rgba(197, 200, 190, 0.45) !important;
-  background-color: #FFFFFF !important;
-  color: #191C18 !important;
-}
-
-.time-slot-btn:hover {
-  background-color: #F2F4ED !important;
-  border-color: #98A68E !important;
-}
-
-.time-slot-btn.selected {
-  background: linear-gradient(135deg, #55624D 0%, #98A68E 100%) !important;
-  color: #FFFFFF !important;
-  border-color: transparent !important;
-  box-shadow: 0 6px 16px rgba(85, 98, 77, 0.28) !important;
+.btn-luminous-primary:hover,
+.view-biz-btn:hover {
+  background: linear-gradient(135deg, #005324 0%, #00D166 100%) !important;
+  box-shadow: 0 10px 28px -4px rgba(0, 209, 102, 0.45) !important;
   transform: translateY(-1px);
 }
 
-/* Badges de Estado Tranquilos */
+/* Time Slot Selection */
+.time-slot-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 0.875rem !important;
+  border: 1px solid rgba(187, 203, 185, 0.35) !important;
+  background-color: #EFF4FF !important;
+  color: #0B1C30 !important;
+  font-weight: 600;
+}
+
+.time-slot-btn:hover {
+  background-color: #E5EEFF !important;
+  border-color: #00D166 !important;
+}
+
+.time-slot-btn.selected {
+  background: linear-gradient(135deg, #006D32 0%, #00B354 100%) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 18px rgba(0, 109, 50, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+/* High-Contrast Status Badges */
 .badge-status {
   display: inline-flex;
   align-items: center;
@@ -150,48 +151,71 @@ h1, h2, h3, h4, .font-headline {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .badge-status-confirmed {
-  background-color: #D9E7CD !important;
-  color: #2F3C29 !important;
-  border: 1px solid rgba(152, 166, 142, 0.3) !important;
+  background-color: #D4F9E4 !important;
+  color: #006D32 !important;
+  border: 1px solid rgba(0, 209, 102, 0.3) !important;
 }
 
 .badge-status-pending {
-  background-color: #FED7D2 !important;
-  color: #795B58 !important;
-  border: 1px solid rgba(227, 190, 186, 0.4) !important;
+  background-color: #E5EEFF !important;
+  color: #00629E !important;
+  border: 1px solid rgba(0, 98, 158, 0.25) !important;
 }
 
 .badge-status-completed {
-  background-color: #ECEFE8 !important;
-  color: #55624D !important;
-  border: 1px solid rgba(197, 200, 190, 0.4) !important;
+  background-color: #E8F0FE !important;
+  color: #0B1C30 !important;
+  border: 1px solid rgba(11, 28, 48, 0.15) !important;
 }
 
 .badge-status-cancelled {
-  background-color: #FFDAD6 !important;
-  color: #93000A !important;
-  border: 1px solid rgba(255, 180, 172, 0.4) !important;
+  background-color: #FFEBEE !important;
+  color: #BA1A1A !important;
+  border: 1px solid rgba(186, 26, 26, 0.2) !important;
 }
 
-/* Custom Minimalist Scrollbars */
+/* Inputs with clean luminous focus */
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+select,
+textarea {
+  background-color: #EFF4FF !important;
+  border: 1px solid rgba(187, 203, 185, 0.3) !important;
+  border-radius: 0.875rem !important;
+  color: #0B1C30 !important;
+  transition: all 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  background-color: #FFFFFF !important;
+  border-color: #006D32 !important;
+  box-shadow: 0 0 0 3px rgba(0, 209, 102, 0.25) !important;
+  outline: none !important;
+}
+
+/* Minimalist Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F8F9F3;
+  background: #F8F9FF;
 }
 ::-webkit-scrollbar-thumb {
-  background: #C5C8BE;
+  background: #D3E4FE;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #98A68E;
+  background: #00D166;
 }
 
 .no-scrollbar::-webkit-scrollbar, 
@@ -203,71 +227,13 @@ h1, h2, h3, h4, .font-headline {
   scrollbar-width: none;
 }
 
-/* Animations */
-@keyframes fadeInView {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Smooth Pulse & Energy Animation */
+@keyframes energyPulse {
+  0% { transform: scale(0.98); opacity: 0.8; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(0.98); opacity: 0.8; }
 }
 
-.animate-fade-in {
-  animation: fadeInView 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Breathing animation for ambient accents */
-@keyframes breathingPulse {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.7;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(0.95);
-    opacity: 0.7;
-  }
-}
-
-.animate-zenith-pulse {
-  animation: breathingPulse 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Input Fields (No boxy harsh borders, soft organic feel) */
-input[type="text"],
-input[type="tel"],
-input[type="email"],
-input[type="password"],
-input[type="date"],
-input[type="time"],
-input[type="number"],
-select,
-textarea {
-  background-color: #F2F4ED !important;
-  border-color: transparent !important;
-  border-radius: 1rem !important;
-  color: #191C18 !important;
-  transition: all 0.2s ease;
-}
-
-input:focus, select:focus, textarea:focus {
-  background-color: #FFFFFF !important;
-  border-color: #98A68E !important;
-  box-shadow: 0 0 0 3px rgba(152, 166, 142, 0.25) !important;
-  outline: none !important;
-}
-
-/* Mobile Friendly Tap Feedback */
-@media (max-width: 768px) {
-  button:active:not([disabled]), 
-  .app-touch-btn:active {
-    transform: scale(0.97);
-    transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1);
-  }
+.animate-energy-pulse {
+  animation: energyPulse 4s ease-in-out infinite;
 }

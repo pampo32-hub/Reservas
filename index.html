@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-[#f8faf3] overflow-x-hidden w-full max-w-full">
+<html lang="es" class="h-full bg-[#f8f9ff] overflow-x-hidden w-full max-w-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Reservas CR - Directorio de Negocios y Citas Online</title>
+  <title>Reservas CR - The Luminous Engine</title>
   
-  <!-- Google Fonts: Manrope & Plus Jakarta Sans -->
+  <!-- Google Fonts: Space Grotesk (Display & Numbers) & Inter (Body & Labels) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   
   <!-- Google Material Symbols & FontAwesome Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -22,117 +22,121 @@
       theme: {
         extend: {
           colors: {
-            // Digital Sanctuary & Breathable Interface Official Palette
+            // Luminous Engine Official Color Palette
             primary: {
-              DEFAULT: '#55624d',
-              dark: '#3e4b3a',
-              container: '#98a68e',
-              fixed: '#d9e7cd',
-              'fixed-dim': '#bdcbb2',
-              'on-container': '#2f3c29',
-              'on-fixed': '#131e0e',
+              DEFAULT: '#006d32',
+              dark: '#005324',
+              container: '#00d166',
+              fixed: '#74ff9a',
+              'on-primary': '#ffffff',
+              'on-container': '#00210a',
             },
             secondary: {
-              DEFAULT: '#755754',
-              container: '#fed7d2',
-              'on-container': '#795b58',
-              'fixed-dim': '#e3beba',
-              'fixed': '#ffdad6',
+              DEFAULT: '#00629e',
+              container: '#b3e5fc',
+              'on-secondary': '#ffffff',
+              'on-container': '#001d33',
             },
             surface: {
-              DEFAULT: '#f8faf3',
-              bright: '#f8faf3',
-              dim: '#d8dbd4',
+              DEFAULT: '#f8f9ff',
+              bright: '#ffffff',
+              dim: '#e2e8f8',
               'container-lowest': '#ffffff',
-              'container-low': '#f2f4ed',
-              'container': '#ecefe8',
-              'container-high': '#e7e9e2',
-              'container-highest': '#e1e3dc',
-            },
-            outline: {
-              DEFAULT: '#757870',
-              variant: '#c5c8be',
+              'container-low': '#eff4ff',
+              'container': '#e5eeff',
+              'container-high': '#dbe7fe',
+              'container-highest': '#d3e4fe',
             },
             'on-surface': {
-              DEFAULT: '#191c18',
-              variant: '#444841',
+              DEFAULT: '#0b1c30',
+              variant: '#414754',
             },
-            // Legacy Tailwind Color Harmonization
+            outline: {
+              DEFAULT: '#727782',
+              variant: '#bbcbb9',
+            },
+            // Legacy UI Palette Harmonization
             blue: {
-              50: '#f2f4ed',
-              100: '#d9e7cd',
-              200: '#bdcbb2',
-              300: '#98a68e',
-              400: '#788a70',
-              500: '#55624d',
-              600: '#485744',
-              700: '#3e4b3a',
-              800: '#2f3c29',
-              900: '#191c18',
+              50: '#eff4ff',
+              100: '#e5eeff',
+              200: '#d3e4fe',
+              300: '#90caf9',
+              400: '#42a5f5',
+              500: '#00629e',
+              600: '#006d32',
+              700: '#005324',
+              800: '#0b1c30',
+              900: '#040e1b',
             },
             brand: {
-              50: '#f2f4ed',
-              100: '#d9e7cd',
-              500: '#98a68e',
-              600: '#55624d',
-              700: '#3e4b3a',
-              900: '#191c18',
+              50: '#eff4ff',
+              100: '#e5eeff',
+              500: '#00d166',
+              600: '#006d32',
+              700: '#005324',
+              900: '#0b1c30',
             },
             slate: {
-              50: '#f8faf3',
-              100: '#f2f4ed',
-              200: '#ecefe8',
-              300: '#e1e3dc',
-              400: '#c5c8be',
-              500: '#757870',
-              600: '#605f56',
-              700: '#444841',
-              800: '#2e312d',
-              900: '#191c18',
-              950: '#131e0e',
+              50: '#f8f9ff',
+              100: '#eff4ff',
+              200: '#e5eeff',
+              300: '#d3e4fe',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#414754',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0b1c30',
+              950: '#040e1b',
             },
             indigo: {
-              50: '#f2f4ed',
-              100: '#fed7d2',
-              600: '#55624d',
-              700: '#3e4b3a',
-              800: '#2f3c29',
-              900: '#191c18',
-              950: '#131e0e',
+              50: '#eff4ff',
+              100: '#e5eeff',
+              600: '#00629e',
+              700: '#004c7d',
+              800: '#0b1c30',
+              900: '#040e1b',
+              950: '#040e1b',
             },
             purple: {
-              50: '#fff0ee',
-              100: '#fed7d2',
-              200: '#e3beba',
-              600: '#755754',
-              700: '#755754',
-              800: '#5b403d',
-              900: '#2b1614',
+              50: '#eff4ff',
+              100: '#d3e4fe',
+              600: '#00629e',
+              700: '#004c7d',
+              800: '#0b1c30',
+              900: '#040e1b',
+            },
+            emerald: {
+              50: '#e8f8f0',
+              100: '#c8f2dc',
+              500: '#00d166',
+              600: '#006d32',
+              700: '#005324',
             },
             amber: {
-              50: '#fef6ea',
-              100: '#fed7d2',
-              300: '#d9e7cd',
-              400: '#98a68e',
-              500: '#755754',
-              600: '#5b403d',
+              50: '#fff9eb',
+              100: '#fef0c7',
+              400: '#00d166',
+              500: '#006d32',
+              600: '#005324',
             }
           },
           fontFamily: {
-            headline: ["Manrope", "sans-serif"],
-            body: ["Plus Jakarta Sans", "sans-serif"],
-            sans: ["Plus Jakarta Sans", "sans-serif"]
+            headline: ["Space Grotesk", "sans-serif"],
+            display: ["Space Grotesk", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            sans: ["Inter", "sans-serif"]
           },
           borderRadius: {
             'xl': '1rem',
             '2xl': '1.25rem',
-            '3xl': '1.875rem',
+            '3xl': '1.75rem',
             'full': '9999px'
           },
           boxShadow: {
-            'ambient': '0 20px 40px -10px rgba(85, 98, 77, 0.06)',
-            'zenith': '0 10px 30px rgba(85, 98, 77, 0.04)',
-            'fab': '0 12px 28px -6px rgba(62, 75, 58, 0.35)',
+            'ambient': '0 24px 44px -12px rgba(11, 28, 48, 0.06)',
+            'zenith': '0 14px 34px rgba(11, 28, 48, 0.04)',
+            'luminous': '0 0 28px rgba(0, 209, 102, 0.28)',
           }
         }
       }
@@ -141,7 +145,7 @@
 
   <!-- PWA & Mobile Web App Meta Tags -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#55624d">
+  <meta name="theme-color" content="#006d32">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -152,14 +156,14 @@
   <link rel="apple-touch-icon" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="192x192" href="/src/assets/reservas_cr_clean_badge_1.jpg">
 
-  <!-- Custom CSS: Digital Sanctuary -->
+  <!-- Custom CSS: The Luminous Engine -->
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
-<body class="min-h-full flex flex-col antialiased text-[#191c18] bg-[#f8faf3] bg-zenith-gradient selection:bg-[#55624d] selection:text-white overflow-x-hidden w-full max-w-full relative">
+<body class="min-h-full flex flex-col antialiased text-[#0b1c30] bg-[#f8f9ff] bg-luminous-gradient selection:bg-[#006d32] selection:text-white overflow-x-hidden w-full max-w-full relative">
 
-  <!-- Atmospheric Background Glow Orbs -->
-  <div class="fixed top-[10%] right-[-5%] w-80 h-80 bg-[#d9e7cd]/25 blur-[110px] rounded-full pointer-events-none -z-10"></div>
-  <div class="fixed bottom-[15%] left-[-5%] w-96 h-96 bg-[#fed7d2]/25 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+  <!-- Luminous Atmospheric Glow Orbs -->
+  <div class="fixed top-[8%] right-[-5%] w-80 h-80 bg-[#00d166]/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed bottom-[12%] left-[-5%] w-96 h-96 bg-[#00629e]/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
 
   <!-- Navbar Container -->
   <div id="navbar-container" class="w-full max-w-full overflow-x-hidden"></div>
@@ -168,13 +172,13 @@
   <main id="main-content" class="flex-1 pb-24 md:pb-12 w-full max-w-full overflow-x-hidden"></main>
 
   <!-- Footer -->
-  <footer id="app-footer" class="bg-white/80 backdrop-blur-md border-t border-[#ecefe8] py-8 px-4 text-center text-xs text-[#757870] mb-14 md:mb-0">
+  <footer id="app-footer" class="bg-white/85 backdrop-blur-md border-t border-[#e5eeff] py-8 px-4 text-center text-xs text-[#727782] mb-14 md:mb-0">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
         <img src="/src/assets/logo.png" alt="Reservas CR Logo" class="w-7 h-7 rounded-xl object-contain shadow-xs">
-        <span class="font-headline font-extrabold text-[#191c18] text-sm">Reservas <span class="text-[#55624d]">CR</span></span> &copy; 2026. Todos los derechos reservados.
+        <span class="font-headline font-bold text-[#0b1c30] text-sm tracking-tight">Reservas <span class="text-[#006d32]">CR</span></span> &copy; 2026. Todos los derechos reservados.
       </div>
-      <p class="text-[#757870] font-medium">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
+      <p class="text-[#727782] font-medium">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
     </div>
   </footer>
 
@@ -188,6 +192,6 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
 
   <!-- App Script (ES Module) -->
-  <script type="module" src="/src/app.js?v=3.1.0"></script>
+  <script type="module" src="/src/app.js?v=3.2.0"></script>
 </body>
 </html>
