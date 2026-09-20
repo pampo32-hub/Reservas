@@ -1,5 +1,5 @@
 // Service Worker para Reservas CR (PWA)
-const CACHE_NAME = 'reservascr-pwa-v5';
+const CACHE_NAME = 'reservascr-pwa-v6';
 
 const STATIC_ASSETS = [
   './',
@@ -45,19 +45,36 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Intercepción de peticiones (Network First para APIs, Stale-While-Revalidate para recursos)
+// Intercepción de peticiones
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Ignorar peticiones API del backend para no servir datos transaccionales obsoletos
+  // Ignorar peticiones API del backend
   if (requestUrl.pathname.startsWith('/api/') || event.request.method !== 'GET') {
+    return;
+  }
+
+  // Para archivos HTML y JS principales, estrategia Network-First para ver cambios y actualizaciones de inmediato
+  if (requestUrl.pathname.endsWith('.html') || requestUrl.pathname.endsWith('.js') || requestUrl.pathname === '/' || requestUrl.pathname.startsWith('/src/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Devolver recurso en caché y actualizar en segundo plano
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
@@ -68,7 +85,6 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
 
-      // Si no está en caché, traer de la red
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
@@ -81,7 +97,6 @@ self.addEventListener('fetch', (event) => {
 
         return networkResponse;
       }).catch(() => {
-        // Fallback offline a index.html para navegación SPA
         if (event.request.mode === 'navigate') {
           return caches.match('./index.html');
         }
