@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-[#f8f9ff] overflow-x-hidden w-full max-w-full">
+<html lang="es" class="h-full bg-[#f8fafc] overflow-x-hidden w-full max-w-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Reservas CR - The Luminous Engine</title>
+  <title>Reservas CR - Directorio y Plataforma de Citas</title>
   
-  <!-- Google Fonts: Space Grotesk (Display & Numbers) & Inter (Body & Labels) -->
+  <!-- Google Fonts: Space Grotesk & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -22,103 +22,105 @@
       theme: {
         extend: {
           colors: {
-            // Luminous Engine Official Color Palette
+            // Formal Royal Navy & Midnight Sapphire Palette
             primary: {
-              DEFAULT: '#006d32',
-              dark: '#005324',
-              container: '#00d166',
-              fixed: '#74ff9a',
+              DEFAULT: '#0F172A',
+              dark: '#020617',
+              container: '#1E3A8A',
+              light: '#2563EB',
+              fixed: '#93C5FD',
               'on-primary': '#ffffff',
-              'on-container': '#00210a',
+              'on-container': '#DBEAFE',
             },
             secondary: {
-              DEFAULT: '#00629e',
-              container: '#b3e5fc',
+              DEFAULT: '#1E293B',
+              container: '#DBEAFE',
               'on-secondary': '#ffffff',
-              'on-container': '#001d33',
+              'on-container': '#0F172A',
             },
             surface: {
-              DEFAULT: '#f8f9ff',
+              DEFAULT: '#F8FAFC',
               bright: '#ffffff',
-              dim: '#e2e8f8',
+              dim: '#E2E8F0',
               'container-lowest': '#ffffff',
-              'container-low': '#eff4ff',
-              'container': '#e5eeff',
-              'container-high': '#dbe7fe',
-              'container-highest': '#d3e4fe',
+              'container-low': '#F1F5F9',
+              'container': '#E2E8F0',
+              'container-high': '#CBD5E1',
+              'container-highest': '#94A3B8',
             },
             'on-surface': {
-              DEFAULT: '#0b1c30',
-              variant: '#414754',
+              DEFAULT: '#0F172A',
+              variant: '#475569',
             },
             outline: {
-              DEFAULT: '#727782',
-              variant: '#bbcbb9',
+              DEFAULT: '#64748B',
+              variant: 'rgba(203, 213, 225, 0.4)',
             },
-            // Legacy UI Palette Harmonization
+            // Harmonized Colors (Formal Navy Gradients)
             blue: {
-              50: '#eff4ff',
-              100: '#e5eeff',
-              200: '#d3e4fe',
-              300: '#90caf9',
-              400: '#42a5f5',
-              500: '#00629e',
-              600: '#006d32',
-              700: '#005324',
-              800: '#0b1c30',
-              900: '#040e1b',
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              200: '#BFDBFE',
+              300: '#93C5FD',
+              400: '#60A5FA',
+              500: '#3B82F6',
+              600: '#2563EB',
+              700: '#1D4ED8',
+              800: '#1E40AF',
+              900: '#1E3A8A',
+              950: '#0F172A',
             },
             brand: {
-              50: '#eff4ff',
-              100: '#e5eeff',
-              500: '#00d166',
-              600: '#006d32',
-              700: '#005324',
-              900: '#0b1c30',
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              500: '#2563EB',
+              600: '#1E40AF',
+              700: '#1E3A8A',
+              900: '#0F172A',
             },
             slate: {
-              50: '#f8f9ff',
-              100: '#eff4ff',
-              200: '#e5eeff',
-              300: '#d3e4fe',
-              400: '#94a3b8',
-              500: '#64748b',
-              600: '#414754',
+              50: '#F8FAFC',
+              100: '#F1F5F9',
+              200: '#E2E8F0',
+              300: '#CBD5E1',
+              400: '#94A3B8',
+              500: '#64748B',
+              600: '#475569',
               700: '#334155',
-              800: '#1e293b',
-              900: '#0b1c30',
-              950: '#040e1b',
+              800: '#1E293B',
+              900: '#0F172A',
+              950: '#020617',
             },
             indigo: {
-              50: '#eff4ff',
-              100: '#e5eeff',
-              600: '#00629e',
-              700: '#004c7d',
-              800: '#0b1c30',
-              900: '#040e1b',
-              950: '#040e1b',
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              600: '#4F46E5',
+              700: '#4338CA',
+              800: '#3730A3',
+              900: '#1E1B4B',
+              950: '#0F172A',
             },
             purple: {
-              50: '#eff4ff',
-              100: '#d3e4fe',
-              600: '#00629e',
-              700: '#004c7d',
-              800: '#0b1c30',
-              900: '#040e1b',
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              600: '#2563EB',
+              700: '#1D4ED8',
+              800: '#1E40AF',
+              900: '#0F172A',
             },
             emerald: {
-              50: '#e8f8f0',
-              100: '#c8f2dc',
-              500: '#00d166',
-              600: '#006d32',
-              700: '#005324',
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              500: '#3B82F6',
+              600: '#2563EB',
+              700: '#1D4ED8',
             },
             amber: {
-              50: '#fff9eb',
-              100: '#fef0c7',
-              400: '#00d166',
-              500: '#006d32',
-              600: '#005324',
+              50: '#F8FAFC',
+              100: '#EFF6FF',
+              400: '#60A5FA',
+              500: '#2563EB',
+              600: '#1E40AF',
             }
           },
           fontFamily: {
@@ -134,9 +136,9 @@
             'full': '9999px'
           },
           boxShadow: {
-            'ambient': '0 24px 44px -12px rgba(11, 28, 48, 0.06)',
-            'zenith': '0 14px 34px rgba(11, 28, 48, 0.04)',
-            'luminous': '0 0 28px rgba(0, 209, 102, 0.28)',
+            'ambient': '0 24px 44px -12px rgba(15, 23, 42, 0.07)',
+            'zenith': '0 14px 34px rgba(15, 23, 42, 0.05)',
+            'luminous': '0 0 28px rgba(37, 99, 235, 0.25)',
           }
         }
       }
@@ -145,7 +147,7 @@
 
   <!-- PWA & Mobile Web App Meta Tags -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#006d32">
+  <meta name="theme-color" content="#0F172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -156,14 +158,14 @@
   <link rel="apple-touch-icon" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="192x192" href="/src/assets/reservas_cr_clean_badge_1.jpg">
 
-  <!-- Custom CSS: The Luminous Engine -->
+  <!-- Custom CSS: Formal Royal Navy & Sapphire -->
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
-<body class="min-h-full flex flex-col antialiased text-[#0b1c30] bg-[#f8f9ff] bg-luminous-gradient selection:bg-[#006d32] selection:text-white overflow-x-hidden w-full max-w-full relative">
+<body class="min-h-full flex flex-col antialiased text-[#0f172a] bg-[#f8fafc] bg-luminous-gradient selection:bg-[#1e40af] selection:text-white overflow-x-hidden w-full max-w-full relative">
 
-  <!-- Luminous Atmospheric Glow Orbs -->
-  <div class="fixed top-[8%] right-[-5%] w-80 h-80 bg-[#00d166]/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
-  <div class="fixed bottom-[12%] left-[-5%] w-96 h-96 bg-[#00629e]/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
+  <!-- Atmospheric Navy / Sapphire Glow Orbs -->
+  <div class="fixed top-[8%] right-[-5%] w-80 h-80 bg-[#3b82f6]/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed bottom-[12%] left-[-5%] w-96 h-96 bg-[#1e40af]/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
 
   <!-- Navbar Container -->
   <div id="navbar-container" class="w-full max-w-full overflow-x-hidden"></div>
@@ -172,13 +174,13 @@
   <main id="main-content" class="flex-1 pb-24 md:pb-12 w-full max-w-full overflow-x-hidden"></main>
 
   <!-- Footer -->
-  <footer id="app-footer" class="bg-white/85 backdrop-blur-md border-t border-[#e5eeff] py-8 px-4 text-center text-xs text-[#727782] mb-14 md:mb-0">
+  <footer id="app-footer" class="bg-white/90 backdrop-blur-md border-t border-[#e2e8f0] py-8 px-4 text-center text-xs text-[#64748b] mb-14 md:mb-0">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
         <img src="/src/assets/logo.png" alt="Reservas CR Logo" class="w-7 h-7 rounded-xl object-contain shadow-xs">
-        <span class="font-headline font-bold text-[#0b1c30] text-sm tracking-tight">Reservas <span class="text-[#006d32]">CR</span></span> &copy; 2026. Todos los derechos reservados.
+        <span class="font-headline font-bold text-[#0f172a] text-sm tracking-tight">Reservas <span class="text-[#2563eb]">CR</span></span> &copy; 2026. Todos los derechos reservados.
       </div>
-      <p class="text-[#727782] font-medium">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
+      <p class="text-[#64748b] font-medium">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
     </div>
   </footer>
 
@@ -192,6 +194,6 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
 
   <!-- App Script (ES Module) -->
-  <script type="module" src="/src/app.js?v=3.2.0"></script>
+  <script type="module" src="/src/app.js?v=3.3.0"></script>
 </body>
 </html>

@@ -1828,10 +1828,10 @@ class App {
         <!-- 1. Banner Principal: Acceso Anticipado / Cupos de Prelanzamiento -->
         ${SHOW_PREREGISTER_BANNER ? `
         <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-amber-500/30">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-blue-500/30">
             <!-- Efectos de Neón y Luces de Fondo -->
-            <div class="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
             <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
               
@@ -1840,18 +1840,18 @@ class App {
                 
                 <!-- Badge Animado -->
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/50 shadow-sm shadow-amber-500/10">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                     <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
                   </span>
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
-                    <i class="fas fa-check-circle text-emerald-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-400/30">
+                    <i class="fas fa-check-circle text-blue-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   </span>
                 </div>
 
                 <!-- Titular de Impacto -->
                 <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">15 Días Gratis</span> a partir del lanzamiento!
+                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
                 <p class="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
@@ -1860,8 +1860,8 @@ class App {
 
                 <!-- Beneficios Destacados -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-amber-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fas fa-gift"></i>
                     </div>
                     <div>
@@ -1878,8 +1878,8 @@ class App {
                       <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
                     </div>
                   </div>
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-emerald-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fab fa-whatsapp"></i>
                     </div>
                     <div>
@@ -1893,16 +1893,16 @@ class App {
                 <div class="pt-2 flex flex-wrap items-center gap-3">
                   <button 
                     id="banner-prereg-btn" 
-                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer animate-pulse"
+                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
-                    <i class="fas fa-gift text-slate-950 text-base"></i>
+                    <i class="fas fa-gift text-blue-300 text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
                   <button 
                     id="banner-view-plans-btn" 
                     class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
-                    <i class="fas fa-tags text-indigo-300"></i>
+                    <i class="fas fa-tags text-blue-300"></i>
                     <span>Ver Planes & Precios</span>
                   </button>
                 </div>
@@ -1911,18 +1911,18 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
-                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-amber-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
+                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-sm font-black shadow-md shadow-amber-500/20">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
                         <h4 class="text-xs font-black text-white leading-none">Tu Negocio Aquí</h4>
-                        <p class="text-[10px] text-amber-300/90 font-medium mt-0.5">reservascr.app</p>
+                        <p class="text-[10px] text-blue-300 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/40">Preventa</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
                   </div>
 
                   <div class="space-y-2 text-xs">
@@ -1931,26 +1931,26 @@ class App {
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Reservas Online</span>
                       </div>
-                      <span class="text-emerald-400 font-bold text-[11px]">24/7</span>
+                      <span class="text-blue-400 font-bold text-[11px]">24/7</span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
+                        <i class="fab fa-whatsapp text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">WhatsApp Auto</span>
                       </div>
                       <span class="text-slate-300 text-[10px]">Instantáneo</span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <i class="fas fa-ban text-rose-400 text-xs"></i>
+                        <i class="fas fa-shield-alt text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Tarjeta requerida</span>
                       </div>
-                      <span class="text-emerald-400 font-black text-[11px]">NO (Gratis)</span>
+                      <span class="text-blue-300 font-black text-[11px]">NO (Gratis)</span>
                     </div>
                   </div>
 
-                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border border-amber-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-amber-300 shadow-xs">
-                    <i class="fas fa-gift text-sm text-amber-400"></i>
+                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-blue-300 shadow-xs">
+                    <i class="fas fa-gift text-sm text-blue-400"></i>
                     <span>15 DÍAS GRATIS AL ESTRENO</span>
                   </div>
                 </div>
@@ -12701,8 +12701,8 @@ class App {
                   <span><strong>¡Registro rápido!</strong> Tus fotos, servicios, horarios, redes sociales y ubicación exacta los podrás personalizar dentro de tu panel en la pestaña <strong>"Configurar Negocio"</strong>.</span>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer">
-                  <i class="fas fa-check-circle"></i>
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/20 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
+                  <i class="fas fa-check-circle text-blue-400"></i>
                   <span>Crear Cuenta y Registrar Negocio</span>
                 </button>
 
@@ -13198,11 +13198,11 @@ class App {
             </button>
             
             <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider border border-amber-400/40">
-                <i class="fas fa-rocket"></i> Preventa & Prelanzamiento Costa Rica 🇨🇷
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/40">
+                <i class="fas fa-rocket text-blue-400"></i> Preventa & Prelanzamiento Costa Rica 🇨🇷
               </span>
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
-                <i class="fas fa-check-circle text-[9px]"></i> Sin Tarjeta
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-600/20 text-blue-200 text-[10px] font-black border border-blue-400/30">
+                <i class="fas fa-check-circle text-[9px] text-blue-400"></i> Sin Tarjeta
               </span>
             </div>
 
@@ -13213,7 +13213,7 @@ class App {
           </div>
 
           <!-- Beneficio Highlight -->
-          <div class="bg-amber-50/90 border-b border-amber-200 px-5 py-2.5 flex items-center gap-2.5 text-xs text-amber-950 font-semibold shrink-0">
+          <div class="bg-blue-50/90 border-b border-blue-200 px-5 py-2.5 flex items-center gap-2.5 text-xs text-blue-950 font-semibold shrink-0">
             <span class="text-base flex-shrink-0">🎁</span>
             <span><strong>0% Pago / 0% Tarjeta hoy:</strong> Te contactaremos por WhatsApp antes del estreno oficial para dejar tu catálogo y horarios listos.</span>
           </div>
@@ -13243,7 +13243,7 @@ class App {
                 <label class="block font-black text-slate-800 mb-1">WhatsApp de Contacto *</label>
                 <div class="relative">
                   <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
-                  <input type="tel" id="prereg-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-2xs">
+                  <input type="tel" id="prereg-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
                 </div>
               </div>
 
@@ -13268,11 +13268,11 @@ class App {
                 ${plans.map(p => `
                   <label class="cursor-pointer">
                     <input type="radio" name="prereg-plan" value="${p.id}" class="sr-only peer" ${p.id === selectedPlanId ? 'checked' : ''}>
-                    <div class="p-2.5 rounded-xl border-2 border-slate-200 bg-white peer-checked:border-amber-500 peer-checked:bg-amber-50/50 peer-checked:shadow-sm text-center transition-all flex flex-col items-center justify-between h-full">
+                    <div class="p-2.5 rounded-xl border-2 border-slate-200 bg-white peer-checked:border-blue-600 peer-checked:bg-blue-50/50 peer-checked:shadow-sm text-center transition-all flex flex-col items-center justify-between h-full">
                       <span class="font-black text-slate-900 text-[11px] block truncate w-full">${p.name}</span>
                       <div class="flex items-center justify-center gap-1 my-0.5 flex-wrap">
                         ${p.originalPriceUsd ? `<span class="text-[10px] text-slate-400 line-through decoration-rose-500 decoration-1 font-bold">$${p.originalPriceUsd}</span>` : ''}
-                        <span class="text-amber-600 font-black text-sm">${p.priceUsd === 0 ? 'Gratis' : '$' + p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">${p.priceUsd === 0 ? '' : '/mes'}</span></span>
+                        <span class="text-blue-600 font-black text-sm">${p.priceUsd === 0 ? 'Gratis' : '$' + p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">${p.priceUsd === 0 ? '' : '/mes'}</span></span>
                       </div>
                       <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' res.'}</span>
                     </div>
@@ -13283,8 +13283,8 @@ class App {
 
             <div id="prereg-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
-            <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
-              <i class="fas fa-gift text-sm"></i>
+            <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-blue-950/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
+              <i class="fas fa-gift text-sm text-blue-300"></i>
               <span>¡Asegurar mis 15 Días Gratis y Pre-registro!</span>
             </button>
             
@@ -13344,11 +13344,11 @@ class App {
           <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
             <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 p-6 sm:p-8 text-center space-y-4">
               
-              <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20 animate-bounce">
+              <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-blue-500/20 animate-bounce border border-blue-100">
                 <i class="fas fa-gift"></i>
               </div>
               
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[11px] font-black uppercase tracking-wider border border-amber-300">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 text-[11px] font-black uppercase tracking-wider border border-blue-200">
                 🎉 ¡Lugar y 15 Días Gratis Reservados!
               </span>
 
@@ -13358,17 +13358,17 @@ class App {
                 Has asegurado tus <strong>15 Días Gratis de prueba completa</strong> a partir del día del lanzamiento oficial + <strong>Configuración asistida de catálogo</strong> para el <strong>${chosenPlanObj.name} ($${chosenPlanObj.priceUsd}/mes)</strong>.
               </p>
 
-              <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-left text-xs space-y-1.5 text-emerald-950">
-                <div class="flex items-center gap-2 font-black text-emerald-800">
-                  <i class="fab fa-whatsapp text-emerald-600 text-base"></i> ¿Qué sigue ahora?
+              <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-left text-xs space-y-1.5 text-slate-200">
+                <div class="flex items-center gap-2 font-black text-blue-400">
+                  <i class="fab fa-whatsapp text-blue-400 text-base"></i> ¿Qué sigue ahora?
                 </div>
-                <p class="text-emerald-900 text-[11px] leading-relaxed">
+                <p class="text-slate-300 text-[11px] leading-relaxed">
                   Te escribiremos a tu WhatsApp <strong>+506 ${this.escapeHtml(phone)}</strong> antes del estreno para darte acceso prioritario y ayudarte a cargar tus servicios, fotos y horarios sin costo.
                 </p>
               </div>
 
               <div class="pt-2 flex flex-col gap-2">
-                <button id="close-success-prereg-btn" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-black shadow-md transition-all cursor-pointer">
+                <button id="close-success-prereg-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white text-xs font-black shadow-md transition-all cursor-pointer">
                   Entendido, ¡muchas gracias!
                 </button>
               </div>
@@ -13407,10 +13407,10 @@ class App {
         <div class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-200 my-auto max-h-[96vh] flex flex-col">
           
           <!-- Header Compacto -->
-          <div class="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 px-5 py-3.5 sm:px-6 sm:py-4 text-white flex items-center justify-between shrink-0 border-b border-indigo-900/50">
+          <div class="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 px-5 py-3.5 sm:px-6 sm:py-4 text-white flex items-center justify-between shrink-0 border-b border-blue-900/40">
             <div>
-              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400/30 via-yellow-400/30 to-amber-400/30 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-1 border border-amber-400/50 shadow-xs">
-                <i class="fas fa-fire text-amber-400 text-[10px]"></i> Precios de Prelanzamiento • Tarifa Congelada
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-1 border border-blue-400/30 shadow-xs">
+                <i class="fas fa-sparkles text-blue-400 text-[10px]"></i> Precios de Prelanzamiento • Tarifa Congelada
               </div>
               <h3 class="text-base sm:text-xl font-black">Elige el plan ideal para tu comercio</h3>
               <p class="text-xs text-slate-300 hidden sm:block">Asegura tu precio de preventa con descuento especial o comienza 100% gratis de por vida.</p>
@@ -13430,11 +13430,11 @@ class App {
                 const isUnlimited = plan.id === 'unlimited';
 
                 return `
-                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isFree ? 'border-emerald-400 shadow-md ring-1 ring-emerald-400/30' : isPro ? 'border-amber-400 shadow-md ring-1 ring-amber-400/30' : isUnlimited ? 'border-purple-300 shadow-xs' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-slate-400">
+                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isPro ? 'border-blue-600 shadow-lg ring-1 ring-blue-500/30' : isFree ? 'border-slate-300 shadow-sm' : isUnlimited ? 'border-indigo-400 shadow-md ring-1 ring-indigo-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-blue-400">
                     
                     ${plan.badge ? `
                       <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isFree ? 'bg-emerald-500 text-white font-black' : isPro ? 'bg-amber-400 text-slate-950 font-black' : isUnlimited ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'}">
+                        <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${isPro ? 'bg-gradient-to-r from-blue-900 to-blue-600 text-white font-black' : isFree ? 'bg-slate-800 text-white font-black' : isUnlimited ? 'bg-indigo-700 text-white' : 'bg-blue-600 text-white'}">
                           ${plan.badge}
                         </span>
                       </div>
@@ -13444,7 +13444,7 @@ class App {
                       <!-- Nombre del Plan e Icono -->
                       <div class="flex items-center justify-between mb-1 mt-0.5">
                         <h4 class="text-base font-extrabold text-slate-900">${plan.name}</h4>
-                        <span class="w-7 h-7 rounded-lg ${isFree ? 'bg-emerald-100 text-emerald-700' : isPro ? 'bg-amber-100 text-amber-700' : isUnlimited ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
+                        <span class="w-7 h-7 rounded-lg ${isPro ? 'bg-blue-100 text-blue-800' : isFree ? 'bg-slate-100 text-slate-700' : isUnlimited ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'} flex items-center justify-center text-xs">
                           <i class="fas ${isUnlimited ? 'fa-infinity' : isPro ? 'fa-star' : isFree ? 'fa-gift' : 'fa-rocket'}"></i>
                         </span>
                       </div>
@@ -13456,14 +13456,14 @@ class App {
                         <div class="flex items-baseline justify-between flex-wrap gap-1">
                           <div class="flex items-baseline gap-1.5 flex-wrap">
                             ${isFree ? `
-                              <span class="text-2xl sm:text-3xl font-black text-emerald-600">₡0</span>
+                              <span class="text-2xl sm:text-3xl font-black text-slate-900">₡0</span>
                               <span class="text-[10px] text-slate-500 font-bold uppercase">De por vida</span>
-                              <span class="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase tracking-tight">100% Gratis</span>
+                              <span class="px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[9px] font-black uppercase tracking-tight">100% Gratis</span>
                             ` : `
                               ${plan.originalPriceUsd ? `
                                 <span class="text-xs sm:text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$${plan.originalPriceUsd}</span>
                               ` : ''}
-                              <span class="text-2xl sm:text-3xl font-black ${isPro ? 'text-amber-600' : isUnlimited ? 'text-purple-600' : 'text-slate-900'}">$${plan.priceUsd}</span>
+                              <span class="text-2xl sm:text-3xl font-black ${isPro ? 'text-blue-700' : isUnlimited ? 'text-indigo-700' : 'text-slate-900'}">$${plan.priceUsd}</span>
                               <span class="text-[10px] text-slate-500 font-bold uppercase">USD/mes</span>
                               <span class="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 text-[9px] font-black uppercase tracking-tight">Lanzamiento</span>
                             `}
@@ -13476,12 +13476,12 @@ class App {
 
                       <!-- Capacidad / Límites -->
                       <div class="grid grid-cols-2 gap-1.5 mb-2.5">
-                        <div class="p-1.5 rounded-lg ${isFree ? 'bg-emerald-50 text-emerald-900 border border-emerald-200' : isPro ? 'bg-amber-50 text-amber-900 border border-amber-200' : isUnlimited ? 'bg-purple-50 text-purple-900 border border-purple-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
+                        <div class="p-1.5 rounded-lg ${isPro ? 'bg-blue-50 text-blue-900 border border-blue-200' : isFree ? 'bg-slate-100 text-slate-900 border border-slate-200' : isUnlimited ? 'bg-indigo-50 text-indigo-900 border border-indigo-200' : 'bg-blue-50 text-blue-900 border border-blue-200'} text-[10px] font-bold flex items-center justify-center gap-1 text-center">
                           <i class="fas ${isUnlimited ? 'fa-infinity text-[9px]' : 'fa-calendar-check text-[9px]'}"></i>
                           <span class="truncate">${plan.bookingLimitLabel}</span>
                         </div>
                         <div class="p-1.5 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 text-[10px] font-bold flex items-center justify-center gap-1 text-center">
-                          <i class="fas ${isUnlimited ? 'fa-users text-purple-600 text-[9px]' : (plan.staffLimit > 1 ? 'fa-users text-amber-600 text-[9px]' : 'fa-user text-blue-600 text-[9px]')}"></i>
+                          <i class="fas ${isUnlimited ? 'fa-users text-indigo-600 text-[9px]' : (plan.staffLimit > 1 ? 'fa-users text-blue-700 text-[9px]' : 'fa-user text-blue-600 text-[9px]')}"></i>
                           <span class="truncate">${plan.staffLimitLabel}</span>
                         </div>
                       </div>
@@ -13490,7 +13490,7 @@ class App {
                       <ul class="space-y-1.5 text-[11px] text-slate-600">
                         ${plan.features.slice(0, 5).map(f => `
                           <li class="flex items-start gap-1.5 leading-tight">
-                            <i class="fas fa-check-circle text-emerald-500 mt-0.5 text-[10px] flex-shrink-0"></i>
+                            <i class="fas fa-check-circle text-blue-600 mt-0.5 text-[10px] flex-shrink-0"></i>
                             <span>${f}</span>
                           </li>
                         `).join('')}
@@ -13500,12 +13500,12 @@ class App {
                     <!-- Botón de Acción: Seleccionar Plan -->
                     <div class="mt-3.5 pt-2.5 border-t border-slate-100">
                       ${isCurrent ? `
-                        <button disabled class="w-full py-2.5 bg-emerald-100 text-emerald-800 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
-                          <i class="fas fa-check-circle"></i> Tu Plan Actual
+                        <button disabled class="w-full py-2.5 bg-blue-100 text-blue-900 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-default">
+                          <i class="fas fa-check-circle text-blue-600"></i> Tu Plan Actual
                         </button>
                       ` : `
                         <button 
-                          class="select-plan-btn w-full py-2.5 ${isFree ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20' : isPro ? 'bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 shadow-md shadow-amber-500/20' : isUnlimited ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-md shadow-purple-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
+                          class="select-plan-btn w-full py-2.5 ${isPro ? 'bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white shadow-md shadow-blue-950/20' : isFree ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20' : isUnlimited ? 'bg-gradient-to-r from-indigo-950 via-indigo-900 to-indigo-700 hover:from-indigo-900 hover:to-indigo-600 text-white shadow-md shadow-indigo-900/20' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/20'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
                           data-plan-id="${plan.id}"
                         >
                           <span>${isFree ? 'Elegir Plan Gratis' : `Elegir Plan ($${plan.priceUsd}/mes)`}</span>
@@ -13522,7 +13522,7 @@ class App {
           <!-- Footer Seguro Compacto -->
           <div class="px-5 py-2.5 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 shrink-0">
             <div class="flex items-center gap-1.5">
-              <i class="fas fa-gift text-amber-500 text-xs"></i>
+              <i class="fas fa-gift text-blue-600 text-xs"></i>
               <span class="text-slate-700 font-semibold">15 Días Gratis de prueba del Plan Pro o Plan Gratis de por vida. Sin compromisos.</span>
             </div>
             <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica 🇨🇷</span>
@@ -13598,30 +13598,30 @@ class App {
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col">
           
           <!-- Header -->
-          <div class="p-6 bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white relative border-b border-emerald-800/40">
+          <div class="p-6 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white relative border-b border-blue-900/40">
             <button id="close-sinpe-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-xs"></i>
             </button>
-            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-emerald-400/30">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30">
               <i class="fas fa-mobile-alt"></i> Pago Oficial Costa Rica 🇨🇷
             </div>
             <h3 class="text-xl font-black text-white">Pago con SINPE Móvil</h3>
-            <p class="text-xs text-emerald-100/90 mt-0.5">Activa tu suscripción de forma rápida y directa.</p>
+            <p class="text-xs text-slate-300 mt-0.5">Activa tu suscripción de forma rápida y directa.</p>
           </div>
 
           <!-- Resumen del Plan -->
-          <div class="p-4 bg-emerald-50/70 border-b border-emerald-100 space-y-2 text-xs">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 space-y-2 text-xs">
             <div class="flex items-center justify-between">
               <span class="text-slate-600 font-semibold">Comercio:</span>
               <strong class="text-slate-900 font-black">${this.escapeHtml(bizName)}</strong>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-600 font-semibold">Plan Seleccionado:</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-emerald-200 text-emerald-950 font-bold">${plan.name}</span>
+              <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-950 font-bold">${plan.name}</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-600 font-semibold">Monto a Transferir:</span>
-              <span class="text-base font-black text-emerald-700">${amountCrc} CRC <span class="text-xs font-normal text-slate-500">(${amountUsd})</span></span>
+              <span class="text-base font-black text-blue-700">${amountCrc} CRC <span class="text-xs font-normal text-slate-500">(${amountUsd})</span></span>
             </div>
             <div class="flex items-center justify-between text-[11px] text-slate-500">
               <span>Frecuencia:</span>
@@ -13631,35 +13631,35 @@ class App {
 
           <!-- Datos de Transferencia SINPE Móvil -->
           <div class="p-5 space-y-4 text-xs">
-            <div class="p-4 rounded-2xl bg-slate-900 text-white space-y-3 shadow-md border border-slate-800">
+            <div class="p-4 rounded-2xl bg-slate-950 text-white space-y-3 shadow-md border border-slate-800">
               <div class="flex items-center justify-between text-slate-400 text-[11px] uppercase tracking-wider font-bold">
-                <span><i class="fas fa-university mr-1 text-emerald-400"></i> Datos del SINPE Móvil</span>
-                <span class="text-emerald-400">Paso 1 de 2</span>
+                <span><i class="fas fa-university mr-1 text-blue-400"></i> Datos del SINPE Móvil</span>
+                <span class="text-blue-400">Paso 1 de 2</span>
               </div>
               
               <!-- Número SINPE con Copiado -->
-              <div class="flex items-center justify-between bg-slate-800/90 p-3 rounded-xl border border-slate-700">
+              <div class="flex items-center justify-between bg-slate-900/90 p-3 rounded-xl border border-slate-800">
                 <div>
                   <span class="text-[10px] text-slate-400 block font-medium">Número de Teléfono:</span>
-                  <span class="text-lg font-mono font-black text-emerald-400 tracking-wider" id="sinpe-phone-display">${sinpePhoneFormatted}</span>
+                  <span class="text-lg font-mono font-black text-blue-400 tracking-wider" id="sinpe-phone-display">${sinpePhoneFormatted}</span>
                 </div>
-                <button id="copy-sinpe-phone-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs">
+                <button id="copy-sinpe-phone-btn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs">
                   <i class="fas fa-copy"></i>
                   <span>Copiar</span>
                 </button>
               </div>
 
               <!-- Titular -->
-              <div class="bg-slate-800/90 p-3 rounded-xl border border-slate-700">
+              <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800">
                 <span class="text-[10px] text-slate-400 block font-medium">Nombre del Titular:</span>
                 <span class="text-sm font-black text-white">${sinpeTitular}</span>
               </div>
             </div>
 
             <!-- Paso 2: Instrucción de WhatsApp -->
-            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 space-y-2">
+            <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 text-blue-950 space-y-2">
               <div class="flex items-start gap-2.5">
-                <i class="fab fa-whatsapp text-emerald-600 text-lg flex-shrink-0 mt-0.5"></i>
+                <i class="fab fa-whatsapp text-blue-600 text-lg flex-shrink-0 mt-0.5"></i>
                 <div class="space-y-1">
                   <span class="font-black text-xs block text-slate-900 uppercase tracking-wide">Paso 2: Envío de Comprobante</span>
                   <p class="text-xs text-slate-700 leading-relaxed">
@@ -13675,7 +13675,7 @@ class App {
                 href="${whatsappUrl}" 
                 target="_blank" 
                 id="sinpe-send-whatsapp-btn" 
-                class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 transition-all cursor-pointer"
+                class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-950/25 transition-all cursor-pointer"
               >
                 <i class="fab fa-whatsapp text-base"></i>
                 <span>Enviar Comprobante por WhatsApp</span>
@@ -13751,12 +13751,12 @@ class App {
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col">
           
           <!-- Header -->
-          <div class="p-6 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white relative border-b border-indigo-900/50">
+          <div class="p-6 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white relative border-b border-blue-900/50">
             <button id="close-paypal-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
               <i class="fas fa-times text-xs"></i>
             </button>
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-400/30">
-              <i class="fab fa-paypal"></i> Pasarela de Pago Seguro
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30">
+              <i class="fab fa-paypal text-blue-400"></i> Pasarela de Pago Seguro
             </div>
             <h3 class="text-xl font-black text-white">Activar ${plan.name}</h3>
             <p class="text-xs text-slate-300 mt-0.5">Suscripción Mensual (30 Días) &bull; <strong>$${plan.priceUsd} USD</strong> (~${amountCrc} CRC)</p>
@@ -13770,7 +13770,7 @@ class App {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Plan seleccionado:</span>
-              <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800 font-bold">${plan.name} ($${plan.priceUsd})</span>
+              <span class="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-900 font-bold">${plan.name} ($${plan.priceUsd})</span>
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Duración activa:</span>
@@ -13778,7 +13778,7 @@ class App {
             </div>
             <div class="flex items-center justify-between">
               <span class="text-slate-500 font-semibold">Límite:</span>
-              <span class="text-emerald-700 font-bold">${plan.bookingLimitLabel}</span>
+              <span class="text-blue-700 font-bold">${plan.bookingLimitLabel}</span>
             </div>
           </div>
 
@@ -13815,15 +13815,15 @@ class App {
               <button 
                 type="button" 
                 id="paypal-switch-to-sinpe-btn" 
-                class="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
-                <i class="fas fa-mobile-alt text-emerald-600"></i>
+                <i class="fas fa-mobile-alt text-blue-600"></i>
                 <span>Pagar con SINPE Móvil (~${amountCrc} CRC)</span>
               </button>
             </div>
 
             <div class="pt-1 text-[11px] text-slate-400 text-center leading-tight flex items-center justify-center gap-1.5">
-              <i class="fas fa-shield-alt text-emerald-600"></i>
+              <i class="fas fa-shield-alt text-blue-600"></i>
               <span>Procesado de forma 100% segura por PayPal. Pago único sin cargos automáticos.</span>
             </div>
           </div>
@@ -13886,7 +13886,7 @@ class App {
           if (btnContainer) {
             btnContainer.innerHTML = `
               <div class="py-8 text-center space-y-2">
-                <i class="fas fa-circle-notch fa-spin text-2xl text-emerald-600"></i>
+                <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
                 <p class="text-xs font-bold text-slate-800">Verificando y activando tu plan...</p>
               </div>
             `;
@@ -13899,14 +13899,14 @@ class App {
             modalContainer.innerHTML = `
               <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
                 <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 my-6 p-6 text-center space-y-4">
-                  <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-emerald-500/20 animate-bounce">
+                  <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-blue-500/20 border border-blue-200 animate-bounce">
                     <i class="fas fa-check-circle"></i>
                   </div>
                   <h3 class="text-xl font-black text-slate-900">¡Plan Activado!</h3>
                   <p class="text-xs text-slate-600">
                     Tu <strong>${plan.name} ($${plan.priceUsd})</strong> está activo por <strong>${durationLabel}</strong>. Puedes usar todas sus funciones de inmediato. ID de orden: <code>${data.orderID}</code>.
                   </p>
-                  <button id="close-paypal-success-btn" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black transition-all cursor-pointer">
+                  <button id="close-paypal-success-btn" class="w-full py-3 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-black transition-all cursor-pointer">
                     Continuar a mi Panel
                   </button>
                 </div>
@@ -14010,7 +14010,7 @@ class App {
             <!-- ID y Tipo -->
             <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
               <span class="text-slate-500 font-medium">ID del Comercio: <strong class="font-mono text-slate-800">${biz.id}</strong></span>
-              <span class="px-2.5 py-0.5 rounded-md font-bold ${biz.isDemo ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'}">
+              <span class="px-2.5 py-0.5 rounded-md font-bold ${biz.isDemo ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">
                 ${biz.isDemo ? 'Comercio de Muestra' : 'Comercio Real'}
               </span>
             </div>
@@ -14054,7 +14054,6 @@ class App {
 
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Correo Electrónico</label>
-                <input type="email" id="edit-biz-email" value="${this.escapeHtml(biz.email || '')}" placeholder="contacto@negocio.cr" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 foc
                 <input type="email" id="edit-biz-email" value="${this.escapeHtml(biz.email || '')}" placeholder="contacto@negocio.cr" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
@@ -14134,17 +14133,17 @@ class App {
             </div>
 
             <!-- Verificación Oficial de Comercio (Developer / SuperAdmin) -->
-            <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
+            <div class="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
               <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shadow-xs flex-shrink-0">
+                <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-sm shadow-xs flex-shrink-0">
                   <i class="fas fa-shield-alt"></i>
                 </div>
                 <div>
-                  <label for="edit-biz-verified" class="font-extrabold text-emerald-950 text-xs block cursor-pointer">Comercio Verificado Oficialmente</label>
-                  <span class="text-[11px] text-emerald-800">Muestra la insignia verde de verificación oficial en la tarjeta del directorio y en su perfil público.</span>
+                  <label for="edit-biz-verified" class="font-extrabold text-blue-950 text-xs block cursor-pointer">Comercio Verificado Oficialmente</label>
+                  <span class="text-[11px] text-blue-800">Muestra la insignia azul real de verificación oficial en la tarjeta del directorio y en su perfil público.</span>
                 </div>
               </div>
-              <input type="checkbox" id="edit-biz-verified" ${biz.isVerified ? 'checked' : ''} class="w-5 h-5 text-emerald-600 rounded-md border-slate-300 focus:ring-emerald-500 cursor-pointer">
+              <input type="checkbox" id="edit-biz-verified" ${biz.isVerified ? 'checked' : ''} class="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer">
             </div>
 
             <!-- Botones de Acción -->
@@ -14152,7 +14151,7 @@ class App {
               <button type="button" id="cancel-edit-biz-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
                 Cancelar
               </button>
-              <button type="submit" id="save-edit-biz-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md shadow-blue-500/20 transition-all flex items-center gap-1.5 cursor-pointer">
+              <button type="submit" id="save-edit-biz-btn" class="px-5 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-black shadow-md shadow-blue-950/20 transition-all flex items-center gap-1.5 cursor-pointer">
                 <i class="fas fa-save"></i>
                 <span>Guardar Cambios</span>
               </button>
@@ -14295,11 +14294,11 @@ class App {
           
           <div class="flex items-center justify-between pb-4 border-b border-slate-100">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg font-black shadow-xs">
-                <i class="fas fa-rocket"></i>
+              <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center text-lg font-black shadow-xs">
+                <i class="fas fa-rocket text-blue-600"></i>
               </div>
               <div>
-                <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">SuperAdmin Dev</span>
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">SuperAdmin Dev</span>
                 <h3 class="text-lg font-black text-slate-900">Modificar Pre-Registro</h3>
               </div>
             </div>
@@ -14317,40 +14316,40 @@ class App {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Nombre del Comercio / Negocio *</label>
-                <input type="text" id="edit-prereg-biz-name" value="${this.escapeHtml(pr.businessName || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <input type="text" id="edit-prereg-biz-name" value="${this.escapeHtml(pr.businessName || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Persona de Contacto *</label>
-                <input type="text" id="edit-prereg-contact-name" value="${this.escapeHtml(pr.contactName || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <input type="text" id="edit-prereg-contact-name" value="${this.escapeHtml(pr.contactName || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Teléfono / WhatsApp (+506) *</label>
-                <input type="tel" id="edit-prereg-phone" value="${this.escapeHtml(pr.phone || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <input type="tel" id="edit-prereg-phone" value="${this.escapeHtml(pr.phone || '')}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Correo Electrónico</label>
-                <input type="email" id="edit-prereg-email" value="${this.escapeHtml(pr.email || '')}" placeholder="negocio@ejemplo.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <input type="email" id="edit-prereg-email" value="${this.escapeHtml(pr.email || '')}" placeholder="negocio@ejemplo.com" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Provincia / Cantón</label>
-                <input type="text" id="edit-prereg-city" value="${this.escapeHtml(pr.city || '')}" placeholder="Ej. San José, Escazú" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <input type="text" id="edit-prereg-city" value="${this.escapeHtml(pr.city || '')}" placeholder="Ej. San José, Escazú" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Categoría</label>
-                <input type="text" id="edit-prereg-cat" value="${this.escapeHtml(pr.category || '')}" placeholder="Ej. Belleza y Barbería" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <input type="text" id="edit-prereg-cat" value="${this.escapeHtml(pr.category || '')}" placeholder="Ej. Belleza y Barbería" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
               </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Plan de Interés</label>
-                <select id="edit-prereg-plan" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <select id="edit-prereg-plan" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   <option value="free" ${pr.planInterest === 'free' ? 'selected' : ''}>Plan Gratis (₡0)</option>
                   <option value="basic" ${pr.planInterest === 'basic' ? 'selected' : ''}>Plan Básico ($10)</option>
                   <option value="pro" ${pr.planInterest === 'pro' || !pr.planInterest ? 'selected' : ''}>Plan Pro ($18)</option>
@@ -14359,7 +14358,7 @@ class App {
               </div>
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Estado / Bloqueo</label>
-                <select id="edit-prereg-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <select id="edit-prereg-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                   <option value="pending" ${!pr.isBlocked ? 'selected' : ''}>🟡 Pendiente de Contacto</option>
                   <option value="contacted" ${pr.status === 'contacted' ? 'selected' : ''}>💬 Contactado</option>
                   <option value="active" ${pr.status === 'active' ? 'selected' : ''}>🟢 Activado en la Plataforma</option>
@@ -14384,7 +14383,7 @@ class App {
               <button type="button" id="cancel-edit-prereg-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
                 Cancelar
               </button>
-              <button type="submit" id="save-edit-prereg-btn" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer">
+              <button type="submit" id="save-edit-prereg-btn" class="px-5 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-black shadow-md shadow-blue-950/20 transition-all flex items-center gap-1.5 cursor-pointer">
                 <i class="fas fa-save"></i>
                 <span>Guardar Cambios</span>
               </button>
@@ -14648,8 +14647,8 @@ class App {
                 <!-- Validación inline -->
                 <div id="forgot-inline-pass-error" class="hidden p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
 
-                <button type="submit" id="forgot-reset-submit-btn" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                  <i class="fas fa-check-circle"></i>
+                <button type="submit" id="forgot-reset-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl font-bold shadow-md shadow-blue-950/20 transition-all flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
+                  <i class="fas fa-check-circle text-blue-400"></i>
                   <span>Guardar y Restablecer Contraseña</span>
                 </button>
               </form>
@@ -14734,12 +14733,12 @@ class App {
           inlineBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden.</span>';
           return false;
         } else if (v1.length >= 6 && v1 === v2) {
-          inlineBox.className = 'p-2 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
-          inlineBox.innerHTML = '<i class="fas fa-check-circle text-emerald-600 text-sm flex-shrink-0"></i> <span>¡Las contraseñas coinciden!</span>';
+          inlineBox.className = 'p-2 bg-blue-50 border border-blue-300 text-blue-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          inlineBox.innerHTML = '<i class="fas fa-check-circle text-blue-600 text-sm flex-shrink-0"></i> <span>¡Las contraseñas coinciden!</span>';
           return true;
         } else if (v1.length > 0 && v1.length < 6) {
-          inlineBox.className = 'p-2 bg-amber-50 border border-amber-300 text-amber-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
-          inlineBox.innerHTML = '<i class="fas fa-info-circle text-amber-600 text-sm flex-shrink-0"></i> <span>Mínimo 6 caracteres.</span>';
+          inlineBox.className = 'p-2 bg-slate-100 border border-slate-300 text-slate-800 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          inlineBox.innerHTML = '<i class="fas fa-info-circle text-blue-600 text-sm flex-shrink-0"></i> <span>Mínimo 6 caracteres.</span>';
           return false;
         } else {
           inlineBox.className = 'hidden';
@@ -14853,12 +14852,12 @@ class App {
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6 sm:p-7 text-center">
-          <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+          <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-700 flex items-center justify-center text-2xl mx-auto mb-4 border border-blue-200 shadow-inner">
             <i class="fas fa-lock"></i>
           </div>
           
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-300">
-            <i class="fas fa-tags"></i> Límite de Servicios Alcanzado (5/5)
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-200">
+            <i class="fas fa-tags text-blue-600"></i> Límite de Servicios Alcanzado (5/5)
           </div>
 
           <h3 class="text-xl font-black text-slate-900">¿Deseas agregar más servicios?</h3>
@@ -14868,22 +14867,22 @@ class App {
 
           <div class="my-5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-emerald-500"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span>Catálogo de servicios 100% ilimitado</span>
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-emerald-500"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span>Hasta 150 o 300+ reservas cada mes</span>
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-emerald-500"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span>Confirmaciones automáticas por correo y WhatsApp</span>
             </div>
           </div>
 
           <div class="space-y-2">
-            <button id="upgrade-from-srv-limit-btn" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer">
-              <i class="fas fa-rocket"></i> Ver Planes y Mejorar Ahora
+            <button id="upgrade-from-srv-limit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-blue-950/25 flex items-center justify-center gap-2 transition-all cursor-pointer">
+              <i class="fas fa-rocket text-blue-300"></i> Ver Planes y Mejorar Ahora
             </button>
             <button id="close-srv-limit-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-colors cursor-pointer">
               Continuar con 5 Servicios
@@ -14914,12 +14913,12 @@ class App {
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6 sm:p-7 text-center">
-          <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+          <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-700 flex items-center justify-center text-2xl mx-auto mb-4 border border-blue-200 shadow-inner">
             <i class="fas fa-users-slash"></i>
           </div>
           
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider mb-2 border border-amber-300">
-            <i class="fas fa-lock"></i> ${isBasicOrFree ? 'Función de Múltiples Especialistas' : 'Límite de Especialistas Alcanzado (5/5)'}
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-200">
+            <i class="fas fa-lock text-blue-600"></i> ${isBasicOrFree ? 'Función de Múltiples Especialistas' : 'Límite de Especialistas Alcanzado (5/5)'}
           </div>
 
           <h3 class="text-xl font-black text-slate-900">
@@ -14933,26 +14932,26 @@ class App {
 
           <div class="my-5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-purple-600"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span><strong>Especialistas y colaboradores 100% ilimitados</strong></span>
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-emerald-500"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span><strong>Reservas mensuales sin límite</strong> (sin topes)</span>
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-blue-500"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span>Horarios, recesos y descansos propios por especialista</span>
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
-              <i class="fas fa-check-circle text-amber-500"></i>
+              <i class="fas fa-check-circle text-blue-600"></i>
               <span>Insignia oficial de Negocio Verificado en el directorio</span>
             </div>
           </div>
 
           <div class="space-y-2">
-            <button id="upgrade-from-staff-limit-btn" class="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-purple-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
-              <i class="fas fa-crown text-amber-300"></i>
+            <button id="upgrade-from-staff-limit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-blue-950/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
+              <i class="fas fa-crown text-blue-300"></i>
               <span>${isBasicOrFree ? 'Subir a Plan Profesional ($18/mes)' : 'Subir a Plan Ilimitado ($35/mes)'}</span>
             </button>
             <button id="close-staff-limit-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-colors cursor-pointer">
@@ -15154,7 +15153,7 @@ class App {
         <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
             <div>
-              <span class="text-xs font-bold text-emerald-600 uppercase">Onboarding de Comercios 🇨🇷</span>
+              <span class="text-xs font-bold text-blue-600 uppercase">Onboarding de Comercios 🇨🇷</span>
               <h3 class="text-xl font-extrabold text-slate-900">Registrar Nuevo Establecimiento</h3>
             </div>
             <button id="close-biz-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
@@ -15253,7 +15252,7 @@ class App {
             <!-- Primer Servicio -->
             <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
               <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                <i class="fas fa-tag mr-1 text-emerald-600"></i> Primer Servicio
+                <i class="fas fa-tag mr-1 text-blue-600"></i> Primer Servicio
               </span>
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -15266,8 +15265,8 @@ class App {
               </div>
             </div>
 
-            <button type="submit" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold shadow-lg shadow-emerald-500/25 transition-all text-sm flex items-center justify-center gap-2">
-              <i class="fas fa-check-circle"></i>
+            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
+              <i class="fas fa-check-circle text-blue-400"></i>
               <span>Crear Cuenta y Registrar Negocio</span>
             </button>
           </form>
@@ -15506,8 +15505,8 @@ class App {
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
                   <i class="fas fa-shield-alt"></i> Marco Legal & Confidencialidad
                 </span>
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
-                  <i class="fas fa-certificate text-[9px]"></i> Ley N° 8968 Costa Rica 🇨🇷
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-600/20 text-blue-200 text-[10px] font-black border border-blue-400/30">
+                  <i class="fas fa-certificate text-[9px] text-blue-400"></i> Ley N° 8968 Costa Rica 🇨🇷
                 </span>
               </div>
 
@@ -15597,11 +15596,11 @@ class App {
               ` : `
                 <!-- POLÍTICA DE PRIVACIDAD Y TRATAMIENTO DE DATOS -->
                 <div class="space-y-4 animate-fade-in">
-                  <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950">
-                    <h3 class="font-black text-sm mb-1 flex items-center gap-2 text-emerald-900">
-                      <i class="fas fa-user-lock text-emerald-600"></i> Cumplimiento con Ley N° 8968 (Costa Rica)
+                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950">
+                    <h3 class="font-black text-sm mb-1 flex items-center gap-2 text-blue-900">
+                      <i class="fas fa-user-lock text-blue-600"></i> Cumplimiento con Ley N° 8968 (Costa Rica)
                     </h3>
-                    <p class="text-xs text-emerald-800 leading-relaxed">
+                    <p class="text-xs text-blue-800 leading-relaxed">
                       Garantizamos la privacidad y seguridad de los datos personales recopilados, respetando el derecho a la autodeterminación informativa de todos nuestros usuarios.
                     </p>
                   </div>
@@ -15617,15 +15616,15 @@ class App {
                   </section>
 
                   <!-- CLÁUSULA DESTACADA DE TITULARIDAD EXCLUSIVA DEL COMERCIO -->
-                  <section class="p-4.5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 space-y-2 text-amber-950 shadow-xs">
-                    <h4 class="font-black text-amber-900 text-sm flex items-center gap-2">
-                      <i class="fas fa-store-alt text-amber-600"></i>
+                  <section class="p-4.5 rounded-2xl bg-slate-900 border-2 border-slate-800 space-y-2 text-white shadow-xs">
+                    <h4 class="font-black text-blue-300 text-sm flex items-center gap-2">
+                      <i class="fas fa-store-alt text-blue-400"></i>
                       2. Titularidad, Uso y Descarga Exclusiva de Datos por el Comercio
                     </h4>
-                    <p class="text-xs sm:text-sm font-medium leading-relaxed">
+                    <p class="text-xs sm:text-sm font-medium leading-relaxed text-slate-200">
                       <strong>Los únicos autorizados y con derecho legal a acceder, registrar, consultar y descargar los datos de los clientes son exclusivamente los propios comercios</strong> con los que el usuario ha solicitado un servicio o cita.
                     </p>
-                    <ul class="list-disc list-inside space-y-1 text-xs text-amber-900 pt-1 font-semibold">
+                    <ul class="list-disc list-inside space-y-1 text-xs text-slate-300 pt-1 font-semibold">
                       <li><strong>Registro y control de ventas:</strong> Los comercios utilizan la información de sus clientes para llevar su control administrativo, historial de atención y facturación.</li>
                       <li><strong>Programas de cliente frecuente y promociones:</strong> El comercio puede contactar a sus propios clientes con descuentos, promociones directas o fidelización por frecuencia.</li>
                       <li><strong>Exportación y descarga de reportes:</strong> El comercio es el único facultado para descargar sus listados de clientes y reportes de citas en formato digital (Excel .xlsx / PDF) para su gestión contable y operativa interna.</li>
@@ -15668,10 +15667,10 @@ class App {
             <!-- Footer Modal -->
             <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
-                <i class="fas fa-lock text-emerald-600"></i>
+                <i class="fas fa-lock text-blue-600"></i>
                 <span>Última actualización: Septiembre 2026 • Reservas CR</span>
               </div>
-              <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
+              <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
                 Entendido y de Acuerdo
               </button>
             </div>
