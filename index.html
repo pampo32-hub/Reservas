@@ -1,41 +1,150 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-slate-50 overflow-x-hidden w-full max-w-full">
+<html lang="es" class="h-full bg-[#f8faf3] overflow-x-hidden w-full max-w-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Reservas CR - Directorio de Negocios y Citas Online</title>
   
+  <!-- Google Fonts: Manrope & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  
+  <!-- Google Material Symbols & FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script>
     tailwind.config = {
+      darkMode: "class",
       theme: {
         extend: {
           colors: {
+            // Digital Sanctuary & Breathable Interface Official Palette
+            primary: {
+              DEFAULT: '#55624d',
+              dark: '#3e4b3a',
+              container: '#98a68e',
+              fixed: '#d9e7cd',
+              'fixed-dim': '#bdcbb2',
+              'on-container': '#2f3c29',
+              'on-fixed': '#131e0e',
+            },
+            secondary: {
+              DEFAULT: '#755754',
+              container: '#fed7d2',
+              'on-container': '#795b58',
+              'fixed-dim': '#e3beba',
+              'fixed': '#ffdad6',
+            },
+            surface: {
+              DEFAULT: '#f8faf3',
+              bright: '#f8faf3',
+              dim: '#d8dbd4',
+              'container-lowest': '#ffffff',
+              'container-low': '#f2f4ed',
+              'container': '#ecefe8',
+              'container-high': '#e7e9e2',
+              'container-highest': '#e1e3dc',
+            },
+            outline: {
+              DEFAULT: '#757870',
+              variant: '#c5c8be',
+            },
+            'on-surface': {
+              DEFAULT: '#191c18',
+              variant: '#444841',
+            },
+            // Legacy Tailwind Color Harmonization
+            blue: {
+              50: '#f2f4ed',
+              100: '#d9e7cd',
+              200: '#bdcbb2',
+              300: '#98a68e',
+              400: '#788a70',
+              500: '#55624d',
+              600: '#485744',
+              700: '#3e4b3a',
+              800: '#2f3c29',
+              900: '#191c18',
+            },
             brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              900: '#1e3a8a',
+              50: '#f2f4ed',
+              100: '#d9e7cd',
+              500: '#98a68e',
+              600: '#55624d',
+              700: '#3e4b3a',
+              900: '#191c18',
+            },
+            slate: {
+              50: '#f8faf3',
+              100: '#f2f4ed',
+              200: '#ecefe8',
+              300: '#e1e3dc',
+              400: '#c5c8be',
+              500: '#757870',
+              600: '#605f56',
+              700: '#444841',
+              800: '#2e312d',
+              900: '#191c18',
+              950: '#131e0e',
+            },
+            indigo: {
+              50: '#f2f4ed',
+              100: '#fed7d2',
+              600: '#55624d',
+              700: '#3e4b3a',
+              800: '#2f3c29',
+              900: '#191c18',
+              950: '#131e0e',
+            },
+            purple: {
+              50: '#fff0ee',
+              100: '#fed7d2',
+              200: '#e3beba',
+              600: '#755754',
+              700: '#755754',
+              800: '#5b403d',
+              900: '#2b1614',
+            },
+            amber: {
+              50: '#fef6ea',
+              100: '#fed7d2',
+              300: '#d9e7cd',
+              400: '#98a68e',
+              500: '#755754',
+              600: '#5b403d',
             }
+          },
+          fontFamily: {
+            headline: ["Manrope", "sans-serif"],
+            body: ["Plus Jakarta Sans", "sans-serif"],
+            sans: ["Plus Jakarta Sans", "sans-serif"]
+          },
+          borderRadius: {
+            'xl': '1rem',
+            '2xl': '1.25rem',
+            '3xl': '1.875rem',
+            'full': '9999px'
+          },
+          boxShadow: {
+            'ambient': '0 20px 40px -10px rgba(85, 98, 77, 0.06)',
+            'zenith': '0 10px 30px rgba(85, 98, 77, 0.04)',
+            'fab': '0 12px 28px -6px rgba(62, 75, 58, 0.35)',
           }
         }
       }
     }
   </script>
 
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- Favicon -->
   <!-- PWA & Mobile Web App Meta Tags -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#2563eb">
+  <meta name="theme-color" content="#55624d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Reservas CR">
 
   <!-- Favicon & Apple Touch Icons -->
@@ -43,10 +152,14 @@
   <link rel="apple-touch-icon" href="/favicon.png">
   <link rel="apple-touch-icon" sizes="192x192" href="/src/assets/reservas_cr_clean_badge_1.jpg">
 
-  <!-- Custom CSS -->
+  <!-- Custom CSS: Digital Sanctuary -->
   <link rel="stylesheet" href="/src/styles/main.css">
 </head>
-<body class="min-h-full flex flex-col antialiased text-slate-900 bg-slate-50 selection:bg-blue-600 selection:text-white overflow-x-hidden w-full max-w-full relative">
+<body class="min-h-full flex flex-col antialiased text-[#191c18] bg-[#f8faf3] bg-zenith-gradient selection:bg-[#55624d] selection:text-white overflow-x-hidden w-full max-w-full relative">
+
+  <!-- Atmospheric Background Glow Orbs -->
+  <div class="fixed top-[10%] right-[-5%] w-80 h-80 bg-[#d9e7cd]/25 blur-[110px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed bottom-[15%] left-[-5%] w-96 h-96 bg-[#fed7d2]/25 blur-[120px] rounded-full pointer-events-none -z-10"></div>
 
   <!-- Navbar Container -->
   <div id="navbar-container" class="w-full max-w-full overflow-x-hidden"></div>
@@ -55,13 +168,13 @@
   <main id="main-content" class="flex-1 pb-24 md:pb-12 w-full max-w-full overflow-x-hidden"></main>
 
   <!-- Footer -->
-  <footer id="app-footer" class="bg-white border-t border-slate-200/80 py-8 px-4 text-center text-xs text-slate-500 mb-14 md:mb-0">
+  <footer id="app-footer" class="bg-white/80 backdrop-blur-md border-t border-[#ecefe8] py-8 px-4 text-center text-xs text-[#757870] mb-14 md:mb-0">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center gap-2.5">
-        <img src="/src/assets/logo.png" alt="Reservas CR Logo" class="w-7 h-7 rounded-lg object-contain shadow-2xs">
-        <span class="font-extrabold text-slate-900 text-sm">Reservas <span class="text-blue-600">CR</span></span> &copy; 2026. Todos los derechos reservados.
+        <img src="/src/assets/logo.png" alt="Reservas CR Logo" class="w-7 h-7 rounded-xl object-contain shadow-xs">
+        <span class="font-headline font-extrabold text-[#191c18] text-sm">Reservas <span class="text-[#55624d]">CR</span></span> &copy; 2026. Todos los derechos reservados.
       </div>
-      <p class="text-slate-400">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
+      <p class="text-[#757870] font-medium">Plataforma de conexión directa entre negocios locales y clientes en Costa Rica 🇨🇷.</p>
     </div>
   </footer>
 
@@ -75,6 +188,6 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
 
   <!-- App Script (ES Module) -->
-  <script type="module" src="/src/app.js?v=2.9.1"></script>
+  <script type="module" src="/src/app.js?v=3.1.0"></script>
 </body>
 </html>
