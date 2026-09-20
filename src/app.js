@@ -3312,8 +3312,6 @@ class App {
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
                 ` : `
-                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
-                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
                   <span class="px-3 py-1 rounded-full bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider shadow-md border border-slate-700">
                     <i class="fas fa-store mr-1 text-slate-400"></i> Comercio Registrado
                   </span>
@@ -3327,7 +3325,7 @@ class App {
               </div>
               <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">${biz.name}</h1>
               <p class="text-sm text-slate-300 flex items-center gap-1.5">
-                <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.address}, ${biz.city}
+                <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.address || ''}${biz.address && biz.city ? ', ' : ''}${biz.city || ''}
               </p>
             </div>
           </div>
