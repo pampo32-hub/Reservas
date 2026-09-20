@@ -17,15 +17,6 @@ const CALENDAR_PASTEL_THEMES = {
     colorName: 'Celeste',
     swatchBg: '#bae6fd', // sky-200
     swatchRing: 'ring-sky-500',
-    containerClass: 'bg-gradient-to-br from-sky-100/50 via-sky-50/60 to-blue-50/40 border-sky-200/90 shadow-sky-500/5',
-    headerNavClass: 'bg-white/90 border-sky-200/90 shadow-2xs',
-    navBtnClass: 'bg-white hover:bg-sky-50 text-slate-700 border-sky-200',
-    todayBtnClass: 'bg-sky-100 hover:bg-sky-200/80 text-sky-800 border-sky-300',
-    weekdayHeaderMobile: 'border-b border-sky-100/80',
-    weekdayWeekendText: 'text-sky-600 font-black',
-    mobileGridBg: 'bg-white/95 border-sky-200/90',
-    mobileCellDefault: 'bg-white text-slate-800 hover:bg-sky-50/70',
-    mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-400 font-black',
     containerClass: 'bg-gradient-to-br from-sky-100 via-sky-50 to-blue-100/70 border-sky-300 shadow-md shadow-sky-500/10',
     headerNavClass: 'bg-white/95 border-sky-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-sky-100 text-slate-800 border-sky-300',
@@ -36,12 +27,6 @@ const CALENDAR_PASTEL_THEMES = {
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-sky-50',
     mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-500 font-black',
     mobileCellSelected: 'bg-sky-600 text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-600 ring-offset-1 z-10 font-black',
-    mobileDetailCard: 'bg-white/95 border-sky-200/90',
-    desktopContainer: 'border-sky-200/90 bg-white/95',
-    desktopWeekdayHeader: 'bg-sky-100/70 border-sky-200/90 text-sky-950',
-    desktopGridDivide: 'divide-sky-100/80 bg-sky-50/20',
-    desktopCellToday: 'ring-2 ring-sky-500 ring-inset bg-sky-50/40',
-    desktopTodayBadge: 'bg-sky-600 text-white',
     mobileDetailCard: 'bg-white/95 border-sky-300',
     desktopContainer: 'border-sky-300 bg-sky-100/30',
     desktopWeekdayHeader: 'bg-sky-200/90 border-sky-300 text-sky-950',
@@ -59,15 +44,6 @@ const CALENDAR_PASTEL_THEMES = {
     colorName: 'Lavanda',
     swatchBg: '#e9d5ff', // purple-200
     swatchRing: 'ring-purple-500',
-    containerClass: 'bg-gradient-to-br from-purple-100/50 via-purple-50/60 to-fuchsia-50/40 border-purple-200/90 shadow-purple-500/5',
-    headerNavClass: 'bg-white/90 border-purple-200/90 shadow-2xs',
-    navBtnClass: 'bg-white hover:bg-purple-50 text-slate-700 border-purple-200',
-    todayBtnClass: 'bg-purple-100 hover:bg-purple-200/80 text-purple-800 border-purple-300',
-    weekdayHeaderMobile: 'border-b border-purple-100/80',
-    weekdayWeekendText: 'text-purple-600 font-black',
-    mobileGridBg: 'bg-white/95 border-purple-200/90',
-    mobileCellDefault: 'bg-white text-slate-800 hover:bg-purple-50/70',
-    mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-400 font-black',
     containerClass: 'bg-gradient-to-br from-purple-100 via-purple-50 to-fuchsia-100/70 border-purple-300 shadow-md shadow-purple-500/10',
     headerNavClass: 'bg-white/95 border-purple-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-purple-100 text-slate-800 border-purple-300',
@@ -78,12 +54,6 @@ const CALENDAR_PASTEL_THEMES = {
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-purple-50',
     mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-500 font-black',
     mobileCellSelected: 'bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-600 ring-offset-1 z-10 font-black',
-    mobileDetailCard: 'bg-white/95 border-purple-200/90',
-    desktopContainer: 'border-purple-200/90 bg-white/95',
-    desktopWeekdayHeader: 'bg-purple-100/70 border-purple-200/90 text-purple-950',
-    desktopGridDivide: 'divide-purple-100/80 bg-purple-50/20',
-    desktopCellToday: 'ring-2 ring-purple-500 ring-inset bg-purple-50/40',
-    desktopTodayBadge: 'bg-purple-600 text-white',
     mobileDetailCard: 'bg-white/95 border-purple-300',
     desktopContainer: 'border-purple-300 bg-purple-100/30',
     desktopWeekdayHeader: 'bg-purple-200/90 border-purple-300 text-purple-950',
@@ -101,15 +71,6 @@ const CALENDAR_PASTEL_THEMES = {
     colorName: 'Menta',
     swatchBg: '#a7f3d0', // emerald-200
     swatchRing: 'ring-emerald-500',
-    containerClass: 'bg-gradient-to-br from-emerald-100/50 via-emerald-50/60 to-teal-50/40 border-emerald-200/90 shadow-emerald-500/5',
-    headerNavClass: 'bg-white/90 border-emerald-200/90 shadow-2xs',
-    navBtnClass: 'bg-white hover:bg-emerald-50 text-slate-700 border-emerald-200',
-    todayBtnClass: 'bg-emerald-100 hover:bg-emerald-200/80 text-emerald-800 border-emerald-300',
-    weekdayHeaderMobile: 'border-b border-emerald-100/80',
-    weekdayWeekendText: 'text-emerald-600 font-black',
-    mobileGridBg: 'bg-white/95 border-emerald-200/90',
-    mobileCellDefault: 'bg-white text-slate-800 hover:bg-emerald-50/70',
-    mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-400 font-black',
     containerClass: 'bg-gradient-to-br from-emerald-100 via-emerald-50 to-teal-100/70 border-emerald-300 shadow-md shadow-emerald-500/10',
     headerNavClass: 'bg-white/95 border-emerald-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-emerald-100 text-slate-800 border-emerald-300',
@@ -120,12 +81,6 @@ const CALENDAR_PASTEL_THEMES = {
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-emerald-50',
     mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500 font-black',
     mobileCellSelected: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-600 ring-offset-1 z-10 font-black',
-    mobileDetailCard: 'bg-white/95 border-emerald-200/90',
-    desktopContainer: 'border-emerald-200/90 bg-white/95',
-    desktopWeekdayHeader: 'bg-emerald-100/70 border-emerald-200/90 text-emerald-950',
-    desktopGridDivide: 'divide-emerald-100/80 bg-emerald-50/20',
-    desktopCellToday: 'ring-2 ring-emerald-500 ring-inset bg-emerald-50/40',
-    desktopTodayBadge: 'bg-emerald-600 text-white',
     mobileDetailCard: 'bg-white/95 border-emerald-300',
     desktopContainer: 'border-emerald-300 bg-emerald-100/30',
     desktopWeekdayHeader: 'bg-emerald-200/90 border-emerald-300 text-emerald-950',
@@ -143,15 +98,6 @@ const CALENDAR_PASTEL_THEMES = {
     colorName: 'Rosa Pastel',
     swatchBg: '#fecdd3', // rose-200
     swatchRing: 'ring-rose-500',
-    containerClass: 'bg-gradient-to-br from-rose-100/50 via-rose-50/60 to-pink-50/40 border-rose-200/90 shadow-rose-500/5',
-    headerNavClass: 'bg-white/90 border-rose-200/90 shadow-2xs',
-    navBtnClass: 'bg-white hover:bg-rose-50 text-slate-700 border-rose-200',
-    todayBtnClass: 'bg-rose-100 hover:bg-rose-200/80 text-rose-800 border-rose-300',
-    weekdayHeaderMobile: 'border-b border-rose-100/80',
-    weekdayWeekendText: 'text-rose-600 font-black',
-    mobileGridBg: 'bg-white/95 border-rose-200/90',
-    mobileCellDefault: 'bg-white text-slate-800 hover:bg-rose-50/70',
-    mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-400 font-black',
     containerClass: 'bg-gradient-to-br from-rose-100 via-rose-50 to-pink-100/70 border-rose-300 shadow-md shadow-rose-500/10',
     headerNavClass: 'bg-white/95 border-rose-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-rose-100 text-slate-800 border-rose-300',
@@ -162,12 +108,6 @@ const CALENDAR_PASTEL_THEMES = {
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-rose-50',
     mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-500 font-black',
     mobileCellSelected: 'bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-600 ring-offset-1 z-10 font-black',
-    mobileDetailCard: 'bg-white/95 border-rose-200/90',
-    desktopContainer: 'border-rose-200/90 bg-white/95',
-    desktopWeekdayHeader: 'bg-rose-100/70 border-rose-200/90 text-rose-950',
-    desktopGridDivide: 'divide-rose-100/80 bg-rose-50/20',
-    desktopCellToday: 'ring-2 ring-rose-500 ring-inset bg-rose-50/40',
-    desktopTodayBadge: 'bg-rose-600 text-white',
     mobileDetailCard: 'bg-white/95 border-rose-300',
     desktopContainer: 'border-rose-300 bg-rose-100/30',
     desktopWeekdayHeader: 'bg-rose-200/90 border-rose-300 text-rose-950',
@@ -185,15 +125,6 @@ const CALENDAR_PASTEL_THEMES = {
     colorName: 'Vainilla',
     swatchBg: '#fde68a', // amber-200
     swatchRing: 'ring-amber-500',
-    containerClass: 'bg-gradient-to-br from-amber-100/50 via-amber-50/60 to-yellow-50/40 border-amber-200/90 shadow-amber-500/5',
-    headerNavClass: 'bg-white/90 border-amber-200/90 shadow-2xs',
-    navBtnClass: 'bg-white hover:bg-amber-50 text-slate-700 border-amber-200',
-    todayBtnClass: 'bg-amber-100 hover:bg-amber-200/80 text-amber-800 border-amber-300',
-    weekdayHeaderMobile: 'border-b border-amber-100/80',
-    weekdayWeekendText: 'text-amber-600 font-black',
-    mobileGridBg: 'bg-white/95 border-amber-200/90',
-    mobileCellDefault: 'bg-white text-slate-800 hover:bg-amber-50/70',
-    mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-400 font-black',
     containerClass: 'bg-gradient-to-br from-amber-100 via-amber-50 to-yellow-100/70 border-amber-300 shadow-md shadow-amber-500/10',
     headerNavClass: 'bg-white/95 border-amber-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-amber-100 text-slate-800 border-amber-300',
@@ -204,12 +135,6 @@ const CALENDAR_PASTEL_THEMES = {
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-amber-50',
     mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-500 font-black',
     mobileCellSelected: 'bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-600 ring-offset-1 z-10 font-black',
-    mobileDetailCard: 'bg-white/95 border-amber-200/90',
-    desktopContainer: 'border-amber-200/90 bg-white/95',
-    desktopWeekdayHeader: 'bg-amber-100/70 border-amber-200/90 text-amber-950',
-    desktopGridDivide: 'divide-amber-100/80 bg-amber-50/20',
-    desktopCellToday: 'ring-2 ring-amber-500 ring-inset bg-amber-50/40',
-    desktopTodayBadge: 'bg-amber-600 text-white',
     mobileDetailCard: 'bg-white/95 border-amber-300',
     desktopContainer: 'border-amber-300 bg-amber-100/30',
     desktopWeekdayHeader: 'bg-amber-200/90 border-amber-300 text-amber-950',
@@ -266,6 +191,63 @@ class App {
     this.realtimeEventSource = null;
     this.realtimeBusinessId = null;
     this.realtimePollingInterval = null;
+
+    // Inicializar modo de color (Dark Mode / Light Mode)
+    this.initTheme();
+  }
+
+  // --- GESTIÓN DE TEMA DARK MODE / LIGHT MODE ---
+  initTheme() {
+    try {
+      const savedTheme = (typeof localStorage !== 'undefined') ? localStorage.getItem('reservas_color_theme') : null;
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+      this.applyTheme(isDark ? 'dark' : 'light');
+
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+          if (!localStorage.getItem('reservas_color_theme')) {
+            this.applyTheme(e.matches ? 'dark' : 'light');
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Theme init notice:', e);
+    }
+  }
+
+  applyTheme(mode) {
+    if (mode === 'dark') {
+      document.documentElement.classList.add('dark');
+      if (typeof localStorage !== 'undefined') localStorage.setItem('reservas_color_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      if (typeof localStorage !== 'undefined') localStorage.setItem('reservas_color_theme', 'light');
+    }
+    this.updateThemeToggleButtons();
+  }
+
+  toggleTheme() {
+    const isDark = document.documentElement.classList.contains('dark');
+    this.applyTheme(isDark ? 'light' : 'dark');
+    this.showToast(isDark ? '☀️ Modo Claro activado' : '🌙 Modo Oscuro activado', 'info');
+  }
+
+  updateThemeToggleButtons() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const buttons = document.querySelectorAll('.theme-toggle-btn');
+    buttons.forEach(btn => {
+      const icon = btn.querySelector('.theme-toggle-icon');
+      const text = btn.querySelector('.theme-toggle-text');
+      if (icon) {
+        icon.className = `theme-toggle-icon fas ${isDark ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs sm:text-sm`;
+      }
+      if (text) {
+        text.textContent = isDark ? 'Claro' : 'Oscuro';
+      }
+      btn.setAttribute('title', isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
+      btn.setAttribute('aria-label', isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
+    });
   }
 
   getTodayDateString() {
@@ -1279,6 +1261,11 @@ class App {
             <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0" title="Instalar App en el Celular">
               <i class="fas fa-download text-blue-600 text-xs"></i>
             </button>
+
+            <!-- Botón Modo Oscuro / Claro (Móvil) -->
+            <button class="theme-toggle-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center gap-1 app-touch-btn cursor-pointer shrink-0 shadow-2xs" title="Cambiar modo oscuro / claro">
+              <i class="theme-toggle-icon fas ${document.documentElement.classList.contains('dark') ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs"></i>
+            </button>
           </div>
 
           <!-- ESCRITORIO PC (>= md): Navigation & Auth Controls Completos -->
@@ -1310,6 +1297,12 @@ class App {
             <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/80 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
               <i class="fas fa-crown text-blue-600 text-xs"></i>
               <span>Planes & Precios</span>
+            </button>
+
+            <!-- Botón Modo Oscuro / Claro (Desktop) -->
+            <button class="theme-toggle-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Cambiar a Modo Oscuro / Claro">
+              <i class="theme-toggle-icon fas ${document.documentElement.classList.contains('dark') ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs"></i>
+              <span class="theme-toggle-text hidden lg:inline">${document.documentElement.classList.contains('dark') ? 'Claro' : 'Oscuro'}</span>
             </button>
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
@@ -1382,6 +1375,10 @@ class App {
     `;
 
     // Eventos de Navegación y Auth
+    headerContainer.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleTheme());
+    });
+
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => {
       this.navigateTo('directory');
     });
@@ -6499,6 +6496,8 @@ class App {
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                  <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
                 <label id="slot-duration-label-15" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
                   <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
                   <div>
@@ -6506,6 +6505,8 @@ class App {
                     <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:15, 8:30, 8:45...</span>
                   </div>
                 </label>
+                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
+                  <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
                 <label id="slot-duration-label-30" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
                   <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
                   <div>
@@ -15396,6 +15397,14 @@ class App {
       if (bizRegTarget) {
         e.preventDefault();
         this.renderAuthModal({ mode: 'register', role: 'business' });
+        return;
+      }
+
+      // Botón Toggle Modo Oscuro / Claro
+      const themeToggleTarget = e.target.closest('.theme-toggle-btn, #theme-toggle-btn');
+      if (themeToggleTarget) {
+        e.preventDefault();
+        this.toggleTheme();
         return;
       }
 
