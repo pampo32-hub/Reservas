@@ -574,10 +574,6 @@ class App {
       window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialUrl);
     }
 
-    this.renderHeader();
-    this.renderMobileBottomNav();
-    this.renderCurrentView();
-    this.setupGlobalEvents();
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -613,13 +609,12 @@ class App {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
-        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
         return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
       }
       case 'review-booking': {
         const aptId = params.appointmentId || this.selectedAppointmentId;
         const query = params.rating ? `?rating=${params.rating}` : '';
-        return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/';
+        return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/directorio';
       }
       case 'directory':
         return '/directorio';
@@ -629,10 +624,6 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
-      case 'owner-dashboard':
-        return '/panel-negocio';
-      case 'developer-dashboard':
-        return '/developer';
       case 'owner-dashboard': {
         const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
         return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
@@ -641,10 +632,8 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
-      case 'directory':
       default:
-        return '/';
-        return '/unete';
+        return '/directorio';
     }
   }
 
@@ -1828,11 +1817,8 @@ class App {
         <!-- 1. Banner Principal: Acceso Anticipado / Cupos de Prelanzamiento -->
         ${SHOW_PREREGISTER_BANNER ? `
         <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-amber-500/30">
           <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-blue-500/30">
             <!-- Efectos de Neón y Luces de Fondo -->
-            <div class="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
-            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
             <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1843,14 +1829,10 @@ class App {
                 
                 <!-- Badge Animado -->
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/50 shadow-sm shadow-amber-500/10">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
                   <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                     <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
                   </span>
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
-                    <i class="fas fa-check-circle text-emerald-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-400/30">
                     <i class="fas fa-check-circle text-blue-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   </span>
@@ -1858,7 +1840,6 @@ class App {
 
                 <!-- Titular de Impacto -->
                 <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
-                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">15 Días Gratis</span> a partir del lanzamiento!
                   ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
@@ -1868,8 +1849,6 @@ class App {
 
                 <!-- Beneficios Destacados -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-amber-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fas fa-gift"></i>
@@ -1888,8 +1867,6 @@ class App {
                       <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
                     </div>
                   </div>
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-emerald-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fab fa-whatsapp"></i>
@@ -1905,10 +1882,8 @@ class App {
                 <div class="pt-2 flex flex-wrap items-center gap-3">
                   <button 
                     id="banner-prereg-btn" 
-                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer animate-pulse"
                     class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
-                    <i class="fas fa-gift text-slate-950 text-base"></i>
                     <i class="fas fa-gift text-blue-300 text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
@@ -1916,7 +1891,6 @@ class App {
                     id="banner-view-plans-btn" 
                     class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
-                    <i class="fas fa-tags text-indigo-300"></i>
                     <i class="fas fa-tags text-blue-300"></i>
                     <span>Ver Planes & Precios</span>
                   </button>
@@ -1926,21 +1900,17 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
-                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-amber-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                 <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-sm font-black shadow-md shadow-amber-500/20">
                       <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
                         <h4 class="text-xs font-black text-white leading-none">Tu Negocio Aquí</h4>
-                        <p class="text-[10px] text-amber-300/90 font-medium mt-0.5">reservascr.app</p>
                         <p class="text-[10px] text-blue-300 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/40">Preventa</span>
                     <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
                   </div>
 
@@ -1950,12 +1920,10 @@ class App {
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Reservas Online</span>
                       </div>
-                      <span class="text-emerald-400 font-bold text-[11px]">24/7</span>
                       <span class="text-blue-400 font-bold text-[11px]">24/7</span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
                         <i class="fab fa-whatsapp text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">WhatsApp Auto</span>
                       </div>
@@ -1963,17 +1931,13 @@ class App {
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
-                        <i class="fas fa-ban text-rose-400 text-xs"></i>
                         <i class="fas fa-shield-alt text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Tarjeta requerida</span>
                       </div>
-                      <span class="text-emerald-400 font-black text-[11px]">NO (Gratis)</span>
                       <span class="text-blue-300 font-black text-[11px]">NO (Gratis)</span>
                     </div>
                   </div>
 
-                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border border-amber-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-amber-300 shadow-xs">
-                    <i class="fas fa-gift text-sm text-amber-400"></i>
                   <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-blue-300 shadow-xs">
                     <i class="fas fa-gift text-sm text-blue-400"></i>
                     <span>15 DÍAS GRATIS AL ESTRENO</span>
@@ -3590,8 +3554,6 @@ class App {
                     <i class="fas fa-eye-slash mr-1"></i> Oculto de Inicio
                   </span>
                 ` : `
-                  <span class="px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
-                    <i class="fas fa-flask mr-1"></i> Comercio de Muestra
                   <span class="px-3 py-1 rounded-full bg-slate-800 text-slate-200 text-xs font-bold uppercase tracking-wider shadow-md border border-slate-700">
                     <i class="fas fa-store mr-1 text-slate-400"></i> Comercio Registrado
                   </span>
@@ -5254,9 +5216,6 @@ class App {
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
-                    <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs" data-apt-id="${apt.id}">
-                      <i class="fas fa-star text-amber-500"></i> Calificar Atención
-                    </button>
                     ${(apt.isReviewed || apt.reviewRating) ? `
                       <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
                         <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}★)
@@ -7935,6 +7894,43 @@ class App {
     this.showToast('Descargando reporte Excel...', 'info');
   }
 
+  // --- EXPORTACIÓN A FORMATO CSV ---
+  exportBusinessReportsCSV(currentBiz, appointments) {
+    if (!appointments || appointments.length === 0) {
+      this.showToast('No hay datos de reservas para exportar.', 'info');
+      return;
+    }
+    const headers = ['#', 'ID', 'Fecha', 'Hora', 'Estado', 'Cliente', 'Telefono', 'Email', 'Servicio', 'Especialista', 'Duracion_Min', 'Monto_CRC', 'Notas'];
+    const rows = appointments.map((a, i) => [
+      i + 1,
+      `"${(a.id || '').replace(/"/g, '""')}"`,
+      `"${(a.date || '').replace(/"/g, '""')}"`,
+      `"${(a.time || '').replace(/"/g, '""')}"`,
+      `"${(a.status || '').replace(/"/g, '""')}"`,
+      `"${(a.clientName || '').replace(/"/g, '""')}"`,
+      `"${(a.clientPhone || '').replace(/"/g, '""')}"`,
+      `"${(a.clientEmail || '').replace(/"/g, '""')}"`,
+      `"${(a.serviceName || '').replace(/"/g, '""')}"`,
+      `"${(a.staffName || '').replace(/"/g, '""')}"`,
+      a.serviceDuration || 30,
+      a.servicePrice || 0,
+      `"${(a.notes || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = (currentBiz.name || 'negocio').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '_');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Reporte_Reservas_${safeName}_${this.getTodayDateString()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    this.showToast('¡Reporte CSV descargado exitosamente!', 'success');
+  }
+
   // --- EXPORTACIÓN Y VISUALIZACIÓN ELEGANTE EN PDF ---
   exportBusinessReportsPDF(currentBiz, appointments) {
     if (!appointments || appointments.length === 0) {
@@ -9651,7 +9647,6 @@ class App {
     // Selector de Tema Pastel del Calendario
     document.querySelectorAll('.cal-theme-swatch-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation()
         e.stopPropagation();
         const themeId = btn.getAttribute('data-theme');
         if (themeId && CALENDAR_PASTEL_THEMES[themeId]) {
@@ -9754,6 +9749,11 @@ class App {
     document.getElementById('dash-export-excel-btn')?.addEventListener('click', () => {
       const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
       this.exportBusinessReportsExcel(currentBiz, appointments);
+    });
+
+    document.getElementById('dash-export-csv-btn')?.addEventListener('click', () => {
+      const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+      this.exportBusinessReportsCSV(currentBiz, appointments);
     });
 
     document.getElementById('dash-export-pdf-btn')?.addEventListener('click', () => {
@@ -15154,195 +15154,6 @@ class App {
     });
   }
 
-  // --- MODAL PARA REGISTRAR NUEVO NEGOCIO (CON CONTRASEÑA) ---
-  renderNewBusinessModal() {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden border border-slate-200 p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
-          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-            <div>
-              <span class="text-xs font-bold text-blue-600 uppercase">Onboarding de Comercios 🇨🇷</span>
-              <h3 class="text-xl font-extrabold text-slate-900">Registrar Nuevo Establecimiento</h3>
-            </div>
-            <button id="close-biz-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-
-          <form id="new-biz-form" class="space-y-4 text-xs sm:text-sm">
-            <!-- Cuenta de Usuario / Credenciales -->
-            <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
-              <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
-                <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
-              </span>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
-                  <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
-                  <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-                </div>
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña de Acceso *</label>
-                <input type="password" id="reg-biz-password" required placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium">
-              </div>
-            </div>
-
-            <!-- Datos Comerciales -->
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-              <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Categoría *</label>
-                <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  <option value="belleza">Belleza y Barbería</option>
-                  <option value="salud">Salud y Bienestar</option>
-                  <option value="spa">Spa y Masajes</option>
-                  <option value="fitness">Fitness y Deporte</option>
-                  <option value="autos">Talleres y Autos</option>
-                  <option value="fotografia">Fotografía y Eventos</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
-                <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-              <div>
-                <label class="block font-bold text-slate-700 mb-1">Dirección Exacta</label>
-                <input type="text" id="new-biz-address" placeholder="100m Oeste del Parque..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Descripción</label>
-              <textarea id="new-biz-desc" rows="2" placeholder="Describe brevemente tus especialidades..." class="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-            </div>
-
-            <!-- Fotos con Guía de Medidas -->
-            <div class="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl space-y-3">
-              <span class="font-bold text-blue-900 block text-xs uppercase tracking-wider">
-                <i class="fas fa-camera mr-1"></i> Fotos del Comercio (Guía de Medidas)
-              </span>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Logo / Foto de Perfil</label>
-                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 800 x 800 px (1:1)</span>
-                </div>
-                <input type="text" id="new-biz-image" placeholder="URL de imagen cuadrada" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-              </div>
-
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <label class="text-xs font-bold text-slate-700">Banner / Foto de Portada</label>
-                  <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Medida: 1200 x 450 px (16:6)</span>
-                </div>
-                <input type="text" id="new-biz-cover" placeholder="URL del banner panorámico" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-              </div>
-            </div>
-
-            <!-- Primer Servicio -->
-            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-              <span class="font-bold text-slate-800 block text-xs uppercase tracking-wider">
-                <i class="fas fa-tag mr-1 text-blue-600"></i> Primer Servicio
-              </span>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <div class="sm:col-span-2">
-                  <input type="text" id="first-srv-name" required placeholder="Nombre del servicio (Ej. Corte Clásico)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs">
-                </div>
-                <div>
-                  <input type="number" id="first-srv-price" required min="0" step="500" placeholder="Precio ₡ CRC" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold">
-                </div>
-              </div>
-            </div>
-
-            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/25 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
-              <i class="fas fa-check-circle text-blue-400"></i>
-              <span>Crear Cuenta y Registrar Negocio</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('close-biz-modal-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
-
-    document.getElementById('new-biz-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const ownerName = document.getElementById('reg-owner-name').value;
-      const email = document.getElementById('reg-biz-email').value;
-      const password = document.getElementById('reg-biz-password').value;
-      const name = document.getElementById('new-biz-name').value;
-      const category = document.getElementById('new-biz-cat').value;
-      const city = document.getElementById('new-biz-city').value;
-      const phone = document.getElementById('new-biz-phone').value;
-      const address = document.getElementById('new-biz-address').value;
-      const description = document.getElementById('new-biz-desc').value;
-      const image = document.getElementById('new-biz-image').value;
-      const coverImage = document.getElementById('new-biz-cover').value;
-      const firstSrvName = document.getElementById('first-srv-name').value;
-      const firstSrvPrice = document.getElementById('first-srv-price').value;
-
-      const catLabels = {
-        belleza: 'Belleza y Barbería',
-        salud: 'Salud y Bienestar',
-        spa: 'Spa y Masajes',
-        fitness: 'Fitness y Deporte',
-        autos: 'Talleres y Autos',
-        fotografia: 'Fotografía y Eventos'
-      };
-
-      try {
-        await storage.registerBusinessWithUser(ownerName, email, password, {
-          name,
-          category,
-          categoryLabel: catLabels[category] || 'Servicios',
-          city,
-          phone,
-          email,
-          address,
-          description,
-          image: image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-          coverImage: coverImage || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
-          isDemo: false,
-          features: ['Sinpe Móvil', 'Atención Personalizada'],
-          services: [
-            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
-          ]
-        });
-
-        this.showToast('¡Negocio y cuenta creados exitosamente!', 'success');
-        modalContainer.innerHTML = '';
-        this.renderHeader();
-        this.navigateTo('owner-dashboard');
-      } catch (err) {
-        this.showToast(err.message || 'Error al registrar.', 'error');
-      }
-    });
-  }
-
   // --- EVENTOS GLOBALES ---
   setupGlobalEvents() {
     window.addEventListener('keydown', (e) => {
@@ -15364,24 +15175,128 @@ class App {
       });
     });
 
-    // Global listener for terms, privacy and FAQ modal triggers
+    // Delegación global de clics para modales, navegación y accesos directos
     document.addEventListener('click', (e) => {
-      const faqTarget = e.target.closest('.open-faq-modal');
+      // FAQ Modal
+      const faqTarget = e.target.closest('.open-faq-modal, #footer-faq-btn');
       if (faqTarget) {
         e.preventDefault();
         this.renderFaqModal();
         return;
       }
-      const termsTarget = e.target.closest('.open-terms-modal');
+
+      // Términos y Condiciones
+      const termsTarget = e.target.closest('.open-terms-modal, #footer-terms-btn');
       if (termsTarget) {
         e.preventDefault();
         this.renderLegalModal('terms');
         return;
       }
-      const privacyTarget = e.target.closest('.open-privacy-modal');
+
+      // Política de Privacidad
+      const privacyTarget = e.target.closest('.open-privacy-modal, #footer-privacy-btn');
       if (privacyTarget) {
         e.preventDefault();
         this.renderLegalModal('privacy');
+        return;
+      }
+
+      // Planes & Precios Modal
+      const plansTarget = e.target.closest('.open-plans-modal, #nav-plans-btn, #mobile-top-plans-btn, #footer-test-plans-btn, #banner-view-plans-btn, #cta-view-plans-btn');
+      if (plansTarget) {
+        e.preventDefault();
+        this.renderPlansModal();
+        return;
+      }
+
+      // Pre-Registro (15 Días Gratis) Modal
+      const preregTarget = e.target.closest('.open-prereg-modal, #nav-prereg-btn, #mobile-top-prereg-btn, #banner-prereg-btn, #hero-prereg-btn');
+      if (preregTarget) {
+        e.preventDefault();
+        this.renderPreRegisterModal();
+        return;
+      }
+
+      // Login Cliente Modal
+      const clientLoginTarget = e.target.closest('.open-login-modal, #nav-login-btn, #mobile-top-login-btn');
+      if (clientLoginTarget) {
+        e.preventDefault();
+        this.renderAuthModal({ mode: 'login', role: 'client' });
+        return;
+      }
+
+      // Registro Cliente Modal
+      const clientRegTarget = e.target.closest('.open-register-modal, #nav-register-btn');
+      if (clientRegTarget) {
+        e.preventDefault();
+        this.renderAuthModal({ mode: 'register', role: 'client' });
+        return;
+      }
+
+      // Login Dueño de Negocio Modal
+      const bizLoginTarget = e.target.closest('.open-biz-login-modal, #nav-biz-login-btn, #nav-biz-extra-btn, #cta-login-biz-btn');
+      if (bizLoginTarget) {
+        e.preventDefault();
+        this.renderAuthModal({ mode: 'login', role: 'business' });
+        return;
+      }
+
+      // Registro Negocio Modal
+      const bizRegTarget = e.target.closest('.open-biz-register-modal, #nav-biz-register-btn, #cta-register-biz-btn, #hero-register-biz-btn');
+      if (bizRegTarget) {
+        e.preventDefault();
+        this.renderAuthModal({ mode: 'register', role: 'business' });
+        return;
+      }
+
+      // Enlaces al Manual de Comercios PDF
+      const manualPdfLink = e.target.closest('a[href="/manual-comercios-pdf"], a[href="/manual-comercios"]');
+      if (manualPdfLink) {
+        const isBiz = Boolean(storage.getBusinessUser());
+        if (isBiz) {
+          e.preventDefault();
+          this.navigateTo('owner-dashboard', { tab: 'manual' });
+        } else {
+          e.preventDefault();
+          this.showToast('El Manual de Usuario requiere inicio de sesión de comercio.', 'info');
+          this.renderAuthModal({ mode: 'login', role: 'business' });
+        }
+        return;
+      }
+
+      // Navegación rápida por botones con clase
+      const navDirTarget = e.target.closest('.nav-to-directory, #nav-directory-btn');
+      if (navDirTarget) {
+        e.preventDefault();
+        this.navigateTo('directory');
+        return;
+      }
+
+      const navLandingTarget = e.target.closest('.nav-to-landing, #nav-landing-btn, #mobile-top-landing-btn');
+      if (navLandingTarget) {
+        e.preventDefault();
+        this.navigateTo('business-landing');
+        return;
+      }
+
+      const navBookingsTarget = e.target.closest('.nav-to-client-bookings, #nav-client-bookings-btn');
+      if (navBookingsTarget) {
+        e.preventDefault();
+        this.navigateTo('my-client-bookings');
+        return;
+      }
+
+      const navBizDashTarget = e.target.closest('.nav-to-owner-dashboard, #nav-biz-dashboard-btn');
+      if (navBizDashTarget) {
+        e.preventDefault();
+        this.navigateTo('owner-dashboard');
+        return;
+      }
+
+      const navDevDashTarget = e.target.closest('.nav-to-dev-dashboard, #nav-dev-dashboard-btn');
+      if (navDevDashTarget) {
+        e.preventDefault();
+        this.navigateTo('developer-dashboard');
         return;
       }
     });
