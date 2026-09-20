@@ -1409,12 +1409,6 @@ class App {
 
         <div class="flex flex-col sm:flex-row items-center gap-3">
           <p class="text-slate-400">Directorio digital & agendamiento en Costa Rica 🇨🇷.</p>
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 text-slate-100 text-[11px] font-bold shadow-xs border border-slate-800">
-            <span class="text-slate-400 font-medium">Powered by</span>
-            <span class="text-blue-400 font-extrabold tracking-wide flex items-center gap-1">
-              <i class="fas fa-cube text-[10px] text-blue-400"></i> GeoSoft
-            </span>
-          </div>
         </div>
       </div>
     `;
@@ -1855,12 +1849,17 @@ class App {
               <!-- Columna Principal de Texto e Incentivos -->
               <div class="lg:col-span-8 space-y-4 text-left">
                 
+                <!-- Badge Animado -->
                 <!-- Badges Superiores -->
                 <div class="flex items-center gap-2 flex-wrap">
+                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/50 shadow-sm shadow-amber-500/10">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
                   <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                     <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
                   </span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                    <i class="fas fa-check-circle text-emerald-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-400/30">
                     <i class="fas fa-check-circle text-blue-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   </span>
@@ -1868,6 +1867,7 @@ class App {
 
                 <!-- Titular de Impacto -->
                 <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">15 Días Gratis</span> a partir del lanzamiento!
                   ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
@@ -1877,6 +1877,8 @@ class App {
 
                 <!-- Beneficios Destacados -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-amber-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fas fa-gift"></i>
@@ -1895,6 +1897,8 @@ class App {
                       <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
                     </div>
                   </div>
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-emerald-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fab fa-whatsapp"></i>
@@ -1910,8 +1914,10 @@ class App {
                 <div class="pt-2 flex flex-wrap items-center gap-3">
                   <button 
                     id="banner-prereg-btn" 
+                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer animate-pulse"
                     class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
+                    <i class="fas fa-gift text-slate-950 text-base"></i>
                     <i class="fas fa-gift text-blue-300 text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
@@ -1919,6 +1925,7 @@ class App {
                     id="banner-view-plans-btn" 
                     class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
+                    <i class="fas fa-tags text-indigo-300"></i>
                     <i class="fas fa-tags text-blue-300"></i>
                     <span>Ver Planes & Precios</span>
                   </button>
@@ -1928,17 +1935,21 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
+                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-amber-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                 <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-sm font-black shadow-md shadow-amber-500/20">
                       <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
                         <h4 class="text-xs font-black text-white leading-none">Tu Negocio Aquí</h4>
+                        <p class="text-[10px] text-amber-300/90 font-medium mt-0.5">reservascr.app</p>
                         <p class="text-[10px] text-blue-300 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/40">Preventa</span>
                     <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
                   </div>
 
@@ -1948,10 +1959,12 @@ class App {
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Reservas Online</span>
                       </div>
+                      <span class="text-emerald-400 font-bold text-[11px]">24/7</span>
                       <span class="text-blue-400 font-bold text-[11px]">24/7</span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
                         <i class="fab fa-whatsapp text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">WhatsApp Auto</span>
                       </div>
@@ -1959,13 +1972,17 @@ class App {
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <i class="fas fa-ban text-rose-400 text-xs"></i>
                         <i class="fas fa-shield-alt text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Tarjeta requerida</span>
                       </div>
+                      <span class="text-emerald-400 font-black text-[11px]">NO (Gratis)</span>
                       <span class="text-blue-300 font-black text-[11px]">NO (Gratis)</span>
                     </div>
                   </div>
 
+                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border border-amber-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-amber-300 shadow-xs">
+                    <i class="fas fa-gift text-sm text-amber-400"></i>
                   <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-blue-300 shadow-xs">
                     <i class="fas fa-gift text-sm text-blue-400"></i>
                     <span>15 DÍAS GRATIS AL ESTRENO</span>
@@ -15531,7 +15548,7 @@ class App {
                       <span>Operador de la Plataforma y Contacto</span>
                     </h4>
                     <p>
-                      La plataforma <strong>Reservas CR</strong> es desarrollada, operada y mantenida por <strong>GeoSoft</strong>, entidad tecnológica radicada en la República de Costa Rica.
+                      La plataforma <strong>Reservas CR</strong> es desarrollada, operada y mantenida en la República de Costa Rica.
                     </p>
                     <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <span class="font-semibold text-slate-700"><i class="fas fa-envelope text-blue-600 mr-1.5"></i> Correo Oficial de Soporte y Legal:</span>
@@ -15675,7 +15692,7 @@ class App {
                       <span>Propiedad Intelectual</span>
                     </h4>
                     <p>
-                      Todos los derechos sobre la plataforma, marcas, software, código fuente, logotipos, arquitectura de datos, interfaces visuales e identidad gráfica pertenecen exclusivamente a <strong>GeoSoft</strong>. Queda prohibida la reproducción, modificación o ingeniería inversa sin autorización previa por escrito.
+                      Todos los derechos sobre la plataforma, marcas, software, código fuente, logotipos, arquitectura de datos, interfaces visuales e identidad gráfica pertenecen exclusivamente a <strong>Reservas CR</strong>. Queda prohibida la reproducción, modificación o ingeniería inversa sin autorización previa por escrito.
                     </p>
                   </section>
 
@@ -15732,7 +15749,7 @@ class App {
                       <span>Responsable del Tratamiento y Datos de Contacto</span>
                     </h4>
                     <p>
-                      El responsable del tratamiento y custodia de las bases de datos es <strong>Reservas CR</strong> (operado por <strong>GeoSoft</strong>), con domicilio legal en San José, Costa Rica.
+                      El responsable del tratamiento y custodia de las bases de datos es <strong>Reservas CR</strong>, con domicilio legal en San José, Costa Rica.
                     </p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                       <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
