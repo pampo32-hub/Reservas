@@ -1828,8 +1828,11 @@ class App {
         <!-- 1. Banner Principal: Acceso Anticipado / Cupos de Prelanzamiento -->
         ${SHOW_PREREGISTER_BANNER ? `
         <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-amber-500/30">
           <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-blue-500/30">
             <!-- Efectos de Neón y Luces de Fondo -->
+            <div class="absolute -top-24 -right-24 w-80 h-80 bg-amber-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+            <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
             <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -1840,10 +1843,14 @@ class App {
                 
                 <!-- Badge Animado -->
                 <div class="flex items-center gap-2 flex-wrap">
+                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/50 shadow-sm shadow-amber-500/10">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
                   <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                     <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
                   </span>
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">
+                    <i class="fas fa-check-circle text-emerald-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-400/30">
                     <i class="fas fa-check-circle text-blue-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
                   </span>
@@ -1851,6 +1858,7 @@ class App {
 
                 <!-- Titular de Impacto -->
                 <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400">15 Días Gratis</span> a partir del lanzamiento!
                   ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
@@ -1860,6 +1868,8 @@ class App {
 
                 <!-- Beneficios Destacados -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-amber-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fas fa-gift"></i>
@@ -1878,6 +1888,8 @@ class App {
                       <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
                     </div>
                   </div>
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-emerald-500/30 shadow-xs">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 text-sm">
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
                     <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
                       <i class="fab fa-whatsapp"></i>
@@ -1893,8 +1905,10 @@ class App {
                 <div class="pt-2 flex flex-wrap items-center gap-3">
                   <button 
                     id="banner-prereg-btn" 
+                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer animate-pulse"
                     class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
+                    <i class="fas fa-gift text-slate-950 text-base"></i>
                     <i class="fas fa-gift text-blue-300 text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
@@ -1902,6 +1916,7 @@ class App {
                     id="banner-view-plans-btn" 
                     class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
+                    <i class="fas fa-tags text-indigo-300"></i>
                     <i class="fas fa-tags text-blue-300"></i>
                     <span>Ver Planes & Precios</span>
                   </button>
@@ -1911,17 +1926,21 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
+                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-amber-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                 <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
                   <div class="flex items-center justify-between pb-3 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
+                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-yellow-500 flex items-center justify-center text-slate-950 text-sm font-black shadow-md shadow-amber-500/20">
                       <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
                         <h4 class="text-xs font-black text-white leading-none">Tu Negocio Aquí</h4>
+                        <p class="text-[10px] text-amber-300/90 font-medium mt-0.5">reservascr.app</p>
                         <p class="text-[10px] text-blue-300 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[10px] font-black border border-amber-400/40">Preventa</span>
                     <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
                   </div>
 
@@ -1931,10 +1950,12 @@ class App {
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Reservas Online</span>
                       </div>
+                      <span class="text-emerald-400 font-bold text-[11px]">24/7</span>
                       <span class="text-blue-400 font-bold text-[11px]">24/7</span>
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-emerald-400 text-xs"></i>
                         <i class="fab fa-whatsapp text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">WhatsApp Auto</span>
                       </div>
@@ -1942,13 +1963,17 @@ class App {
                     </div>
                     <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
+                        <i class="fas fa-ban text-rose-400 text-xs"></i>
                         <i class="fas fa-shield-alt text-blue-400 text-xs"></i>
                         <span class="text-slate-200 font-medium">Tarjeta requerida</span>
                       </div>
+                      <span class="text-emerald-400 font-black text-[11px]">NO (Gratis)</span>
                       <span class="text-blue-300 font-black text-[11px]">NO (Gratis)</span>
                     </div>
                   </div>
 
+                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/25 to-amber-500/25 border border-amber-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-amber-300 shadow-xs">
+                    <i class="fas fa-gift text-sm text-amber-400"></i>
                   <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-blue-300 shadow-xs">
                     <i class="fas fa-gift text-sm text-blue-400"></i>
                     <span>15 DÍAS GRATIS AL ESTRENO</span>
@@ -2340,14 +2365,14 @@ class App {
             <div class="stitch-border-beam-inner text-center space-y-6">
               
               <!-- Badge Superior -->
-              <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/40 text-cyan-300 text-xs font-black uppercase tracking-wider shadow-lg shadow-cyan-500/10 animate-fade-in">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-blue-500/40 text-blue-300 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 animate-fade-in">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                 <span>🚀 PLATAFORMA OFICIAL PARA NEGOCIOS • COSTA RICA 🇨🇷</span>
               </div>
 
               <!-- Titular de Impacto -->
               <h1 class="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-[1.15] tracking-tight">
-                Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">24/7</span> con confirmación por WhatsApp
+                Tus clientes agendan solos <span class="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">24/7</span> con confirmación por WhatsApp
               </h1>
 
               <!-- Subtítulo -->
@@ -2358,27 +2383,27 @@ class App {
               <!-- 3 Badges de Confianza -->
               <div class="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs sm:text-sm font-bold text-slate-200">
                 <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                  <i class="fas fa-bolt text-emerald-400"></i>
+                  <i class="fas fa-bolt text-blue-400"></i>
                   <span>0% Comisiones por Cita</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                  <i class="fab fa-whatsapp text-emerald-400 text-base"></i>
+                  <i class="fab fa-whatsapp text-blue-400 text-base"></i>
                   <span>WhatsApp Automático</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                  <i class="fas fa-clock text-cyan-400"></i>
+                  <i class="fas fa-clock text-blue-400"></i>
                   <span>Configuración en 2 Minutos</span>
                 </div>
               </div>
 
               <!-- Botones de Acción Primarios -->
               <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-                <button id="landing-hero-register-btn" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-black text-base shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
+                <button id="landing-hero-register-btn" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-base shadow-xl shadow-blue-950/25 flex items-center justify-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
                   <i class="fas fa-rocket text-lg"></i>
                   <span>Registrar Mi Negocio Gratis</span>
                 </button>
                 <button id="landing-scroll-demo-btn" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer">
-                  <i class="fas fa-play-circle text-cyan-400 text-lg"></i>
+                  <i class="fas fa-play-circle text-blue-400 text-lg"></i>
                   <span>Probar Demo en Vivo</span>
                 </button>
               </div>
@@ -2387,7 +2412,7 @@ class App {
               <p class="text-xs text-slate-400">
                 ✨ <strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
               </p>
-              <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-sm">
+              <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-bold shadow-sm">
                 <span class="text-base">🎁</span>
                 <span><strong>Pre-registro Especial:</strong> Obtén <strong>15 Días de Prueba Gratis del Plan Profesional (Pro)</strong> a partir del lanzamiento. ¡Sin tarjeta ni pagos hoy!</span>
               </div>
@@ -2396,11 +2421,10 @@ class App {
           </div>
         </section>
 
-        <!-- 3. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <!-- 2. SIMULADOR INTERACTIVO DE RESERVA EN VIVO (MOCKUP DEMO) -->
         <section id="landing-demo-section" class="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <span class="text-cyan-400 font-black text-xs uppercase tracking-wider">
+            <span class="text-blue-400 font-black text-xs uppercase tracking-wider">
               <i class="fas fa-mobile-alt mr-1"></i> Demo Interactiva en Vivo
             </span>
             <h2 class="text-2xl sm:text-4xl font-black text-white">Así de fácil reservará tu cliente en 10 segundos</h2>
@@ -2410,7 +2434,7 @@ class App {
           <div class="flex flex-col lg:flex-row items-center justify-center gap-10">
             
             <!-- SMARTPHONE MOCKUP INTERACTIVO -->
-            <div class="w-full max-w-sm bg-slate-900 rounded-[44px] p-3.5 border-4 border-slate-800 shadow-2xl shadow-cyan-500/10 relative">
+            <div class="w-full max-w-sm bg-slate-900 rounded-[44px] p-3.5 border-4 border-slate-800 shadow-2xl shadow-blue-500/10 relative">
               
               <!-- Pantalla de la App Demo -->
               <div class="bg-white text-slate-900 rounded-[34px] overflow-hidden p-4 space-y-3 relative">
@@ -2423,7 +2447,7 @@ class App {
                     </div>
                     <div>
                       <span class="font-black text-xs text-slate-900 block leading-tight">Studio Barber & Spa</span>
-                      <span class="text-[10px] text-emerald-600 font-bold">● Abierto Ahora</span>
+                      <span class="text-[10px] text-blue-600 font-bold">● Abierto Ahora</span>
                     </div>
                   </div>
                   <span class="text-[10px] bg-slate-100 font-bold px-2 py-0.5 rounded-full text-slate-600">⭐ 4.9 (128)</span>
@@ -2433,12 +2457,12 @@ class App {
                 <div>
                   <span class="text-[11px] font-black text-slate-500 uppercase tracking-wide block mb-1.5">1. Elige Servicio:</span>
                   <div class="space-y-1.5" id="demo-services-list">
-                    <div class="demo-service-item p-2.5 rounded-xl border-2 border-cyan-500 bg-cyan-50/50 flex justify-between items-center cursor-pointer transition-all" data-service="Corte & Barba VIP" data-price="12000">
+                    <div class="demo-service-item p-2.5 rounded-xl border-2 border-blue-600 bg-blue-50/50 flex justify-between items-center cursor-pointer transition-all" data-service="Corte & Barba VIP" data-price="12000">
                       <div>
                         <span class="font-black text-xs text-slate-900 block">✂️ Corte & Barba VIP</span>
                         <span class="text-[10px] text-slate-500">45 min</span>
                       </div>
-                      <span class="font-black text-xs text-cyan-700">₡12,000</span>
+                      <span class="font-black text-xs text-blue-700">₡12,000</span>
                     </div>
                     <div class="demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all" data-service="Manicura Spa" data-price="15000">
                       <div>
@@ -2462,7 +2486,7 @@ class App {
                   <span class="text-[11px] font-black text-slate-500 uppercase tracking-wide block mb-1.5">2. Horarios para Hoy:</span>
                   <div class="grid grid-cols-2 gap-1.5" id="demo-slots-list">
                     <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">09:30 AM</button>
-                    <button class="demo-slot-btn py-2 px-3 rounded-xl border-2 border-emerald-500 text-xs font-black text-emerald-800 bg-emerald-50 shadow-xs">10:30 AM ✓</button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border-2 border-blue-600 text-xs font-black text-blue-900 bg-blue-50 shadow-xs">10:30 AM ✓</button>
                     <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">02:00 PM</button>
                     <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">04:30 PM</button>
                   </div>
@@ -2470,20 +2494,20 @@ class App {
 
                 <!-- Botón Confirmar Simulación -->
                 <div class="pt-1">
-                  <button id="demo-confirm-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-95">
+                  <button id="demo-confirm-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs shadow-md shadow-blue-950/25 flex items-center justify-center gap-2 cursor-pointer transition-transform transform active:scale-95">
                     <i class="fas fa-check-circle"></i>
                     <span>Toca para Confirmar Cita Demo</span>
                   </button>
                 </div>
 
                 <!-- Notificación Emergente de WhatsApp (Simulada) -->
-                <div id="demo-whatsapp-toast" class="hidden absolute top-3 inset-x-3 z-30 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border-2 border-emerald-500 animate-bounce">
+                <div id="demo-whatsapp-toast" class="hidden absolute top-3 inset-x-3 z-30 bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border-2 border-blue-500 animate-bounce">
                   <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-lg flex-shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg flex-shrink-0">
                       <i class="fab fa-whatsapp"></i>
                     </div>
                     <div class="text-[11px] leading-tight">
-                      <span class="font-extrabold text-emerald-400 block">¡Confirmación por WhatsApp!</span>
+                      <span class="font-extrabold text-blue-400 block">¡Confirmación por WhatsApp!</span>
                       <p class="text-slate-300 mt-0.5" id="demo-wa-text">Tu cita de Corte & Barba VIP quedó lista para hoy a las 10:30 AM.</p>
                     </div>
                   </div>
@@ -2496,15 +2520,15 @@ class App {
             <!-- EXPLICACIÓN PASO A PASO AL LADO -->
             <div class="max-w-md space-y-6 text-left">
               <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 rounded-2xl bg-cyan-500/20 text-cyan-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-cyan-500/30">1</div>
+                <div class="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-blue-500/30">1</div>
                 <div>
                   <h4 class="font-black text-white text-base">El cliente entra a tu propio enlace</h4>
-                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Colocas tu link <code class="text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded">reservas.cr/tu-negocio</code> en tu biografía de Instagram o estados de WhatsApp.</p>
+                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Colocas tu link <code class="text-blue-300 bg-slate-900 px-1.5 py-0.5 rounded">reservas.cr/tu-negocio</code> en tu biografía de Instagram o estados de WhatsApp.</p>
                 </div>
               </div>
 
               <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-emerald-500/30">2</div>
+                <div class="w-10 h-10 rounded-2xl bg-blue-600/20 text-blue-300 font-black text-base flex items-center justify-center flex-shrink-0 border border-blue-600/30">2</div>
                 <div>
                   <h4 class="font-black text-white text-base">Elige servicio, especialista y hora</h4>
                   <p class="text-xs sm:text-sm text-slate-400 mt-1">Solo ve los horarios que tú tienes verdaderamente libres. Cero dobles reservas o confusiones.</p>
@@ -2512,7 +2536,7 @@ class App {
               </div>
 
               <div class="flex gap-4 items-start">
-                <div class="w-10 h-10 rounded-2xl bg-purple-500/20 text-purple-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-purple-500/30">3</div>
+                <div class="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-300 font-black text-base flex items-center justify-center flex-shrink-0 border border-indigo-500/30">3</div>
                 <div>
                   <h4 class="font-black text-white text-base">WhatsApp automático inmediato</h4>
                   <p class="text-xs sm:text-sm text-slate-400 mt-1">Tanto tú como tu cliente reciben los detalles de la cita con opción para agregar al calendario de Google.</p>
@@ -2520,9 +2544,7 @@ class App {
               </div>
 
               <div class="pt-2">
-                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-sm shadow-md transition-all cursor-pointer">
-                  ¡Quiero esto en mi negocio! >
-                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-sm shadow-md transition-all cursor-pointer">
+                <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-sm shadow-md transition-all cursor-pointer">
                   🎁 ¡Quiero 15 Días de Prueba Pro Gratis! >
                 </button>
               </div>
@@ -2534,7 +2556,7 @@ class App {
         <!-- 4. 4 PILARES DE VALOR (VENTAJAS ESTRATÉGICAS) -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
-            <span class="text-emerald-400 font-black text-xs uppercase tracking-wider">
+            <span class="text-blue-400 font-black text-xs uppercase tracking-wider">
               <i class="fas fa-gem mr-1"></i> Todo lo que necesitas para crecer
             </span>
             <h2 class="text-2xl sm:text-4xl font-black text-white">Diseñado para la realidad de los negocios en Costa Rica</h2>
@@ -2544,8 +2566,8 @@ class App {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             
             <!-- Tarjeta 1 -->
-            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 transition-all space-y-3">
-              <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl">
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-blue-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl">
                 <i class="fas fa-calendar-check"></i>
               </div>
               <h3 class="font-black text-white text-lg">Agenda 24/7 en Piloto Automático</h3>
@@ -2553,8 +2575,8 @@ class App {
             </div>
 
             <!-- Tarjeta 2 -->
-            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/50 transition-all space-y-3">
-              <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-blue-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-xl">
                 <i class="fab fa-whatsapp"></i>
               </div>
               <h3 class="font-black text-white text-lg">Recordatorios y Confirmación WhatsApp</h3>
@@ -2571,8 +2593,8 @@ class App {
             </div>
 
             <!-- Tarjeta 4 -->
-            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-purple-500/50 transition-all space-y-3">
-              <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center text-xl">
+            <div class="p-6 rounded-3xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/50 transition-all space-y-3">
+              <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xl">
                 <i class="fas fa-sliders-h"></i>
               </div>
               <h3 class="font-black text-white text-lg">Control Total de tus Horarios</h3>
@@ -2585,7 +2607,7 @@ class App {
         <!-- 5. TABLA DE LOS 4 PLANES DE SUSCRIPCIÓN -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-12 space-y-2">
-            <span class="text-amber-400 font-black text-xs uppercase tracking-wider">
+            <span class="text-blue-400 font-black text-xs uppercase tracking-wider">
               <i class="fas fa-crown mr-1"></i> Precios Transparentes y Sin Letra Pequeña
             </span>
             <h2 class="text-2xl sm:text-4xl font-black text-white">Elige el plan perfecto para tu negocio</h2>
@@ -2596,30 +2618,30 @@ class App {
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             
             <!-- PLAN 1: GRATIS DE POR VIDA -->
-            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-emerald-500/40 transition-all">
+            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-blue-500/40 transition-all">
               <div class="space-y-3">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 inline-block">100% Gratis</span>
+                  <span class="text-[11px] font-black text-blue-400 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 inline-block">100% Gratis</span>
                 </div>
                 <h3 class="text-xl font-black text-white">Plan Gratis</h3>
                 
                 <div class="flex items-baseline gap-2 flex-wrap">
                   <span class="text-3xl font-black text-white">₡0</span>
                   <span class="text-xs text-slate-400 font-bold">/ de por vida</span>
-                  <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-tight">100% Gratis</span>
+                  <span class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-black uppercase tracking-tight">100% Gratis</span>
                 </div>
                 <p class="text-xs text-slate-400">Ideal para emprendedores independientes que están empezando a digitalizar su negocio.</p>
 
                 <ul class="space-y-2 text-xs text-slate-300 pt-2">
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Hasta 25 reservas / mes</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> 1 especialista (dueño)</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Catálogo de hasta 5 servicios</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Tu propio link personalizado</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-emerald-400"></i> Cero tarjetas de crédito</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Hasta 25 reservas / mes</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> 1 especialista (dueño)</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Catálogo de hasta 5 servicios</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Tu propio link personalizado</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Cero tarjetas de crédito</li>
                 </ul>
               </div>
 
-              <button id="landing-plan-free-btn" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 font-black text-xs transition-all border border-slate-700 cursor-pointer">
+              <button id="landing-plan-free-btn" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-300 font-black text-xs transition-all border border-slate-700 cursor-pointer">
                 Comenzar Gratis de por Vida
               </button>
             </div>
@@ -2655,44 +2677,44 @@ class App {
             </div>
 
             <!-- PLAN 3: PROFESIONAL (PRO) -->
-            <div class="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-indigo-950/60 to-slate-900 border-2 border-amber-400 flex flex-col justify-between space-y-5 shadow-2xl relative">
-              <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-md whitespace-nowrap">
+            <div class="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-blue-950/60 to-slate-900 border-2 border-blue-500 flex flex-col justify-between space-y-5 shadow-2xl relative">
+              <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-blue-900 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md whitespace-nowrap">
                 ⭐ Más Popular • 15 Días Gratis
               </div>
 
               <div class="space-y-3 pt-1">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black text-amber-300 uppercase tracking-wider bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20 inline-block">Profesional</span>
+                  <span class="text-[11px] font-black text-blue-300 uppercase tracking-wider bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 inline-block">Profesional</span>
                 </div>
                 <h3 class="text-xl font-black text-white">Plan Profesional</h3>
                 
                 <div class="flex items-baseline gap-2 flex-wrap">
                   <span class="text-sm font-bold text-slate-400 line-through decoration-rose-500 decoration-2" title="Precio regular">$25</span>
-                  <span class="text-3xl font-black text-amber-300">$18</span>
+                  <span class="text-3xl font-black text-blue-400">$18</span>
                   <span class="text-xs text-slate-400 font-bold">/ mes (~₡9,400)</span>
                   <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-black uppercase tracking-tight">Lanzamiento</span>
                 </div>
                 <p class="text-xs text-slate-300 font-medium">La solución completa para salones, barberías, spas y clínicas con equipo.</p>
 
                 <ul class="space-y-2 text-xs text-slate-200 pt-2">
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> <strong>Hasta 300 reservas / mes</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> <strong>Hasta 5 especialistas / empleados</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> <strong>WhatsApp oficial automatizado</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> Reportes y métricas de ingresos</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-amber-400"></i> Google Calendar (.ics)</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Hasta 300 reservas / mes</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Hasta 5 especialistas / empleados</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>WhatsApp oficial automatizado</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> Reportes y métricas de ingresos</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> Google Calendar (.ics)</li>
                 </ul>
               </div>
 
-              <button id="landing-plan-pro-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition-all cursor-pointer transform hover:scale-102">
+              <button id="landing-plan-pro-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs shadow-lg shadow-blue-950/25 transition-all cursor-pointer transform hover:scale-102">
                 🎁 Probar 15 Días Pro Gratis
               </button>
             </div>
 
             <!-- PLAN 4: ILIMITADO -->
-            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-purple-500/40 transition-all">
+            <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-indigo-500/40 transition-all">
               <div class="space-y-3">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black text-purple-400 uppercase tracking-wider bg-purple-500/10 px-2.5 py-1 rounded-full border border-purple-500/20 inline-block">Sin Límites</span>
+                  <span class="text-[11px] font-black text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20 inline-block">Sin Límites</span>
                 </div>
                 <h3 class="text-xl font-black text-white">Plan Ilimitado</h3>
                 
@@ -2705,15 +2727,15 @@ class App {
                 <p class="text-xs text-slate-400">Para franquicias y negocios con gran volumen de citas.</p>
 
                 <ul class="space-y-2 text-xs text-slate-300 pt-2">
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> <strong>Reservas 100% ilimitadas</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> <strong>Especialistas ilimitados</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> Posición preferencial en directorio</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> Soporte prioritario VIP</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-purple-400"></i> Todo lo del Plan Profesional</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Reservas 100% ilimitadas</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Especialistas ilimitados</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Posición preferencial en directorio</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Soporte prioritario VIP</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Todo lo del Plan Profesional</li>
                 </ul>
               </div>
 
-              <button id="landing-plan-unlimited-btn" class="w-full py-3 rounded-xl bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white font-black text-xs transition-all border border-purple-500/30 cursor-pointer">
+              <button id="landing-plan-unlimited-btn" class="w-full py-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white font-black text-xs transition-all border border-indigo-500/30 cursor-pointer">
                 Elegir Plan Ilimitado
               </button>
             </div>
@@ -2724,7 +2746,7 @@ class App {
         <!-- 6. PREGUNTAS FRECUENTES (FAQ) -->
         <section class="py-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
           <div class="text-center max-w-2xl mx-auto mb-10 space-y-2">
-            <span class="text-cyan-400 font-black text-xs uppercase tracking-wider">
+            <span class="text-blue-400 font-black text-xs uppercase tracking-wider">
               <i class="fas fa-question-circle mr-1"></i> Resolvemos tus dudas
             </span>
             <h2 class="text-2xl sm:text-3xl font-black text-white">Preguntas Frecuentes</h2>
@@ -2734,7 +2756,7 @@ class App {
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿En qué consiste la prueba de 15 días gratis?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+                <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
                 Al pre-registrarte recibes 15 días completos de acceso gratuito al <strong>Plan Profesional (Pro)</strong> a partir del lanzamiento oficial. Podrás probar las confirmaciones automáticas por WhatsApp, agregar hasta 5 especialistas y recibir citas sin pagar nada ni ingresar tarjeta de crédito.
@@ -2744,7 +2766,7 @@ class App {
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿El Plan Gratis realmente es gratis de por vida?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+                <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
                 Sí, puedes usar el Plan Gratis para siempre sin costo alguno. Te incluye hasta 25 citas mensuales y catálogo de hasta 5 servicios para tu negocio. Si en el futuro tu negocio crece y necesitas más citas o más empleados, puedes actualizar a Pro cuando quieras.
@@ -2754,7 +2776,7 @@ class App {
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Cobran comisiones por cada cita que reserven mis clientes?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+                <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
                 ¡Absolutamente no! El 100% de lo que te pagan tus clientes es tuyo. No cobramos comisiones por servicio ni por reserva agendada.
@@ -2764,7 +2786,7 @@ class App {
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Mis clientes necesitan descargar una aplicación?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+                <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
                 No, tus clientes no tienen que descargar nada pesado ni crear cuentas complicadas. Tocan tu link en Instagram o WhatsApp y reservan directamente en su navegador web en 10 segundos.
@@ -2774,7 +2796,7 @@ class App {
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Puedo configurar mis días libres y horas de almuerzo?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+                <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
                 Sí. Desde tu panel de negocio puedes definir tus horarios de apertura, descansos y bloquear cualquier hora específica o día completo con un solo toque para que nadie pueda agendar en ese momento.
@@ -2784,7 +2806,7 @@ class App {
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
                 <span>¿Necesito tarjeta de crédito para registrarme?</span>
-                <i class="fas fa-chevron-down text-cyan-400 group-open:rotate-180 transition-transform"></i>
+                <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
                 No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis o del plan gratis sin pagos previos.
@@ -2795,16 +2817,14 @@ class App {
 
         <!-- 7. BANNER FINAL DE LLAMADO A LA ACCIÓN -->
         <section class="py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center">
-          <div class="bg-gradient-to-r from-blue-900 via-indigo-950 to-emerald-950 rounded-3xl p-8 sm:p-12 border border-cyan-500/30 shadow-2xl space-y-6">
+          <div class="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 rounded-3xl p-8 sm:p-12 border border-blue-500/30 shadow-2xl space-y-6">
             <h2 class="text-2xl sm:text-4xl font-black text-white">¿Listo para tener tu agenda en piloto automático?</h2>
             <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
               Únete a los negocios de Costa Rica que ya están ahorrando horas de trabajo cada semana con Reservas CR.
               Pre-regístrate hoy y asegura tus <strong>15 Días de Prueba Gratis del Plan Pro</strong> sin ningún compromiso.
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
-              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
-                <i class="fas fa-rocket mr-2"></i> Crear Mi Cuenta Gratis Ahora
-              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-base shadow-xl transition-transform transform hover:scale-105 cursor-pointer">
+              <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-base shadow-xl shadow-blue-950/30 transition-transform transform hover:scale-105 cursor-pointer">
                 🎁 Pre-registrarme con 15 Días Pro Gratis
               </button>
             </div>
@@ -2819,20 +2839,12 @@ class App {
 
   // --- EVENTOS Y LÓGICA DE LA LANDING DE NEGOCIOS ---
   initBusinessLandingEvents() {
-    // 1. Botones de Registro
-    const openRegister = () => this.renderAuthModal({ mode: 'register', role: 'business' });
-    document.getElementById('landing-hero-register-btn')?.addEventListener('click', openRegister);
-        document.getElementById('landing-demo-register-btn')?.addEventListener('click', openRegister);
-    document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
-    document.getElementById('landing-plan-pro-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'pro' }));
-    document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openRegister);
     // 1. Botones Principales que dirigen al Pre-registro con 15 Días de Prueba Pro
     const openPreRegister = () => this.renderPreRegisterModal('pro');
     document.getElementById('landing-hero-register-btn')?.addEventListener('click', openPreRegister);
-        document.getElementById('landing-demo-register-btn')?.addEventListener('click', openPreRegister);
+    document.getElementById('landing-demo-register-btn')?.addEventListener('click', openPreRegister);
     document.getElementById('landing-bottom-register-btn')?.addEventListener('click', openPreRegister);
 
-    // 2. Smooth Scroll to Demo
     // 2. Botones de Planes Específicos
     document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => {
       this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
@@ -2850,8 +2862,6 @@ class App {
       document.getElementById('landing-demo-section')?.scrollIntoView({ behavior: 'smooth' });
     });
 
-    
-
     // 4. Simulador de Reserva Demo Interactiva
     let selectedDemoService = 'Corte & Barba VIP';
     let selectedDemoSlot = '10:30 AM';
@@ -2862,8 +2872,8 @@ class App {
           i.className = 'demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all';
           i.querySelector('span:last-child').className = 'font-black text-xs text-slate-700';
         });
-        item.className = 'demo-service-item p-2.5 rounded-xl border-2 border-cyan-500 bg-cyan-50/50 flex justify-between items-center cursor-pointer transition-all';
-        item.querySelector('span:last-child').className = 'font-black text-xs text-cyan-700';
+        item.className = 'demo-service-item p-2.5 rounded-xl border-2 border-blue-600 bg-blue-50/50 flex justify-between items-center cursor-pointer transition-all';
+        item.querySelector('span:last-child').className = 'font-black text-xs text-blue-700';
         selectedDemoService = item.getAttribute('data-service') || 'Corte & Barba VIP';
       });
     });
@@ -2874,7 +2884,7 @@ class App {
           b.className = 'demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100';
           b.textContent = b.textContent.replace(' ✓', '');
         });
-        btn.className = 'demo-slot-btn py-2 px-3 rounded-xl border-2 border-emerald-500 text-xs font-black text-emerald-800 bg-emerald-50 shadow-xs';
+        btn.className = 'demo-slot-btn py-2 px-3 rounded-xl border-2 border-blue-600 text-xs font-black text-blue-900 bg-blue-50 shadow-xs';
         if (!btn.textContent.includes('✓')) btn.textContent = `${btn.textContent} ✓`;
         selectedDemoSlot = btn.textContent.replace(' ✓', '').trim();
       });
@@ -2891,12 +2901,12 @@ class App {
       if (waToast) {
         waToast.classList.remove('hidden');
         confirmDemoBtn.innerHTML = '<i class="fas fa-check"></i> ¡Cita Confirmada con Éxito!';
-        confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-2';
+        confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 text-white font-black text-xs shadow-md flex items-center justify-center gap-2';
 
         setTimeout(() => {
           waToast.classList.add('hidden');
           confirmDemoBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Toca para Probar Otra Cita Demo</span>';
-          confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-black text-xs shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer';
+          confirmDemoBtn.className = 'w-full py-3 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs shadow-md shadow-blue-950/25 flex items-center justify-center gap-2 cursor-pointer';
         }, 5000);
       }
     });
@@ -8836,6 +8846,7 @@ class App {
                     <input type="file" id="upload-staff-avatar-file" accept="image/*" class="hidden">
                     <button type="button" id="btn-trigger-upload-staff-avatar" class="w-full px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                       <i class="fas fa-upload"></i> Subir desde PC / Celular
+             
                     </button>
                     <input 
                       type="text" 

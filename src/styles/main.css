@@ -1,23 +1,37 @@
 /* ==========================================================================
+   THE LUMINOUS ENGINE • DIGITAL FLUIDITY & RESOURCE INTELLIGENCE DESIGN SYSTEM
    ROYAL MIDNIGHT SAPPHIRE & NAVY GRADIENT DESIGN SYSTEM
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
+  --color-surface: #F8F9FF;
+  --color-surface-container-low: #EFF4FF;
+  --color-surface-container: #E5EEFF;
+  --color-surface-container-highest: #D3E4FE;
   --color-surface: #F8FAFC;
   --color-surface-container-low: #F1F5F9;
   --color-surface-container: #E2E8F0;
   --color-surface-container-highest: #CBD5E1;
   --color-surface-container-lowest: #FFFFFF;
 
+  --color-primary: #006D32;
+  --color-primary-container: #00D166;
+  --color-primary-fixed: #74FF9A;
   --color-primary: #0F172A;
   --color-primary-container: #2563EB;
   --color-primary-fixed: #93C5FD;
   
+  --color-secondary: #00629E;
+  --color-secondary-container: #B3E5FC;
   --color-secondary: #1E293B;
   --color-secondary-container: #DBEAFE;
 
+  --color-on-surface: #0B1C30;
+  --color-on-surface-variant: #414754;
+  --color-outline: #727782;
+  --color-outline-variant: rgba(187, 203, 185, 0.22);
   --color-on-surface: #0F172A;
   --color-on-surface-variant: #475569;
   --color-outline: #64748B;
@@ -33,6 +47,8 @@
 
 html, body {
   font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
   background-color: #F8FAFC;
   color: #0F172A;
   margin: 0;
@@ -52,10 +68,14 @@ h1, h2, h3, h4, .font-headline, .font-display {
   letter-spacing: -0.03em;
 }
 
+/* Luminous Atmospheric Energy Canvas */
 /* Luminous Midnight Atmospheric Energy Canvas */
 .bg-luminous-gradient, body {
+  background-color: #F8F9FF;
   background-color: #F8FAFC;
   background-image: 
+    radial-gradient(circle at 85% 12%, rgba(0, 209, 102, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 12% 88%, rgba(0, 98, 158, 0.10) 0%, transparent 48%);
     radial-gradient(circle at 85% 12%, rgba(37, 99, 235, 0.08) 0%, transparent 45%),
     radial-gradient(circle at 12% 88%, rgba(15, 23, 42, 0.06) 0%, transparent 50%);
   background-attachment: fixed;
@@ -63,6 +83,7 @@ h1, h2, h3, h4, .font-headline, .font-display {
 
 /* Glassmorphism Navigation & Floating Panels */
 .glass-pill {
+  background: rgba(248, 249, 255, 0.85) !important;
   background: rgba(248, 250, 252, 0.88) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
@@ -70,43 +91,55 @@ h1, h2, h3, h4, .font-headline, .font-display {
 }
 
 .glass-panel {
+  background: rgba(255, 255, 255, 0.92) !important;
   background: rgba(255, 255, 255, 0.94) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(229, 238, 255, 0.8) !important;
   border: 1px solid rgba(226, 232, 240, 0.8) !important;
 }
 
 .glass-header {
+  background: rgba(248, 249, 255, 0.88) !important;
   background: rgba(255, 255, 255, 0.9) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(211, 228, 254, 0.6) !important;
   border-bottom: 1px solid rgba(226, 232, 240, 0.7) !important;
 }
 
+/* Ambient Diffused Shadows (Tinted with on-surface #0B1C30) */
 /* Ambient Diffused Shadows (Tinted with Midnight Navy #0F172A) */
 .shadow-ambient {
+  box-shadow: 0 24px 44px -12px rgba(11, 28, 48, 0.06) !important;
   box-shadow: 0 24px 44px -12px rgba(15, 23, 42, 0.07) !important;
 }
 
 .shadow-zenith {
+  box-shadow: 0 14px 34px rgba(11, 28, 48, 0.04) !important;
   box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05) !important;
 }
 
 .shadow-luminous-glow {
+  box-shadow: 0 0 28px rgba(0, 209, 102, 0.28) !important;
   box-shadow: 0 0 28px rgba(37, 99, 235, 0.25) !important;
 }
 
 /* The No-Line Rule: Soft Ghost Borders & Background Shifts */
 .border-slate-100, .border-slate-200, .border-slate-300 {
+  border-color: rgba(187, 203, 185, 0.25) !important;
   border-color: rgba(203, 213, 225, 0.4) !important;
 }
 
+/* Signature Primary Luminous Gradient (Energy Flow) */
 /* Signature Formal Navy / Royal Sapphire Gradient Buttons */
 .bg-gradient-primary, 
 .btn-luminous-primary,
 .view-biz-btn {
+  background: linear-gradient(135deg, #006D32 0%, #00B354 100%) !important;
   background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%) !important;
   color: #FFFFFF !important;
+  box-shadow: 0 8px 24px -4px rgba(0, 109, 50, 0.35) !important;
   box-shadow: 0 8px 24px -4px rgba(30, 58, 138, 0.35) !important;
   border: none !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -114,6 +147,8 @@ h1, h2, h3, h4, .font-headline, .font-display {
 
 .btn-luminous-primary:hover,
 .view-biz-btn:hover {
+  background: linear-gradient(135deg, #005324 0%, #00D166 100%) !important;
+  box-shadow: 0 10px 28px -4px rgba(0, 209, 102, 0.45) !important;
   background: linear-gradient(135deg, #020617 0%, #1D4ED8 50%, #3B82F6 100%) !important;
   box-shadow: 0 10px 28px -4px rgba(37, 99, 235, 0.45) !important;
   transform: translateY(-1px);
@@ -123,6 +158,9 @@ h1, h2, h3, h4, .font-headline, .font-display {
 .time-slot-btn {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 0.875rem !important;
+  border: 1px solid rgba(187, 203, 185, 0.35) !important;
+  background-color: #EFF4FF !important;
+  color: #0B1C30 !important;
   border: 1px solid rgba(203, 213, 225, 0.6) !important;
   background-color: #F8FAFC !important;
   color: #0F172A !important;
@@ -130,19 +168,24 @@ h1, h2, h3, h4, .font-headline, .font-display {
 }
 
 .time-slot-btn:hover {
+  background-color: #E5EEFF !important;
+  border-color: #00D166 !important;
   background-color: #EFF6FF !important;
   border-color: #3B82F6 !important;
   color: #1E40AF !important;
 }
 
 .time-slot-btn.selected {
+  background: linear-gradient(135deg, #006D32 0%, #00B354 100%) !important;
   background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%) !important;
   color: #FFFFFF !important;
   border-color: transparent !important;
+  box-shadow: 0 6px 18px rgba(0, 109, 50, 0.3) !important;
   box-shadow: 0 6px 18px rgba(30, 58, 138, 0.3) !important;
   transform: translateY(-1px);
 }
 
+/* High-Contrast Status Badges */
 /* High-Contrast Status Badges (Formal & Navy) */
 .badge-status {
   display: inline-flex;
@@ -156,24 +199,36 @@ h1, h2, h3, h4, .font-headline, .font-display {
 }
 
 .badge-status-confirmed {
+  background-color: #D4F9E4 !important;
+  color: #006D32 !important;
+  border: 1px solid rgba(0, 209, 102, 0.3) !important;
   background-color: #EFF6FF !important;
   color: #1E40AF !important;
   border: 1px solid rgba(59, 130, 246, 0.3) !important;
 }
 
 .badge-status-pending {
+  background-color: #E5EEFF !important;
+  color: #00629E !important;
+  border: 1px solid rgba(0, 98, 158, 0.25) !important;
   background-color: #F8FAFC !important;
   color: #3B82F6 !important;
   border: 1px solid rgba(147, 197, 253, 0.4) !important;
 }
 
 .badge-status-completed {
+  background-color: #E8F0FE !important;
+  color: #0B1C30 !important;
+  border: 1px solid rgba(11, 28, 48, 0.15) !important;
   background-color: #F1F5F9 !important;
   color: #0F172A !important;
   border: 1px solid rgba(15, 23, 42, 0.15) !important;
 }
 
 .badge-status-cancelled {
+  background-color: #FFEBEE !important;
+  color: #BA1A1A !important;
+  border: 1px solid rgba(186, 26, 26, 0.2) !important;
   background-color: #FEF2F2 !important;
   color: #DC2626 !important;
   border: 1px solid rgba(220, 38, 38, 0.2) !important;
@@ -189,15 +244,20 @@ input[type="time"],
 input[type="number"],
 select,
 textarea {
+  background-color: #EFF4FF !important;
+  border: 1px solid rgba(187, 203, 185, 0.3) !important;
   background-color: #F8FAFC !important;
   border: 1px solid rgba(203, 213, 225, 0.6) !important;
   border-radius: 0.875rem !important;
+  color: #0B1C30 !important;
   color: #0F172A !important;
   transition: all 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
   background-color: #FFFFFF !important;
+  border-color: #006D32 !important;
+  box-shadow: 0 0 0 3px rgba(0, 209, 102, 0.25) !important;
   border-color: #2563EB !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
   outline: none !important;
@@ -209,13 +269,16 @@ input:focus, select:focus, textarea:focus {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
+  background: #F8F9FF;
   background: #F8FAFC;
 }
 ::-webkit-scrollbar-thumb {
+  background: #D3E4FE;
   background: #CBD5E1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  background: #00D166;
   background: #2563EB;
 }
 
@@ -259,7 +322,8 @@ input:focus, select:focus, textarea:focus {
   will-change: transform;
 }
 
-.aurora-blob-emerald {
+.aurora-blob-emerald,
+.aurora-blob-sapphire {
   top: -15%;
   left: 20%;
   width: 600px;
@@ -268,7 +332,8 @@ input:focus, select:focus, textarea:focus {
   animation: auroraFlow1 18s ease-in-out infinite alternate;
 }
 
-.aurora-blob-cyan {
+.aurora-blob-cyan,
+.aurora-blob-ice {
   bottom: -15%;
   right: 12%;
   width: 650px;
@@ -277,7 +342,8 @@ input:focus, select:focus, textarea:focus {
   animation: auroraFlow2 22s ease-in-out infinite alternate;
 }
 
-.aurora-blob-purple {
+.aurora-blob-purple,
+.aurora-blob-cobalt {
   top: 35%;
   left: 50%;
   width: 500px;
