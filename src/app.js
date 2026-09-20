@@ -8569,6 +8569,7 @@ class App {
                 <h3 class="text-xl font-bold">${isEdit ? 'Editar Especialista' : 'Nuevo Especialista'}</h3>
               </div>
             </div>
+            <button id="close-staff-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-
             <button id="close-staff-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
               <i class="fas fa-times"></i>
             </button>
@@ -15395,6 +15396,7 @@ class App {
   }
 
   // --- MODAL DE TÉRMINOS, CONDICIONES Y PRIVACIDAD ---
+  // --- MODAL DE TÉRMINOS, CONDICIONES Y PRIVACIDAD ---
   renderLegalModal(initialTab = 'terms') {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
@@ -15403,186 +15405,555 @@ class App {
 
     const renderContent = () => {
       modalContainer.innerHTML = `
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
-          <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+          <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 my-4 modal-card flex flex-col max-h-[94vh]">
             
             <!-- Header -->
             <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative shrink-0 border-b border-slate-800">
-              <button id="close-legal-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-                <i class="fas fa-times text-xs"></i>
+              <button id="close-legal-modal-btn" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer" title="Cerrar modal">
+                <i class="fas fa-times text-sm"></i>
               </button>
               
-              <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
-                  <i class="fas fa-shield-alt"></i> Marco Legal & Confidencialidad
+              <div class="flex items-center gap-2 mb-2 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/30">
+                  <i class="fas fa-shield-alt text-blue-400"></i> Marco Legal & Confidencialidad
                 </span>
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-600/20 text-blue-200 text-[10px] font-black border border-blue-400/30">
-                  <i class="fas fa-certificate text-[9px] text-blue-400"></i> Ley N° 8968 Costa Rica 🇨🇷
+                <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
+                  <i class="fas fa-certificate text-[9px] text-emerald-400"></i> Ley N° 8968 Costa Rica 🇨🇷
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-semibold border border-slate-700">
+                  <i class="fas fa-lock text-[9px] text-slate-400"></i> Cifrado SSL 256-bit
                 </span>
               </div>
 
-              <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Términos de Servicio & Política de Privacidad</h2>
-              <p class="text-xs text-slate-300 mt-1">Transparencia, seguridad y protección de datos para comercios y clientes en Costa Rica.</p>
+              <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+                <span>Términos de Servicio & Política de Privacidad</span>
+              </h2>
+              <p class="text-xs text-slate-300 mt-1 max-w-2xl">
+                Condiciones de uso, responsabilidades operativas y protección integral de datos para usuarios finales y comercios en Costa Rica.
+              </p>
             </div>
 
             <!-- Tab Switcher -->
             <div class="flex border-b border-slate-200 bg-slate-50 px-4 sm:px-6 pt-3 gap-2 shrink-0">
-              <button id="tab-btn-terms" class="px-4 py-2.5 rounded-t-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer ${currentTab === 'terms' ? 'bg-white text-blue-700 border-t-2 border-l border-r border-slate-200 -mb-px shadow-2xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-file-contract"></i>
+              <button id="tab-btn-terms" class="px-4 sm:px-5 py-2.5 rounded-t-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer ${currentTab === 'terms' ? 'bg-white text-blue-700 border-t-2 border-l border-r border-slate-200 -mb-px shadow-2xs' : 'text-slate-500 hover:text-slate-800'}">
+                <i class="fas fa-file-contract ${currentTab === 'terms' ? 'text-blue-600' : 'text-slate-400'}"></i>
                 <span>Términos y Condiciones</span>
               </button>
-              <button id="tab-btn-privacy" class="px-4 py-2.5 rounded-t-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer ${currentTab === 'privacy' ? 'bg-white text-blue-700 border-t-2 border-l border-r border-slate-200 -mb-px shadow-2xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-user-shield"></i>
-                <span>Privacidad & Tratamiento de Datos</span>
+              <button id="tab-btn-privacy" class="px-4 sm:px-5 py-2.5 rounded-t-2xl text-xs sm:text-sm font-black transition-all flex items-center gap-2 cursor-pointer ${currentTab === 'privacy' ? 'bg-white text-blue-700 border-t-2 border-l border-r border-slate-200 -mb-px shadow-2xs' : 'text-slate-500 hover:text-slate-800'}">
+                <i class="fas fa-user-shield ${currentTab === 'privacy' ? 'text-blue-600' : 'text-slate-400'}"></i>
+                <span>Política de Privacidad</span>
               </button>
             </div>
 
             <!-- Scrollable Content -->
-            <div class="p-6 overflow-y-auto space-y-6 text-xs sm:text-sm text-slate-700 leading-relaxed flex-1 bg-white">
+            <div class="p-5 sm:p-7 overflow-y-auto space-y-6 text-xs sm:text-sm text-slate-700 leading-relaxed flex-1 bg-white">
               ${currentTab === 'terms' ? `
-                <!-- TÉRMINOS Y CONDICIONES -->
-                <div class="space-y-4 animate-fade-in">
-                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-950">
-                    <h3 class="font-black text-sm mb-1 flex items-center gap-2 text-blue-900">
-                      <i class="fas fa-info-circle text-blue-600"></i> Resumen de Términos
-                    </h3>
-                    <p class="text-xs text-blue-800">
-                      Reservas CR es una plataforma de software en la nube que conecta comercios locales con sus clientes para la gestión digital de reservas. Al utilizar nuestros servicios, aceptas las condiciones aquí detalladas.
-                    </p>
+                <!-- TÉRMINOS Y CONDICIONES EXTENDIDOS -->
+                <div class="space-y-6 animate-fade-in">
+                  
+                  <!-- Banner informativo -->
+                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 flex items-start gap-3 shadow-2xs">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <i class="fas fa-info-circle text-sm"></i>
+                    </div>
+                    <div>
+                      <h3 class="font-black text-sm text-blue-900 mb-0.5">Resumen de las Condiciones de Uso</h3>
+                      <p class="text-xs text-blue-800 leading-relaxed">
+                        Bienvenido a <strong>Reservas CR</strong>. Estos términos regulan el acceso y uso de nuestra plataforma tecnológica tanto para personas que agendan citas (clientes finales) como para comercios, profesionales y dueños de negocio que publican sus servicios. Al navegar, registrarte o reservar, aceptas cumplir íntegramente estas cláusulas.
+                      </p>
+                    </div>
                   </div>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">1</span>
-                      Naturaleza del Servicio e Intermediación Tecnológica
+                  <!-- Cláusula 1 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">1</span>
+                      <span>Ámbito de Aplicación y Aceptación Expresa</span>
                     </h4>
                     <p>
-                      Reservas CR opera como un directorio comercial y herramienta SaaS (Software as a Service) de agendamiento. Reservas CR <strong>no presta ni ejecuta directamente los servicios físicos</strong> (cortes de cabello, servicios médicos, tratamientos estéticos, talleres mecánicos, entre otros) ofertados por los comercios independientes. La calidad, puntualidad, precios, facturación y ejecución de cada servicio recaen bajo la responsabilidad exclusiva del comercio prestador.
+                      Al acceder al sitio web, crear una cuenta de cliente o de comercio, agendar una cita o utilizar cualquiera de las herramientas digitales provistas por <strong>Reservas CR</strong>, declaras ser mayor de edad con capacidad legal para contratar o contar con la debida representación, y manifiestas tu consentimiento pleno y sin reservas a los presentes Términos de Servicio.
+                    </p>
+                    <p class="text-slate-600">
+                      Si utilizas la plataforma en representación de una persona jurídica, empresa, salón, barbería, clínica o establecimiento comercial, garantizas que posees las facultades legales suficientes para vincular a dicha entidad a estas condiciones.
                     </p>
                   </section>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">2</span>
-                      Periodo de Prueba de Lanzamiento (15 Días Gratis) y Suscripciones
+                  <!-- Cláusula 2 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">2</span>
+                      <span>Operador de la Plataforma y Contacto</span>
                     </h4>
                     <p>
-                      Los comercios que se pre-registren o se registren durante el lanzamiento disfrutan de un periodo de <strong>15 días naturales de prueba 100% gratuita</strong> sin costo alguno ni obligación de ingresar tarjetas de crédito.
+                      La plataforma <strong>Reservas CR</strong> es desarrollada, operada y mantenida por <strong>GeoSoft</strong>, entidad tecnológica radicada en la República de Costa Rica.
                     </p>
-                    <p>
-                      Al culminar el periodo de prueba, el comercio podrá optar voluntariamente por suscribirse a uno de los planes mensuales oficiales (Básico $10/mes, Profesional $18/mes o Ilimitado $35/mes) pagaderos mediante SINPE Móvil o plataformas de pago habilitadas. El comercio podrá cancelar su plan en cualquier momento sin cláusulas de permanencia forzosa ni penalizaciones.
-                    </p>
+                    <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <span class="font-semibold text-slate-700"><i class="fas fa-envelope text-blue-600 mr-1.5"></i> Correo Oficial de Soporte y Legal:</span>
+                      <a href="mailto:soporte@reservascr.app" class="font-bold text-blue-600 hover:text-blue-800 underline">soporte@reservascr.app</a>
+                    </div>
                   </section>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">3</span>
-                      Compromisos de los Usuarios y Clientes
+                  <!-- Cláusula 3: Deslinde -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">3</span>
+                      <span>Naturaleza del Servicio e Intermediación Tecnológica</span>
                     </h4>
                     <p>
-                      Los usuarios finales se comprometen a suministrar información verídica (nombre y número telefónico) y a presentarse puntualmente a las citas agendadas o bien cancelarlas con la anticipación debida a través de la plataforma para permitir que otros clientes aprovechen los horarios disponibles.
+                      <strong>Reservas CR</strong> opera única y exclusivamente como un directorio comercial digital y plataforma SaaS (Software as a Service) de gestión de citas y reservas en la nube.
                     </p>
+                    <div class="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 space-y-1.5">
+                      <div class="font-bold text-xs flex items-center gap-1.5 text-amber-900">
+                        <i class="fas fa-exclamation-triangle text-amber-600"></i> Deslinde de Responsabilidad sobre el Servicio Presencial
+                      </div>
+                      <p class="text-xs text-amber-900 leading-relaxed">
+                        Reservas CR <strong>no presta, no ejecuta ni supervisa directamente los servicios físicos o presenciales</strong> (cortes de cabello, tratamientos estéticos, atenciones de salud, asesorías, reparaciones u otros oficios) ofrecidos por los comercios y profesionales independientes.
+                      </p>
+                      <p class="text-[11px] text-amber-800">
+                        La calidad, higiene, cumplimiento horario, tarifas, emisión de facturas electrónicas y ejecución técnica del servicio son responsabilidad exclusiva del comercio o profesional prestador.
+                      </p>
+                    </div>
                   </section>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">4</span>
-                      Notificaciones y Canales de Comunicación
+                  <!-- Cláusula 4 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">4</span>
+                      <span>Cuentas de Usuario, Seguridad y Veracidad</span>
                     </h4>
-                    <p>
-                      Al solicitar una reserva o registrarse, el usuario autoriza el envío de notificaciones transaccionales necesarias (confirmaciones de cita, recordatorios previos al turno y solicitudes de calificación del servicio) a través de la API oficial de WhatsApp Cloud de Meta y/o correo electrónico.
-                    </p>
-                  </section>
-
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">5</span>
-                      Legislación Aplicable y Jurisdicción
-                    </h4>
-                    <p>
-                      Estos términos se rigen e interpretan de acuerdo con las leyes vigentes de la <strong>República de Costa Rica</strong>. Cualquier controversia será dirimida ante los tribunales competentes de San José, Costa Rica.
-                    </p>
-                  </section>
-                </div>
-              ` : `
-                <!-- POLÍTICA DE PRIVACIDAD Y TRATAMIENTO DE DATOS -->
-                <div class="space-y-4 animate-fade-in">
-                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950">
-                    <h3 class="font-black text-sm mb-1 flex items-center gap-2 text-blue-900">
-                      <i class="fas fa-user-lock text-blue-600"></i> Cumplimiento con Ley N° 8968 (Costa Rica)
-                    </h3>
-                    <p class="text-xs text-blue-800 leading-relaxed">
-                      Garantizamos la privacidad y seguridad de los datos personales recopilados, respetando el derecho a la autodeterminación informativa de todos nuestros usuarios.
-                    </p>
-                  </div>
-
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">1</span>
-                      Datos Recopilados
-                    </h4>
-                    <p>
-                      Recopilamos únicamente los datos indispensables para coordinar y confirmar los servicios: nombre del cliente, número de teléfono/WhatsApp, correo electrónico, cantón o provincia, y el historial de citas agendadas con los comercios.
-                    </p>
-                  </section>
-
-                  <!-- CLÁUSULA DESTACADA DE TITULARIDAD EXCLUSIVA DEL COMERCIO -->
-                  <section class="p-4.5 rounded-2xl bg-slate-900 border-2 border-slate-800 space-y-2 text-white shadow-xs">
-                    <h4 class="font-black text-blue-300 text-sm flex items-center gap-2">
-                      <i class="fas fa-store-alt text-blue-400"></i>
-                      2. Titularidad, Uso y Descarga Exclusiva de Datos por el Comercio
-                    </h4>
-                    <p class="text-xs sm:text-sm font-medium leading-relaxed text-slate-200">
-                      <strong>Los únicos autorizados y con derecho legal a acceder, registrar, consultar y descargar los datos de los clientes son exclusivamente los propios comercios</strong> con los que el usuario ha solicitado un servicio o cita.
-                    </p>
-                    <ul class="list-disc list-inside space-y-1 text-xs text-slate-300 pt-1 font-semibold">
-                      <li><strong>Registro y control de ventas:</strong> Los comercios utilizan la información de sus clientes para llevar su control administrativo, historial de atención y facturación.</li>
-                      <li><strong>Programas de cliente frecuente y promociones:</strong> El comercio puede contactar a sus propios clientes con descuentos, promociones directas o fidelización por frecuencia.</li>
-                      <li><strong>Exportación y descarga de reportes:</strong> El comercio es el único facultado para descargar sus listados de clientes y reportes de citas en formato digital (Excel .xlsx / PDF) para su gestión contable y operativa interna.</li>
+                    <ul class="list-disc list-inside space-y-1.5 text-slate-600">
+                      <li><strong>Veracidad de la información:</strong> El usuario se compromete a proporcionar información verídica, exacta y actualizada (nombre real, número telefónico y correo electrónico).</li>
+                      <li><strong>Custodia de credenciales:</strong> Cada usuario es responsable de mantener la confidencialidad de su contraseña y acceso a su cuenta. Toda actividad realizada desde una cuenta autenticada se presumirá realizada por su titular.</li>
+                      <li><strong>Prohibición de suplantación:</strong> Queda estrictamente prohibido utilizar identidades falsas, reservar en nombre de terceros sin su consentimiento explícito o manipular datos ajenos.</li>
                     </ul>
                   </section>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">3</span>
-                      No Comercialización a Terceros
+                  <!-- Cláusula 5 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">5</span>
+                      <span>Flujo de Reservas, Estados de Citas y Trazabilidad</span>
                     </h4>
                     <p>
-                      Reservas CR <strong>no vende, no alquila ni comercializa bases de datos</strong> de clientes ni de comercios a empresas externas, agencias de publicidad de terceros ni entidades ajenas a la relación directa entre el comercio y su cliente.
+                      Una reserva queda formalizada y visible en el sistema según los estados: <em>Confirmada, Pendiente, Atendida, Cancelada o Reprogramada</em>. La pantalla de detalles y el panel de usuario constituyen la referencia oficial del estado registrado.
+                    </p>
+                    <p class="text-slate-600">
+                      El cliente es responsable de verificar minuciosamente la sede física, fecha, hora exacta, profesional seleccionado y duración del servicio antes de presionar el botón de confirmación.
                     </p>
                   </section>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">4</span>
-                      Seguridad y Almacenamiento en la Nube
+                  <!-- Cláusula 6 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">6</span>
+                      <span>Precios, Métodos de Pago y Suscripciones</span>
+                    </h4>
+                    <div class="space-y-3">
+                      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-tag text-blue-600 mr-1"></i> Precios de Servicios Físicos de Comercios:</span>
+                        <p class="text-xs text-slate-600">
+                          Los precios listados son fijados libremente por cada negocio en colones costarricenses (₡ CRC) o dólares ($ USD). Por defecto, el pago del servicio físico se efectúa directamente en el local comercial (efectivo, datáfono o SINPE Móvil directo al comercio) según las políticas informadas por dicho establecimiento.
+                        </p>
+                      </div>
+
+                      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-crown text-amber-600 mr-1"></i> Suscripciones SaaS de Comercios a Reservas CR:</span>
+                        <p class="text-xs text-slate-600">
+                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita</strong>. Posterior a dicho periodo, podrán contratar planes mensuales oficiales (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Ilimitado ₡18.200/mes) pagaderos mediante <strong>SINPE Móvil con verificación automática</strong> o pasarelas habilitadas. No aplican contratos de permanencia forzosa y la suscripción puede cancelarse en cualquier momento sin penalizaciones.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Cláusula 7 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">7</span>
+                      <span>Cancelaciones, Reprogramaciones y Ausencias ("No-Show")</span>
                     </h4>
                     <p>
-                      La información se almacena en bases de datos PostgreSQL de última generación con conexiones cifradas SSL/TLS y copias de seguridad continuas, garantizando altos estándares de integridad y confidencialidad.
+                      Los clientes pueden cancelar o reprogramar sus citas a través de la plataforma respetando los plazos y límites de anticipación configurados por cada comercio.
+                    </p>
+                    <p class="text-slate-600">
+                      Ante inasistencias injustificadas o cancelaciones tardías de clientes, los comercios se reservan el derecho de limitar futuras reservas o aplicar sus políticas comerciales internas.
                     </p>
                   </section>
 
-                  <section class="space-y-2">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                      <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center text-xs font-black">5</span>
-                      Derechos de los Titulares (Acceso, Rectificación y Supresión)
+                  <!-- Cláusula 8 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">8</span>
+                      <span>Notificaciones Transaccionales por WhatsApp y Correo</span>
                     </h4>
                     <p>
-                      Cualquier usuario puede solicitar en cualquier momento la actualización o eliminación definitiva de su perfil y registros contactando directamente al comercio o al canal de soporte oficial de Reservas CR a través de <a href="mailto:soporte@reservascr.app" class="text-blue-600 underline font-bold hover:text-blue-800">soporte@reservascr.app</a>.
+                      Al solicitar una reserva o registrarse, el usuario autoriza expresamente la recepción de comunicaciones operativas (confirmaciones de reserva, recordatorios de turno previos a la cita, avisos de reprogramación y encuestas de calidad) a través de la API oficial de WhatsApp Cloud de Meta y/o correo electrónico.
+                    </p>
+                    <p class="text-slate-600 text-xs">
+                      Estas comunicaciones tienen carácter estrictamente operativo y de servicio. El usuario puede gestionar o solicitar la desactivación de recordatorios automáticos comunicándose con nuestro canal de soporte.
                     </p>
                   </section>
+
+                  <!-- Cláusula 9 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">9</span>
+                      <span>Perfiles Públicos, Contenido y Reseñas de Clientes</span>
+                    </h4>
+                    <p>
+                      Los comercios son responsables de la exactitud, legitimidad y derechos de autor sobre las fotografías, descripciones, nombres y logotipos que cargan en sus perfiles públicos.
+                    </p>
+                    <p class="text-slate-600">
+                      Las reseñas y calificaciones de clientes deben ser auténticas y fundamentadas en experiencias reales de servicio. Reservas CR se reserva el derecho de moderar o remover contenido ofensivo, difamatorio o fraudulento.
+                    </p>
+                  </section>
+
+                  <!-- Cláusula 10 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">10</span>
+                      <span>Uso Aceptable y Prohibiciones</span>
+                    </h4>
+                    <p>Queda terminantemente prohibido a los usuarios y comercios:</p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600">
+                      <li>Realizar reservas maliciosas o fraudulentas que bloqueen la agenda de un negocio.</li>
+                      <li>Emplear bots, scrapers, arañas web o scripts automatizados para extraer datos masivos de la plataforma.</li>
+                      <li>Intentar vulnerar la seguridad de la infraestructura, bases de datos o paneles administrativos.</li>
+                      <li>Utilizar datos obtenidos mediante la plataforma para el envío de spam, publicidad no solicitada o actividades ilícitas.</li>
+                    </ul>
+                  </section>
+
+                  <!-- Cláusula 11 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">11</span>
+                      <span>Propiedad Intelectual</span>
+                    </h4>
+                    <p>
+                      Todos los derechos sobre la plataforma, marcas, software, código fuente, logotipos, arquitectura de datos, interfaces visuales e identidad gráfica pertenecen exclusivamente a <strong>GeoSoft</strong>. Queda prohibida la reproducción, modificación o ingeniería inversa sin autorización previa por escrito.
+                    </p>
+                  </section>
+
+                  <!-- Cláusula 12 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">12</span>
+                      <span>Disponibilidad del Sistema y Límite de Responsabilidad</span>
+                    </h4>
+                    <p>
+                      Trabajamos continuamente para garantizar la máxima disponibilidad y rendimiento de la plataforma. No obstante, el servicio se suministra sobre la base de disponibilidad técnica ("tal cual"), pudiendo presentarse mantenimientos programados, fallas de conectividad de proveedores externos o eventos de fuerza mayor.
+                    </p>
+                    <p class="text-slate-600">
+                      En la máxima medida permitida por la ley de Costa Rica, Reservas CR no responderá por pérdidas de beneficios comerciales o lucro cesante derivados de la indisponibilidad temporal del sistema.
+                    </p>
+                  </section>
+
+                  <!-- Cláusula 13 -->
+                  <section class="space-y-2">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">13</span>
+                      <span>Legislación Aplicable y Jurisdicción</span>
+                    </h4>
+                    <p>
+                      Estos términos se rigen conforme a las leyes de la <strong>República de Costa Rica</strong> (incluyendo la Ley N° 7472 de Promoción de la Competencia y Defensa Efectiva del Consumidor). Cualquier controversia que no pueda resolverse de mutuo acuerdo será sometida a la jurisdicción de los tribunales de justicia de San José, Costa Rica.
+                    </p>
+                  </section>
+
+                </div>
+              ` : `
+                <!-- POLÍTICA DE PRIVACIDAD Y PROTECCIÓN DE DATOS EXTENSA -->
+                <div class="space-y-6 animate-fade-in">
+                  
+                  <!-- Banner Cumplimiento Ley 8968 -->
+                  <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-950 text-white space-y-2 shadow-sm border border-blue-800">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="px-2.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200 text-[10px] font-black tracking-wider uppercase border border-blue-400/40">
+                        <i class="fas fa-balance-scale mr-1"></i> Marco Regulatorio PRODHAB
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
+                        <i class="fas fa-check-circle mr-1"></i> Ley N° 8968 Costa Rica
+                      </span>
+                    </div>
+                    <h3 class="font-black text-base sm:text-lg text-white">Política de Privacidad y Tratamiento de Datos Personales</h3>
+                    <p class="text-xs text-slate-200 leading-relaxed">
+                      En <strong>Reservas CR</strong> garantizamos la protección del derecho fundamental a la autodeterminación informativa de todos nuestros usuarios, clientes y comercios, cumpliendo con los más estrictos estándares de confidencialidad, seguridad y transparencia.
+                    </p>
+                  </div>
+
+                  <!-- Sección 1 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">1</span>
+                      <span>Responsable del Tratamiento y Datos de Contacto</span>
+                    </h4>
+                    <p>
+                      El responsable del tratamiento y custodia de las bases de datos es <strong>Reservas CR</strong> (operado por <strong>GeoSoft</strong>), con domicilio legal en San José, Costa Rica.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                        <span class="font-bold text-slate-800 block mb-0.5"><i class="fas fa-envelope text-blue-600 mr-1"></i> Consultas de Privacidad & DPO:</span>
+                        <a href="mailto:privacidad@reservascr.app" class="font-bold text-blue-600 underline">privacidad@reservascr.app</a>
+                      </div>
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                        <span class="font-bold text-slate-800 block mb-0.5"><i class="fas fa-headset text-blue-600 mr-1"></i> Soporte General:</span>
+                        <a href="mailto:soporte@reservascr.app" class="font-bold text-blue-600 underline">soporte@reservascr.app</a>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Sección 2 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">2</span>
+                      <span>Categorías Detalladas de Datos Personales Recopilados</span>
+                    </h4>
+                    <p>Recopilamos únicamente los datos imprescindibles para el funcionamiento del servicio, organizados en las siguientes categorías:</p>
+                    
+                    <div class="space-y-3 pt-1">
+                      <!-- Datos Clientes -->
+                      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1">
+                        <span class="font-black text-xs text-blue-900 flex items-center gap-1.5">
+                          <i class="fas fa-user text-blue-600"></i> A. Datos de Clientes Finales:
+                        </span>
+                        <p class="text-xs text-slate-600">
+                          Nombre completo, número de teléfono móvil / WhatsApp, dirección de correo electrónico (opcional según el flujo), cantón/provincia de interés, historial de citas agendadas (fechas, horas, servicios y profesional asignado), notas de preferencia médica/estética indicadas por el usuario, estados de asistencia y reseñas o calificaciones otorgadas.
+                        </p>
+                      </div>
+
+                      <!-- Datos Comercios -->
+                      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1">
+                        <span class="font-black text-xs text-indigo-900 flex items-center gap-1.5">
+                          <i class="fas fa-store text-indigo-600"></i> B. Datos de Comercios y Profesionales:
+                        </span>
+                        <p class="text-xs text-slate-600">
+                          Nombre comercial, razón social o nombre del titular, cédula física o jurídica, teléfono de contacto y WhatsApp comercial, número de SINPE Móvil del negocio, dirección física exacta y geolocalización, fotografías de portafolio y logotipo, catálogo de servicios y tarifas, nómina de profesionales o colaboradores, horarios de apertura y bloqueos de agenda.
+                        </p>
+                      </div>
+
+                      <!-- Datos Técnicos -->
+                      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1">
+                        <span class="font-black text-xs text-slate-900 flex items-center gap-1.5">
+                          <i class="fas fa-laptop-code text-slate-700"></i> C. Datos Técnicos, de Navegación y Conexión:
+                        </span>
+                        <p class="text-xs text-slate-600">
+                          Dirección IP pública aproximada (para geolocalización de país/provincia y prevención de ataques de seguridad), identificadores de sesión cifrados, tipo de navegador, sistema operativo del dispositivo, marcas de tiempo de acceso y registros (logs) de seguridad para auditoría técnica.
+                        </p>
+                      </div>
+
+                      <!-- Datos de Transacciones -->
+                      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1">
+                        <span class="font-black text-xs text-emerald-900 flex items-center gap-1.5">
+                          <i class="fas fa-receipt text-emerald-600"></i> D. Datos de Transacciones y Suscripciones:
+                        </span>
+                        <p class="text-xs text-slate-600">
+                          Números de comprobante/referencia de transferencias SINPE Móvil, teléfono emisor de la transferencia, montos en colones (₡ CRC), fecha/hora de acreditación bancaria e historial de planes de suscripción. <em>Nota: Reservas CR no almacena números completos de tarjetas bancarias ni contraseñas bancarias de los usuarios.</em>
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Sección 3: Titularidad exclusiva del comercio -->
+                  <section class="p-4.5 rounded-2xl bg-slate-900 border-2 border-slate-800 space-y-2.5 text-white shadow-md">
+                    <div class="flex items-center gap-2">
+                      <span class="w-6 h-6 rounded-lg bg-blue-500 text-white flex items-center justify-center text-xs font-black shrink-0">3</span>
+                      <h4 class="font-black text-blue-300 text-sm sm:text-base">
+                        Titularidad, Uso y Descarga Exclusiva de Datos por el Comercio Afiliado
+                      </h4>
+                    </div>
+                    <p class="text-xs sm:text-sm font-medium leading-relaxed text-slate-200">
+                      <strong>Los únicos autorizados y con derecho legal para acceder, consultar y descargar los datos de los clientes son exclusivamente los propios comercios</strong> con los cuales el cliente ha coordinado un servicio o cita.
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs text-slate-300 pt-1 font-medium">
+                      <li><strong>Registro y gestión comercial:</strong> Los comercios utilizan la información de sus clientes para llevar su control operativo, historial de atención y facturación.</li>
+                      <li><strong>Programas de fidelización:</strong> El comercio puede contactar a sus clientes frecuentes con promociones o avisos directos.</li>
+                      <li><strong>Exportación y descarga en Excel/PDF:</strong> El comercio es el único facultado para exportar su listado de clientes y agenda en formatos estándar (.xlsx / PDF) para su respaldo administrativo interno.</li>
+                    </ul>
+                  </section>
+
+                  <!-- Sección 4: Cero venta de datos -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">4</span>
+                      <span>Política Estricta de No Venta ni Comercialización de Datos</span>
+                    </h4>
+                    <p>
+                      Reservas CR <strong>no vende, no alquila, no cede ni comercializa bases de datos personales</strong> de clientes ni de comercios a agencias de publicidad externas, empresas de telemercadeo ni terceros con fines lucrativos independientes.
+                    </p>
+                    <p class="text-slate-600 text-xs">
+                      Toda la información se utiliza estrictamente para fines operacionales propios de la plataforma y de la prestación de los servicios de reserva.
+                    </p>
+                  </section>
+
+                  <!-- Sección 5 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">5</span>
+                      <span>Finalidades Específicas del Tratamiento de Datos</span>
+                    </h4>
+                    <p>Los datos recopilados se destinan exclusivamente a:</p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700 pt-1 font-medium">
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Coordinar, agendar y confirmar citas entre clientes y comercios en tiempo real.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Enviar confirmaciones y recordatorios automáticos por WhatsApp y correo.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Geolocalizar comercios cercanos y optimizar las búsquedas del directorio.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Verificar y conciliar automáticamente pagos de suscripciones mediante SINPE Móvil.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Prevenir fraudes, ataques cibernéticos, suplantaciones o reservas malintencionadas.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Brindar soporte técnico y atención a solicitudes de usuarios y comercios.</span>
+                      </li>
+                    </ul>
+                  </section>
+
+                  <!-- Sección 6 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">6</span>
+                      <span>Notificaciones y Tratamiento de Datos en WhatsApp</span>
+                    </h4>
+                    <p>
+                      Para el envío de recordatorios y confirmaciones operativas, nos integramos con la <strong>API oficial de WhatsApp Cloud de Meta</strong>.
+                    </p>
+                    <p class="text-slate-600 text-xs">
+                      Tratamos el número de teléfono, nombre de pila y detalles de la cita exclusivamente para remitir la plantilla de recordatorio transaccional correspondiente. No se utiliza este canal para envío masivo de spam no autorizado.
+                    </p>
+                  </section>
+
+                  <!-- Sección 7 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">7</span>
+                      <span>Cookies, Almacenamiento Local (Local Storage) y Caché PWA</span>
+                    </h4>
+                    <p>
+                      Reservas CR utiliza <code>localStorage</code> y tecnologías de caché del navegador indispensables para:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600 text-xs">
+                      <li>Mantener la sesión activa y segura del usuario o comercio.</li>
+                      <li>Guardar preferencias de interfaz (modo oscuro, filtros de búsqueda frecuentes).</li>
+                      <li>Permitir el funcionamiento rápido y offline de la aplicación web progresiva (PWA).</li>
+                    </ul>
+                    <p class="text-slate-500 text-xs pt-1">
+                      No utilizamos cookies invasivas de seguimiento entre sitios de terceros para perfilamiento publicitario externo.
+                    </p>
+                  </section>
+
+                  <!-- Sección 8 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">8</span>
+                      <span>Medidas de Seguridad Técnicas y Cifrado</span>
+                    </h4>
+                    <p>
+                      Implementamos salvaguardas técnicas, administrativas y operativas de vanguardia para proteger la información contra accesos no autorizados, alteraciones, pérdidas o divulgación ilícita:
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <i class="fas fa-lock text-blue-600 mb-1 block text-base"></i>
+                        <span class="font-bold text-slate-900 block">Cifrado SSL/TLS</span>
+                        <span class="text-slate-600">Toda la transmisión de datos viaja bajo protocolo HTTPS con cifrado de 256 bits.</span>
+                      </div>
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <i class="fas fa-key text-indigo-600 mb-1 block text-base"></i>
+                        <span class="font-bold text-slate-900 block">Hashing Criptográfico</span>
+                        <span class="text-slate-600">Las contraseñas se almacenan procesadas mediante algoritmos seguros unidireccionales (bcrypt).</span>
+                      </div>
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <i class="fas fa-database text-emerald-600 mb-1 block text-base"></i>
+                        <span class="font-bold text-slate-900 block">Bases de Datos Aisladas</span>
+                        <span class="text-slate-600">Almacenamiento PostgreSQL con respaldos continuos y control de accesos basado en roles.</span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Sección 9 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">9</span>
+                      <span>Plazos de Conservación y Retención de Datos</span>
+                    </h4>
+                    <p>
+                      Conservamos los datos personales únicamente durante el tiempo necesario para la prestación del servicio activo o durante los plazos legalmente exigidos por la legislación mercantil, civil y tributaria de Costa Rica (prescripción de 4 a 5 años para registros contables).
+                    </p>
+                    <p class="text-slate-600 text-xs">
+                      Una vez extinguida la finalidad o solicitada la supresión de la cuenta, los datos son eliminados de forma segura o anonimizados para fines estadísticos no identificables.
+                    </p>
+                  </section>
+
+                  <!-- Sección 10 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">10</span>
+                      <span>Derechos de los Titulares (Derechos ARCO)</span>
+                    </h4>
+                    <p>
+                      De conformidad con la <strong>Ley N° 8968</strong>, todo titular de datos personales goza de los derechos de:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600 text-xs">
+                      <li><strong>Acceso:</strong> Conocer qué datos personales tratamos y consultar su procedencia.</li>
+                      <li><strong>Rectificación:</strong> Solicitar la corrección de datos inexactos, erróneos o desactualizados.</li>
+                      <li><strong>Cancelación / Supresión:</strong> Solicitar la eliminación total de sus datos cuando no exista obligación legal de conservación.</li>
+                      <li><strong>Oposición:</strong> Oponerse al tratamiento de sus datos para finalidades específicas.</li>
+                    </ul>
+                    <p class="text-xs text-slate-700 pt-1">
+                      Para ejercer cualquiera de estos derechos de forma gratuita, envía una solicitud formal con tu nombre y número de teléfono registrado a <a href="mailto:privacidad@reservascr.app" class="text-blue-600 font-bold underline">privacidad@reservascr.app</a>. Las solicitudes son atendidas en un plazo máximo de 5 días hábiles.
+                    </p>
+                  </section>
+
+                  <!-- Sección 11 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">11</span>
+                      <span>Proceso de Eliminación Definitiva de Cuenta</span>
+                    </h4>
+                    <p>
+                      Cualquier usuario o comercio puede solicitar el cierre y eliminación definitiva de su cuenta en cualquier momento. Al completarse el proceso:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-slate-600 text-xs">
+                      <li>Se borran permanentemente el perfil público, catálogo, credenciales de acceso y vínculos telefónicos.</li>
+                      <li>El número telefónico y correo quedan liberados para que el usuario pueda volver a registrarse en el futuro si así lo desea.</li>
+                      <li>Se cancelan de forma automática e inmediata las renovaciones de suscripción pendientes.</li>
+                    </ul>
+                  </section>
+
+                  <!-- Sección 12 -->
+                  <section class="space-y-2">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">12</span>
+                      <span>Actualizaciones de la Política de Privacidad</span>
+                    </h4>
+                    <p>
+                      Reservas CR se reserva el derecho de modificar o actualizar periódicamente esta Política de Privacidad para adecuarla a reformas legislativas o mejoras en la plataforma. Publicaremos la fecha de última actualización en esta misma sección para conocimiento transparente de la comunidad.
+                    </p>
+                  </section>
+
                 </div>
               `}
             </div>
 
             <!-- Footer Modal -->
             <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-              <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+              <div class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
                 <i class="fas fa-lock text-blue-600"></i>
-                <span>Última actualización: Septiembre 2026 • Reservas CR</span>
+                <span>Última actualización: Septiembre 2026 • Reservas CR (Costa Rica 🇨🇷)</span>
               </div>
-              <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
-                Entendido y de Acuerdo
+              <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-7 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-check"></i>
+                <span>Entendido y de Acuerdo</span>
               </button>
             </div>
           </div>
