@@ -1741,6 +1741,7 @@ class App {
                 <button 
                   type="button"
                   class="card-toggle-verify-btn py-2 px-1 rounded-xl text-[10px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isVerified ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-300'}"
+                  class="card-toggle-verify-btn py-2 px-1 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-xs ${isVerified ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-emerald-700 hover:bg-emerald-50 border border-emerald-300'}"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   data-is-verified="${isVerified}"
@@ -1755,6 +1756,7 @@ class App {
                   type="button"
                   class="card-toggle-block-btn py-2 px-1 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   class="card-toggle-block-btn py-2 px-1 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs ${isBlocked ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
+                  class="card-toggle-block-btn py-2 px-1 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 cursor-pointer shadow-xs ${isBlocked ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-white text-rose-700 hover:bg-rose-50 border border-rose-200'}"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   data-is-blocked="${isBlocked}"
@@ -1770,12 +1772,14 @@ class App {
                   type="button"
                   class="card-edit-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   class="card-edit-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                  class="card-edit-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-blue-700 hover:bg-blue-50 border border-blue-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                   data-biz-id="${biz.id}"
                   title="Modificar y editar información del negocio"
                 >
                   <i class="fas fa-edit text-xs"></i>
                   <span>Modificar</span>
                   <span>Editar</span>
+                  <span class="truncate">Editar</span>
                 </button>
 
                 <!-- 3. Eliminar -->
@@ -1783,6 +1787,7 @@ class App {
                   type="button"
                   class="card-delete-biz-btn py-2 px-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
                   class="card-delete-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-2xs"
+                  class="card-delete-biz-btn py-2 px-1 rounded-xl text-[10px] font-bold bg-white text-slate-600 hover:bg-rose-600 hover:text-white border border-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                   data-biz-id="${biz.id}"
                   data-biz-name="${this.escapeHtml(biz.name)}"
                   title="Eliminar este negocio permanentemente"
@@ -1790,6 +1795,7 @@ class App {
                   <i class="fas fa-trash-alt text-xs"></i>
                   <span>Eliminar</span>
                   <span>Borrar</span>
+                  <span class="truncate">Eliminar</span>
                 </button>
               </div>
             ` : ''}
