@@ -4325,11 +4325,18 @@ class App {
               </div>
 
               <!-- Checkbox Términos y Condiciones para la Reserva -->
-              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
-                <input type="checkbox" id="booking-terms-optin" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
-                <label for="booking-terms-optin" class="text-xs text-slate-700 dark:text-slate-300 leading-snug cursor-pointer select-none">
-                  He leído y acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> de Reservas CR *
-                </label>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/70 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all">
+                <div class="flex items-center justify-between gap-3">
+                  <label for="booking-terms-optin" class="flex items-center gap-3 cursor-pointer select-none flex-1">
+                    <input type="checkbox" id="booking-terms-optin" checked class="w-5 h-5 rounded-lg text-blue-600 focus:ring-2 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                    <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                      Acepto los Términos y Condiciones de la Reserva *
+                    </span>
+                  </label>
+                  <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 shrink-0 cursor-pointer flex items-center gap-1">
+                    <i class="fas fa-file-contract text-[10px]"></i> Leer
+                  </button>
+                </div>
               </div>
 
               <!-- Submit button -->
@@ -8930,7 +8937,6 @@ class App {
         </div>
 
         ${isLimitReached ? `
-          <div class="p-4 bg-gradient-to-r from-amber-50
           <div class="p-4 bg-gradient-to-r from-amber-50 via-amber-100/50 to-purple-50 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
             <div class="flex items-start sm:items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center text-base font-black flex-shrink-0">
@@ -12979,11 +12985,18 @@ class App {
                 </div>
 
                 <!-- Checkbox Términos y Condiciones Cliente -->
-                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
-                  <input type="checkbox" id="cli-reg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
-                  <label for="cli-reg-terms" class="text-xs text-slate-700 dark:text-slate-300 leading-snug cursor-pointer select-none">
-                    He leído y acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> de Reservas CR *
-                  </label>
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/70 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all">
+                  <div class="flex items-center justify-between gap-3">
+                    <label for="cli-reg-terms" class="flex items-center gap-3 cursor-pointer select-none flex-1">
+                      <input type="checkbox" id="cli-reg-terms" checked class="w-5 h-5 rounded-lg text-blue-600 focus:ring-2 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                      <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                        Acepto los Términos y la Política de Privacidad *
+                      </span>
+                    </label>
+                    <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 shrink-0 cursor-pointer flex items-center gap-1">
+                      <i class="fas fa-file-contract text-[10px]"></i> Leer
+                    </button>
+                  </div>
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
@@ -13236,11 +13249,18 @@ class App {
                 </div>
 
                 <!-- Checkbox Términos y Condiciones Negocio -->
-                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
-                  <input type="checkbox" id="biz-reg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
-                  <label for="biz-reg-terms" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed cursor-pointer select-none">
-                    Acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span>, la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> y las políticas comerciales de Reservas CR *
-                  </label>
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/70 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all">
+                  <div class="flex items-center justify-between gap-3">
+                    <label for="biz-reg-terms" class="flex items-center gap-3 cursor-pointer select-none flex-1">
+                      <input type="checkbox" id="biz-reg-terms" checked class="w-5 h-5 rounded-lg text-blue-600 focus:ring-2 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                      <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                        Acepto los Términos y Políticas Comerciales *
+                      </span>
+                    </label>
+                    <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 shrink-0 cursor-pointer flex items-center gap-1">
+                      <i class="fas fa-file-contract text-[10px]"></i> Leer
+                    </button>
+                  </div>
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/20 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
@@ -13860,11 +13880,18 @@ class App {
             </div>
 
             <!-- Checkbox Términos y Condiciones Pre-registro -->
-            <div class="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xs flex items-start gap-3">
-              <input type="checkbox" id="prereg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
-              <label for="prereg-terms" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed cursor-pointer select-none">
-                Acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> (Ley N° 8968 de Costa Rica) *
-              </label>
+            <div class="p-3.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xs transition-all">
+              <div class="flex items-center justify-between gap-3">
+                <label for="prereg-terms" class="flex items-center gap-3 cursor-pointer select-none flex-1">
+                  <input type="checkbox" id="prereg-terms" checked class="w-5 h-5 rounded-lg text-blue-600 focus:ring-2 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                  <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
+                    Acepto los Términos y Condiciones (Ley N° 8968) *
+                  </span>
+                </label>
+                <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 shrink-0 cursor-pointer flex items-center gap-1">
+                  <i class="fas fa-file-contract text-[10px]"></i> Leer
+                </button>
+              </div>
             </div>
 
             <div id="prereg-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
