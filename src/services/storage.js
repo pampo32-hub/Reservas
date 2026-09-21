@@ -688,6 +688,13 @@ class StorageService {
     return businesses.find(b => b.id === id) || null;
   }
 
+  async getBusinessByIdAsync(id) {
+    let biz = this.getBusinessById(id);
+    if (biz) return biz;
+    await this.init();
+    return this.getBusinessById(id);
+  }
+
   async saveBusiness(businessData) {
     // 1. Guardar de inmediato en caché local y localStorage
     const businesses = this.getBusinesses();

@@ -687,14 +687,7 @@ class App {
     }
 
     const initialUrl = this.getUrlForView(this.currentView, initialRoute.params);
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState({ view: this.currentView, params: initialRoute.params }, '', initialUrl);
-    }
-
-    this.renderHeader();
-    this.renderMobileBottomNav();
-    this.renderCurrentView();
-    this.setupGlobalEvents();
+    // Renderizado único e instantáneo de la vista inicial
     try {
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -704,21 +697,16 @@ class App {
       console.error('Error inicializando vista:', err);
     }
 
-    // Sincronizar datos frescos del servidor y refrescar conservando la vista actual
-    // Sincronizar datos frescos del servidor en segundo plano sin parpadeo múltiple
+    // Sincronizar datos frescos del servidor en segundo plano sin parpadear la pantalla
     try {
       if (storage.initAsync) {
         const prevCount = (storage.businessesCache || []).length;
-        await storage.initAsync();
-        this.renderHeader();
-        this.renderMobileBottomNav();
-        this.renderCurrentView();
-        const newCount = (storage.businessesCache || []).length;
-        if (prevCount === 0 || prevCount !== newCount) {
-          this.renderHeader();
-          this.renderMobileBottomNav();
-          this.renderCurrentView();
-        }
+        storage.initAsync().then(() => {
+          const newCount = (storage.businessesCache || []).length;
+          if (prevCount === 0 && newCount > 0 && this.currentView === 'directory') {
+            this.renderCurrentView();
+          }
+        }).catch(err => console.warn('Storage sync warning:', err));
       }
     } catch (err) {
       console.warn('Storage sync warning:', err);
@@ -1093,9 +1081,11 @@ class App {
 
           console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
 
+          // 1. Guardar ID de cita recién llegada para animarla con acomodo y resplandor
           // 1. Guardar ID de cita recién llegada e insertar inmediatamente en memoria local para render instantáneo
           if (apt && apt.id) {
             this.newlyArrivedAppointmentId = apt.id;
+          this.newlyArrivedAppointmentId = apt.id;
 
             try {
               const curApts = storage.getAppointments();
@@ -1105,6 +1095,14 @@ class App {
                 localStorage.setItem('reservas_cr_appointments', JSON.stringify(updated));
               }
             } catch (errLocal) {}
+          try {
+            const curApts = storage.getAppointments();
+            if (!curApts.some(a => a.id === apt.id)) {
+              const updated = [apt, ...curApts];
+              storage.appointmentsCache = updated;
+              localStorage.setItem('reservas_cr_appointments', JSON.stringify(updated));
+            }
+          } catch (errLocal) {}
 
             if (apt.date) {
               this.ownerCalendarSelectedDate = apt.date;
@@ -1234,7 +1232,7 @@ class App {
             if (this.currentView === 'owner-dashboard') {
               const mainContent = document.getElementById('main-content');
               if (mainContent) {
-                await this.renderOwnerDashboardView(mainContent);
+                this.renderOwnerDashboardView(mainContent);
               }
             }
           }
@@ -1286,12 +1284,18 @@ class App {
 
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 glass-header border-b border-slate-200/80 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-h-[4rem] sm:min-h-[4.75rem] py-2 flex items-center justify-between gap-2 sm:gap-3">
           <!-- Logo -->
+          <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn" id="nav-logo-btn" title="Reservas CR">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
           <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn shrink-0" id="nav-logo-btn" title="Reservas CR">
             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
               <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
+            <div>
+              <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">Reservas <span class="text-blue-600">CR</span></span>
+              <span class="text-[11px] sm:text-xs block text-slate-500 font-medium hidden sm:block">Directorio & Reservas de Servicios en Costa Rica 🇨🇷</span>
             <div class="shrink-0">
               <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent block leading-tight">Reservas <span class="text-blue-600">CR</span></span>
               <span class="text-[10px] sm:text-xs text-slate-500 font-medium hidden lg:block leading-tight">Directorio & Reservas 🇨🇷</span>
@@ -1301,6 +1305,7 @@ class App {
           <!-- MÓVIL (< md): Controles Compactos Superiores Optimizados -->
           <div class="flex md:hidden items-center gap-1.5 shrink-0 max-w-[62vw] justify-end overflow-x-auto no-scrollbar py-1">
             ${devUser ? `
+              <button id="mobile-top-dev-badge" class="px-2.5 py-1 rounded-xl bg-slate-900 text-amber-400 text-[11px] font-black border border-slate-700 flex items-center gap-1 app-touch-btn shrink-0 shadow-xs" title="Panel Developer">
               <button id="mobile-top-dev-badge" class="px-2.5 py-1 rounded-xl bg-slate-900 text-amber-400 text-[11px] font-black border border-slate-700 flex items-center gap-1 app-touch-btn shrink-0 shadow-xs whitespace-nowrap" title="Panel Developer">
                 <i class="fas fa-shield-alt text-[10px]"></i>
                 <span>DEV</span>
@@ -1308,6 +1313,7 @@ class App {
             ` : ''}
 
             ${bizUser && !devUser ? `
+              <button id="mobile-top-biz-badge" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs">
               <button id="mobile-top-biz-badge" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
                 <i class="fas fa-store text-xs text-indigo-600"></i>
                 <span class="max-w-[100px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
@@ -1315,6 +1321,7 @@ class App {
             ` : ''}
 
             ${clientUser && !bizUser && !devUser ? `
+              <button id="mobile-top-profile-badge" class="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs">
               <button id="mobile-top-profile-badge" class="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
                 <i class="fas fa-user-circle text-xs text-blue-600"></i>
                 <span class="max-w-[90px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mis Citas'}</span>
@@ -1323,12 +1330,14 @@ class App {
 
             ${!clientUser && !bizUser && !devUser ? `
               <!-- Botón Pre-Registro 15 Días Gratis (Móvil) -->
+              <button id="mobile-top-prereg-btn" class="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1.5 app-touch-btn cursor-pointer shrink-0" title="Pre-regístrate y obtén 15 Días Gratis">
               <button id="mobile-top-prereg-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis">
                 <i class="fas fa-gift text-blue-200 text-xs"></i>
                 <span>15 Días Gratis</span>
               </button>
 
               <!-- Botón Únete / Para Negocios (Móvil) -->
+              <button id="mobile-top-landing-btn" class="px-3 py-1.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 border border-blue-500/30 shadow-xs flex items-center gap-1.5 app-touch-btn shrink-0 cursor-pointer" title="Para Negocios">
               <button id="mobile-top-landing-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 border border-blue-500/30 shadow-xs flex items-center gap-1 app-touch-btn shrink-0 cursor-pointer whitespace-nowrap" title="Para Negocios">
                 <i class="fas fa-rocket text-blue-400 text-xs"></i>
                 <span>Negocios</span>
@@ -1336,60 +1345,75 @@ class App {
             ` : ''}
 
             <!-- Botón Instalar App PWA (Móvil) -->
+            <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0" title="Instalar App en el Celular">
             <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Instalar App en el Celular">
               <i class="fas fa-download text-blue-600 text-xs"></i>
             </button>
 
             <!-- Botón Modo Oscuro / Claro (Móvil) -->
+            <button class="theme-toggle-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center gap-1 app-touch-btn cursor-pointer shrink-0 shadow-2xs" title="Cambiar modo oscuro / claro">
             <button class="theme-toggle-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center gap-1 app-touch-btn cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Cambiar modo oscuro / claro">
               <i class="theme-toggle-icon fas ${document.documentElement.classList.contains('dark') ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs"></i>
             </button>
           </div>
 
           <!-- ESCRITORIO PC (>= md): Navigation & Auth Controls Completos -->
+          <div class="hidden md:flex items-center gap-2 sm:gap-3">
           <div class="hidden md:flex items-center gap-1.5 lg:gap-2.5 shrink-0 justify-end">
             <!-- Explorar -->
+            <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
             <button id="nav-directory-btn" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
               <i class="fas fa-compass mr-1"></i> Explorar
             </button>
 
             <!-- Botón Únete / Para Negocios (Desktop) -->
+            <button id="nav-landing-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 hover:from-slate-900 hover:to-blue-800 border border-blue-500/30 shadow-sm shadow-blue-950/20 flex items-center gap-2 transition-all cursor-pointer transform hover:scale-105 active:scale-98 ${this.currentView === 'business-landing' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}" title="Conoce la plataforma para tu negocio">
             <button id="nav-landing-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 hover:from-slate-900 hover:to-blue-800 border border-blue-500/30 shadow-sm shadow-blue-950/20 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98 ${this.currentView === 'business-landing' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}" title="Conoce la plataforma para tu negocio">
               <i class="fas fa-rocket text-blue-400 text-xs"></i>
               <span>¿Tienes un Negocio? Únete</span>
             </button>
 
             <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
+            <button id="nav-prereg-btn" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-2 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
             <button id="nav-prereg-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
               <i class="fas fa-gift text-blue-200 text-xs"></i>
               <span>Pre-Registro 15 Días Gratis</span>
             </button>
 
             <!-- Instalar PWA Desktop -->
+            <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
             <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 whitespace-nowrap shrink-0 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
               <i class="fas fa-mobile-alt text-blue-600 text-xs"></i>
+              <span>Instalar App</span>
               <span class="hidden lg:inline">Instalar App</span>
             </button>
 
             <!-- Planes y Precios -->
+            <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-900 bg-blue-50/80 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
             <button id="nav-plans-btn" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-900 whitespace-nowrap shrink-0 bg-blue-50/80 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
               <i class="fas fa-crown text-blue-600 text-xs"></i>
               <span>Planes & Precios</span>
             </button>
 
             <!-- Botón Modo Oscuro / Claro (Desktop) -->
+            <button class="theme-toggle-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Cambiar a Modo Oscuro / Claro">
             <button class="theme-toggle-btn px-2.5 lg:px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Cambiar a Modo Oscuro / Claro">
               <i class="theme-toggle-icon fas ${document.documentElement.classList.contains('dark') ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs"></i>
+              <span class="theme-toggle-text hidden lg:inline">${document.documentElement.classList.contains('dark') ? 'Claro' : 'Oscuro'}</span>
               <span class="theme-toggle-text hidden xl:inline">${document.documentElement.classList.contains('dark') ? 'Claro' : 'Oscuro'}</span>
             </button>
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
             ${devUser ? `
+              <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in">
+                <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
               <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in shrink-0 whitespace-nowrap">
                 <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all whitespace-nowrap ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
                   <i class="fas fa-shield-alt text-xs"></i>
+                  <span>DEVELOPER</span>
                   <span>DEV</span>
                 </button>
+                <button id="nav-dev-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg transition-colors" title="Cerrar sesión de Developer">
                 <button id="nav-dev-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg transition-colors shrink-0" title="Cerrar sesión de Developer">
                   <i class="fas fa-sign-out-alt text-xs"></i>
                 </button>
@@ -1398,12 +1422,16 @@ class App {
 
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
             ${clientUser && !devUser ? `
+              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
               <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0 whitespace-nowrap">
                 <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
                   <i class="fas fa-user-circle text-blue-600 text-sm"></i>
                   <span class="max-w-[100px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mi Perfil'}</span>
+                  <span class="hidden md:inline text-[10px] text-slate-400">(Mis Reservas)</span>
                   <span class="hidden xl:inline text-[10px] text-slate-400">(Mis Reservas)</span>
                 </button>
+                <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg" title="Cerrar sesión de cliente">
                 <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg shrink-0" title="Cerrar sesión de cliente">
                   <i class="fas fa-sign-out-alt text-xs"></i>
                 </button>
@@ -1412,11 +1440,14 @@ class App {
 
             <!-- 2. SI EL NEGOCIO ESTÁ LOGUEADO -->
             ${bizUser && !devUser ? `
+              <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl">
+                <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
               <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl shrink-0 whitespace-nowrap">
                 <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
                   <i class="fas fa-store text-xs ${this.currentView === 'owner-dashboard' ? 'text-white' : 'text-indigo-600'}"></i>
                   <span class="max-w-[120px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
                 </button>
+                <button id="nav-biz-logout-btn" class="p-1.5 text-indigo-400 hover:text-rose-600 rounded-lg" title="Cerrar sesión de negocio">
                 <button id="nav-biz-logout-btn" class="p-1.5 text-indigo-400 hover:text-rose-600 rounded-lg shrink-0" title="Cerrar sesión de negocio">
                   <i class="fas fa-sign-out-alt text-xs"></i>
                 </button>
@@ -1426,6 +1457,7 @@ class App {
             <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
             ${!clientUser && !bizUser && !devUser ? `
               ${SHOW_LOGIN_BUTTON ? `
+              <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all">
               <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0">
                 <i class="fas fa-sign-in-alt text-blue-600"></i>
                 <span>Iniciar Sesión</span>
@@ -1433,6 +1465,7 @@ class App {
               ` : ''}
 
               ${REGISTRATION_ENABLED ? `
+              <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all">
               <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0">
                 <i class="fas fa-user-plus"></i>
                 <span>Registrarse</span>
@@ -1442,6 +1475,7 @@ class App {
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
             ${clientUser && !bizUser && !devUser && SHOW_BIZ_SHORTCUTS ? `
+              <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all" title="Acceso al panel de negocio">
               <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0" title="Acceso al panel de negocio">
                 <i class="fas fa-store text-indigo-600"></i>
                 <span>Soy Negocio</span>
@@ -3390,20 +3424,14 @@ class App {
   // ==========================================
   // VISTA 2: DETALLE DEL NEGOCIO & SERVICIOS
   // ==========================================
-  renderBusinessDetailView(container) {
+  async renderBusinessDetailView(container) {
     const bizId = this.selectedBusinessId || this.currentRouteParams?.businessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
-    const biz = storage.getBusinessById(bizId);
+    let biz = storage.getBusinessById(bizId);
+    if (!biz && storage.getBusinessByIdAsync) {
+      biz = await storage.getBusinessByIdAsync(bizId);
+    }
     if (!biz) {
       this.navigateTo('directory');
-      container.innerHTML = `
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center animate-fade-in">
-          <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4 animate-pulse">
-            <i class="fas fa-circle-notch fa-spin"></i>
-          </div>
-          <h2 class="text-lg font-bold text-slate-800">Cargando perfil del comercio...</h2>
-          <p class="text-xs text-slate-500 mt-1">Conectando con el catálogo de servicios.</p>
-        </div>
-      `;
       return;
     }
 
@@ -5021,7 +5049,23 @@ class App {
       return;
     }
 
-    const allAppointments = await storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email);
+    // Obtener citas locales de inmediato (render instantáneo)
+    let allAppointments = storage.getClientAppointments(clientUser.phone, clientUser.email);
+
+    // Sincronizar en segundo plano
+    if (!this.clientSyncingInFlight) {
+      this.clientSyncingInFlight = true;
+      storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email).then((fresh) => {
+        this.clientSyncingInFlight = false;
+        if (fresh && fresh.length !== allAppointments.length && this.currentView === 'my-client-bookings') {
+          const main = document.getElementById('main-content');
+          if (main) this.renderClientBookingsView(main);
+        }
+      }).catch(() => {
+        this.clientSyncingInFlight = false;
+      });
+    }
+
     const filter = this.clientAppointmentFilter || 'all';
 
     let appointments = allAppointments;
@@ -5259,9 +5303,23 @@ class App {
       this.initRealtimePush();
     } catch (e) {}
 
-    // Sincronizar citas frescas del backend para este negocio
-    await storage.getAppointmentsByBusinessAsync(currentBiz.id);
+    // 1. Obtener citas de caché local de inmediato (render instantáneo sin parpadeo)
     const appointments = storage.getAppointmentsByBusiness(currentBiz.id);
+
+    // 2. Sincronizar citas frescas del servidor en segundo plano
+    if (!this.ownerSyncingInFlight) {
+      this.ownerSyncingInFlight = true;
+      storage.getAppointmentsByBusinessAsync(currentBiz.id).then((fresh) => {
+        this.ownerSyncingInFlight = false;
+        if (fresh && fresh.length !== appointments.length && this.currentView === 'owner-dashboard') {
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) this.renderOwnerDashboardView(mainContent);
+        }
+      }).catch(() => {
+        this.ownerSyncingInFlight = false;
+      });
+    }
+
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
