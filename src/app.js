@@ -1334,10 +1334,11 @@ class App {
   }
 
   // --- INICIALIZADOR DE CHECKBOX INTERACTIVO CUSTOM (TÉRMINOS Y CONDICIONES) ---
-  initCustomCheckbox(rowId, inputId, boxId) {
+  initCustomCheckbox(rowId, inputId, boxId, submitBtnId = null) {
     const row = document.getElementById(rowId);
     const input = document.getElementById(inputId);
     const box = document.getElementById(boxId);
+    const submitBtn = submitBtnId ? document.getElementById(submitBtnId) : null;
     if (!row || !input) return;
 
     const renderState = () => {
@@ -1354,20 +1355,43 @@ class App {
       if (isChecked) {
         row.classList.remove('border-slate-300', 'dark:border-slate-700', 'bg-slate-50', 'dark:bg-slate-800');
         row.classList.add('border-blue-500', 'dark:border-blue-500', 'bg-blue-50/70', 'dark:bg-slate-800/90');
+        row.setAttribute('aria-checked', 'true');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+          submitBtn.classList.add('cursor-pointer');
+        }
       } else {
         row.classList.remove('border-blue-500', 'dark:border-blue-500', 'bg-blue-50/70', 'dark:bg-slate-800/90');
         row.classList.add('border-slate-300', 'dark:border-slate-700', 'bg-slate-50', 'dark:bg-slate-800');
+        row.setAttribute('aria-checked', 'false');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+          submitBtn.classList.remove('cursor-pointer');
+        }
       }
     };
 
-    // Sincronizar visual con cambios nativos (teclado espacio, clics directos o eventos programáticos)
+    // Sincronizar visual con cambios nativos (cambio por label, teclado o dispatchEvent)
     input.onchange = () => {
       renderState();
     };
 
-    // Toggle al hacer clic en cualquier parte de la fila interactiva (excepto enlaces o botones)
+    // Soporte de accesibilidad y teclado (Enter / Espacio en contenedor)
+    row.setAttribute('tabindex', '0');
+    row.setAttribute('role', 'checkbox');
+    row.onkeydown = (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        input.checked = !input.checked;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    // Toggle al hacer clic en cualquier parte de la fila interactiva (excepto enlaces, botones o label nativo)
     row.onclick = (e) => {
-      if (e.target.closest('.open-terms-modal, .open-privacy-modal, button, a')) return;
+      if (e.target.closest('.open-terms-modal, .open-privacy-modal, button, a, label')) return;
       if (e.target === input) return; // Si el clic fue directo al input nativo, el browser ya invierte su checked
       input.checked = !input.checked;
       input.dispatchEvent(new Event('change', { bubbles: true }));
@@ -4362,9 +4386,9 @@ class App {
               </div>
 
               <!-- Checkbox Términos y Condiciones para la Reserva (Custom Interactive Component) -->
-              <div id="booking-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-all cursor-pointer select-none">
+              <div id="booking-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-colors cursor-pointer select-none">
                 <div class="flex items-center justify-between gap-3">
-                  <div class="flex items-center gap-3 flex-1">
+                  <label for="booking-terms-optin" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
                     <input type="checkbox" id="booking-terms-optin" name="booking_terms" checked class="sr-only">
                     <div id="booking-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
                       <i class="fas fa-check text-xs font-black"></i>
@@ -4372,7 +4396,7 @@ class App {
                     <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                       Acepto los Términos y Condiciones de la Reserva *
                     </span>
-                  </div>
+                  </label>
                   <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
                     <i class="fas fa-file-contract text-xs"></i> Leer
                   </button>
@@ -4384,7 +4408,7 @@ class App {
                 type="submit" 
                 id="submit-booking-btn"
                 ${!this.bookingState.selectedTime ? 'disabled' : ''}
-                class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <i class="fas fa-check-circle"></i>
                 <span>Confirmar Reserva ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
@@ -4396,7 +4420,7 @@ class App {
     `;
 
     document.getElementById('close-modal-btn')?.addEventListener('click', () => this.closeBookingModal());
-    this.initCustomCheckbox('booking-terms-row', 'booking-terms-optin', 'booking-terms-box');
+    this.initCustomCheckbox('booking-terms-row', 'booking-terms-optin', 'booking-terms-box', 'submit-booking-btn');
 
     // Asignación interactiva de slots sin recargar el modal completo
     const attachSlotListeners = () => {
@@ -5150,13 +5174,13 @@ class App {
             <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name || 'Cliente'}</strong> ${clientUser.phone ? `• ${clientUser.phone}` : ''} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
+            <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs">
               <i class="fas fa-user-edit text-blue-600"></i> Mi Perfil
             </button>
-            <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
+            <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20">
               <i class="fas fa-plus mr-1"></i> Nueva Reserva
             </button>
-            <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all">
+            <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-colors">
               <i class="fas fa-sign-out-alt mr-1"></i> Salir
             </button>
           </div>
@@ -5164,16 +5188,16 @@ class App {
 
         <!-- Filtros de Estado -->
         <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
             Todas (${allAppointments.length})
           </button>
-          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'active' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="active">
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${filter === 'active' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="active">
             Activas (${activeCount})
           </button>
-          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
             Completadas (${completedCount})
           </button>
-          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
+          <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
             Canceladas (${cancelledCount})
           </button>
         </div>
@@ -5185,7 +5209,7 @@ class App {
             </div>
             <h3 class="text-lg font-bold text-slate-800">No hay reservas en esta categoría</h3>
             <p class="text-xs text-slate-500 mt-1">Explora los comercios disponibles y agenda tu primer turno.</p>
-            <button id="go-explore-btn" class="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20">
+            <button id="go-explore-btn" class="mt-4 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20">
               Explorar Comercios
             </button>
           </div>
@@ -5233,38 +5257,38 @@ class App {
                       href="${this.generateGoogleCalendarUrl(apt, storage.getBusinessById(apt.businessId))}" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      class="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                      class="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
                       title="Añadir a Google Calendar"
                     >
                       <i class="fab fa-google text-rose-500 text-xs"></i> Google Cal
                     </a>
                     <button 
                       type="button" 
-                      class="client-download-ics-btn px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" 
+                      class="client-download-ics-btn px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" 
                       data-apt-id="${apt.id}"
                       title="Descargar archivo .ics (Apple Calendar / iPhone / Outlook)"
                     >
                       <i class="fas fa-calendar-alt text-blue-600 text-xs"></i> .ICS
                     </button>
-                    <button class="client-reschedule-btn px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" data-apt-id="${apt.id}">
+                    <button class="client-reschedule-btn px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5" data-apt-id="${apt.id}">
                       <i class="fas fa-calendar-alt"></i> Reprogramar Turno
                     </button>
-                    <button class="client-cancel-btn px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" data-apt-id="${apt.id}">
+                    <button class="client-cancel-btn px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5" data-apt-id="${apt.id}">
                       <i class="fas fa-times-circle"></i> Cancelar Reserva
                     </button>
                   ` : ''}
                   ${apt.status === 'cancelled' ? `
-                    <button class="client-reschedule-btn px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5" data-apt-id="${apt.id}">
+                    <button class="client-reschedule-btn px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 flex items-center gap-1.5" data-apt-id="${apt.id}">
                       <i class="fas fa-redo"></i> Reprogramar Reserva
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
                     ${(apt.isReviewed || apt.reviewRating) ? `
-                      <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
+                      <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
                         <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}★)
                       </button>
                     ` : `
-                      <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer" data-apt-id="${apt.id}">
+                      <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer" data-apt-id="${apt.id}">
                         <i class="fas fa-star text-amber-500"></i> Calificar Atención
                       </button>
                     `}
@@ -13022,9 +13046,9 @@ class App {
                 </div>
 
                 <!-- Checkbox Términos y Condiciones Cliente (Custom Interactive Component) -->
-                <div id="cli-reg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-all cursor-pointer select-none">
+                <div id="cli-reg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-colors cursor-pointer select-none">
                   <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 flex-1">
+                    <label for="cli-reg-terms" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
                       <input type="checkbox" id="cli-reg-terms" name="cli_terms" checked class="sr-only">
                       <div id="cli-reg-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
                         <i class="fas fa-check text-xs font-black"></i>
@@ -13032,14 +13056,14 @@ class App {
                       <span class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
                         He leído y acepto los Términos y la Política de Privacidad *
                       </span>
-                    </div>
+                    </label>
                     <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
                       <i class="fas fa-file-contract text-xs"></i> Leer
                     </button>
                   </div>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <button type="submit" id="cli-reg-submit-btn" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-colors flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-user-plus"></i>
                   <span>Crear Cuenta de Cliente</span>
                 </button>
@@ -13289,9 +13313,9 @@ class App {
                 </div>
 
                 <!-- Checkbox Términos y Condiciones Negocio (Custom Interactive Component) -->
-                <div id="biz-reg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-all cursor-pointer select-none">
+                <div id="biz-reg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-colors cursor-pointer select-none">
                   <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 flex-1">
+                    <label for="biz-reg-terms" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
                       <input type="checkbox" id="biz-reg-terms" name="biz_terms" checked class="sr-only">
                       <div id="biz-reg-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
                         <i class="fas fa-check text-xs font-black"></i>
@@ -13299,14 +13323,14 @@ class App {
                       <span class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
                         Acepto los Términos, Políticas de Privacidad y Comerciales *
                       </span>
-                    </div>
+                    </label>
                     <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
                       <i class="fas fa-file-contract text-xs"></i> Leer
                     </button>
                   </div>
                 </div>
 
-                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/20 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
+                <button type="submit" id="biz-reg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/20 transition-colors text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
                   <i class="fas fa-check-circle text-blue-400"></i>
                   <span>Crear Cuenta y Registrar Negocio</span>
                 </button>
@@ -13504,9 +13528,9 @@ class App {
     bizRegPass?.addEventListener('input', checkBizPasswordsMatch);
     bizRegPassConf?.addEventListener('input', checkBizPasswordsMatch);
 
-    // Inicializar Checkboxes interactivos de términos
-    this.initCustomCheckbox('cli-reg-terms-row', 'cli-reg-terms', 'cli-reg-terms-box');
-    this.initCustomCheckbox('biz-reg-terms-row', 'biz-reg-terms', 'biz-reg-terms-box');
+    // Inicializar Checkboxes interactivos de términos y enlace de botón submit
+    this.initCustomCheckbox('cli-reg-terms-row', 'cli-reg-terms', 'cli-reg-terms-box', 'cli-reg-submit-btn');
+    this.initCustomCheckbox('biz-reg-terms-row', 'biz-reg-terms', 'biz-reg-terms-box', 'biz-reg-submit-btn');
 
     // Evento Submit: Login Cliente
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
@@ -13927,9 +13951,9 @@ class App {
             </div>
 
             <!-- Checkbox Términos y Condiciones Pre-registro (Custom Interactive Component) -->
-            <div id="prereg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl shadow-2xs transition-all cursor-pointer select-none">
+            <div id="prereg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl shadow-2xs transition-colors cursor-pointer select-none">
               <div class="flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 flex-1">
+                <label for="prereg-terms" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
                   <input type="checkbox" id="prereg-terms" name="prereg_terms" checked class="sr-only">
                   <div id="prereg-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
                     <i class="fas fa-check text-xs font-black"></i>
@@ -13937,7 +13961,7 @@ class App {
                   <span class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
                     Acepto los Términos y Condiciones (Ley N° 8968) *
                   </span>
-                </div>
+                </label>
                 <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
                   <i class="fas fa-file-contract text-xs"></i> Leer
                 </button>
@@ -13946,7 +13970,7 @@ class App {
 
             <div id="prereg-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
-            <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-blue-950/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
+            <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-blue-950/25 flex items-center justify-center gap-2 transition-colors cursor-pointer app-touch-btn">
               <i class="fas fa-gift text-sm text-blue-300"></i>
               <span>¡Asegurar mis 15 Días Gratis y Pre-registro!</span>
             </button>
@@ -14002,7 +14026,7 @@ class App {
     document.getElementById('close-prereg-modal-btn')?.addEventListener('click', () => {
       modalContainer.innerHTML = '';
     });
-    this.initCustomCheckbox('prereg-terms-row', 'prereg-terms', 'prereg-terms-box');
+    this.initCustomCheckbox('prereg-terms-row', 'prereg-terms', 'prereg-terms-box', 'prereg-submit-btn');
 
     document.getElementById('prereg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();

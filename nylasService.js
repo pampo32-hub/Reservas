@@ -39,8 +39,6 @@ export function getNylasClient() {
  * Genera la URL de autenticación OAuth de Nylas para sincronización de calendario de un comercio
  * Genera la URL directa de Google OAuth (sin intermediarios de Sandbox ni pantallas de advertencia)
  */
-export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = '/directorio' } = {}) {
-  const state = JSON.stringify({ action, role, businessId, provider: 'google', returnTo, timestamp: Date.now() });
 export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = null } = {}) {
   const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
   const effectiveReturnTo = returnTo || defaultReturnTo;
@@ -55,8 +53,6 @@ export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', busi
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
-    scope,
     scope: scope,
     access_type: 'offline',
     prompt: 'select_account',
