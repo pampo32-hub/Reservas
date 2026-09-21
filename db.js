@@ -64,6 +64,12 @@ export async function initDatabase() {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS subscription_status VARCHAR(50) DEFAULT 'trial';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'none';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS subscription_updated_at TIMESTAMP DEFAULT NOW();
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_grant_id VARCHAR(150) DEFAULT NULL;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_email VARCHAR(150) DEFAULT NULL;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_provider VARCHAR(50) DEFAULT NULL;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_connected_at TIMESTAMP DEFAULT NULL;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_calendar_id VARCHAR(150) DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS nylas_event_id VARCHAR(150) DEFAULT NULL;
     `);
 
     // 2. Crear tabla de servicios

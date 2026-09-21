@@ -2383,6 +2383,30 @@ class StorageService {
     }
     return outputArray;
   }
+
+  // ==========================================
+  // INTEGRACIÓN NYLAS (GOOGLE CALENDAR / OUTLOOK)
+  // ==========================================
+  async getNylasStatus(businessId) {
+    try {
+      const res = await fetch(`${this.apiBase}/nylas/status/${encodeURIComponent(businessId)}`);
+      if (!res.ok) return { connected: false };
+      return await res.json();
+    } catch (e) {
+      return { connected: false, error: e.message };
+    }
+  }
+
+  async disconnectNylas(businessId) {
+    const res = await fetch(`${this.apiBase}/nylas/disconnect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al desconectar calendario');
+    return data;
+  }
 }
 
 export const storage = new StorageService();

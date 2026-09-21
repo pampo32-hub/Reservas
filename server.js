@@ -31,6 +31,13 @@ import {
 } from './pushService.js';
 import { parseSinpeEmail } from './src/services/sinpeParser.js';
 import { startSinpeImapWorker } from './sinpeImapService.js';
+import { 
+  getNylasAuthUrl, 
+  exchangeNylasCode, 
+  createNylasAppointmentEvent, 
+  deleteNylasAppointmentEvent, 
+  revokeNylasGrant 
+} from './nylasService.js';
 
 dotenv.config();
 
@@ -2061,6 +2068,21 @@ app.post('/api/appointments', async (req, res) => {
           }).catch(pushErr => {
             console.error('⚠️ Error no bloqueante al enviar Push a comercio:', pushErr.message);
           });
+
+          // 4. Sincronizar automáticamente con Google Calendar / Outlook vía Nylas
+          if (business && business.nylas_grant_id) {
+            console.log(`📅 [Nylas Sync] Sincronizando cita #${createdAppointment.id} con Google Calendar (${business.nylas_email})...`);
+            createNylasAppointmentEvent(business.nylas_grant_id, createdAppointment, business)
+              .then(nylasEventId => {
+                if (nylasEventId) {
+                  pool.query('UPDATE reservas_appointments SET nylas_event_id = $1 WHERE id = $2', [nylasEventId, newId])
+                    .catch(dbErr => console.error('Error guardando nylas_event_id:', dbErr.message));
+                }
+              })
+              .catch(nylasErr => {
+                console.error('⚠️ Error no bloqueante al sincronizar con Nylas Calendar:', nylasErr.message);
+              });
+          }
         })
         .catch(err => {
           console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
@@ -4259,6 +4281,124 @@ app.post('/api/push/test', async (req, res) => {
   } catch (error) {
     console.error('Error enviando push de prueba:', error);
     res.status(500).json({ error: error.message || 'Error al enviar notificación de prueba' });
+  }
+});
+
+// ==========================================
+// ENDPOINTS DE INTEGRACIÓN NYLAS (GOOGLE CALENDAR & OUTLOOK)
+// ==========================================
+
+// 1. Iniciar autenticación OAuth de Nylas (Redirección a Google / Microsoft)
+app.get('/api/nylas/auth', (req, res) => {
+  try {
+    const { businessId, provider = 'google' } = req.query;
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId es requerido para conectar el calendario.' });
+    }
+
+    const authUrl = getNylasAuthUrl(businessId, provider);
+    res.redirect(authUrl);
+  } catch (err) {
+    console.error('Error generando URL de Nylas:', err);
+    res.status(500).send(`Error al iniciar autenticación con Nylas: ${err.message}`);
+  }
+});
+
+// 2. Callback de OAuth de Nylas (Intercambio de código por Grant ID)
+app.get('/api/nylas/callback', async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+
+  if (error) {
+    console.error('Error recibido en Nylas callback:', error, error_description);
+    return res.redirect(`/panel-negocio?nylas_error=${encodeURIComponent(error_description || error)}`);
+  }
+
+  if (!code) {
+    return res.status(400).send('Código de autorización de Nylas no recibido.');
+  }
+
+  let businessId = null;
+  let provider = 'google';
+  try {
+    if (state) {
+      const parsedState = typeof state === 'string' && state.startsWith('{') ? JSON.parse(state) : { businessId: state };
+      businessId = parsedState.businessId;
+      provider = parsedState.provider || provider;
+    }
+  } catch (e) {
+    businessId = state;
+  }
+
+  try {
+    const tokenData = await exchangeNylasCode(code);
+    const { grantId, email } = tokenData;
+
+    if (businessId) {
+      await pool.query(
+        `UPDATE reservas_businesses 
+         SET nylas_grant_id = $1, nylas_email = $2, nylas_provider = $3, nylas_connected_at = NOW() 
+         WHERE id = $4`,
+        [grantId, email, provider, businessId]
+      );
+      console.log(`✅ [Nylas] Calendario conectado para el negocio ${businessId} (${email}) con Grant ID ${grantId}`);
+    }
+
+    res.redirect(`/panel-negocio?nylas_connected=true&email=${encodeURIComponent(email)}`);
+  } catch (err) {
+    console.error('❌ Error intercambiando código de Nylas:', err);
+    res.redirect(`/panel-negocio?nylas_error=${encodeURIComponent(err.message)}`);
+  }
+});
+
+// 3. Desconectar calendario de Nylas
+app.post('/api/nylas/disconnect', async (req, res) => {
+  try {
+    const { businessId } = req.body;
+    if (!businessId) {
+      return res.status(400).json({ error: 'businessId es requerido.' });
+    }
+
+    const bizRes = await pool.query('SELECT nylas_grant_id FROM reservas_businesses WHERE id = $1', [businessId]);
+    if (bizRes.rows.length > 0 && bizRes.rows[0].nylas_grant_id) {
+      await revokeNylasGrant(bizRes.rows[0].nylas_grant_id).catch(() => {});
+    }
+
+    await pool.query(
+      `UPDATE reservas_businesses 
+       SET nylas_grant_id = NULL, nylas_email = NULL, nylas_provider = NULL, nylas_connected_at = NULL, nylas_calendar_id = NULL 
+       WHERE id = $1`,
+      [businessId]
+    );
+
+    res.json({ success: true, message: 'Calendario desconectado exitosamente.' });
+  } catch (err) {
+    console.error('Error desconectando Nylas:', err);
+    res.status(500).json({ error: err.message || 'Error al desconectar calendario' });
+  }
+});
+
+// 4. Consultar estado de conexión de Nylas para un comercio
+app.get('/api/nylas/status/:businessId', async (req, res) => {
+  try {
+    const { businessId } = req.params;
+    const bizRes = await pool.query(
+      'SELECT nylas_grant_id, nylas_email, nylas_provider, nylas_connected_at FROM reservas_businesses WHERE id = $1',
+      [businessId]
+    );
+
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Negocio no encontrado' });
+    }
+
+    const row = bizRes.rows[0];
+    res.json({
+      isConnected: !!row.nylas_grant_id,
+      email: row.nylas_email || null,
+      provider: row.nylas_provider || null,
+      connectedAt: row.nylas_connected_at || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
