@@ -4248,18 +4248,28 @@ class App {
               </div>
 
               <!-- Consentimiento previo (Opt-in) Notificaciones WhatsApp -->
-              <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
+              <div class="p-3.5 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
                 <label class="flex items-start gap-3 cursor-pointer select-none">
                   <input type="checkbox" id="client-whatsapp-optin" checked class="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300">
-                  <div class="text-xs text-slate-700 leading-snug">
-                    <div class="font-bold text-emerald-800 flex items-center gap-1.5 mb-0.5">
+                  <div class="text-xs text-slate-700 dark:text-slate-300 leading-snug">
+                    <div class="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5 mb-0.5">
                       <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
                       <span>Confirmación de Reserva por WhatsApp</span>
                     </div>
-                    <p class="text-slate-600 text-[11px]">
+                    <p class="text-slate-600 dark:text-slate-400 text-[11px]">
                       Acepto recibir el mensaje de confirmación de esta reserva y recordatorios del turno por WhatsApp a mi número de teléfono.
                     </p>
                   </div>
+                </label>
+              </div>
+
+              <!-- Checkbox Términos y Condiciones para la Reserva -->
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
+                <label class="flex items-start gap-3 cursor-pointer select-none">
+                  <input type="checkbox" id="booking-terms-optin" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
+                  <span class="text-xs text-slate-700 dark:text-slate-300 leading-snug">
+                    He leído y acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> de Reservas CR *
+                  </span>
                 </label>
               </div>
 
@@ -4338,53 +4348,23 @@ class App {
 
       const selectedBadge = document.getElementById('booking-selected-time-badge');
       if (selectedBadge) {
-        selectedBadge.innerHTML = this.bookingState.selectedTime
-          ? `<span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200"><i class="fas fa-clock mr-1"></i> Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}</span>`
-          : '';
-      }
-
-      const slotsGrid = document.getElementById('booking-slots-grid-wrapper');
-      if (slotsGrid) {
-        if (curAvailability.isClosed) {
-          slotsGrid.innerHTML = `
-            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
-              <i class="fas fa-calendar-times text-base"></i>
-              <span>${curAvailability.reason}</span>
-            </div>
-          `;
-        } else if (!curAvailability.slots || curAvailability.slots.length === 0) {
-          slotsGrid.innerHTML = `
-            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
-              <i class="fas fa-info-circle text-base"></i>
-              <span>No hay turnos disponibles para esta fecha o especialista. Intenta con otro día o especialista.</span>
-            </div>
+        if (this.bookingState.selectedTime && curAvailability.slots && curAvailability.slots.includes(this.bookingState.selectedTime)) {
+          selectedBadge.innerHTML = `
+            <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+              <i class="fas fa-clock mr-1"></i> Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}
+            </span>
           `;
         } else {
-          slotsGrid.innerHTML = `
-            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
-              ${curAvailability.slots.map(slot => `
-                <button 
-                  type="button" 
-                  class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center cursor-pointer transition-all ${this.bookingState.selectedTime === slot ? 'selected bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white'}"
-                  data-slot="${slot}"
-                >
-                  ${this.formatTime12h(slot)}
-                </button>
-              `).join('')}
-            </div>
-          `;
-          attachSlotListeners();
-        }
-      }
-
-      const submitBtn = document.getElementById('submit-booking-btn');
-      if (submitBtn) {
-        if (!this.bookingState.selectedTime) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = `
-            <i class="fas fa-check-circle"></i>
-            <span>Confirmar Reserva</span>
-          `;
+          selectedBadge.innerHTML = '';
+          this.bookingState.selectedTime = null;
+          const submitBtn = document.getElementById('submit-booking-btn');
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+              <i class="fas fa-check-circle"></i>
+              <span>Confirmar Reserva</span>
+            `;
+          }
         }
       }
     };
@@ -4429,6 +4409,13 @@ class App {
       e.preventDefault();
       if (!this.bookingState.selectedTime) {
         this.showToast('Por favor selecciona una hora disponible.', 'error');
+        return;
+      }
+
+      const termsOptIn = document.getElementById('booking-terms-optin')?.checked;
+      if (!termsOptIn) {
+        this.showToast('Debes aceptar los Términos y Condiciones para confirmar tu reserva.', 'error');
+        document.getElementById('booking-terms-optin')?.focus();
         return;
       }
 
@@ -12492,18 +12479,28 @@ class App {
                 <div id="cli-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
 
                 <!-- Consentimiento previo (Opt-in) WhatsApp -->
-                <div class="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl">
+                <div class="p-3.5 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
                   <label class="flex items-start gap-3 cursor-pointer select-none">
                     <input type="checkbox" id="cli-reg-whatsapp-optin" checked class="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300">
-                    <div class="text-xs text-slate-700 leading-relaxed">
-                      <div class="font-bold text-emerald-800 flex items-center gap-1.5 mb-0.5">
+                    <div class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      <div class="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5 mb-0.5">
                         <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
                         <span>Notificaciones de Reservas por WhatsApp (Opt-in)</span>
                       </div>
-                      <p class="text-slate-600 text-[11px]">
+                      <p class="text-slate-600 dark:text-slate-400 text-[11px]">
                         Acepto recibir mensajes de confirmación de mis reservas y recordatorios de turnos vía WhatsApp a mi número telefónico.
                       </p>
                     </div>
+                  </label>
+                </div>
+
+                <!-- Checkbox Términos y Condiciones Cliente -->
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
+                  <label class="flex items-start gap-3 cursor-pointer select-none">
+                    <input type="checkbox" id="cli-reg-terms" required class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
+                    <span class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      He leído y acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> de Reservas CR *
+                    </span>
                   </label>
                 </div>
 
@@ -12511,10 +12508,6 @@ class App {
                   <i class="fas fa-user-plus"></i>
                   <span>Crear Cuenta de Cliente</span>
                 </button>
-
-                <p class="text-[11px] text-slate-500 text-center leading-tight pt-1">
-                  Al registrarte aceptas nuestros <button type="button" class="open-terms-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Términos</button> y la <button type="button" class="open-privacy-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button>.
-                </p>
               </form>
             ` : ''}
 
@@ -12555,7 +12548,7 @@ class App {
                       <input type="radio" name="new-biz-plan" value="basic" ${selectedPlanId === 'basic' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-white">Básico</span>
+                          <span class="font-black text-xs text-blue-300">Básico</span>
                           <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 res.</span>
                         </div>
                         <div class="text-sm sm:text-base font-black text-white">$10 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
@@ -12723,14 +12716,20 @@ class App {
                   <span><strong>¡Registro rápido!</strong> Tus fotos, servicios, horarios, redes sociales y ubicación exacta los podrás personalizar dentro de tu panel en la pestaña <strong>"Configurar Negocio"</strong>.</span>
                 </div>
 
+                <!-- Checkbox Términos y Condiciones Negocio -->
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
+                  <label class="flex items-start gap-3 cursor-pointer select-none">
+                    <input type="checkbox" id="biz-reg-terms" required class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
+                    <span class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      Acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button>, la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> y las políticas comerciales de Reservas CR *
+                    </span>
+                  </label>
+                </div>
+
                 <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/20 transition-all text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
                   <i class="fas fa-check-circle text-blue-400"></i>
                   <span>Crear Cuenta y Registrar Negocio</span>
                 </button>
-
-                <p class="text-[11px] text-slate-500 text-center leading-tight pt-1">
-                  Al registrar tu negocio aceptas nuestros <button type="button" class="open-terms-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Términos</button> y la <button type="button" class="open-privacy-modal text-blue-600 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button>.
-                </p>
               </form>
             ` : ''}
           </div>
@@ -13004,6 +13003,17 @@ class App {
         return;
       }
 
+      const termsAccepted = document.getElementById('cli-reg-terms')?.checked;
+      if (!termsAccepted) {
+        this.showToast('Debes aceptar los Términos y Condiciones para crear tu cuenta.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>Debes aceptar los Términos y Condiciones y la Política de Privacidad.</span>';
+        }
+        document.getElementById('cli-reg-terms')?.focus();
+        return;
+      }
+
       const whatsappOptIn = document.getElementById('cli-reg-whatsapp-optin')?.checked ?? true;
 
       try {
@@ -13110,6 +13120,17 @@ class App {
         const confirmInput = document.getElementById('reg-biz-password-confirm');
         confirmInput.classList.add('border-rose-500', 'bg-rose-50/20');
         confirmInput.focus();
+        return;
+      }
+
+      const bizTermsAccepted = document.getElementById('biz-reg-terms')?.checked;
+      if (!bizTermsAccepted) {
+        this.showToast('Debes aceptar los Términos y Condiciones para registrar tu negocio.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
+          errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>Debes aceptar los Términos y Condiciones y la Política de Privacidad.</span>';
+        }
+        document.getElementById('biz-reg-terms')?.focus();
         return;
       }
 
@@ -13319,16 +13340,22 @@ class App {
               </div>
             </div>
 
+            <!-- Checkbox Términos y Condiciones Pre-registro -->
+            <div class="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xs">
+              <label class="flex items-start gap-3 cursor-pointer select-none">
+                <input type="checkbox" id="prereg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
+                <span class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  Acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer">Política de Privacidad</button> (Ley N° 8968 de Costa Rica) *
+                </span>
+              </label>
+            </div>
+
             <div id="prereg-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
 
             <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-blue-950/25 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 cursor-pointer app-touch-btn">
               <i class="fas fa-gift text-sm text-blue-300"></i>
               <span>¡Asegurar mis 15 Días Gratis y Pre-registro!</span>
             </button>
-            
-            <p class="text-[10px] text-slate-400 text-center leading-tight">
-              🔒 Al pre-registrarte aceptas nuestros <button type="button" class="open-terms-modal text-blue-600 underline font-bold hover:text-blue-700 inline cursor-pointer">Términos</button> y la <button type="button" class="open-privacy-modal text-blue-600 underline font-bold hover:text-blue-700 inline cursor-pointer">Política de Privacidad</button>. Tus datos están protegidos bajo la Ley N° 8968 de Costa Rica.
-            </p>
           </form>
         </div>
       </div>
@@ -13393,6 +13420,16 @@ class App {
       const category = document.getElementById('prereg-category').value.trim();
       const city = document.getElementById('prereg-city').value.trim();
       const planInterest = document.querySelector('input[name="prereg-plan"]:checked')?.value || 'pro';
+
+      const preregTermsAccepted = document.getElementById('prereg-terms')?.checked;
+      if (!preregTermsAccepted) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.textContent = 'Debes aceptar los Términos y Condiciones para pre-registrarte.';
+        }
+        document.getElementById('prereg-terms')?.focus();
+        return;
+      }
 
       if (!bizName || !contactName || !phone || !email) {
         if (errBox) {
