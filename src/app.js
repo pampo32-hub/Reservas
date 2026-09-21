@@ -4356,9 +4356,24 @@ class App {
                 </label>
               </div>
 
+              <!-- Checkbox Términos y Condiciones para la Reserva -->
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
+                <label class="flex items-start gap-3 cursor-pointer select-none">
+                  <input type="checkbox" id="booking-terms-optin" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
+                  <span class="text-xs text-slate-700 dark:text-slate-300 leading-snug">
+                    He leído y acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> de Reservas CR *
+                  </span>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
+                <input type="checkbox" id="booking-terms-optin" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                <label for="booking-terms-optin" class="text-xs text-slate-700 dark:text-slate-300 leading-snug cursor-pointer select-none">
+                  He leído y acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> de Reservas CR *
+                </label>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/70 border border-slate-200 dark:border-slate-700 rounded-2xl transition-all">
               <!-- Checkbox Términos y Condiciones para la Reserva (Custom Interactive Component) -->
               <div id="booking-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-all cursor-pointer select-none">
                 <div class="flex items-center justify-between gap-3">
+                  <label for="booking-terms-optin" class="flex items-center gap-3 cursor-pointer select-none flex-1">
+                    <input type="checkbox" id="booking-terms-optin" checked class="w-5 h-5 rounded-lg text-blue-600 focus:ring-2 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
                   <div class="flex items-center gap-3 flex-1 pointer-events-none">
                     <input type="checkbox" id="booking-terms-optin" name="booking_terms" checked class="sr-only">
                     <div id="booking-terms-box" class="w-6 h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm transition-all">
@@ -4367,6 +4382,9 @@ class App {
                     <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                       Acepto los Términos y Condiciones de la Reserva *
                     </span>
+                  </label>
+                  <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 shrink-0 cursor-pointer flex items-center gap-1">
+                    <i class="fas fa-file-contract text-[10px]"></i> Leer
                   </div>
                   <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
                     <i class="fas fa-file-contract text-xs"></i> Leer
@@ -5142,10 +5160,8 @@ class App {
           <div>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Portal de Cliente</span>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
-            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
             <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name || 'Cliente'}</strong> ${clientUser.phone ? `• ${clientUser.phone}` : ''} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
-          <div class="flex items-center gap-2">
           <div class="flex items-center gap-2 flex-wrap">
             <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
               <i class="fas fa-user-edit text-blue-600"></i> Mi Perfil
@@ -5256,9 +5272,6 @@ class App {
                     </button>
                   ` : ''}
                   ${apt.status === 'completed' ? `
-                    <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 shadow-xs" data-apt-id="${apt.id}">
-                      <i class="fas fa-star text-amber-500"></i> Calificar Atención
-                    </button>
                     ${(apt.isReviewed || apt.reviewRating) ? `
                       <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
                         <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}★)
@@ -8935,6 +8948,7 @@ class App {
               <button id="dash-upgrade-team-pro-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
                 <i class="fas fa-rocket"></i> Subir a Plan Profesional ($18/mes - Hasta 5 Especialistas)
               </button>
+              <button id="dash-upgrade-team-unlimited-btn" class="w-full sm:w-auto 
               <button id="dash-upgrade-team-unlimited-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
                 <i class="fas fa-crown text-amber-300"></i> Plan Ilimitado ($35/mes - Especialistas ∞)
               </button>

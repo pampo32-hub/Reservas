@@ -63,6 +63,21 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ==========================================================================
+   ANTI-FLICKER & ZERO-JITTER HOVER ENGINE
+   Prevents pointer bouncing between parent and nested children (icons, text)
+   ========================================================================== */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+button > *, a > *, [role="button"] > * {
+  pointer-events: none;
+}
+
 h1, h2, h3, h4, .font-headline, .font-display {
   font-family: var(--font-headline);
   letter-spacing: -0.03em;
