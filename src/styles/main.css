@@ -64,18 +64,25 @@ html, body {
 }
 
 /* ==========================================================================
-   ANTI-FLICKER & ZERO-JITTER HOVER ENGINE
+   ANTI-FLICKER & STABLE HOVER ENGINE
    Prevents pointer bouncing between parent and nested children (icons, text)
    ========================================================================== */
-button, a, [role="button"] {
+button, a, [role="button"], input[type="button"], input[type="submit"] {
   -webkit-tap-highlight-color: transparent;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
 }
 
+/* Ensure child elements inside buttons/links do not capture pointer events,
+   preventing mouseenter/mouseleave bubbling jitter */
 button > *, a > *, [role="button"] > * {
   pointer-events: none;
+}
+
+/* Restrict button transitions to safe non-layout visual properties,
+   preventing GPU subpixel hit-test oscillation loops */
+button, a.btn, [role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
 }
 
 h1, h2, h3, h4, .font-headline, .font-display {
