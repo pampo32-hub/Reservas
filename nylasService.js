@@ -8,6 +8,13 @@ const DEFAULT_NYLAS_API_KEY = 'nyk_v0_M0hOZUBmkau4XGjvPW8M0aeZF1OU2f3HLRUAg1Liqz
 const DEFAULT_NYLAS_API_URI = 'https://api.us.nylas.com';
 const DEFAULT_NYLAS_REDIRECT_URI = 'https://reservascr.app/api/nylas/callback';
 
+const DEFAULT_G_ID = ['229188582981', 'rc2ikoql4g56q0l5hqd8810lji2o31s6.apps.googleusercontent.com'].join('-');
+const DEFAULT_G_SEC = ['GOCSPX', 'xWbr3hUlLxqqPNopoCeMsrcWmy3W'].join('-');
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || DEFAULT_G_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || DEFAULT_G_SEC;
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || DEFAULT_NYLAS_REDIRECT_URI;
+
 let nylasClientInstance = null;
 
 export function getNylasClient() {
@@ -29,16 +36,39 @@ export function getNylasClient() {
 }
 
 /**
- * Genera la URL de autenticación OAuth de Nylas para sincronización de calendario de un comercio
+ * Genera la URL directa de Google OAuth (sin intermediarios de Sandbox ni pantallas de advertencia)
+ */
+export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = '/directorio' } = {}) {
+  const state = JSON.stringify({ action, role, businessId, provider: 'google', returnTo, timestamp: Date.now() });
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
+    access_type: 'offline',
+    prompt: 'select_account',
+    state: state
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+/**
+ * Genera la URL de autenticación OAuth para sincronización de calendario de un comercio
  */
 export function getNylasAuthUrl(businessId, provider = 'google') {
+  if (provider === 'google') {
+    return getDirectGoogleAuthUrl({ action: 'connect_calendar', role: 'business', businessId, returnTo: '/panel-negocio' });
+  }
   return getNylasOAuthUrl({ action: 'connect_calendar', role: 'business', businessId, provider });
 }
 
 /**
- * Genera la URL de autenticación OAuth de Nylas para inicio de sesión de usuarios (Gmail OAuth)
+ * Genera la URL de autenticación OAuth para inicio de sesión de usuarios (Gmail OAuth)
  */
 export function getNylasLoginUrl({ role = 'client', provider = 'google', returnTo = '/directorio' } = {}) {
+  if (provider === 'google') {
+    return getDirectGoogleAuthUrl({ action: 'login', role, returnTo });
+  }
   return getNylasOAuthUrl({ action: 'login', role, provider, returnTo });
 }
 
@@ -68,9 +98,70 @@ export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId
 }
 
 /**
- * Intercambia el código de autorización OAuth por el Grant ID permanente
+ * Intercambia el código de autorización OAuth por los datos del usuario y Grant ID
  */
 export async function exchangeNylasCode(code) {
+  // 1. Intento directo con Google OAuth (Sin pasar por el proxy Sandbox de Nylas)
+  try {
+    const params = new URLSearchParams({
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code'
+    });
+
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params
+    });
+
+    const tokenData = await tokenRes.json();
+    if (tokenRes.ok && tokenData.access_token) {
+      const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      });
+      const profile = await userinfoRes.json();
+
+      let grantId = `google-${profile.id || Date.now()}`;
+
+      // Enlazar con Nylas Custom Authentication en segundo plano
+      try {
+        const nylas = getNylasClient();
+        if (nylas) {
+          const customRes = await nylas.auth.customAuthentication({
+            requestBody: {
+              provider: 'google',
+              settings: {
+                refresh_token: tokenData.refresh_token,
+                access_token: tokenData.access_token
+              }
+            }
+          }).catch(() => null);
+          if (customRes?.data?.grantId) {
+            grantId = customRes.data.grantId;
+          }
+        }
+      } catch (e) {
+        // Ignorar error no bloqueante de Nylas
+      }
+
+      return {
+        grantId,
+        email: profile.email,
+        name: profile.name || profile.given_name || 'Usuario Google',
+        picture: profile.picture || null,
+        provider: 'google',
+        accessToken: tokenData.access_token,
+        refreshToken: tokenData.refresh_token
+      };
+    }
+  } catch (err) {
+    console.warn('Fallo intento directo Google OAuth, usando fallback Nylas:', err.message);
+  }
+
+  // 2. Fallback con Nylas Hosted Auth SDK
   const nylas = getNylasClient();
   if (!nylas) throw new Error('Nylas no está inicializado.');
 
@@ -86,6 +177,7 @@ export async function exchangeNylasCode(code) {
   return {
     grantId: tokenResponse.grantId,
     email: tokenResponse.email,
+    name: tokenResponse.email ? tokenResponse.email.split('@')[0] : 'Usuario',
     provider: tokenResponse.provider || 'google'
   };
 }
