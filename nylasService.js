@@ -39,8 +39,10 @@ export function getNylasClient() {
  * Genera la URL de autenticación OAuth de Nylas para sincronización de calendario de un comercio
  * Genera la URL directa de Google OAuth (sin intermediarios de Sandbox ni pantallas de advertencia)
  */
-export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = '/directorio' } = {}) {
-  const state = JSON.stringify({ action, role, businessId, provider: 'google', returnTo, timestamp: Date.now() });
+export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = null } = {}) {
+  const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
+  const effectiveReturnTo = returnTo || defaultReturnTo;
+  const state = JSON.stringify({ action, role, businessId, provider: 'google', returnTo: effectiveReturnTo, timestamp: Date.now() });
   
   // Para login regular de usuarios/clientes usamos solo scopes estándar (no sensibles)
   const scope = action === 'connect_calendar' 
@@ -51,8 +53,7 @@ export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', busi
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
-    scope,
+    scope: scope,
     access_type: 'offline',
     prompt: 'select_account',
     state: state
@@ -67,24 +68,27 @@ export function getNylasAuthUrl(businessId, provider = 'google') {
   if (provider === 'google') {
     return getDirectGoogleAuthUrl({ action: 'connect_calendar', role: 'business', businessId, returnTo: '/panel-negocio' });
   }
-  return getNylasOAuthUrl({ action: 'connect_calendar', role: 'business', businessId, provider });
+  return getNylasOAuthUrl({ action: 'connect_calendar', role: 'business', businessId, provider, returnTo: '/panel-negocio' });
 }
 
 /**
- * Genera la URL de autenticación OAuth de Nylas para inicio de sesión de usuarios (Gmail OAuth)
- * Genera la URL de autenticación OAuth para inicio de sesión de usuarios (Gmail OAuth)
+ * Genera la URL de autenticación OAuth para inicio de sesión de usuarios o comercios (Gmail OAuth)
  */
-export function getNylasLoginUrl({ role = 'client', provider = 'google', returnTo = '/directorio' } = {}) {
+export function getNylasLoginUrl({ role = 'client', provider = 'google', returnTo = null } = {}) {
+  const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
+  const effectiveReturnTo = returnTo || defaultReturnTo;
   if (provider === 'google') {
-    return getDirectGoogleAuthUrl({ action: 'login', role, returnTo });
+    return getDirectGoogleAuthUrl({ action: 'login', role, returnTo: effectiveReturnTo });
   }
-  return getNylasOAuthUrl({ action: 'login', role, provider, returnTo });
+  return getNylasOAuthUrl({ action: 'login', role, provider, returnTo: effectiveReturnTo });
 }
 
 /**
  * Función base para generar URLs de OAuth con Nylas Hosted Auth
  */
-export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId = null, provider = 'google', returnTo = '/directorio' } = {}) {
+export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId = null, provider = 'google', returnTo = null } = {}) {
+  const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
+  const effectiveReturnTo = returnTo || defaultReturnTo;
   const nylas = getNylasClient();
   if (!nylas) throw new Error('Nylas no está inicializado.');
 

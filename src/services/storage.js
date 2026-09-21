@@ -1118,20 +1118,32 @@ class StorageService {
     return all.filter(a => a.businessId === businessId);
   }
 
+  getClientAppointments(phone, email = '') {
+    const all = this.appointmentsCache || this.getAppointments() || [];
+    const cleanPhone = (phone || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanPhone && !cleanEmail) return [];
+    return all.filter(a => {
+      const matchPhone = cleanPhone && a.clientPhone && a.clientPhone.trim() === cleanPhone;
+      const matchEmail = cleanEmail && a.clientEmail && a.clientEmail.trim().toLowerCase() === cleanEmail;
+      return Boolean(matchPhone || matchEmail);
+    });
+  }
+
   async getClientAppointmentsAsync(phone, email = '') {
     if (this.isOnlineApi && (phone || email)) {
       try {
         const url = `${this.apiBase}/clients/${encodeURIComponent(phone || 'null')}/appointments?email=${encodeURIComponent(email || '')}`;
         const res = await fetch(url);
         if (res.ok) {
-          return await res.json();
+          const remoteAppointments = await res.json();
+          return remoteAppointments;
         }
       } catch (e) {
         console.warn('Error consultando citas de cliente:', e);
       }
     }
-    const all = this.getAppointments();
-    return all.filter(a => (phone && a.clientPhone === phone) || (email && a.clientEmail && a.clientEmail.toLowerCase() === email.toLowerCase()));
+    return this.getClientAppointments(phone, email);
   }
 
   async createAppointment(appointmentData) {

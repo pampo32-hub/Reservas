@@ -739,6 +739,7 @@ class App {
           this.renderHeader();
           this.renderMobileBottomNav();
           this.renderCurrentView();
+          this.showToast(`¡Bienvenido, ${event.data.user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
           this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
         }
       });
@@ -5100,7 +5101,7 @@ class App {
           <div>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Portal de Cliente</span>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
-            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
+            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name || 'Cliente'}</strong> ${clientUser.phone ? `• ${clientUser.phone}` : ''} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
             <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
@@ -9088,6 +9089,7 @@ class App {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
           <!-- Header -->
+          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6
           <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6 text-white flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg">
@@ -12764,7 +12766,7 @@ class App {
             ${mode === 'login' && role === 'client' ? `
               <!-- FORM 1: LOGIN CLIENTE (GOOGLE O TELÉFONO/CORREO Y CONTRASEÑA) -->
               <!-- Botón Continuar con Google (Gmail) -->
-              <a href="/api/auth/nylas/google?role=client" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer active:scale-[0.99]">
+              <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer active:scale-[0.99]">
                 <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -12808,7 +12810,7 @@ class App {
             ${mode === 'login' && role === 'business' ? `
               <!-- FORM 2: LOGIN NEGOCIO (GOOGLE O CORREO Y CONTRASEÑA) -->
               <!-- Botón Continuar con Google (Gmail del Negocio) -->
-              <a href="/api/auth/nylas/google?role=business" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
+              <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
                 <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -12852,7 +12854,7 @@ class App {
             ${mode === 'register' && role === 'client' ? `
               <!-- FORM 3: REGISTRO CLIENTE (GOOGLE O CON CONTRASEÑA Y CONFIRMACIÓN) -->
               <!-- Botón Registrarse con Google (Gmail) -->
-              <a href="/api/auth/nylas/google?role=client" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
+              <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
                 <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -12934,6 +12936,23 @@ class App {
 
             ${mode === 'register' && role === 'business' ? `
               <!-- FORM 4: REGISTRO NUEVO NEGOCIO (RÁPIDO Y SENCILLO) -->
+              <!-- Botón Registrarse con Google (Gmail del Negocio) -->
+              <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
+                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Registrar mi Negocio con Google (Gmail)</span>
+              </a>
+
+              <div class="relative flex py-1 items-center mb-3">
+                <div class="flex-grow border-t border-slate-200"></div>
+                <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold">o completa el registro manual</span>
+                <div class="flex-grow border-t border-slate-200"></div>
+              </div>
+
               <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
                 
                 <!-- 1. SELECCIÓN DE PLAN DE SUSCRIPCIÓN -->
@@ -13375,7 +13394,8 @@ class App {
         this.showToast('¡Bienvenido(a)! Sesión iniciada como cliente.', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
-        this.renderCurrentView();
+        this.renderMobileBottomNav();
+        this.navigateTo('my-client-bookings');
       } catch (err) {
         this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         if (errBox) {
@@ -13442,7 +13462,8 @@ class App {
         this.showToast('¡Cuenta de cliente creada exitosamente!', 'success');
         modalContainer.innerHTML = '';
         this.renderHeader();
-        this.renderCurrentView();
+        this.renderMobileBottomNav();
+        this.navigateTo('my-client-bookings');
       } catch (err) {
         this.showToast(err.message || 'Error al registrarse.', 'error');
         if (errBox) {

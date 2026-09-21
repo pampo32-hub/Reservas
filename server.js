@@ -1903,12 +1903,12 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       FROM reservas_appointments a 
       LEFT JOIN reservas_businesses b ON a.business_id = b.id 
       LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
-      WHERE a.client_phone = $1
+      WHERE (a.client_phone = $1 AND $1 != '' AND $1 != 'null' AND $1 != 'undefined')
     `;
     const params = [phone];
 
     if (email && email.trim() !== '') {
-      query += ' OR (a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
+      query += ' OR (a.client_email IS NOT NULL AND a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
       params.push(email.trim());
     }
     query += ' ORDER BY a.date DESC, a.time ASC';
@@ -4362,7 +4362,7 @@ app.get('/api/nylas/auth', (req, res) => {
 app.get(['/api/auth/nylas/google', '/api/auth/google'], (req, res) => {
   try {
     const role = req.query.role || 'client';
-    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/directorio');
+    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
     const authUrl = getNylasLoginUrl({ role, provider: 'google', returnTo });
     res.redirect(authUrl);
   } catch (err) {
@@ -4388,7 +4388,7 @@ app.get('/api/nylas/callback', async (req, res) => {
   let role = 'client';
   let businessId = null;
   let provider = 'google';
-  let returnTo = '/directorio';
+  let returnTo = '/mis-reservas';
 
   try {
     if (state) {
@@ -4397,7 +4397,7 @@ app.get('/api/nylas/callback', async (req, res) => {
       role = parsedState.role || 'client';
       businessId = parsedState.businessId;
       provider = parsedState.provider || provider;
-      returnTo = parsedState.returnTo || (role === 'business' ? '/panel-negocio' : '/directorio');
+      returnTo = parsedState.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
     }
   } catch (e) {
     businessId = state;
@@ -4462,8 +4462,65 @@ app.get('/api/nylas/callback', async (req, res) => {
             role: 'business'
           };
         } else {
-          // Si no tiene negocio registrado aún, se autentica como cliente
-          finalRole = 'client';
+          // Crear un nuevo negocio y usuario de negocio automáticamente
+          const newBizId = `biz-${Date.now()}`;
+          const newUserId = `buser-${Date.now()}`;
+          const defaultSchedule = {
+            days: [1, 2, 3, 4, 5, 6],
+            openTime: '08:00',
+            closeTime: '18:00',
+            breakStart: '12:00',
+            breakEnd: '13:00',
+            slotDuration: 30
+          };
+          const defaultFeatures = ['Sinpe Móvil', 'Atención Personalizada'];
+
+          await pool.query(`
+            INSERT INTO reservas_businesses (
+              id, name, category, category_label, rating, reviews_count,
+              price_range, address, city, phone, email, description,
+              image, cover_image, schedule, features, is_demo,
+              plan, plan_price_usd, monthly_booking_limit,
+              auto_confirm_appointments, subscription_status, payment_method,
+              nylas_grant_id, nylas_email, nylas_provider, nylas_connected_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW())
+          `, [
+            newBizId, `Negocio de ${fallbackName}`, 'belleza', 'Salud y Belleza',
+            5.0, 0, '₡₡',
+            'San José, Costa Rica', 'San José', '', cleanEmail,
+            'Servicios profesionales y atención personalizada.',
+            'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+            JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
+            'free', 0, 25,
+            true, 'active', 'free',
+            grantId, cleanEmail, 'google'
+          ]);
+
+          // Crear servicio inicial
+          const srvId = `srv-${Date.now()}`;
+          await pool.query(`
+            INSERT INTO reservas_services (id, business_id, name, duration, price, description)
+            VALUES ($1, $2, 'Servicio General', 30, 10000, 'Servicio profesional')
+          `, [srvId, newBizId]);
+
+          // Crear usuario del negocio
+          await pool.query(
+            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, nylas_grant_id)
+             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5)`,
+            [newUserId, newBizId, fallbackName, cleanEmail, grantId]
+          );
+
+          sessionUser = {
+            id: newUserId,
+            businessId: newBizId,
+            name: fallbackName,
+            email: cleanEmail,
+            role: 'business'
+          };
+          finalRole = 'business';
+          returnTo = '/panel-negocio?tab=config';
+          console.log(`✅ [Google OAuth] Nuevo comercio creado y autenticado: ${cleanEmail}`);
         }
       }
     }
@@ -4502,7 +4559,7 @@ app.get('/api/nylas/callback', async (req, res) => {
       }
     }
 
-    const redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/directorio');
+    const redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/mis-reservas');
     res.send(`
       <!DOCTYPE html>
       <html lang="es">
