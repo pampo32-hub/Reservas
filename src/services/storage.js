@@ -721,7 +721,6 @@ class StorageService {
           });
         }
         await this.loadFromApi();
-        return businessData.id;
       } catch (e) {
         console.error('Error guardando en API Neon:', e);
       }

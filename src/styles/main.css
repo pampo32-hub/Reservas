@@ -651,3 +651,38 @@ html.dark ::-webkit-scrollbar-thumb {
 html.dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* ==========================================================================
+   Owner Calendar Agenda - Responsive View Guarantees & Enhancements
+   ========================================================================== */
+@media (max-width: 767px) {
+  .cal-desktop-view {
+    display: none !important;
+  }
+  .cal-mobile-view {
+    display: block !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .cal-desktop-view {
+    display: block !important;
+  }
+  .cal-mobile-view {
+    display: none !important;
+  }
+}
+
+.cal-day-cell {
+  min-height: 120px;
+  position: relative;
+}
+
+html.dark .calendar-view-container {
+  border-color: #334155 !important;
+}
+
+html.dark .cal-day-cell {
+  border-color: #334155 !important;
+}
+

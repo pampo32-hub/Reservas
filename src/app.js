@@ -6702,7 +6702,7 @@ class App {
         <!-- ========================================================================= -->
         <!-- VISTA MÓVIL: CALENDARIO ESPACIOSO TÁCTIL + AGENDA DEL DÍA (SOLO PANTALLAS < 768px) -->
         <!-- ========================================================================= -->
-        <div class="block md:hidden space-y-4">
+        <div class="cal-mobile-view block md:hidden space-y-4">
           <!-- Cuadrícula Mensual Ampliada -->
           <div class="${theme.mobileGridBg} rounded-3xl border overflow-hidden shadow-2xs p-3.5 sm:p-4 space-y-2.5 transition-colors">
             <!-- Días de la semana -->
@@ -6772,7 +6772,6 @@ class App {
                   <span>${this.formatDateFullSpanish(selectedMobileDate)}</span>
                 </h4>
               </div>
-              <div>
               <div class="flex items-center gap-2">
                 <button 
                   type="button" 
@@ -6922,7 +6921,7 @@ class App {
         <!-- ========================================================================= -->
         <!-- VISTA ESCRITORIO: CUADRÍCULA COMPLETA DE 7 COLUMNAS (SOLO PANTALLAS >= 768px) -->
         <!-- ========================================================================= -->
-        <div class="hidden md:block border rounded-3xl overflow-hidden ${theme.desktopContainer} shadow-2xs transition-colors">
+        <div class="cal-desktop-view hidden md:block border rounded-3xl overflow-hidden ${theme.desktopContainer} shadow-2xs transition-colors">
           <!-- Cabecera de Días de la Semana -->
           <div class="grid grid-cols-7 ${theme.desktopWeekdayHeader} border-b text-center text-[11px] font-black uppercase tracking-wider py-2.5">
             ${daysOfWeek.map((d, idx) => `
@@ -6948,7 +6947,6 @@ class App {
 
               return `
                 <div 
-                  class="cal-day-cell min-h-[120px] lg:min-h-[135px] p-2 flex flex-col justify-between transition-all duration-200 ${cell.isCurrentMonth ? 'bg-white/90 hover:bg-white cursor-pointer shadow-2xs' : 'bg-slate-50/50 opacity-40'} ${cell.isToday ? theme.desktopCellToday : ''} ${isExpanded ? 'z-20 ring-2 ring-indigo-500 shadow-xl bg-white scale-[1.02] rounded-2xl' : ''}" 
                   class="cal-day-cell min-h-[120px] lg:min-h-[135px] p-2 flex flex-col justify-between transition-all duration-200 ${cellBgClass} ${isExpanded ? 'z-20 ring-2 ring-indigo-500 shadow-xl bg-white scale-[1.02] rounded-2xl' : ''}" 
                   data-date="${cell.dateKey}"
                   title="${cell.isCurrentMonth ? `Click para agregar reserva manual el ${this.formatDateDMY(cell.dateKey)}` : ''}"
