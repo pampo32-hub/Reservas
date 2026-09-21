@@ -36,15 +36,22 @@ export function getNylasClient() {
 }
 
 /**
+ * Genera la URL de autenticación OAuth de Nylas para sincronización de calendario de un comercio
  * Genera la URL directa de Google OAuth (sin intermediarios de Sandbox ni pantallas de advertencia)
  */
 export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = '/directorio' } = {}) {
   const state = JSON.stringify({ action, role, businessId, provider: 'google', returnTo, timestamp: Date.now() });
+  
+  // Para login regular de usuarios/clientes usamos solo scopes estándar (no sensibles)
+  const scope = action === 'connect_calendar' 
+    ? 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar'
+    : 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
+
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
+    scope,
     access_type: 'offline',
     prompt: 'select_account',
     state: state
@@ -63,6 +70,7 @@ export function getNylasAuthUrl(businessId, provider = 'google') {
 }
 
 /**
+ * Genera la URL de autenticación OAuth de Nylas para inicio de sesión de usuarios (Gmail OAuth)
  * Genera la URL de autenticación OAuth para inicio de sesión de usuarios (Gmail OAuth)
  */
 export function getNylasLoginUrl({ role = 'client', provider = 'google', returnTo = '/directorio' } = {}) {
@@ -98,6 +106,7 @@ export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId
 }
 
 /**
+ * Intercambia el código de autorización OAuth por el Grant ID permanente
  * Intercambia el código de autorización OAuth por los datos del usuario y Grant ID
  */
 export async function exchangeNylasCode(code) {
