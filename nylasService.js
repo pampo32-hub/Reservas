@@ -39,6 +39,8 @@ export function getNylasClient() {
  * Genera la URL de autenticación OAuth de Nylas para sincronización de calendario de un comercio
  * Genera la URL directa de Google OAuth (sin intermediarios de Sandbox ni pantallas de advertencia)
  */
+export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = '/directorio' } = {}) {
+  const state = JSON.stringify({ action, role, businessId, provider: 'google', returnTo, timestamp: Date.now() });
 export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', businessId = null, returnTo = null } = {}) {
   const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
   const effectiveReturnTo = returnTo || defaultReturnTo;
@@ -53,6 +55,8 @@ export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', busi
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: 'code',
+    scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
+    scope,
     scope: scope,
     access_type: 'offline',
     prompt: 'select_account',
@@ -65,26 +69,29 @@ export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', busi
  * Genera la URL de autenticación OAuth para sincronización de calendario de un comercio
  */
 export function getNylasAuthUrl(businessId, provider = 'google') {
-  if (provider === 'google') {
+  const normProvider = (provider || 'google').toLowerCase();
+  if (normProvider === 'google') {
     return getDirectGoogleAuthUrl({ action: 'connect_calendar', role: 'business', businessId, returnTo: '/panel-negocio' });
   }
-  return getNylasOAuthUrl({ action: 'connect_calendar', role: 'business', businessId, provider, returnTo: '/panel-negocio' });
+  return getNylasOAuthUrl({ action: 'connect_calendar', role: 'business', businessId, provider: normProvider, returnTo: '/panel-negocio' });
 }
 
 /**
- * Genera la URL de autenticación OAuth para inicio de sesión de usuarios o comercios (Gmail OAuth)
+ * Genera la URL de autenticación OAuth para inicio de sesión de usuarios o comercios (Google, Microsoft/Hotmail, Apple/iCloud)
  */
 export function getNylasLoginUrl({ role = 'client', provider = 'google', returnTo = null } = {}) {
   const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
   const effectiveReturnTo = returnTo || defaultReturnTo;
-  if (provider === 'google') {
+  const normProvider = (provider || 'google').toLowerCase();
+
+  if (normProvider === 'google') {
     return getDirectGoogleAuthUrl({ action: 'login', role, returnTo: effectiveReturnTo });
   }
-  return getNylasOAuthUrl({ action: 'login', role, provider, returnTo: effectiveReturnTo });
+  return getNylasOAuthUrl({ action: 'login', role, provider: normProvider, returnTo: effectiveReturnTo });
 }
 
 /**
- * Función base para generar URLs de OAuth con Nylas Hosted Auth
+ * Función base para generar URLs de OAuth con Nylas Hosted Auth (Google, Microsoft, iCloud)
  */
 export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId = null, provider = 'google', returnTo = null } = {}) {
   const defaultReturnTo = role === 'business' ? '/panel-negocio' : '/mis-reservas';
@@ -99,12 +106,24 @@ export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId
     throw new Error('NYLAS_CLIENT_ID no configurado');
   }
 
+  const providerMap = {
+    google: 'google',
+    microsoft: 'microsoft',
+    outlook: 'microsoft',
+    hotmail: 'microsoft',
+    office365: 'microsoft',
+    icloud: 'icloud',
+    apple: 'icloud'
+  };
+
+  const nylasProvider = providerMap[provider.toLowerCase()] || provider;
+
   const authUrl = nylas.auth.urlForOAuth2({
     clientId,
     redirectUri,
-    provider, // 'google' | 'microsoft'
+    provider: nylasProvider,
     prompt: 'select_provider,detect_provider',
-    state: JSON.stringify({ action, role, businessId, provider, returnTo, timestamp: Date.now() })
+    state: JSON.stringify({ action, role, businessId, provider: nylasProvider, returnTo: effectiveReturnTo, timestamp: Date.now() })
   });
 
   return authUrl;

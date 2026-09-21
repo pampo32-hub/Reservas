@@ -1903,11 +1903,13 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       FROM reservas_appointments a 
       LEFT JOIN reservas_businesses b ON a.business_id = b.id 
       LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
+      WHERE a.client_phone = $1
       WHERE (a.client_phone = $1 AND $1 != '' AND $1 != 'null' AND $1 != 'undefined')
     `;
     const params = [phone];
 
     if (email && email.trim() !== '') {
+      query += ' OR (a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
       query += ' OR (a.client_email IS NOT NULL AND a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
       params.push(email.trim());
     }
@@ -4371,7 +4373,33 @@ app.get(['/api/auth/nylas/google', '/api/auth/google'], (req, res) => {
   }
 });
 
-// 2. Callback de OAuth de Nylas (Login de usuario con Gmail o Sincronización de calendario)
+// 1.2 Iniciar sesión / Registrarse con Microsoft / Outlook / Hotmail (para Clientes y Comercios)
+app.get(['/api/auth/nylas/microsoft', '/api/auth/microsoft', '/api/auth/nylas/outlook', '/api/auth/outlook', '/api/auth/nylas/hotmail'], (req, res) => {
+  try {
+    const role = req.query.role || 'client';
+    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+    const authUrl = getNylasLoginUrl({ role, provider: 'microsoft', returnTo });
+    res.redirect(authUrl);
+  } catch (err) {
+    console.error('Error generando URL de login con Microsoft:', err);
+    res.status(500).send(`Error al iniciar sesión con Microsoft: ${err.message}`);
+  }
+});
+
+// 1.3 Iniciar sesión / Registrarse con Apple / iCloud (para Clientes y Comercios)
+app.get(['/api/auth/nylas/apple', '/api/auth/apple', '/api/auth/nylas/icloud', '/api/auth/icloud'], (req, res) => {
+  try {
+    const role = req.query.role || 'client';
+    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+    const authUrl = getNylasLoginUrl({ role, provider: 'icloud', returnTo });
+    res.redirect(authUrl);
+  } catch (err) {
+    console.error('Error generando URL de login con Apple:', err);
+    res.status(500).send(`Error al iniciar sesión con Apple: ${err.message}`);
+  }
+});
+
+// 2. Callback de OAuth de Nylas (Login de usuario con Gmail/Hotmail/Apple o Sincronización de calendario)
 app.get('/api/nylas/callback', async (req, res) => {
   const { code, state, error, error_description } = req.query;
 
@@ -4406,6 +4434,7 @@ app.get('/api/nylas/callback', async (req, res) => {
   try {
     const tokenData = await exchangeNylasCode(code);
     const { grantId, email } = tokenData;
+    const authProvider = tokenData.provider || provider || 'google';
 
     // CASO A: Sincronización de calendario para comercio
     if (action === 'connect_calendar' && businessId) {
@@ -4430,6 +4459,8 @@ app.get('/api/nylas/callback', async (req, res) => {
       .replace(/[._-]+/g, ' ')
       .replace(/\b\w/g, l => l.toUpperCase());
 
+    const providerLabel = authProvider === 'microsoft' ? 'Microsoft (Outlook/Hotmail)' : (authProvider === 'icloud' || authProvider === 'apple' ? 'Apple (iCloud)' : 'Google');
+
     if (role === 'business') {
       // Buscar usuario en reservas_business_users
       const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
@@ -4442,7 +4473,7 @@ app.get('/api/nylas/callback', async (req, res) => {
           email: row.email,
           role: 'business'
         };
-        await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', ['google', grantId, row.id]).catch(() => {});
+        await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', [authProvider, grantId, row.id]).catch(() => {});
       } else {
         // Buscar si existe un negocio registrado con este email
         const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE LOWER(email) = $1', [cleanEmail]);
@@ -4451,8 +4482,8 @@ app.get('/api/nylas/callback', async (req, res) => {
           const newUserId = `buser-${Date.now()}`;
           await pool.query(
             `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, nylas_grant_id)
-             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5)`,
-            [newUserId, biz.id, biz.name || fallbackName, cleanEmail, grantId]
+             VALUES ($1, $2, $3, $4, 'OAUTH_PROVIDER', $5, $6)`,
+            [newUserId, biz.id, biz.name || fallbackName, cleanEmail, authProvider, grantId]
           );
           sessionUser = {
             id: newUserId,
@@ -4494,7 +4525,7 @@ app.get('/api/nylas/callback', async (req, res) => {
             JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
             'free', 0, 25,
             true, 'active', 'free',
-            grantId, cleanEmail, 'google'
+            grantId, cleanEmail, authProvider
           ]);
 
           // Crear servicio inicial
@@ -4507,8 +4538,8 @@ app.get('/api/nylas/callback', async (req, res) => {
           // Crear usuario del negocio
           await pool.query(
             `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, nylas_grant_id)
-             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5)`,
-            [newUserId, newBizId, fallbackName, cleanEmail, grantId]
+             VALUES ($1, $2, $3, $4, 'OAUTH_PROVIDER', $5, $6)`,
+            [newUserId, newBizId, fallbackName, cleanEmail, authProvider, grantId]
           );
 
           sessionUser = {
@@ -4520,7 +4551,7 @@ app.get('/api/nylas/callback', async (req, res) => {
           };
           finalRole = 'business';
           returnTo = '/panel-negocio?tab=config';
-          console.log(`✅ [Google OAuth] Nuevo comercio creado y autenticado: ${cleanEmail}`);
+          console.log(`✅ [${providerLabel}] Nuevo comercio creado y autenticado: ${cleanEmail}`);
         }
       }
     }
@@ -4538,14 +4569,14 @@ app.get('/api/nylas/callback', async (req, res) => {
           whatsappOptIn: row.whatsapp_opt_in !== false,
           role: 'client'
         };
-        await pool.query('UPDATE reservas_clients SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', ['google', grantId, row.id]).catch(() => {});
+        await pool.query('UPDATE reservas_clients SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', [authProvider, grantId, row.id]).catch(() => {});
       } else {
-        // Registrar nuevo cliente automáticamente con su cuenta de Google
+        // Registrar nuevo cliente automáticamente con su cuenta
         const newClientId = `cli-${Date.now()}`;
         await pool.query(
           `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, nylas_grant_id)
-           VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', true, 'google', $5)`,
-          [newClientId, fallbackName, '', cleanEmail, grantId]
+           VALUES ($1, $2, $3, $4, 'OAUTH_PROVIDER', true, $5, $6)`,
+          [newClientId, fallbackName, '', cleanEmail, authProvider, grantId]
         );
         sessionUser = {
           id: newClientId,
@@ -4555,7 +4586,7 @@ app.get('/api/nylas/callback', async (req, res) => {
           whatsappOptIn: true,
           role: 'client'
         };
-        console.log(`✅ [Nylas OAuth] Nuevo cliente registrado con Gmail: ${cleanEmail}`);
+        console.log(`✅ [Nylas OAuth] Nuevo cliente registrado con ${providerLabel}: ${cleanEmail}`);
       }
     }
 
@@ -4566,7 +4597,7 @@ app.get('/api/nylas/callback', async (req, res) => {
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Iniciando sesión con Google...</title>
+        <title>Iniciando sesión con ${providerLabel}...</title>
         <style>
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;

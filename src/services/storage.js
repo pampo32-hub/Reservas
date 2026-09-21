@@ -1136,8 +1136,7 @@ class StorageService {
         const url = `${this.apiBase}/clients/${encodeURIComponent(phone || 'null')}/appointments?email=${encodeURIComponent(email || '')}`;
         const res = await fetch(url);
         if (res.ok) {
-          const remoteAppointments = await res.json();
-          return remoteAppointments;
+          return await res.json();
         }
       } catch (e) {
         console.warn('Error consultando citas de cliente:', e);

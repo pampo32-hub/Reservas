@@ -859,6 +859,7 @@ class App {
           }
         };
       }
+      if (/^\/?(mis-reservas|cliente)$/i.test(pathname)) {
       if (/^\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)$/i.test(pathname)) {
         return { view: 'my-client-bookings', params: {} };
       }
@@ -970,6 +971,7 @@ class App {
     }
 
     // 6. Mis citas en hash
+    if (/^#\/?(mis-reservas|cliente)/i.test(cleanHash)) {
     if (/^#\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
@@ -5101,8 +5103,10 @@ class App {
           <div>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Portal de Cliente</span>
             <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
+            <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
             <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name || 'Cliente'}</strong> ${clientUser.phone ? `• ${clientUser.phone}` : ''} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
+          <div class="flex items-center gap-2">
           <div class="flex items-center gap-2 flex-wrap">
             <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
               <i class="fas fa-user-edit text-blue-600"></i> Mi Perfil
@@ -8930,6 +8934,7 @@ class App {
         </div>
 
         ${isLimitReached ? `
+          <div class="p-4 bg-gradient-to-r from-amber-50
           <div class="p-4 bg-gradient-to-r from-amber-50 via-amber-100/50 to-purple-50 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
             <div class="flex items-start sm:items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center text-base font-black flex-shrink-0">
@@ -12764,17 +12769,37 @@ class App {
           <!-- Cuerpo con Formularios Dinámicos -->
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
             ${mode === 'login' && role === 'client' ? `
-              <!-- FORM 1: LOGIN CLIENTE (GOOGLE O TELÉFONO/CORREO Y CONTRASEÑA) -->
-              <!-- Botón Continuar con Google (Gmail) -->
-              <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer active:scale-[0.99]">
-                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Continuar con Google (Gmail)</span>
-              </a>
+              <!-- FORM 1: LOGIN CLIENTE (GOOGLE, MICROSOFT, APPLE O CONTRASEÑA) -->
+              <div class="space-y-2">
+                <!-- Botón Google -->
+                <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                  <span>Continuar con Google</span>
+                </a>
+
+                <!-- Botones Microsoft y Apple -->
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="/api/auth/nylas/microsoft?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Hotmail o Outlook">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                    </svg>
+                    <span>Hotmail / Outlook</span>
+                  </a>
+
+                  <a href="/api/auth/nylas/apple?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID">
+                    <i class="fab fa-apple text-slate-900 text-sm"></i>
+                    <span>Apple (iCloud)</span>
+                  </a>
+                </div>
+              </div>
 
               <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
@@ -12808,17 +12833,37 @@ class App {
             ` : ''}
 
             ${mode === 'login' && role === 'business' ? `
-              <!-- FORM 2: LOGIN NEGOCIO (GOOGLE O CORREO Y CONTRASEÑA) -->
-              <!-- Botón Continuar con Google (Gmail del Negocio) -->
-              <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
-                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Continuar con Google (Gmail del Negocio)</span>
-              </a>
+              <!-- FORM 2: LOGIN NEGOCIO (GOOGLE, MICROSOFT, APPLE O CORREO Y CONTRASEÑA) -->
+              <div class="space-y-2 mb-3">
+                <!-- Botón Google -->
+                <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                  <span>Continuar con Google (Gmail)</span>
+                </a>
+
+                <!-- Botones Microsoft y Apple -->
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="/api/auth/nylas/microsoft?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Hotmail o Outlook del negocio">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                    </svg>
+                    <span>Hotmail / Outlook</span>
+                  </a>
+
+                  <a href="/api/auth/nylas/apple?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID del negocio">
+                    <i class="fab fa-apple text-slate-900 text-sm"></i>
+                    <span>Apple (iCloud)</span>
+                  </a>
+                </div>
+              </div>
 
               <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
@@ -12852,17 +12897,37 @@ class App {
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
-              <!-- FORM 3: REGISTRO CLIENTE (GOOGLE O CON CONTRASEÑA Y CONFIRMACIÓN) -->
-              <!-- Botón Registrarse con Google (Gmail) -->
-              <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
-                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Registrarse con Google (Gmail)</span>
-              </a>
+              <!-- FORM 3: REGISTRO CLIENTE (GOOGLE, MICROSOFT, APPLE O MANUAL) -->
+              <div class="space-y-2 mb-3">
+                <!-- Botón Google -->
+                <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                  <span>Registrarse con Google</span>
+                </a>
+
+                <!-- Botones Microsoft y Apple -->
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="/api/auth/nylas/microsoft?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrarse con Hotmail o Outlook">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                    </svg>
+                    <span>Hotmail / Outlook</span>
+                  </a>
+
+                  <a href="/api/auth/nylas/apple?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrarse con Apple ID">
+                    <i class="fab fa-apple text-slate-900 text-sm"></i>
+                    <span>Apple (iCloud)</span>
+                  </a>
+                </div>
+              </div>
 
               <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
@@ -12935,17 +13000,37 @@ class App {
             ` : ''}
 
             ${mode === 'register' && role === 'business' ? `
-              <!-- FORM 4: REGISTRO NUEVO NEGOCIO (RÁPIDO Y SENCILLO) -->
-              <!-- Botón Registrarse con Google (Gmail del Negocio) -->
-              <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs flex items-center justify-center gap-3 cursor-pointer mb-3 active:scale-[0.99]">
-                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                </svg>
-                <span>Registrar mi Negocio con Google (Gmail)</span>
-              </a>
+              <!-- FORM 4: REGISTRO NUEVO NEGOCIO (GOOGLE, MICROSOFT, APPLE O MANUAL) -->
+              <div class="space-y-2 mb-3">
+                <!-- Botón Google -->
+                <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                  <span>Registrar mi Negocio con Google (Gmail)</span>
+                </a>
+
+                <!-- Botones Microsoft y Apple -->
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="/api/auth/nylas/microsoft?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrar mi negocio con Hotmail u Outlook">
+                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                    </svg>
+                    <span>Hotmail / Outlook</span>
+                  </a>
+
+                  <a href="/api/auth/nylas/apple?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrar mi negocio con Apple ID">
+                    <i class="fab fa-apple text-slate-900 text-sm"></i>
+                    <span>Apple (iCloud)</span>
+                  </a>
+                </div>
+              </div>
 
               <div class="relative flex py-1 items-center mb-3">
                 <div class="flex-grow border-t border-slate-200"></div>
