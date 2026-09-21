@@ -25,3 +25,11 @@ services:
         sync: false
       - key: TWILIO_AUTH_TOKEN
         sync: false
+      - key: NYLAS_CLIENT_ID
+        value: 4c11b10e-abe8-43b3-8765-d1feb79cd423
+      - key: NYLAS_API_KEY
+        value: nyk_v0_M0hOZUBmkau4XGjvPW8M0aeZF1OU2f3HLRUAg1Liqzogmc7eUODcpr6wuB4SgQkF
+      - key: NYLAS_API_URI
+        value: https://api.us.nylas.com
+      - key: NYLAS_REDIRECT_URI
+        value: https://reservascr.app/api/nylas/callback
