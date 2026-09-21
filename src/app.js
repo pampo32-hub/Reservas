@@ -859,7 +859,6 @@ class App {
           }
         };
       }
-      if (/^\/?(mis-reservas|cliente)$/i.test(pathname)) {
       if (/^\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)$/i.test(pathname)) {
         return { view: 'my-client-bookings', params: {} };
       }
@@ -971,7 +970,6 @@ class App {
     }
 
     // 6. Mis citas en hash
-    if (/^#\/?(mis-reservas|cliente)/i.test(cleanHash)) {
     if (/^#\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
@@ -4327,12 +4325,10 @@ class App {
               </div>
 
               <!-- Checkbox Términos y Condiciones para la Reserva -->
-              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                <label class="flex items-start gap-3 cursor-pointer select-none">
-                  <input type="checkbox" id="booking-terms-optin" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
-                  <span class="text-xs text-slate-700 dark:text-slate-300 leading-snug">
-                    He leído y acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> de Reservas CR *
-                  </span>
+              <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
+                <input type="checkbox" id="booking-terms-optin" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                <label for="booking-terms-optin" class="text-xs text-slate-700 dark:text-slate-300 leading-snug cursor-pointer select-none">
+                  He leído y acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> de Reservas CR *
                 </label>
               </div>
 
@@ -12983,12 +12979,10 @@ class App {
                 </div>
 
                 <!-- Checkbox Términos y Condiciones Cliente -->
-                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                  <label class="flex items-start gap-3 cursor-pointer select-none">
-                    <input type="checkbox" id="cli-reg-terms" required class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
-                    <span class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                      He leído y acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> de Reservas CR *
-                    </span>
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
+                  <input type="checkbox" id="cli-reg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                  <label for="cli-reg-terms" class="text-xs text-slate-700 dark:text-slate-300 leading-snug cursor-pointer select-none">
+                    He leído y acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> de Reservas CR *
                   </label>
                 </div>
 
@@ -13242,12 +13236,10 @@ class App {
                 </div>
 
                 <!-- Checkbox Términos y Condiciones Negocio -->
-                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl">
-                  <label class="flex items-start gap-3 cursor-pointer select-none">
-                    <input type="checkbox" id="biz-reg-terms" required class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
-                    <span class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                      Acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Términos y Condiciones</button>, la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer">Política de Privacidad</button> y las políticas comerciales de Reservas CR *
-                    </span>
+                <div class="p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex items-start gap-3">
+                  <input type="checkbox" id="biz-reg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+                  <label for="biz-reg-terms" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed cursor-pointer select-none">
+                    Acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span>, la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-800 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> y las políticas comerciales de Reservas CR *
                   </label>
                 </div>
 
@@ -13868,12 +13860,10 @@ class App {
             </div>
 
             <!-- Checkbox Términos y Condiciones Pre-registro -->
-            <div class="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xs">
-              <label class="flex items-start gap-3 cursor-pointer select-none">
-                <input type="checkbox" id="prereg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600">
-                <span class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                  Acepto los <button type="button" class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer">Términos y Condiciones</button> y la <button type="button" class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer">Política de Privacidad</button> (Ley N° 8968 de Costa Rica) *
-                </span>
+            <div class="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xs flex items-start gap-3">
+              <input type="checkbox" id="prereg-terms" required checked class="mt-0.5 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 cursor-pointer shrink-0">
+              <label for="prereg-terms" class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed cursor-pointer select-none">
+                Acepto los <span class="open-terms-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer" role="button" tabindex="0">Términos y Condiciones</span> y la <span class="open-privacy-modal text-blue-600 dark:text-blue-400 underline font-bold hover:text-blue-700 cursor-pointer" role="button" tabindex="0">Política de Privacidad</span> (Ley N° 8968 de Costa Rica) *
               </label>
             </div>
 
@@ -16017,6 +16007,7 @@ class App {
       const termsTarget = e.target.closest('.open-terms-modal, #footer-terms-btn');
       if (termsTarget) {
         e.preventDefault();
+        e.stopPropagation();
         this.renderLegalModal('terms');
         return;
       }
@@ -16025,6 +16016,7 @@ class App {
       const privacyTarget = e.target.closest('.open-privacy-modal, #footer-privacy-btn');
       if (privacyTarget) {
         e.preventDefault();
+        e.stopPropagation();
         this.renderLegalModal('privacy');
         return;
       }
@@ -16248,14 +16240,19 @@ class App {
   // --- MODAL DE TÉRMINOS, CONDICIONES Y PRIVACIDAD ---
   // --- MODAL DE TÉRMINOS, CONDICIONES Y PRIVACIDAD ---
   renderLegalModal(initialTab = 'terms') {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
+    let legalContainer = document.getElementById('legal-modal-container');
+    if (!legalContainer) {
+      legalContainer = document.createElement('div');
+      legalContainer.id = 'legal-modal-container';
+      legalContainer.className = 'fixed inset-0 z-[9999] pointer-events-auto';
+      document.body.appendChild(legalContainer);
+    }
 
     let currentTab = initialTab;
 
     const renderContent = () => {
-      modalContainer.innerHTML = `
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+      legalContainer.innerHTML = `
+        <div class="fixed inset-0 z-[9999] flex items-center justify-center p-2.5 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
           <div class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 my-4 modal-card flex flex-col max-h-[94vh]">
             
             <!-- Header -->
@@ -16811,8 +16808,13 @@ class App {
       `;
 
       // Event listeners
-      document.getElementById('close-legal-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
-      document.getElementById('accept-legal-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+      const closeLegalModal = () => {
+        if (legalContainer && legalContainer.parentNode) {
+          legalContainer.remove();
+        }
+      };
+      document.getElementById('close-legal-modal-btn')?.addEventListener('click', closeLegalModal);
+      document.getElementById('accept-legal-modal-btn')?.addEventListener('click', closeLegalModal);
 
       document.getElementById('tab-btn-terms')?.addEventListener('click', () => {
         currentTab = 'terms';
