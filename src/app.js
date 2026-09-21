@@ -22,18 +22,24 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-sky-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-sky-100 text-slate-800 border-sky-300',
     todayBtnClass: 'bg-sky-600 hover:bg-sky-700 text-white border-sky-600 shadow-xs font-bold',
+    weekdayHeaderMobile: 'border-b border-sky-200 bg-sky-100/70 text-sky-950 py-1.5 rounded-xl',
     weekdayHeaderMobile: 'border-b border-sky-200 bg-sky-100/80 text-sky-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-sky-700 font-black',
+    mobileGridBg: 'bg-sky-50/60 border-sky-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-sky-50',
     mobileGridBg: 'bg-sky-50/70 border-sky-300',
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-sky-100',
     mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-500 font-black',
     mobileCellSelected: 'bg-sky-600 text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-sky-300',
+    desktopContainer: 'border-sky-300 bg-sky-100/30',
     desktopContainer: 'border-sky-300 bg-sky-100/40',
     desktopWeekdayHeader: 'bg-sky-200/90 border-sky-300 text-sky-950',
     desktopGridDivide: 'divide-sky-200 bg-sky-100/40',
+    desktopCellDefault: 'bg-white/95 hover:bg-sky-50/80 cursor-pointer shadow-2xs',
     desktopCellDefault: 'bg-white/95 hover:bg-sky-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-sky-100/95 ring-2 ring-sky-500 ring-inset shadow-xs',
+    desktopCellOtherMonth: 'bg-sky-50/30 text-slate-300 opacity-40',
     desktopCellOtherMonth: 'bg-sky-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-sky-600 text-white font-bold',
     accentText: 'text-sky-600',
@@ -49,18 +55,24 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-purple-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-purple-100 text-slate-800 border-purple-300',
     todayBtnClass: 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-xs font-bold',
+    weekdayHeaderMobile: 'border-b border-purple-200 bg-purple-100/70 text-purple-950 py-1.5 rounded-xl',
     weekdayHeaderMobile: 'border-b border-purple-200 bg-purple-100/80 text-purple-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-purple-700 font-black',
+    mobileGridBg: 'bg-purple-50/60 border-purple-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-purple-50',
     mobileGridBg: 'bg-purple-50/70 border-purple-300',
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-purple-100',
     mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-500 font-black',
     mobileCellSelected: 'bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-purple-300',
+    desktopContainer: 'border-purple-300 bg-purple-100/30',
     desktopContainer: 'border-purple-300 bg-purple-100/40',
     desktopWeekdayHeader: 'bg-purple-200/90 border-purple-300 text-purple-950',
     desktopGridDivide: 'divide-purple-200 bg-purple-100/40',
+    desktopCellDefault: 'bg-white/95 hover:bg-purple-50/80 cursor-pointer shadow-2xs',
     desktopCellDefault: 'bg-white/95 hover:bg-purple-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-purple-100/95 ring-2 ring-purple-500 ring-inset shadow-xs',
+    desktopCellOtherMonth: 'bg-purple-50/30 text-slate-300 opacity-40',
     desktopCellOtherMonth: 'bg-purple-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-purple-600 text-white font-bold',
     accentText: 'text-purple-600',
@@ -76,18 +88,24 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-emerald-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-emerald-100 text-slate-800 border-emerald-300',
     todayBtnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs font-bold',
+    weekdayHeaderMobile: 'border-b border-emerald-200 bg-emerald-100/70 text-emerald-950 py-1.5 rounded-xl',
     weekdayHeaderMobile: 'border-b border-emerald-200 bg-emerald-100/80 text-emerald-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-emerald-700 font-black',
+    mobileGridBg: 'bg-emerald-50/60 border-emerald-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-emerald-50',
     mobileGridBg: 'bg-emerald-50/70 border-emerald-300',
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-emerald-100',
     mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500 font-black',
     mobileCellSelected: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-emerald-300',
+    desktopContainer: 'border-emerald-300 bg-emerald-100/30',
     desktopContainer: 'border-emerald-300 bg-emerald-100/40',
     desktopWeekdayHeader: 'bg-emerald-200/90 border-emerald-300 text-emerald-950',
     desktopGridDivide: 'divide-emerald-200 bg-emerald-100/40',
+    desktopCellDefault: 'bg-white/95 hover:bg-emerald-50/80 cursor-pointer shadow-2xs',
     desktopCellDefault: 'bg-white/95 hover:bg-emerald-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-emerald-100/95 ring-2 ring-emerald-500 ring-inset shadow-xs',
+    desktopCellOtherMonth: 'bg-emerald-50/30 text-slate-300 opacity-40',
     desktopCellOtherMonth: 'bg-emerald-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-emerald-600 text-white font-bold',
     accentText: 'text-emerald-600',
@@ -103,18 +121,24 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-rose-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-rose-100 text-slate-800 border-rose-300',
     todayBtnClass: 'bg-rose-600 hover:bg-rose-700 text-white border-rose-600 shadow-xs font-bold',
+    weekdayHeaderMobile: 'border-b border-rose-200 bg-rose-100/70 text-rose-950 py-1.5 rounded-xl',
     weekdayHeaderMobile: 'border-b border-rose-200 bg-rose-100/80 text-rose-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-rose-700 font-black',
+    mobileGridBg: 'bg-rose-50/60 border-rose-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-rose-50',
     mobileGridBg: 'bg-rose-50/70 border-rose-300',
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-rose-100',
     mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-500 font-black',
     mobileCellSelected: 'bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-rose-300',
+    desktopContainer: 'border-rose-300 bg-rose-100/30',
     desktopContainer: 'border-rose-300 bg-rose-100/40',
     desktopWeekdayHeader: 'bg-rose-200/90 border-rose-300 text-rose-950',
     desktopGridDivide: 'divide-rose-200 bg-rose-100/40',
+    desktopCellDefault: 'bg-white/95 hover:bg-rose-50/80 cursor-pointer shadow-2xs',
     desktopCellDefault: 'bg-white/95 hover:bg-rose-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-rose-100/95 ring-2 ring-rose-500 ring-inset shadow-xs',
+    desktopCellOtherMonth: 'bg-rose-50/30 text-slate-300 opacity-40',
     desktopCellOtherMonth: 'bg-rose-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-rose-600 text-white font-bold',
     accentText: 'text-rose-600',
@@ -130,18 +154,24 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-amber-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-amber-100 text-slate-800 border-amber-300',
     todayBtnClass: 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-500 shadow-xs font-black',
+    weekdayHeaderMobile: 'border-b border-amber-200 bg-amber-100/70 text-amber-950 py-1.5 rounded-xl',
     weekdayHeaderMobile: 'border-b border-amber-200 bg-amber-100/80 text-amber-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-amber-800 font-black',
+    mobileGridBg: 'bg-amber-50/60 border-amber-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-amber-50',
     mobileGridBg: 'bg-amber-50/70 border-amber-300',
     mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-amber-100',
     mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-500 font-black',
     mobileCellSelected: 'bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-amber-300',
+    desktopContainer: 'border-amber-300 bg-amber-100/30',
     desktopContainer: 'border-amber-300 bg-amber-100/40',
     desktopWeekdayHeader: 'bg-amber-200/90 border-amber-300 text-amber-950',
     desktopGridDivide: 'divide-amber-200 bg-amber-100/40',
+    desktopCellDefault: 'bg-white/95 hover:bg-amber-50/80 cursor-pointer shadow-2xs',
     desktopCellDefault: 'bg-white/95 hover:bg-amber-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-amber-100/95 ring-2 ring-amber-500 ring-inset shadow-xs',
+    desktopCellOtherMonth: 'bg-amber-50/30 text-slate-300 opacity-40',
     desktopCellOtherMonth: 'bg-amber-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-amber-600 text-white font-bold',
     accentText: 'text-amber-600',
@@ -192,6 +222,13 @@ class App {
     this.realtimeEventSource = null;
     this.realtimeBusinessId = null;
     this.realtimePollingInterval = null;
+    this.notifiedAppointmentIds = new Set();
+    try {
+      const existing = storage.getAppointments();
+      if (Array.isArray(existing)) {
+        existing.forEach(a => { if (a && a.id) this.notifiedAppointmentIds.add(a.id); });
+      }
+    } catch (e) {}
 
     // Inicializar modo de color (Dark Mode / Light Mode)
     this.initTheme();
@@ -1025,40 +1062,46 @@ class App {
         try {
           const payload = JSON.parse(e.data);
           const apt = payload.appointment;
+          if (!apt || !apt.id) return;
+
+          // Deduplicar: Si ya fue notificada en esta sesión, omitir toast y timbre repetidos
+          if (this.notifiedAppointmentIds.has(apt.id)) {
+            console.log('⚡ [Realtime SSE] Cita ya notificada previamente, omitiendo notificación duplicada:', apt.id);
+            return;
+          }
+          this.notifiedAppointmentIds.add(apt.id);
+
           console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
 
-          // 1. Guardar ID de cita recién llegada para animarla con acomodo y resplandor
           // 1. Guardar ID de cita recién llegada e insertar inmediatamente en memoria local para render instantáneo
-          if (apt && apt.id) {
-            this.newlyArrivedAppointmentId = apt.id;
+          this.newlyArrivedAppointmentId = apt.id;
 
-            try {
-              const curApts = storage.getAppointments();
-              if (!curApts.some(a => a.id === apt.id)) {
-                const updated = [apt, ...curApts];
-                storage.appointmentsCache = updated;
-                localStorage.setItem('reservas_cr_appointments', JSON.stringify(updated));
-              }
-            } catch (errLocal) {}
+          try {
+            const curApts = storage.getAppointments();
+            if (!curApts.some(a => a.id === apt.id)) {
+              const updated = [apt, ...curApts];
+              storage.appointmentsCache = updated;
+              localStorage.setItem('reservas_cr_appointments', JSON.stringify(updated));
+            }
+          } catch (errLocal) {}
 
-            if (apt.date) {
-              this.ownerCalendarSelectedDate = apt.date;
-              const dateParts = apt.date.split('-').map(Number);
-              if (dateParts.length === 3 && !isNaN(dateParts[0]) && !isNaN(dateParts[1])) {
-                this.ownerCalendarCurrentMonth = new Date(dateParts[0], dateParts[1] - 1, 1);
+          if (apt.date) {
+            this.ownerCalendarSelectedDate = apt.date;
+            const dateParts = apt.date.split('-').map(Number);
+            if (dateParts.length === 3 && !isNaN(dateParts[0]) && !isNaN(dateParts[1])) {
+              this.ownerCalendarCurrentMonth = new Date(dateParts[0], dateParts[1] - 1, 1);
+            }
+          }
+          clearTimeout(this.newlyArrivedTimer);
+          this.newlyArrivedTimer = setTimeout(() => {
+            this.newlyArrivedAppointmentId = null;
+            if (this.currentView === 'owner-dashboard') {
+              const mainContent = document.getElementById('main-content');
+              if (mainContent) {
+                this.renderOwnerDashboardView(mainContent);
               }
             }
-            clearTimeout(this.newlyArrivedTimer);
-            this.newlyArrivedTimer = setTimeout(() => {
-              this.newlyArrivedAppointmentId = null;
-              if (this.currentView === 'owner-dashboard') {
-                const mainContent = document.getElementById('main-content');
-                if (mainContent) {
-                  this.renderOwnerDashboardView(mainContent);
-                }
-              }
-            }, 9000);
-          }
+          }, 9000);
 
           // 2. Reproducir sonido de campana
           this.playNotificationChime();
@@ -1070,7 +1113,6 @@ class App {
           const aptDate = apt.date ? this.formatDateDMY(apt.date) : '';
           this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
 
-          // 4. Sincronizar appointments cache de Neon
           // 4. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda de inmediato
           if (this.currentView === 'owner-dashboard') {
             const mainContent = document.getElementById('main-content');
@@ -1088,7 +1130,6 @@ class App {
           // 5. Sincronizar en segundo plano con la base de datos remota
           await storage.getAppointmentsByBusinessAsync(activeBizId);
 
-          // 5. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda en tiempo real
           if (this.currentView === 'owner-dashboard') {
             const mainContent = document.getElementById('main-content');
             if (mainContent) {
@@ -1134,8 +1175,9 @@ class App {
         const freshApts = await storage.getAppointmentsByBusinessAsync(activeBizId);
 
         if (prevIds.size > 0 && freshApts && freshApts.length > prevIds.size) {
-          const newApts = freshApts.filter(a => !prevIds.has(a.id));
+          const newApts = freshApts.filter(a => a && a.id && !prevIds.has(a.id) && !this.notifiedAppointmentIds.has(a.id));
           if (newApts.length > 0) {
+            newApts.forEach(a => this.notifiedAppointmentIds.add(a.id));
             console.log('⚡ [AutoSync Fallback] Nuevas citas detectadas:', newApts);
             const first = newApts[0];
             if (first && first.id) {
@@ -1182,12 +1224,22 @@ class App {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
+    // Deduplicar si ya existe un toast visible con el mismo texto
+    const existingToasts = Array.from(container.children);
+    const isDuplicate = existingToasts.some(t => t.innerText && t.innerText.trim() === message.trim());
+    if (isDuplicate) return;
+
+    // Limitar toasts apilados a un máximo de 3 eliminando los más viejos
+    while (container.children.length >= 3) {
+      container.removeChild(container.firstChild);
+    }
+
     const toast = document.createElement('div');
     const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
     const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
 
     toast.className = `flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl ${bgClass} animate-fade-in transition-all duration-300 font-medium text-sm`;
-    toast.innerHTML = `<i class="fas ${icon} text-lg"></i> <span>${message}</span>`;
+    toast.innerHTML = `<i class="fas ${icon} text-lg"></i> <span class="whitespace-pre-line">${message}</span>`;
 
     container.appendChild(toast);
     setTimeout(() => {
@@ -6939,6 +6991,7 @@ class App {
               } else if (cell.isCurrentMonth) {
                 cellBgClass = theme.desktopCellDefault;
               } else {
+                cellBgClass = theme.desktopCellOtherMonth || 'bg-slate-50/50 opacity-40';
                 cellBgClass = (theme.desktopCellOtherMonth || 'bg-slate-50/50 opacity-40') + ' cal-day-other-month';
               }
 
