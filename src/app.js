@@ -10,6 +10,7 @@ const SHOW_PREREGISTER_BANNER = true;
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
+// --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
 const CALENDAR_PASTEL_THEMES = {
   celeste: {
     id: 'celeste',
@@ -21,19 +22,19 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-sky-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-sky-100 text-slate-800 border-sky-300',
     todayBtnClass: 'bg-sky-600 hover:bg-sky-700 text-white border-sky-600 shadow-xs font-bold',
-    weekdayHeaderMobile: 'border-b border-sky-200 bg-sky-100/70 text-sky-950 py-1.5 rounded-xl',
+    weekdayHeaderMobile: 'border-b border-sky-200 bg-sky-100/80 text-sky-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-sky-700 font-black',
-    mobileGridBg: 'bg-sky-50/60 border-sky-300',
-    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-sky-50',
+    mobileGridBg: 'bg-sky-50/70 border-sky-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-sky-100',
     mobileCellToday: 'bg-sky-100 text-sky-900 border-2 border-sky-500 font-black',
     mobileCellSelected: 'bg-sky-600 text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-sky-300',
-    desktopContainer: 'border-sky-300 bg-sky-100/30',
+    desktopContainer: 'border-sky-300 bg-sky-100/40',
     desktopWeekdayHeader: 'bg-sky-200/90 border-sky-300 text-sky-950',
     desktopGridDivide: 'divide-sky-200 bg-sky-100/40',
-    desktopCellDefault: 'bg-white/95 hover:bg-sky-50/80 cursor-pointer shadow-2xs',
+    desktopCellDefault: 'bg-white/95 hover:bg-sky-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-sky-100/95 ring-2 ring-sky-500 ring-inset shadow-xs',
-    desktopCellOtherMonth: 'bg-sky-50/30 text-slate-300 opacity-40',
+    desktopCellOtherMonth: 'bg-sky-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-sky-600 text-white font-bold',
     accentText: 'text-sky-600',
     accentBg: 'bg-sky-600 hover:bg-sky-700'
@@ -48,19 +49,19 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-purple-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-purple-100 text-slate-800 border-purple-300',
     todayBtnClass: 'bg-purple-600 hover:bg-purple-700 text-white border-purple-600 shadow-xs font-bold',
-    weekdayHeaderMobile: 'border-b border-purple-200 bg-purple-100/70 text-purple-950 py-1.5 rounded-xl',
+    weekdayHeaderMobile: 'border-b border-purple-200 bg-purple-100/80 text-purple-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-purple-700 font-black',
-    mobileGridBg: 'bg-purple-50/60 border-purple-300',
-    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-purple-50',
+    mobileGridBg: 'bg-purple-50/70 border-purple-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-purple-100',
     mobileCellToday: 'bg-purple-100 text-purple-900 border-2 border-purple-500 font-black',
     mobileCellSelected: 'bg-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-purple-300',
-    desktopContainer: 'border-purple-300 bg-purple-100/30',
+    desktopContainer: 'border-purple-300 bg-purple-100/40',
     desktopWeekdayHeader: 'bg-purple-200/90 border-purple-300 text-purple-950',
     desktopGridDivide: 'divide-purple-200 bg-purple-100/40',
-    desktopCellDefault: 'bg-white/95 hover:bg-purple-50/80 cursor-pointer shadow-2xs',
+    desktopCellDefault: 'bg-white/95 hover:bg-purple-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-purple-100/95 ring-2 ring-purple-500 ring-inset shadow-xs',
-    desktopCellOtherMonth: 'bg-purple-50/30 text-slate-300 opacity-40',
+    desktopCellOtherMonth: 'bg-purple-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-purple-600 text-white font-bold',
     accentText: 'text-purple-600',
     accentBg: 'bg-purple-600 hover:bg-purple-700'
@@ -75,19 +76,19 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-emerald-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-emerald-100 text-slate-800 border-emerald-300',
     todayBtnClass: 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs font-bold',
-    weekdayHeaderMobile: 'border-b border-emerald-200 bg-emerald-100/70 text-emerald-950 py-1.5 rounded-xl',
+    weekdayHeaderMobile: 'border-b border-emerald-200 bg-emerald-100/80 text-emerald-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-emerald-700 font-black',
-    mobileGridBg: 'bg-emerald-50/60 border-emerald-300',
-    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-emerald-50',
+    mobileGridBg: 'bg-emerald-50/70 border-emerald-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-emerald-100',
     mobileCellToday: 'bg-emerald-100 text-emerald-900 border-2 border-emerald-500 font-black',
     mobileCellSelected: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 ring-2 ring-emerald-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-emerald-300',
-    desktopContainer: 'border-emerald-300 bg-emerald-100/30',
+    desktopContainer: 'border-emerald-300 bg-emerald-100/40',
     desktopWeekdayHeader: 'bg-emerald-200/90 border-emerald-300 text-emerald-950',
     desktopGridDivide: 'divide-emerald-200 bg-emerald-100/40',
-    desktopCellDefault: 'bg-white/95 hover:bg-emerald-50/80 cursor-pointer shadow-2xs',
+    desktopCellDefault: 'bg-white/95 hover:bg-emerald-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-emerald-100/95 ring-2 ring-emerald-500 ring-inset shadow-xs',
-    desktopCellOtherMonth: 'bg-emerald-50/30 text-slate-300 opacity-40',
+    desktopCellOtherMonth: 'bg-emerald-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-emerald-600 text-white font-bold',
     accentText: 'text-emerald-600',
     accentBg: 'bg-emerald-600 hover:bg-emerald-700'
@@ -102,19 +103,19 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-rose-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-rose-100 text-slate-800 border-rose-300',
     todayBtnClass: 'bg-rose-600 hover:bg-rose-700 text-white border-rose-600 shadow-xs font-bold',
-    weekdayHeaderMobile: 'border-b border-rose-200 bg-rose-100/70 text-rose-950 py-1.5 rounded-xl',
+    weekdayHeaderMobile: 'border-b border-rose-200 bg-rose-100/80 text-rose-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-rose-700 font-black',
-    mobileGridBg: 'bg-rose-50/60 border-rose-300',
-    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-rose-50',
+    mobileGridBg: 'bg-rose-50/70 border-rose-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-rose-100',
     mobileCellToday: 'bg-rose-100 text-rose-900 border-2 border-rose-500 font-black',
     mobileCellSelected: 'bg-rose-600 text-white shadow-md shadow-rose-500/30 ring-2 ring-rose-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-rose-300',
-    desktopContainer: 'border-rose-300 bg-rose-100/30',
+    desktopContainer: 'border-rose-300 bg-rose-100/40',
     desktopWeekdayHeader: 'bg-rose-200/90 border-rose-300 text-rose-950',
     desktopGridDivide: 'divide-rose-200 bg-rose-100/40',
-    desktopCellDefault: 'bg-white/95 hover:bg-rose-50/80 cursor-pointer shadow-2xs',
+    desktopCellDefault: 'bg-white/95 hover:bg-rose-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-rose-100/95 ring-2 ring-rose-500 ring-inset shadow-xs',
-    desktopCellOtherMonth: 'bg-rose-50/30 text-slate-300 opacity-40',
+    desktopCellOtherMonth: 'bg-rose-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-rose-600 text-white font-bold',
     accentText: 'text-rose-600',
     accentBg: 'bg-rose-600 hover:bg-rose-700'
@@ -129,19 +130,19 @@ const CALENDAR_PASTEL_THEMES = {
     headerNavClass: 'bg-white/95 border-amber-300 shadow-xs',
     navBtnClass: 'bg-white hover:bg-amber-100 text-slate-800 border-amber-300',
     todayBtnClass: 'bg-amber-500 hover:bg-amber-600 text-slate-950 border-amber-500 shadow-xs font-black',
-    weekdayHeaderMobile: 'border-b border-amber-200 bg-amber-100/70 text-amber-950 py-1.5 rounded-xl',
+    weekdayHeaderMobile: 'border-b border-amber-200 bg-amber-100/80 text-amber-950 py-1.5 rounded-xl',
     weekdayWeekendText: 'text-amber-800 font-black',
-    mobileGridBg: 'bg-amber-50/60 border-amber-300',
-    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-amber-50',
+    mobileGridBg: 'bg-amber-50/70 border-amber-300',
+    mobileCellDefault: 'bg-white/95 text-slate-800 hover:bg-amber-100',
     mobileCellToday: 'bg-amber-100 text-amber-900 border-2 border-amber-500 font-black',
     mobileCellSelected: 'bg-amber-600 text-white shadow-md shadow-amber-500/30 ring-2 ring-amber-600 ring-offset-1 z-10 font-black',
     mobileDetailCard: 'bg-white/95 border-amber-300',
-    desktopContainer: 'border-amber-300 bg-amber-100/30',
+    desktopContainer: 'border-amber-300 bg-amber-100/40',
     desktopWeekdayHeader: 'bg-amber-200/90 border-amber-300 text-amber-950',
     desktopGridDivide: 'divide-amber-200 bg-amber-100/40',
-    desktopCellDefault: 'bg-white/95 hover:bg-amber-50/80 cursor-pointer shadow-2xs',
+    desktopCellDefault: 'bg-white/95 hover:bg-amber-100 cursor-pointer shadow-2xs',
     desktopCellToday: 'bg-amber-100/95 ring-2 ring-amber-500 ring-inset shadow-xs',
-    desktopCellOtherMonth: 'bg-amber-50/30 text-slate-300 opacity-40',
+    desktopCellOtherMonth: 'bg-amber-50/40 text-slate-300 opacity-40',
     desktopTodayBadge: 'bg-amber-600 text-white font-bold',
     accentText: 'text-amber-600',
     accentBg: 'bg-amber-600 hover:bg-amber-700'
@@ -6638,7 +6639,7 @@ class App {
       .sort((a, b) => this.parseTimeToMinutes(a.time) - this.parseTimeToMinutes(b.time));
 
     return `
-      <div class="calendar-view-container space-y-4 animate-fade-in p-3 sm:p-5 rounded-3xl border ${theme.containerClass} backdrop-blur-xs transition-colors duration-300">
+      <div class="calendar-view-container cal-theme-${activeThemeId} space-y-4 animate-fade-in p-3 sm:p-5 rounded-3xl border ${theme.containerClass} backdrop-blur-xs transition-colors duration-300">
         <!-- Barra de Navegación de Mes, Selector de Color Pastel y Leyenda -->
         <div class="flex flex-col lg:flex-row items-center justify-between gap-3 ${theme.headerNavClass} p-3 sm:p-4 rounded-2xl border transition-colors">
           <!-- Navegación y Título del Mes -->
@@ -6938,7 +6939,7 @@ class App {
               } else if (cell.isCurrentMonth) {
                 cellBgClass = theme.desktopCellDefault;
               } else {
-                cellBgClass = theme.desktopCellOtherMonth || 'bg-slate-50/50 opacity-40';
+                cellBgClass = (theme.desktopCellOtherMonth || 'bg-slate-50/50 opacity-40') + ' cal-day-other-month';
               }
 
               return `

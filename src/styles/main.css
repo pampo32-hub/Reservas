@@ -678,6 +678,32 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   position: relative;
 }
 
+/* ==========================================================================
+   Calendar Theme Cell Hover Highlights (Light Mode)
+   ========================================================================== */
+.cal-theme-celeste .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #e0f2fe !important; /* sky-100 */
+}
+
+.cal-theme-lavanda .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #f3e8ff !important; /* purple-100 */
+}
+
+.cal-theme-menta .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+.cal-theme-melocoton .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #ffe4e6 !important; /* rose-100 */
+}
+
+.cal-theme-vainilla .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #fef3c7 !important; /* amber-100 */
+}
+
+/* ==========================================================================
+   Calendar Theme Cell Hover Highlights (Dark Mode)
+   ========================================================================== */
 html.dark .calendar-view-container {
   border-color: #334155 !important;
 }
@@ -685,4 +711,25 @@ html.dark .calendar-view-container {
 html.dark .cal-day-cell {
   border-color: #334155 !important;
 }
+
+html.dark .cal-theme-celeste .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #0c4a6e !important; /* sky-900 */
+}
+
+html.dark .cal-theme-lavanda .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #581c87 !important; /* purple-900 */
+}
+
+html.dark .cal-theme-menta .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #064e3b !important; /* emerald-900 */
+}
+
+html.dark .cal-theme-melocoton .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #881337 !important; /* rose-900 */
+}
+
+html.dark .cal-theme-vainilla .cal-day-cell:not(.cal-day-other-month):hover {
+  background-color: #78350f !important; /* amber-900 */
+}
+
 
