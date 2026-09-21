@@ -3,15 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const DEFAULT_NYLAS_CLIENT_ID = '4c11b10e-abe8-43b3-8765-d1feb79cd423';
+const DEFAULT_NYLAS_API_KEY = 'nyk_v0_M0hOZUBmkau4XGjvPW8M0aeZF1OU2f3HLRUAg1Liqzogmc7eUODcpr6wuB4SgQkF';
+const DEFAULT_NYLAS_API_URI = 'https://api.us.nylas.com';
+const DEFAULT_NYLAS_REDIRECT_URI = 'https://reservascr.app/api/nylas/callback';
+
 let nylasClientInstance = null;
 
 export function getNylasClient() {
   if (!nylasClientInstance) {
-    const apiKey = process.env.NYLAS_API_KEY;
-    const apiUri = process.env.NYLAS_API_URI || 'https://api.us.nylas.com';
+    const apiKey = process.env.NYLAS_API_KEY || DEFAULT_NYLAS_API_KEY;
+    const apiUri = process.env.NYLAS_API_URI || DEFAULT_NYLAS_API_URI;
 
     if (!apiKey) {
-      console.warn('⚠️ NYLAS_API_KEY no está configurada en las variables de entorno.');
+      console.warn('⚠️ NYLAS_API_KEY no está configurada.');
       return null;
     }
 
@@ -44,11 +49,11 @@ export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId
   const nylas = getNylasClient();
   if (!nylas) throw new Error('Nylas no está inicializado.');
 
-  const clientId = process.env.NYLAS_CLIENT_ID;
-  const redirectUri = process.env.NYLAS_REDIRECT_URI || 'https://reservascr.app/api/nylas/callback';
+  const clientId = process.env.NYLAS_CLIENT_ID || DEFAULT_NYLAS_CLIENT_ID;
+  const redirectUri = process.env.NYLAS_REDIRECT_URI || DEFAULT_NYLAS_REDIRECT_URI;
 
   if (!clientId) {
-    throw new Error('NYLAS_CLIENT_ID no configurado en .env');
+    throw new Error('NYLAS_CLIENT_ID no configurado');
   }
 
   const authUrl = nylas.auth.urlForOAuth2({
@@ -69,8 +74,8 @@ export async function exchangeNylasCode(code) {
   const nylas = getNylasClient();
   if (!nylas) throw new Error('Nylas no está inicializado.');
 
-  const clientId = process.env.NYLAS_CLIENT_ID;
-  const redirectUri = process.env.NYLAS_REDIRECT_URI || 'https://reservascr.app/api/nylas/callback';
+  const clientId = process.env.NYLAS_CLIENT_ID || DEFAULT_NYLAS_CLIENT_ID;
+  const redirectUri = process.env.NYLAS_REDIRECT_URI || DEFAULT_NYLAS_REDIRECT_URI;
 
   const tokenResponse = await nylas.auth.exchangeCodeForToken({
     clientId,

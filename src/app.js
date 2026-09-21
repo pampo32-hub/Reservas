@@ -686,6 +686,7 @@ class App {
       }
     }
 
+    // Manejo de redirección y alertas de sincronización de Nylas Calendar (?nylas_connected=true / ?nylas_error=...)
     // Manejo de redirección y alertas de sincronización de Nylas Calendar y OAuth Login
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -8949,6 +8950,8 @@ class App {
             <button id="close-staff-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
               <i class="fas fa-times"></i>
             </button>
+          </
+... [truncated for diff preview]
           </div>
 
           <!-- Fo
