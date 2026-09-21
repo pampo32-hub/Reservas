@@ -732,4 +732,14 @@ html.dark .cal-theme-vainilla .cal-day-cell:not(.cal-day-other-month):hover {
   background-color: #78350f !important; /* amber-900 */
 }
 
+/* Date input UX: Cursor pointer and full-width interactive area */
+input[type="date"] {
+  cursor: pointer;
+}
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: 4px;
+}
+
+
 

@@ -628,6 +628,18 @@ class App {
       console.warn('SW init notice:', e);
     }
 
+    // Delegación global para que hacer clic en cualquier parte de un input[type="date"] abra el calendario nativo
+    document.addEventListener('click', (e) => {
+      const dateInput = (e.target && e.target.tagName === 'INPUT' && e.target.type === 'date')
+        ? e.target
+        : (e.target && e.target.closest ? e.target.closest('input[type="date"]') : null);
+      if (dateInput && typeof dateInput.showPicker === 'function') {
+        try {
+          dateInput.showPicker();
+        } catch (err) {}
+      }
+    });
+
     // 1. Escuchar botones Atrás y Adelante del navegador
     window.addEventListener('popstate', (e) => {
       if (e.state && e.state.view) {
@@ -4131,6 +4143,7 @@ class App {
                 id="booking-date-input" 
                 value="${this.bookingState.selectedDate}" 
                 min="${this.getTodayDateString()}" 
+                onclick="try { this.showPicker(); } catch(e) {}"
                 class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
               />
             </div>
@@ -4394,6 +4407,13 @@ class App {
     });
 
     const dateInput = document.getElementById('booking-date-input');
+    dateInput?.addEventListener('click', () => {
+      try {
+        if (typeof dateInput.showPicker === 'function') {
+          dateInput.showPicker();
+        }
+      } catch (err) {}
+    });
     dateInput?.addEventListener('change', (e) => {
       this.bookingState.selectedDate = e.target.value;
       this.bookingState.selectedTime = null;
@@ -4814,7 +4834,8 @@ class App {
                   value="${selectedDate}" 
                   min="${this.getTodayDateString()}" 
                   required
-                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  onclick="try { this.showPicker(); } catch(e) {}"
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs sm:text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
                 />
               </div>
 
@@ -4917,7 +4938,15 @@ class App {
         renderModalContent();
       });
 
-      document.getElementById('reschedule-date-input')?.addEventListener('change', (e) => {
+      const reschedDateInput = document.getElementById('reschedule-date-input');
+      reschedDateInput?.addEventListener('click', () => {
+        try {
+          if (typeof reschedDateInput.showPicker === 'function') {
+            reschedDateInput.showPicker();
+          }
+        } catch (e) {}
+      });
+      reschedDateInput?.addEventListener('change', (e) => {
         selectedDate = e.target.value;
         selectedTime = null;
         renderModalContent();
@@ -9140,10 +9169,9 @@ class App {
               </button>
 
               <div class="relative">
-                <input type="date" id="blocked-slots-date-picker" value="${selectedDate}" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
+                <input type="date" id="blocked-slots-date-picker" value="${selectedDate}" onclick="try { this.showPicker(); } catch(e) {}" class="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer">
               </div>
 
-              <button id="
               <button id="btn-next-day" class="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 transition-colors text-xs font-bold cursor-pointer" title="Día Siguiente">
                 <i class="fas fa-chevron-right"></i>
               </button>
@@ -11499,7 +11527,7 @@ class App {
                           <label class="block text-xs font-bold text-slate-200">
                             <i class="fas fa-calendar-day text-blue-400 mr-1"></i> Fecha Desde:
                           </label>
-                          <input type="date" id="dev-export-start-date" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                          <input type="date" id="dev-export-start-date" onclick="try { this.showPicker(); } catch(e) {}" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
                         </div>
 
                         <!-- Filtro: Fecha Hasta -->
@@ -11507,7 +11535,7 @@ class App {
                           <label class="block text-xs font-bold text-slate-200">
                             <i class="fas fa-calendar-day text-blue-400 mr-1"></i> Fecha Hasta:
                           </label>
-                          <input type="date" id="dev-export-end-date" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                          <input type="date" id="dev-export-end-date" onclick="try { this.showPicker(); } catch(e) {}" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
                         </div>
 
                       </div>
