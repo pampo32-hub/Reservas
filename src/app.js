@@ -6496,8 +6496,6 @@ class App {
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
-                  <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
                 <label id="slot-duration-label-15" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
                   <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
                   <div>
@@ -6505,8 +6503,6 @@ class App {
                     <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:15, 8:30, 8:45...</span>
                   </div>
                 </label>
-                <label class="flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
-                  <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4">
                 <label id="slot-duration-label-30" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
                   <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
                   <div>
