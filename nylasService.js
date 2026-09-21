@@ -20,15 +20,10 @@ export function getNylasClient() {
       return null;
     }
 
-    try {
-      nylasClientInstance = new Nylas({
-        apiKey,
-        apiUri
-      });
-    } catch (e) {
-      console.error('Error instanciando cliente Nylas:', e);
-      return null;
-    }
+    nylasClientInstance = new Nylas({
+      apiKey,
+      apiUri
+    });
   }
   return nylasClientInstance;
 }

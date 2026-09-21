@@ -4307,7 +4307,6 @@ app.get('/api/nylas/auth', (req, res) => {
   }
 });
 
-// 2. Callback de OAuth de Nylas (Intercambio de código por Grant ID)
 // 1.1 Iniciar sesión / Registrarse con Gmail / Google OAuth (para Clientes y Comercios)
 app.get(['/api/auth/nylas/google', '/api/auth/google'], (req, res) => {
   try {
@@ -4327,7 +4326,6 @@ app.get('/api/nylas/callback', async (req, res) => {
 
   if (error) {
     console.error('Error recibido en Nylas callback:', error, error_description);
-    return res.redirect(`/panel-negocio?nylas_error=${encodeURIComponent(error_description || error)}`);
     return res.redirect(`/directorio?oauth_error=${encodeURIComponent(error_description || error)}`);
   }
 
@@ -4358,7 +4356,6 @@ app.get('/api/nylas/callback', async (req, res) => {
     const tokenData = await exchangeNylasCode(code);
     const { grantId, email } = tokenData;
 
-    if (businessId) {
     // CASO A: Sincronización de calendario para comercio
     if (action === 'connect_calendar' && businessId) {
       await pool.query(
@@ -4371,7 +4368,6 @@ app.get('/api/nylas/callback', async (req, res) => {
       return res.redirect(`/panel-negocio?nylas_connected=true&tab=integrations&email=${encodeURIComponent(email)}`);
     }
 
-    res.redirect(`/panel-negocio?nylas_connected=true&email=${encodeURIComponent(email)}`);
     // CASO B: Inicio de sesión / Registro de usuario con Gmail OAuth
     const cleanEmail = (email || '').trim().toLowerCase();
     let sessionUser = null;
@@ -4528,7 +4524,6 @@ app.get('/api/nylas/callback', async (req, res) => {
     `);
   } catch (err) {
     console.error('❌ Error intercambiando código de Nylas:', err);
-    res.redirect(`/panel-negocio?nylas_error=${encodeURIComponent(err.message)}`);
     res.redirect(`/directorio?oauth_error=${encodeURIComponent(err.message)}`);
   }
 });
