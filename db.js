@@ -178,6 +178,12 @@ export async function initDatabase() {
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS whatsapp_opt_in BOOLEAN DEFAULT TRUE;
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
       ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS oauth_provider VARCHAR(50);
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS nylas_grant_id VARCHAR(100);
+      ALTER TABLE reservas_clients ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+      ALTER TABLE reservas_clients ALTER COLUMN phone DROP NOT NULL;
+      ALTER TABLE reservas_business_users ADD COLUMN IF NOT EXISTS oauth_provider VARCHAR(50);
+      ALTER TABLE reservas_business_users ADD COLUMN IF NOT EXISTS nylas_grant_id VARCHAR(100);
     `);
 
     console.log('✅ Tablas verificadas/creadas en Neon PostgreSQL.');

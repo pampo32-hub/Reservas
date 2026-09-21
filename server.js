@@ -33,6 +33,8 @@ import { parseSinpeEmail } from './src/services/sinpeParser.js';
 import { startSinpeImapWorker } from './sinpeImapService.js';
 import { 
   getNylasAuthUrl, 
+  getNylasLoginUrl,
+  getNylasOAuthUrl,
   exchangeNylasCode, 
   createNylasAppointmentEvent, 
   deleteNylasAppointmentEvent, 
@@ -4288,7 +4290,7 @@ app.post('/api/push/test', async (req, res) => {
 // ENDPOINTS DE INTEGRACIÓN NYLAS (GOOGLE CALENDAR & OUTLOOK)
 // ==========================================
 
-// 1. Iniciar autenticación OAuth de Nylas (Redirección a Google / Microsoft)
+// 1. Iniciar autenticación OAuth de Nylas (Redirección a Google / Microsoft para sincronización de calendario)
 app.get('/api/nylas/auth', (req, res) => {
   try {
     const { businessId, provider = 'google' } = req.query;
@@ -4304,26 +4306,46 @@ app.get('/api/nylas/auth', (req, res) => {
   }
 });
 
-// 2. Callback de OAuth de Nylas (Intercambio de código por Grant ID)
+// 1.1 Iniciar sesión / Registrarse con Gmail / Google OAuth (para Clientes y Comercios)
+app.get(['/api/auth/nylas/google', '/api/auth/google'], (req, res) => {
+  try {
+    const role = req.query.role || 'client';
+    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/directorio');
+    const authUrl = getNylasLoginUrl({ role, provider: 'google', returnTo });
+    res.redirect(authUrl);
+  } catch (err) {
+    console.error('Error generando URL de login con Google:', err);
+    res.status(500).send(`Error al iniciar sesión con Google: ${err.message}`);
+  }
+});
+
+// 2. Callback de OAuth de Nylas (Login de usuario con Gmail o Sincronización de calendario)
 app.get('/api/nylas/callback', async (req, res) => {
   const { code, state, error, error_description } = req.query;
 
   if (error) {
     console.error('Error recibido en Nylas callback:', error, error_description);
-    return res.redirect(`/panel-negocio?nylas_error=${encodeURIComponent(error_description || error)}`);
+    return res.redirect(`/directorio?oauth_error=${encodeURIComponent(error_description || error)}`);
   }
 
   if (!code) {
     return res.status(400).send('Código de autorización de Nylas no recibido.');
   }
 
+  let action = 'connect_calendar';
+  let role = 'client';
   let businessId = null;
   let provider = 'google';
+  let returnTo = '/directorio';
+
   try {
     if (state) {
       const parsedState = typeof state === 'string' && state.startsWith('{') ? JSON.parse(state) : { businessId: state };
+      action = parsedState.action || (parsedState.businessId ? 'connect_calendar' : 'login');
+      role = parsedState.role || 'client';
       businessId = parsedState.businessId;
       provider = parsedState.provider || provider;
+      returnTo = parsedState.returnTo || (role === 'business' ? '/panel-negocio' : '/directorio');
     }
   } catch (e) {
     businessId = state;
@@ -4333,7 +4355,8 @@ app.get('/api/nylas/callback', async (req, res) => {
     const tokenData = await exchangeNylasCode(code);
     const { grantId, email } = tokenData;
 
-    if (businessId) {
+    // CASO A: Sincronización de calendario para comercio
+    if (action === 'connect_calendar' && businessId) {
       await pool.query(
         `UPDATE reservas_businesses 
          SET nylas_grant_id = $1, nylas_email = $2, nylas_provider = $3, nylas_connected_at = NOW() 
@@ -4341,12 +4364,166 @@ app.get('/api/nylas/callback', async (req, res) => {
         [grantId, email, provider, businessId]
       );
       console.log(`✅ [Nylas] Calendario conectado para el negocio ${businessId} (${email}) con Grant ID ${grantId}`);
+      return res.redirect(`/panel-negocio?nylas_connected=true&tab=integrations&email=${encodeURIComponent(email)}`);
     }
 
-    res.redirect(`/panel-negocio?nylas_connected=true&email=${encodeURIComponent(email)}`);
+    // CASO B: Inicio de sesión / Registro de usuario con Gmail OAuth
+    const cleanEmail = (email || '').trim().toLowerCase();
+    let sessionUser = null;
+    let finalRole = role;
+
+    // Formatear nombre legible desde el correo
+    const emailPrefix = cleanEmail.split('@')[0] || 'Usuario';
+    const fallbackName = emailPrefix
+      .replace(/[._-]+/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+
+    if (role === 'business') {
+      // Buscar usuario en reservas_business_users
+      const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
+      if (bizUserRes.rows.length > 0) {
+        const row = bizUserRes.rows[0];
+        sessionUser = {
+          id: row.id,
+          businessId: row.business_id,
+          name: row.name,
+          email: row.email,
+          role: 'business'
+        };
+        await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', ['google', grantId, row.id]).catch(() => {});
+      } else {
+        // Buscar si existe un negocio registrado con este email
+        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE LOWER(email) = $1', [cleanEmail]);
+        if (bizRes.rows.length > 0) {
+          const biz = bizRes.rows[0];
+          const newUserId = `buser-${Date.now()}`;
+          await pool.query(
+            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, nylas_grant_id)
+             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5)`,
+            [newUserId, biz.id, biz.name || fallbackName, cleanEmail, grantId]
+          );
+          sessionUser = {
+            id: newUserId,
+            businessId: biz.id,
+            name: biz.name || fallbackName,
+            email: cleanEmail,
+            role: 'business'
+          };
+        } else {
+          // Si no tiene negocio registrado aún, se autentica como cliente
+          finalRole = 'client';
+        }
+      }
+    }
+
+    if (finalRole === 'client') {
+      // Buscar cliente en reservas_clients
+      const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
+      if (clientRes.rows.length > 0) {
+        const row = clientRes.rows[0];
+        sessionUser = {
+          id: row.id,
+          name: row.name,
+          phone: row.phone || '',
+          email: row.email,
+          whatsappOptIn: row.whatsapp_opt_in !== false,
+          role: 'client'
+        };
+        await pool.query('UPDATE reservas_clients SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', ['google', grantId, row.id]).catch(() => {});
+      } else {
+        // Registrar nuevo cliente automáticamente con su cuenta de Google
+        const newClientId = `cli-${Date.now()}`;
+        await pool.query(
+          `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, nylas_grant_id)
+           VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', true, 'google', $5)`,
+          [newClientId, fallbackName, '', cleanEmail, grantId]
+        );
+        sessionUser = {
+          id: newClientId,
+          name: fallbackName,
+          phone: '',
+          email: cleanEmail,
+          whatsappOptIn: true,
+          role: 'client'
+        };
+        console.log(`✅ [Nylas OAuth] Nuevo cliente registrado con Gmail: ${cleanEmail}`);
+      }
+    }
+
+    const redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/directorio');
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Iniciando sesión con Google...</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #0f172a;
+            color: #ffffff;
+          }
+          .card {
+            background: #1e293b;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+            max-width: 380px;
+            width: 90%;
+          }
+          .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(59,130,246,0.2);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          h2 { margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 800; color: #f8fafc; }
+          p { margin: 0; color: #94a3b8; font-size: 0.875rem; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="spinner"></div>
+          <h2>¡Bienvenido, ${sessionUser ? sessionUser.name : 'Usuario'}!</h2>
+          <p>Iniciando sesión con Google (${cleanEmail})...</p>
+        </div>
+        <script>
+          try {
+            const role = '${finalRole}';
+            const sessionData = ${JSON.stringify(sessionUser)};
+            if (role === 'business') {
+              localStorage.setItem('directorio_biz_user_session', JSON.stringify(sessionData));
+            } else {
+              localStorage.setItem('directorio_client_user_session', JSON.stringify(sessionData));
+            }
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage({ type: 'NYLAS_OAUTH_SUCCESS', role: role, user: sessionData }, '*');
+              window.close();
+            } else {
+              window.location.href = '${redirectTarget}';
+            }
+          } catch(e) {
+            window.location.href = '/directorio';
+          }
+        </script>
+      </body>
+      </html>
+    `);
   } catch (err) {
     console.error('❌ Error intercambiando código de Nylas:', err);
-    res.redirect(`/panel-negocio?nylas_error=${encodeURIComponent(err.message)}`);
+    res.redirect(`/directorio?oauth_error=${encodeURIComponent(err.message)}`);
   }
 });
 

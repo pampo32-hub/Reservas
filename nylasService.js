@@ -24,9 +24,23 @@ export function getNylasClient() {
 }
 
 /**
- * Genera la URL de autenticación OAuth de Nylas (Hosted Authentication)
+ * Genera la URL de autenticación OAuth de Nylas para sincronización de calendario de un comercio
  */
 export function getNylasAuthUrl(businessId, provider = 'google') {
+  return getNylasOAuthUrl({ action: 'connect_calendar', role: 'business', businessId, provider });
+}
+
+/**
+ * Genera la URL de autenticación OAuth de Nylas para inicio de sesión de usuarios (Gmail OAuth)
+ */
+export function getNylasLoginUrl({ role = 'client', provider = 'google', returnTo = '/directorio' } = {}) {
+  return getNylasOAuthUrl({ action: 'login', role, provider, returnTo });
+}
+
+/**
+ * Función base para generar URLs de OAuth con Nylas Hosted Auth
+ */
+export function getNylasOAuthUrl({ action = 'login', role = 'client', businessId = null, provider = 'google', returnTo = '/directorio' } = {}) {
   const nylas = getNylasClient();
   if (!nylas) throw new Error('Nylas no está inicializado.');
 
@@ -42,7 +56,7 @@ export function getNylasAuthUrl(businessId, provider = 'google') {
     redirectUri,
     provider, // 'google' | 'microsoft'
     prompt: 'select_provider,detect_provider',
-    state: JSON.stringify({ businessId, provider, timestamp: Date.now() })
+    state: JSON.stringify({ action, role, businessId, provider, returnTo, timestamp: Date.now() })
   });
 
   return authUrl;
@@ -188,3 +202,4 @@ export async function revokeNylasGrant(grantId) {
     return false;
   }
 }
+
