@@ -1283,21 +1283,42 @@ class App {
     const activeBiz = bizUser ? storage.getBusinessById(bizUser.businessId) : null;
 
     headerContainer.innerHTML = `
-      <header class="sticky top-0 z-40 w-full glass-header border-b border-slate-200/80 shadow-xs backdrop-blur-md bg-white/95 dark:bg-slate-900/95">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[4rem] sm:min-h-[4.5rem] py-2 flex items-center justify-between gap-3">
+      <header class="sticky top-0 z-40 w-full glass-header border-b border-slate-200/80 dark:border-slate-800 shadow-xs backdrop-blur-md bg-white/95 dark:bg-slate-900/95 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[4rem] sm:min-h-[4.5rem] py-2 flex items-center justify-between gap-2 lg:gap-4">
           
-          <!-- Logo & Marca -->
+          <!-- 1. IZQUIERDA: Logo & Marca -->
           <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn shrink-0" id="nav-logo-btn" title="Reservas CR">
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 dark:border-slate-700 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
               <img src="./src/assets/reservas_cr_clean_badge_1.jpg" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
             <div class="shrink-0 flex flex-col justify-center">
               <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none">Reservas <span class="text-blue-600">CR</span></span>
-              <span class="text-[10px] sm:text-xs text-slate-500 font-medium hidden sm:block leading-none mt-1">Directorio & Reservas Costa Rica 🇨🇷</span>
+              <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-none mt-1">Directorio & Reservas Costa Rica 🇨🇷</span>
             </div>
           </div>
 
-          <!-- MÓVIL (< md): Controles Compactos Superiores -->
+          <!-- 2. CENTRO: Navegación Principal Centrada (Desktop) -->
+          <nav class="hidden md:flex items-center justify-center gap-1 lg:gap-2 flex-1 px-2">
+            <!-- Explorar -->
+            <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-extrabold shadow-2xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}">
+              <i class="fas fa-compass text-blue-600 dark:text-blue-400"></i>
+              <span>Explorar</span>
+            </button>
+
+            <!-- ¿Tienes un Negocio? -->
+            <button id="nav-landing-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${this.currentView === 'business-landing' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-extrabold shadow-2xs' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Conoce la plataforma para tu negocio">
+              <i class="fas fa-store text-indigo-600 dark:text-indigo-400"></i>
+              <span>¿Tienes un Negocio?</span>
+            </button>
+
+            <!-- Planes y Precios -->
+            <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" title="Ver Planes de Suscripción">
+              <i class="fas fa-crown text-amber-500"></i>
+              <span>Planes & Precios</span>
+            </button>
+          </nav>
+
+          <!-- 3. MÓVIL (< md): Controles Compactos Superiores -->
           <div class="flex md:hidden items-center gap-1.5 shrink-0 justify-end overflow-x-auto no-scrollbar py-1">
             ${devUser ? `
               <button id="mobile-top-dev-badge" class="px-2.5 py-1.5 rounded-xl bg-slate-900 text-amber-400 text-[11px] font-black border border-slate-700 flex items-center gap-1 app-touch-btn shrink-0 shadow-xs whitespace-nowrap" title="Panel Developer">
@@ -1307,14 +1328,14 @@ class App {
             ` : ''}
 
             ${bizUser && !devUser ? `
-              <button id="mobile-top-biz-badge" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
+              <button id="mobile-top-biz-badge" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-200/80 dark:border-indigo-800 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
                 <i class="fas fa-store text-xs text-indigo-600"></i>
                 <span class="max-w-[100px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
               </button>
             ` : ''}
 
             ${clientUser && !bizUser && !devUser ? `
-              <button id="mobile-top-profile-badge" class="px-2.5 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200/80 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
+              <button id="mobile-top-profile-badge" class="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200/80 dark:border-blue-800 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
                 <i class="fas fa-user-circle text-xs text-blue-600"></i>
                 <span class="max-w-[90px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mis Citas'}</span>
               </button>
@@ -1332,8 +1353,8 @@ class App {
               </button>
             ` : ''}
 
-            <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Instalar App en el Celular">
-              <i class="fas fa-download text-blue-600 text-xs"></i>
+            <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 border border-blue-200/80 dark:border-slate-700 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Instalar App en el Celular">
+              <i class="fas fa-download text-blue-600 dark:text-blue-400 text-xs"></i>
             </button>
 
             <button class="theme-toggle-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center gap-1 app-touch-btn cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Cambiar modo oscuro / claro">
@@ -1341,35 +1362,19 @@ class App {
             </button>
           </div>
 
-          <!-- ESCRITORIO PC (>= md): Navigation & Auth Controls Centrados y Alineados -->
-          <div class="hidden md:flex items-center gap-2 lg:gap-3 shrink-0 justify-end">
-            <!-- Explorar -->
-            <button id="nav-directory-btn" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 transition-all ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 text-blue-700 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
-              <i class="fas fa-compass mr-1"></i> Explorar
-            </button>
-
-            <!-- Botón Únete / Para Negocios (Desktop) -->
-            <button id="nav-landing-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 hover:from-slate-900 hover:to-blue-800 border border-blue-500/30 shadow-sm shadow-blue-950/20 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98 ${this.currentView === 'business-landing' ? 'ring-2 ring-blue-500 ring-offset-2' : ''}" title="Conoce la plataforma para tu negocio">
-              <i class="fas fa-rocket text-blue-400 text-xs"></i>
-              <span>¿Tienes un Negocio? Únete</span>
-            </button>
-
+          <!-- 4. DERECHA: Acciones, CTA y Perfil (Desktop >= md) -->
+          <div class="hidden md:flex items-center gap-2 lg:gap-2.5 shrink-0 justify-end">
+            
             <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
             <button id="nav-prereg-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
               <i class="fas fa-gift text-blue-200 text-xs"></i>
-              <span>Pre-Registro 15 Días Gratis</span>
+              <span>15 Días Gratis</span>
             </button>
 
             <!-- Instalar PWA Desktop -->
-            <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 whitespace-nowrap shrink-0 bg-blue-50 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
-              <i class="fas fa-mobile-alt text-blue-600 text-xs"></i>
+            <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-2.5 lg:px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap shrink-0 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
+              <i class="fas fa-mobile-alt text-blue-600 dark:text-blue-400 text-xs"></i>
               <span class="hidden lg:inline">Instalar App</span>
-            </button>
-
-            <!-- Planes y Precios -->
-            <button id="nav-plans-btn" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-900 whitespace-nowrap shrink-0 bg-blue-50/80 hover:bg-blue-100 border border-blue-200/80 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Ver Planes de Suscripción">
-              <i class="fas fa-crown text-blue-600 text-xs"></i>
-              <span>Planes & Precios</span>
             </button>
 
             <!-- Botón Modo Oscuro / Claro (Desktop) -->
@@ -1393,9 +1398,9 @@ class App {
 
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
             ${clientUser && !devUser ? `
-              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0 whitespace-nowrap">
-                <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 hover:bg-white transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'my-client-bookings' ? 'bg-white shadow-xs text-blue-600' : ''}">
-                  <i class="fas fa-user-circle text-blue-600 text-sm"></i>
+              <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 whitespace-nowrap border border-slate-200/80 dark:border-slate-700">
+                <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'my-client-bookings' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400' : ''}">
+                  <i class="fas fa-user-circle text-blue-600 dark:text-blue-400 text-sm"></i>
                   <span class="max-w-[100px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mi Perfil'}</span>
                   <span class="hidden xl:inline text-[10px] text-slate-400">(Mis Reservas)</span>
                 </button>
@@ -1407,9 +1412,9 @@ class App {
 
             <!-- 2. SI EL NEGOCIO ESTÁ LOGUEADO -->
             ${bizUser && !devUser ? `
-              <div class="flex items-center gap-1 bg-indigo-50 border border-indigo-100 p-1 rounded-xl shrink-0 whitespace-nowrap">
-                <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 hover:bg-white transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
-                  <i class="fas fa-store text-xs ${this.currentView === 'owner-dashboard' ? 'text-white' : 'text-indigo-600'}"></i>
+              <div class="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-800 p-1 rounded-xl shrink-0 whitespace-nowrap">
+                <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 dark:text-indigo-200 hover:bg-white dark:hover:bg-indigo-900 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
+                  <i class="fas fa-store text-xs ${this.currentView === 'owner-dashboard' ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'}"></i>
                   <span class="max-w-[120px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
                 </button>
                 <button id="nav-biz-logout-btn" class="p-1.5 text-indigo-400 hover:text-rose-600 rounded-lg shrink-0" title="Cerrar sesión de negocio">
@@ -1421,14 +1426,14 @@ class App {
             <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
             ${!clientUser && !bizUser && !devUser ? `
               ${SHOW_LOGIN_BUTTON ? `
-              <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-xs flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0">
-                <i class="fas fa-sign-in-alt text-blue-600"></i>
+              <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer">
+                <i class="fas fa-sign-in-alt text-blue-600 dark:text-blue-400"></i>
                 <span>Iniciar Sesión</span>
               </button>
               ` : ''}
 
               ${REGISTRATION_ENABLED ? `
-              <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0">
+              <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer">
                 <i class="fas fa-user-plus"></i>
                 <span>Registrarse</span>
               </button>
@@ -1437,8 +1442,8 @@ class App {
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
             ${clientUser && !bizUser && !devUser && SHOW_BIZ_SHORTCUTS ? `
-              <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 hidden sm:flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0" title="Acceso al panel de negocio">
-                <i class="fas fa-store text-indigo-600"></i>
+              <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-indigo-200/60 dark:border-indigo-800 hidden sm:flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer" title="Acceso al panel de negocio">
+                <i class="fas fa-store text-indigo-600 dark:text-indigo-400"></i>
                 <span>Soy Negocio</span>
               </button>
             ` : ''}
