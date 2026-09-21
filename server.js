@@ -646,6 +646,57 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
   }
 });
 
+// 5.1 Actualizar Perfil de Cliente / Usuario Final
+app.put('/api/client/profile/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, email, password, whatsappOptIn } = req.body;
+
+    let updateQuery = `
+      UPDATE reservas_clients SET
+        name = COALESCE($1, name),
+        phone = COALESCE($2, phone),
+        email = COALESCE($3, email),
+        whatsapp_opt_in = COALESCE($4, whatsapp_opt_in)
+    `;
+    const params = [
+      name ? name.trim() : null,
+      phone ? phone.trim() : null,
+      email ? email.trim().toLowerCase() : null,
+      whatsappOptIn !== undefined ? Boolean(whatsappOptIn) : null
+    ];
+
+    if (password && password.trim()) {
+      updateQuery += `, password = $5 WHERE id = $6 RETURNING *`;
+      params.push(password.trim(), id);
+    } else {
+      updateQuery += ` WHERE id = $5 RETURNING *`;
+      params.push(id);
+    }
+
+    const result = await pool.query(updateQuery, params);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    const updated = result.rows[0];
+    res.json({
+      success: true,
+      user: {
+        id: updated.id,
+        name: updated.name,
+        phone: updated.phone || '',
+        email: updated.email || '',
+        whatsappOptIn: updated.whatsapp_opt_in !== false,
+        role: 'client'
+      }
+    });
+  } catch (error) {
+    console.error('Error actualizando perfil de cliente:', error);
+    res.status(500).json({ error: error.message || 'Error al actualizar perfil.' });
+  }
+});
+
 // 6. Solicitar Código de Recuperación de Contraseña (Envío por Resend)
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {

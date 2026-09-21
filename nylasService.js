@@ -51,6 +51,7 @@ export function getDirectGoogleAuthUrl({ action = 'login', role = 'client', busi
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: GOOGLE_REDIRECT_URI,
     response_type: 'code',
+    scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar',
     scope,
     access_type: 'offline',
     prompt: 'select_account',

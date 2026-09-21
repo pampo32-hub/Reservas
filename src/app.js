@@ -721,9 +721,25 @@ class App {
       // Escuchar evento postMessage si se abrió en ventana popup
       window.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'NYLAS_OAUTH_SUCCESS') {
+          const user = event.data.user;
+          const role = event.data.role;
+          if (role === 'business') {
+            storage.setBusinessUser(user);
+            if (user?.businessId) {
+              this.activeBusinessId = user.businessId;
+              storage.setActiveBusinessId(user.businessId);
+            }
+            this.navigateTo('owner-dashboard');
+          } else {
+            storage.setClientUser(user);
+            this.navigateTo('my-client-bookings');
+          }
+          const modalContainer = document.getElementById('modal-container');
+          if (modalContainer) modalContainer.innerHTML = '';
           this.renderHeader();
+          this.renderMobileBottomNav();
           this.renderCurrentView();
-          this.showToast(`¡Bienvenido, ${event.data.user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
+          this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
         }
       });
     } catch (e) {
@@ -842,7 +858,7 @@ class App {
           }
         };
       }
-      if (/^\/?(mis-reservas|cliente)$/i.test(pathname)) {
+      if (/^\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)$/i.test(pathname)) {
         return { view: 'my-client-bookings', params: {} };
       }
       if (/^\/?(panel-negocio|dashboard|owner)$/i.test(pathname)) {
@@ -953,7 +969,7 @@ class App {
     }
 
     // 6. Mis citas en hash
-    if (/^#\/?(mis-reservas|cliente)/i.test(cleanHash)) {
+    if (/^#\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)/i.test(cleanHash)) {
       return { view: 'my-client-bookings', params: {} };
     }
 
@@ -5086,7 +5102,10 @@ class App {
             <h1 class="text-2xl font-black text-slate-900 mt-1">Mis Reservas</h1>
             <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name}</strong> • ${clientUser.phone} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs">
+              <i class="fas fa-user-edit text-blue-600"></i> Mi Perfil
+            </button>
             <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
               <i class="fas fa-plus mr-1"></i> Nueva Reserva
             </button>
@@ -5271,6 +5290,139 @@ class App {
           this.renderClientBookingsView(container);
         }
       });
+    });
+
+    document.getElementById('client-edit-profile-btn')?.addEventListener('click', () => {
+      this.renderClientProfileModal(clientUser);
+    });
+  }
+
+  // --- MODAL PARA EDITAR PERFIL DE CLIENTE / USUARIO FINAL ---
+  renderClientProfileModal(clientUser) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer || !clientUser) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200/90 my-8">
+          <div class="p-6 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-base font-bold shadow-md shadow-blue-500/20">
+                <i class="fas fa-user-cog"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-bold text-white">Mi Perfil y Cuenta</h3>
+                <p class="text-xs text-slate-400">Actualiza tus datos de contacto</p>
+              </div>
+            </div>
+            <button id="close-profile-modal-btn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <form id="client-profile-form" class="p-6 space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Nombre Completo *</label>
+              <div class="relative">
+                <i class="fas fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="text" id="prof-name" value="${this.escapeHtml(clientUser.name || '')}" required class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Teléfono / WhatsApp</label>
+              <div class="relative">
+                <i class="fas fa-phone absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="tel" id="prof-phone" value="${this.escapeHtml(clientUser.phone || '')}" placeholder="88888888" class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Correo Electrónico</label>
+              <div class="relative">
+                <i class="fas fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="email" id="prof-email" value="${this.escapeHtml(clientUser.email || '')}" class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div class="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fab fa-whatsapp text-emerald-600 text-base"></i>
+                <span class="text-xs font-bold text-slate-800">Notificaciones por WhatsApp</span>
+              </div>
+              <input type="checkbox" id="prof-whatsapp" ${clientUser.whatsappOptIn !== false ? 'checked' : ''} class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Cambiar Contraseña (Opcional)</label>
+              <div class="relative">
+                <i class="fas fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <input type="password" id="prof-password" placeholder="Dejar en blanco para no cambiarla" class="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              </div>
+            </div>
+
+            <div id="prof-error-box" class="hidden"></div>
+
+            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button type="button" id="cancel-prof-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
+                Cancelar
+              </button>
+              <button type="submit" id="save-prof-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5">
+                <i class="fas fa-save"></i> Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-profile-modal-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+    document.getElementById('cancel-prof-btn')?.addEventListener('click', () => { modalContainer.innerHTML = ''; });
+
+    document.getElementById('client-profile-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const saveBtn = document.getElementById('save-prof-btn');
+      const errBox = document.getElementById('prof-error-box');
+
+      const name = document.getElementById('prof-name')?.value?.trim();
+      const phone = document.getElementById('prof-phone')?.value?.trim();
+      const email = document.getElementById('prof-email')?.value?.trim();
+      const password = document.getElementById('prof-password')?.value?.trim();
+      const whatsappOptIn = document.getElementById('prof-whatsapp')?.checked;
+
+      if (!name) {
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl block';
+          errBox.textContent = 'El nombre es obligatorio.';
+        }
+        return;
+      }
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+      }
+
+      try {
+        const payload = { name, phone, email, whatsappOptIn };
+        if (password) payload.password = password;
+        await storage.updateClientProfile(clientUser.id, payload);
+        this.showToast('¡Perfil actualizado con éxito!', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.renderCurrentView();
+      } catch (err) {
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl block';
+          errBox.textContent = err.message || 'Error al guardar cambios.';
+        } else {
+          this.showToast(err.message || 'Error al guardar.', 'error');
+        }
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        }
+      }
     });
   }
 
@@ -10481,7 +10633,6 @@ class App {
             </div>
 
             <!-- Clientes -->
-            <div class=
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
               <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl flex-shrink-0">
                 <i class="fas fa-users"></i>

@@ -465,6 +465,31 @@ class StorageService {
     localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
   }
 
+  async updateClientProfile(clientId, data) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/client/profile/${clientId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) {
+          const result = await res.json();
+          if (result.user) {
+            this.setClientUser(result.user);
+            return result.user;
+          }
+        }
+      } catch (e) {
+        console.warn('Fallo actualizando cliente vía API, guardando en local:', e);
+      }
+    }
+    const current = this.getClientUser() || {};
+    const updated = { ...current, ...data };
+    this.setClientUser(updated);
+    return updated;
+  }
+
   async registerClient(name, phone, email, password, whatsappOptIn = true) {
     if (this.isOnlineApi) {
       const res = await fetch(`${this.apiBase}/auth/client/register`, {
