@@ -4478,25 +4478,69 @@ class App {
         countLabel.textContent = `(${curAvailability.slots ? curAvailability.slots.length : 0} libres)`;
       }
 
+      const gridWrapper = document.getElementById('booking-slots-grid-wrapper');
+      if (gridWrapper) {
+        if (curAvailability.isClosed) {
+          gridWrapper.innerHTML = `
+            <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs flex items-center gap-2">
+              <i class="fas fa-calendar-times text-base"></i>
+              <span>${curAvailability.reason || 'El negocio no labora en este día de la semana.'}</span>
+            </div>
+          `;
+        } else if (!curAvailability.slots || curAvailability.slots.length === 0) {
+          gridWrapper.innerHTML = `
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-800 text-xs flex items-center gap-2">
+              <i class="fas fa-info-circle text-base"></i>
+              <span>No hay turnos disponibles para esta fecha o especialista. Intenta con otro día u horario.</span>
+            </div>
+          `;
+        } else {
+          gridWrapper.innerHTML = `
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2.5 max-h-48 overflow-y-auto p-1">
+              ${curAvailability.slots.map(slot => `
+                <button 
+                  type="button" 
+                  class="time-slot-btn py-2.5 px-3 text-xs font-bold rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50 text-slate-700 text-center cursor-pointer transition-all ${this.bookingState.selectedTime === slot ? 'selected bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white'}"
+                  data-slot="${slot}"
+                >
+                  ${this.formatTime12h(slot)}
+                </button>
+              `).join('')}
+            </div>
+          `;
+        }
+      }
+
+      // Re-enlazar eventos a los nuevos botones de horario renderizados
+      attachSlotListeners();
+
       const selectedBadge = document.getElementById('booking-selected-time-badge');
-      if (selectedBadge) {
-        if (this.bookingState.selectedTime && curAvailability.slots && curAvailability.slots.includes(this.bookingState.selectedTime)) {
+      const submitBtn = document.getElementById('submit-booking-btn');
+
+      if (this.bookingState.selectedTime && curAvailability.slots && curAvailability.slots.includes(this.bookingState.selectedTime)) {
+        if (selectedBadge) {
           selectedBadge.innerHTML = `
             <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
               <i class="fas fa-clock mr-1"></i> Elegido: ${this.formatTime12h(this.bookingState.selectedTime)}
             </span>
           `;
-        } else {
-          selectedBadge.innerHTML = '';
-          this.bookingState.selectedTime = null;
-          const submitBtn = document.getElementById('submit-booking-btn');
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `
-              <i class="fas fa-check-circle"></i>
-              <span>Confirmar Reserva</span>
-            `;
-          }
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>Confirmar Reserva (${this.formatTime12h(this.bookingState.selectedTime)})</span>
+          `;
+        }
+      } else {
+        if (selectedBadge) selectedBadge.innerHTML = '';
+        this.bookingState.selectedTime = null;
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>Confirmar Reserva</span>
+          `;
         }
       }
     };
@@ -6803,8 +6847,17 @@ class App {
     }
 
     if (this.activeDashboardTab === 'schedule') {
-      const sch = currentBiz.schedule || { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
-      const currentSlotDuration = sch.slotDuration === 15 ? 15 : 30;
+      let sch = currentBiz.schedule;
+      if (typeof sch === 'string') {
+        try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+      }
+      if (!sch || typeof sch !== 'object') {
+        sch = { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+      }
+      const schDays = Array.isArray(sch.days) ? sch.days.map(Number) : [1, 2, 3, 4, 5, 6];
+      const currentSlotDuration = (sch.slotDuration === 15 || sch.slotDuration === 30)
+        ? sch.slotDuration
+        : (parseInt(sch.slotDuration, 10) === 15 ? 15 : 30);
       const days = [
         { id: 1, name: 'Lunes' },
         { id: 2, name: 'Martes' },
@@ -6827,7 +6880,7 @@ class App {
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 ${days.map(d => `
                   <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                    <input type="checkbox" name="work_days" value="${d.id}" ${sch.days && sch.days.includes(d.id) ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500">
+                    <input type="checkbox" name="work_days" value="${d.id}" ${schDays.includes(d.id) ? 'checked' : ''} class="rounded text-blue-600 focus:ring-blue-500">
                     <span class="font-medium text-slate-800">${d.name}</span>
                   </label>
                 `).join('')}
@@ -9472,13 +9525,20 @@ class App {
   // --- SUB-CONTENIDO: BLOQUEOS Y GESTIÓN VISUAL DE HORARIOS ---
   renderBlockedSlotsTabContent(currentBiz, appointments) {
     const selectedDate = this.selectedBlockedSlotsDate || this.getTodayDateString();
-    const sch = currentBiz.schedule || { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+    let sch = currentBiz.schedule;
+    if (typeof sch === 'string') {
+      try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+    }
+    if (!sch || typeof sch !== 'object') {
+      sch = { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+    }
     
     // Calcular día de la semana para saber si labora normalmente
     const [y, m, d] = selectedDate.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
     const dayOfWeek = dateObj.getDay();
-    const isWorkingDay = sch.days && sch.days.includes(dayOfWeek);
+    const schDays = Array.isArray(sch.days) ? sch.days.map(Number) : [1, 2, 3, 4, 5, 6];
+    const isWorkingDay = schDays.includes(dayOfWeek);
 
     const timeToMinutes = (timeStr) => {
       if (!timeStr) return 0;
@@ -10345,27 +10405,42 @@ class App {
     });
 
     // Selector interactivo de intervalo de turnos (15 min vs 30 min)
+    const updateSlotDurationVisuals = (durationVal) => {
+      const selectedVal = parseInt(durationVal, 10);
+      const label15 = document.getElementById('slot-duration-label-15');
+      const label30 = document.getElementById('slot-duration-label-30');
+      const radio15 = document.querySelector('input[name="slot_duration"][value="15"]');
+      const radio30 = document.querySelector('input[name="slot_duration"][value="30"]');
+
+      if (selectedVal === 15) {
+        if (radio15) radio15.checked = true;
+        if (radio30) radio30.checked = false;
+        label15?.classList.remove('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
+        label15?.classList.add('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
+        label30?.classList.remove('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
+        label30?.classList.add('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
+      } else {
+        if (radio30) radio30.checked = true;
+        if (radio15) radio15.checked = false;
+        label30?.classList.remove('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
+        label30?.classList.add('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
+        label15?.classList.remove('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
+        label15?.classList.add('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
+      }
+    };
+
+    document.querySelectorAll('.slot-duration-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        const radio = card.querySelector('input[name="slot_duration"]');
+        if (radio) {
+          updateSlotDurationVisuals(radio.value);
+        }
+      });
+    });
+
     document.querySelectorAll('input[name="slot_duration"]').forEach(radio => {
       radio.addEventListener('change', () => {
-        const selectedVal = parseInt(radio.value, 10);
-        const label15 = document.getElementById('slot-duration-label-15');
-        const label30 = document.getElementById('slot-duration-label-30');
-        const activeClasses = ['bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs'];
-        const inactiveClasses = ['bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50'];
-
-        if (label15 && label30) {
-          if (selectedVal === 15) {
-            label15.classList.remove(...inactiveClasses);
-            label15.classList.add(...activeClasses);
-            label30.classList.remove(...activeClasses);
-            label30.classList.add(...inactiveClasses);
-          } else {
-            label30.classList.remove(...inactiveClasses);
-            label30.classList.add(...activeClasses);
-            label15.classList.remove(...activeClasses);
-            label15.classList.add(...inactiveClasses);
-          }
-        }
+        updateSlotDurationVisuals(radio.value);
       });
     });
 

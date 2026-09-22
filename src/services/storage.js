@@ -1414,13 +1414,31 @@ class StorageService {
   // --- CÁLCULO DE DISPONIBILIDAD EN TIEMPO REAL CON MULTI-ESPECIALISTA ---
   getAvailableSlots(businessId, dateString, serviceDurationMinutes = 30, excludeAppointmentId = null, selectedStaffId = 'any', serviceId = null) {
     const business = this.getBusinessById(businessId);
-    if (!business || !business.schedule) return { isClosed: false, slots: [] };
+    if (!business) return { isClosed: false, slots: [] };
+
+    // Parsear schedule si viene como string JSON desde la BD
+    let schedule = business.schedule;
+    if (typeof schedule === 'string') {
+      try {
+        schedule = JSON.parse(schedule);
+      } catch (e) {
+        schedule = null;
+      }
+    }
+    if (!schedule || typeof schedule !== 'object') {
+      schedule = { days: [1, 2, 3, 4, 5, 6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 };
+    }
 
     const [year, month, day] = dateString.split('-').map(Number);
     const dateObj = new Date(year, month - 1, day);
-    const dayOfWeek = dateObj.getDay();
+    const dayOfWeek = dateObj.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
 
-    if (!business.schedule.days || !business.schedule.days.includes(dayOfWeek)) {
+    // Días laborables normalizados a números [0..6]
+    const allowedDays = Array.isArray(schedule.days) && schedule.days.length > 0
+      ? schedule.days.map(Number)
+      : [1, 2, 3, 4, 5, 6];
+
+    if (!allowedDays.includes(dayOfWeek)) {
       return { isClosed: true, reason: 'El negocio no labora en este día de la semana.', slots: [] };
     }
 
@@ -1430,9 +1448,9 @@ class StorageService {
       const isPM = str.includes('PM');
       const isAM = str.includes('AM');
       str = str.replace(/[APM\s]/g, '');
-      const [hStr, mStr] = str.split(':');
-      let h = parseInt(hStr, 10) || 0;
-      const m = parseInt(mStr, 10) || 0;
+      const parts = str.split(':');
+      let h = parseInt(parts[0], 10) || 0;
+      const m = parseInt(parts[1], 10) || 0;
       if (isPM && h < 12) h += 12;
       if (isAM && h === 12) h = 0;
       return h * 60 + m;
@@ -1447,22 +1465,34 @@ class StorageService {
       return `${hour12}:${m} ${period}`;
     };
 
-    const openMin = timeToMinutes(business.schedule.openTime || '09:00');
-    const closeMin = timeToMinutes(business.schedule.closeTime || '18:00');
-    const breakStartMin = business.schedule.breakStart ? timeToMinutes(business.schedule.breakStart) : -1;
-    const breakEndMin = business.schedule.breakEnd ? timeToMinutes(business.schedule.breakEnd) : -1;
-    const slotStep = business.schedule.slotDuration || 30;
-    const serviceDur = parseInt(serviceDurationMinutes, 10) || 30;
+    let openMin = timeToMinutes(schedule.openTime || '08:00');
+    let closeMin = timeToMinutes(schedule.closeTime || '18:00');
+    if (closeMin <= openMin) {
+      openMin = 8 * 60;   // 08:00
+      closeMin = 18 * 60; // 18:00
+    }
+
+    const breakStartMin = schedule.breakStart ? timeToMinutes(schedule.breakStart) : -1;
+    const breakEndMin = schedule.breakEnd ? timeToMinutes(schedule.breakEnd) : -1;
+    const slotStep = (schedule.slotDuration === 15 || schedule.slotDuration === 30)
+      ? schedule.slotDuration
+      : (parseInt(schedule.slotDuration, 10) || 30);
+    const serviceDur = parseInt(serviceDurationMinutes, 10) || slotStep || 30;
 
     // Obtener equipo activo
     const allStaff = (this.getBusinessStaffSync(businessId) || []).filter(s => s.isActive !== false);
 
     // Filtrar staff calificado para el servicio si se proporcionó serviceId
-    const qualifiedStaff = allStaff.filter(st => {
+    let qualifiedStaff = allStaff.filter(st => {
       if (!serviceId) return true;
       if (!st.services || st.services.length === 0 || st.services.includes('all')) return true;
       return st.services.includes(serviceId);
     });
+
+    // Si hay especialistas pero ninguno tiene explícitamente el serviceId, se habilita todo el equipo disponible
+    if (allStaff.length > 0 && qualifiedStaff.length === 0) {
+      qualifiedStaff = allStaff;
+    }
 
     const existingAppointments = this.getAppointmentsByBusiness(businessId).filter(
       appt => appt.date === dateString && appt.status !== 'cancelled' && (!excludeAppointmentId || appt.id !== excludeAppointmentId)
@@ -1481,12 +1511,20 @@ class StorageService {
 
     // Helper para verificar si un miembro del personal está disponible en un rango [slotStart, slotEnd]
     const isStaffMemberAvailable = (st, slotStart, slotEnd) => {
-      const stSchedule = st.schedule || business.schedule;
-      if (stSchedule.days && !stSchedule.days.includes(dayOfWeek)) {
+      let stSchedule = st.schedule;
+      if (typeof stSchedule === 'string') {
+        try { stSchedule = JSON.parse(stSchedule); } catch(e) { stSchedule = null; }
+      }
+      stSchedule = stSchedule || schedule;
+      const stDays = Array.isArray(stSchedule.days) && stSchedule.days.length > 0
+        ? stSchedule.days.map(Number)
+        : allowedDays;
+
+      if (!stDays.includes(dayOfWeek)) {
         return false;
       }
-      const stOpen = timeToMinutes(stSchedule.openTime || business.schedule.openTime || '09:00');
-      const stClose = timeToMinutes(stSchedule.closeTime || business.schedule.closeTime || '18:00');
+      const stOpen = timeToMinutes(stSchedule.openTime || schedule.openTime || '08:00');
+      const stClose = timeToMinutes(stSchedule.closeTime || schedule.closeTime || '18:00');
       if (slotStart < stOpen || slotEnd > stClose) {
         return false;
       }
@@ -1500,7 +1538,7 @@ class StorageService {
       const staffBooked = existingAppointments.filter(appt => appt.staffId === st.id);
       const hasConflict = staffBooked.some(appt => {
         const start = timeToMinutes(appt.time);
-        const duration = appt.serviceDuration || 30;
+        const duration = parseInt(appt.serviceDuration, 10) || 30;
         return (slotStart < start + duration && slotEnd > start);
       });
       return !hasConflict;
@@ -1523,7 +1561,7 @@ class StorageService {
         }
         const hasConflict = existingAppointments.some(appt => {
           const start = timeToMinutes(appt.time);
-          const duration = appt.serviceDuration || 30;
+          const duration = parseInt(appt.serviceDuration, 10) || 30;
           return (current < start + duration && slotEnd > start);
         });
         if (hasConflict) continue;
@@ -1548,7 +1586,7 @@ class StorageService {
       const unassignedCount = existingAppointments.filter(appt => {
         if (appt.staffId) return false;
         const start = timeToMinutes(appt.time);
-        const duration = appt.serviceDuration || 30;
+        const duration = parseInt(appt.serviceDuration, 10) || 30;
         return (current < start + duration && slotEnd > start);
       }).length;
 
