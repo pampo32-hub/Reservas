@@ -236,6 +236,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-1',
     name: 'Barbería & Estilo Vintage',
+    slug: 'barberia-estilo-vintage',
     category: 'belleza',
     categoryLabel: 'Belleza y Barbería',
     rating: 4.9,
@@ -268,6 +269,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-2',
     name: 'Studio GLAM Salón & Nails Lounge',
+    slug: 'studio-glam-salon-nails-lounge',
     category: 'belleza',
     categoryLabel: 'Belleza y Barbería',
     rating: 4.8,
@@ -303,6 +305,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-3',
     name: 'Centro Médico Familiar del Este',
+    slug: 'centro-medico-familiar-del-este',
     category: 'salud',
     categoryLabel: 'Salud y Medicina',
     rating: 4.9,
@@ -334,6 +337,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-4',
     name: 'Clínica Médica Santa Ana & Especialistas',
+    slug: 'clinica-medica-santa-ana-especialistas',
     category: 'salud',
     categoryLabel: 'Salud y Medicina',
     rating: 4.8,
@@ -368,6 +372,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-5',
     name: 'Clínica Dental Sonrisas & Salud',
+    slug: 'clinica-dental-sonrisas-salud',
     category: 'dental',
     categoryLabel: 'Odontología y Dental',
     rating: 4.8,
@@ -400,6 +405,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-6',
     name: 'Dental Art Costa Rica - Odontología Estética',
+    slug: 'dental-art-costa-rica-odontologia-estetica',
     category: 'dental',
     categoryLabel: 'Odontología y Dental',
     rating: 5.0,
@@ -434,6 +440,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-7',
     name: 'Serenity Spa & Masajes Holísticos',
+    slug: 'serenity-spa-masajes-holisticos',
     category: 'spa',
     categoryLabel: 'Spa, Masajes y Estética',
     rating: 5.0,
@@ -466,6 +473,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-8',
     name: 'Aura Zen Spa & Terapias Termales',
+    slug: 'aura-zen-spa-terapias-termales',
     category: 'spa',
     categoryLabel: 'Spa, Masajes y Estética',
     rating: 4.9,
@@ -500,6 +508,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-9',
     name: 'Titan Gym & Cross Training Costa Rica',
+    slug: 'titan-gym-cross-training-costa-rica',
     category: 'fitness',
     categoryLabel: 'Fitness y Deporte',
     rating: 4.8,
@@ -530,6 +539,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-10',
     name: 'Equilibrio Yoga & Pilates Studio',
+    slug: 'equilibrio-yoga-pilates-studio',
     category: 'fitness',
     categoryLabel: 'Fitness y Deporte',
     rating: 5.0,
@@ -564,6 +574,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-11',
     name: 'Hospital Veterinario San Francisco',
+    slug: 'hospital-veterinario-san-francisco',
     category: 'mascotas',
     categoryLabel: 'Veterinaria y Mascotas',
     rating: 4.9,
@@ -595,6 +606,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-12',
     name: 'PetCare Grooming & Spa de Mascotas',
+    slug: 'petcare-grooming-spa-de-mascotas',
     category: 'mascotas',
     categoryLabel: 'Veterinaria y Mascotas',
     rating: 4.8,
@@ -629,6 +641,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-13',
     name: 'AutoCheck Taller Mecánico Especializado',
+    slug: 'autocheck-taller-mecanico-especializado',
     category: 'autos',
     categoryLabel: 'Talleres y Automotriz',
     rating: 4.7,
@@ -660,6 +673,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-14',
     name: 'ElectroAuto & Detailing Pro CR',
+    slug: 'electroauto-detailing-pro-cr',
     category: 'autos',
     categoryLabel: 'Talleres y Automotriz',
     rating: 4.9,
@@ -694,6 +708,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-15',
     name: 'Restaurante El Mirador del Valle',
+    slug: 'restaurante-el-mirador-del-valle',
     category: 'gastronomia',
     categoryLabel: 'Restaurantes y Gastronomía',
     rating: 4.9,
@@ -724,6 +739,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-16',
     name: 'Café & Bistro La Esquina Tica',
+    slug: 'cafe-bistro-la-esquina-tica',
     category: 'gastronomia',
     categoryLabel: 'Restaurantes y Gastronomía',
     rating: 4.8,
@@ -758,6 +774,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-17',
     name: 'Luz & Arte Fotografía de Bodas & Retratos',
+    slug: 'luz-arte-fotografia-de-bodas-retratos',
     category: 'fotografia',
     categoryLabel: 'Fotografía y Eventos',
     rating: 5.0,
@@ -788,6 +805,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-18',
     name: 'Pixel Studio Producciones & Video',
+    slug: 'pixel-studio-producciones-video',
     category: 'fotografia',
     categoryLabel: 'Fotografía y Eventos',
     rating: 4.8,
@@ -822,6 +840,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-19',
     name: 'Academia de Idiomas & Tutorías Pura Vida',
+    slug: 'academia-de-idiomas-tutorias-pura-vida',
     category: 'educacion',
     categoryLabel: 'Educación, Cursos y Tutorías',
     rating: 4.9,
@@ -852,6 +871,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-20',
     name: 'Studio Musical & Clases de Instrumentos',
+    slug: 'studio-musical-clases-de-instrumentos',
     category: 'educacion',
     categoryLabel: 'Educación, Cursos y Tutorías',
     rating: 4.9,
@@ -886,6 +906,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-21',
     name: 'Bufete Jurídico Central & Notaría',
+    slug: 'bufete-juridico-central-notaria',
     category: 'profesionales',
     categoryLabel: 'Servicios Legales y Contabilidad',
     rating: 4.9,
@@ -916,6 +937,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-22',
     name: 'Soluciones Contables & Tributarias CR',
+    slug: 'soluciones-contables-tributarias-cr',
     category: 'profesionales',
     categoryLabel: 'Servicios Legales y Contabilidad',
     rating: 4.8,
@@ -950,6 +972,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-23',
     name: 'ServiHogar - Electricidad, Plomería & Cerrajería',
+    slug: 'servihogar-electricidad-plomeria-cerrajeria',
     category: 'hogar',
     categoryLabel: 'Hogar, Reparaciones y Limpieza',
     rating: 4.8,
@@ -980,6 +1003,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-24',
     name: 'EcoClean CR - Limpieza de Muebles & Desinfección',
+    slug: 'ecoclean-cr-limpieza-de-muebles-desinfeccion',
     category: 'hogar',
     categoryLabel: 'Hogar, Reparaciones y Limpieza',
     rating: 4.9,
@@ -1014,6 +1038,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-25',
     name: 'Centro de Psicología & Bienestar Emocional',
+    slug: 'centro-de-psicologia-bienestar-emocional',
     category: 'psicologia',
     categoryLabel: 'Psicología y Terapia',
     rating: 5.0,
@@ -1044,6 +1069,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-26',
     name: 'Mente Plena - Psicopedagogía & Terapia Infantil',
+    slug: 'mente-plena-psicopedagogia-terapia-infantil',
     category: 'psicologia',
     categoryLabel: 'Psicología y Terapia',
     rating: 4.9,
@@ -1078,6 +1104,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-27',
     name: 'Pura Tinta Tattoo & Piercing Studio',
+    slug: 'pura-tinta-tattoo-piercing-studio',
     category: 'tatuajes',
     categoryLabel: 'Tatuajes y Piercing',
     rating: 4.9,
@@ -1109,6 +1136,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-28',
     name: 'Black Lotus Tattoo Boutique',
+    slug: 'black-lotus-tattoo-boutique',
     category: 'tatuajes',
     categoryLabel: 'Tatuajes y Piercing',
     rating: 5.0,
@@ -1143,6 +1171,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-29',
     name: 'TechFix CR - Reparación de Laptops, Celulares & PC',
+    slug: 'techfix-cr-reparacion-de-laptops-celulares-pc',
     category: 'tecnologia',
     categoryLabel: 'Tecnología y Soporte',
     rating: 4.8,
@@ -1174,6 +1203,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-30',
     name: 'CyberNet Soporte IT & Redes Empresariales',
+    slug: 'cybernet-soporte-it-redes-empresariales',
     category: 'tecnologia',
     categoryLabel: 'Tecnología y Soporte',
     rating: 5.0,
@@ -1208,6 +1238,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-31',
     name: 'Lavandería & Tintorería Exprés Costa Rica',
+    slug: 'lavanderia-tintoreria-expres-costa-rica',
     category: 'otros',
     categoryLabel: 'Otros Servicios',
     rating: 4.8,
@@ -1238,6 +1269,7 @@ export const INITIAL_BUSINESSES = [
   {
     id: 'biz-32',
     name: 'Eventos & Logística Mágica CR',
+    slug: 'eventos-logistica-magica-cr',
     category: 'otros',
     categoryLabel: 'Otros Servicios',
     rating: 5.0,

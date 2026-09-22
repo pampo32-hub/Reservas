@@ -48,6 +48,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+export function slugify(text) {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'negocio';
+}
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
@@ -1101,6 +1111,7 @@ app.get('/api/businesses', async (req, res) => {
     const businesses = bizRes.rows.map(b => ({
       id: b.id,
       name: b.name,
+      slug: b.slug || slugify(b.name || b.id),
       category: b.category,
       categoryLabel: b.category_label,
       rating: parseFloat(b.rating),
@@ -1120,9 +1131,6 @@ app.get('/api/businesses', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       isVerified: Boolean(b.is_verified),
-      plan: b.plan || 'pro',
-      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
       monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
@@ -1160,6 +1168,7 @@ app.get('/api/developer/businesses', async (req, res) => {
     const businesses = bizRes.rows.map(b => ({
       id: b.id,
       name: b.name,
+      slug: b.slug || slugify(b.name || b.id),
       category: b.category,
       categoryLabel: b.category_label,
       rating: parseFloat(b.rating),
@@ -1204,21 +1213,23 @@ app.get('/api/developer/businesses', async (req, res) => {
   }
 });
 
-// Obtener un negocio por ID
+// Obtener un negocio por ID o por Slug
 app.get('/api/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [id]);
+    const cleanLookup = String(id || '').trim().toLowerCase();
+    const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = $2', [id, cleanLookup]);
     if (bizRes.rows.length === 0) {
       return res.status(404).json({ error: 'Negocio no encontrado' });
     }
 
     const b = bizRes.rows[0];
-    const srvRes = await pool.query('SELECT * FROM reservas_services WHERE business_id = $1 ORDER BY created_at ASC', [id]);
+    const srvRes = await pool.query('SELECT * FROM reservas_services WHERE business_id = $1 ORDER BY created_at ASC', [b.id]);
 
     const business = {
       id: b.id,
       name: b.name,
+      slug: b.slug || slugify(b.name || b.id),
       category: b.category,
       categoryLabel: b.category_label,
       rating: parseFloat(b.rating),
@@ -1238,9 +1249,9 @@ app.get('/api/businesses/:id', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       isVerified: Boolean(b.is_verified),
-      plan: b.plan || 'pro',
-      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'basic' ? 10 : 18))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'basic' ? 150 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 300)))),
+      plan: b.plan || 'basic',
+      planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
@@ -1299,13 +1310,14 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
   }
 });
 
-// Actualizar negocio completo (Modificar datos)
+// Actualizar negocio completo (Modificar datos, incluyendo slug)
 app.put('/api/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const b = req.body;
 
     const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : null);
+    const rawSlug = b.slug !== undefined ? slugify(b.slug) : (b.name ? slugify(b.name) : null);
 
     const updateRes = await pool.query(`
       UPDATE reservas_businesses SET
@@ -1328,8 +1340,9 @@ app.put('/api/businesses/:id', async (req, res) => {
         is_blocked = COALESCE($17, is_blocked),
         block_reason = COALESCE($18, block_reason),
         is_hidden = COALESCE($19, is_hidden),
-        is_verified = COALESCE($20, is_verified)
-      WHERE id = $21
+        is_verified = COALESCE($20, is_verified),
+        slug = COALESCE($21, slug)
+      WHERE id = $22 OR LOWER(slug) = LOWER($22)
       RETURNING *
     `, [
       b.name !== undefined ? b.name : null,
@@ -1352,24 +1365,27 @@ app.put('/api/businesses/:id', async (req, res) => {
       b.blockReason !== undefined ? b.blockReason : null,
       b.isHidden !== undefined ? Boolean(b.isHidden) : null,
       b.isVerified !== undefined ? Boolean(b.isVerified) : null,
+      rawSlug,
       id
     ]);
 
     if (updateRes.rowCount === 0) {
       // Upsert: si no existía el registro, crearlo directamente en PostgreSQL
+      const newSlug = rawSlug || slugify(b.name || id);
       await pool.query(`
         INSERT INTO reservas_businesses (
-          id, name, category, category_label, city, address, phone, email, description,
+          id, name, slug, category, category_label, city, address, phone, email, description,
           image, cover_image, price_range, features, schedule, social_links,
           auto_confirm_appointments, plan, is_blocked, block_reason, is_hidden, is_verified,
           rating, reviews_count, is_demo, subscription_status, payment_method
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
           5.0, 0, false, 'active', 'free'
         )
       `, [
         id,
         b.name || 'Negocio',
+        newSlug,
         b.category || 'servicios',
         b.categoryLabel || 'Servicios',
         b.city || '',
@@ -1399,25 +1415,27 @@ app.put('/api/businesses/:id', async (req, res) => {
   }
 });
 
-// Crear o sincronizar negocio
+// Crear o sincronizar negocio con Slug
 app.post('/api/businesses', async (req, res) => {
   try {
     const b = req.body;
     const bizId = b.id || `biz-${Date.now()}`;
     const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : '');
+    const finalSlug = slugify(b.slug || b.name || bizId);
 
     await pool.query(`
       INSERT INTO reservas_businesses (
-        id, name, category, category_label, city, address, phone, email, description,
+        id, name, slug, category, category_label, city, address, phone, email, description,
         image, cover_image, price_range, features, schedule, social_links,
         auto_confirm_appointments, plan, is_blocked, block_reason, is_hidden, is_verified,
         rating, reviews_count, is_demo, subscription_status, payment_method
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
         5.0, 0, false, 'active', 'free'
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
+        slug = COALESCE(EXCLUDED.slug, reservas_businesses.slug),
         category = EXCLUDED.category,
         category_label = EXCLUDED.category_label,
         city = EXCLUDED.city,
@@ -1435,6 +1453,7 @@ app.post('/api/businesses', async (req, res) => {
     `, [
       bizId,
       b.name || 'Nuevo Negocio',
+      finalSlug,
       b.category || 'servicios',
       b.categoryLabel || 'Servicios',
       b.city || '',
@@ -1456,7 +1475,7 @@ app.post('/api/businesses', async (req, res) => {
       Boolean(b.isVerified)
     ]);
 
-    res.status(201).json({ success: true, id: bizId });
+    res.status(201).json({ success: true, id: bizId, slug: finalSlug });
   } catch (error) {
     console.error('Error creando negocio:', error);
     res.status(500).json({ error: 'Error al crear negocio' });

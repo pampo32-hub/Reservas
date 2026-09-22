@@ -754,17 +754,24 @@ class App {
   }
 
   // --- RUTAS Y NAVEGACIÓN LIMPIA (HTML5 HISTORY API) ---
+  getBusinessPublicUrl(biz) {
+    if (!biz) return window.location.origin;
+    const slug = biz.slug || storage.slugify(biz.name || biz.id);
+    return `${window.location.origin}/#/${slug}`;
+  }
+
   getUrlForView(view, params = {}) {
     switch (view) {
       case 'business-detail': {
         const bizId = params.businessId || this.selectedBusinessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
-        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/';
-        return bizId ? `/negocio/${encodeURIComponent(bizId)}` : '/directorio';
+        if (!bizId) return '/directorio';
+        const biz = storage.getBusinessById(bizId);
+        const slugOrId = biz?.slug || bizId;
+        return `/negocio/${encodeURIComponent(slugOrId)}`;
       }
       case 'review-booking': {
         const aptId = params.appointmentId || this.selectedAppointmentId;
         const query = params.rating ? `?rating=${params.rating}` : '';
-        return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/';
         return aptId ? `/calificar/${encodeURIComponent(aptId)}${query}` : '/directorio';
       }
       case 'directory':
@@ -775,10 +782,6 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
-      case 'owner-dashboard':
-        return '/panel-negocio';
-      case 'developer-dashboard':
-        return '/developer';
       case 'owner-dashboard': {
         const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
         return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
@@ -787,10 +790,7 @@ class App {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
         return (tab && tab !== 'alerts') ? `/developer?tab=${encodeURIComponent(tab)}` : '/developer';
       }
-      case 'directory':
       default:
-        return '/';
-        return '/unete';
         return '/directorio';
     }
   }
@@ -803,6 +803,17 @@ class App {
     const cleanHash = (hash || '').trim();
     const pathname = (window.location.pathname || '').trim();
     const searchParams = new URLSearchParams(window.location.search);
+
+    const reservedPaths = [
+      'directorio', 'explorar', 'catalogo', 'buscar', 'comercios', 'negocios-locales',
+      'pruebas', 'planes-prueba', 'test-planes', 'planes-test', 'demo-planes',
+      'unete', 'para-negocios', 'para-comercios', 'negocios', 'empresas', 'hazte-socio', 'registro-negocio', 'planes', 'precios',
+      'mis-reservas', 'cliente', 'panel-usuario', 'panel-cliente', 'usuario', 'mi-cuenta', 'perfil', 'mis-citas',
+      'panel-negocio', 'dashboard', 'owner',
+      'developer', 'developer-dashboard', 'admin',
+      'login', 'acceso', 'entrar', 'soy-negocio',
+      'calificar', 'review', 'valorar', 'api', 'sw.js', 'manifest.json', 'robots.txt', 'sitemap.xml'
+    ];
 
     // 0. Revisar si la ruta viene directo en el pathname (URLs limpias sin #)
     if (pathname && pathname !== '/' && pathname !== '') {
@@ -844,6 +855,12 @@ class App {
       if (/^\/?(login|acceso|entrar|soy-negocio)$/i.test(pathname)) {
         setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
         return { view: 'directory', params: {} };
+      }
+
+      // Slug directo en pathname (ej. /serenity-spa o /barberia-vintage)
+      const cleanPathSlug = pathname.replace(/^\/+|\/+$/g, '');
+      if (cleanPathSlug && !reservedPaths.includes(cleanPathSlug.toLowerCase()) && !cleanPathSlug.includes('/')) {
+        return { view: 'business-detail', params: { businessId: decodeURIComponent(cleanPathSlug) } };
       }
     }
 
@@ -924,7 +941,7 @@ class App {
       }
     }
 
-    // 5. Negocio en hash
+    // 5. Negocio explícito en hash (#/negocio/serenity-spa o #negocio/biz-7)
     const bizMatch = cleanHash.match(/^#\/?negocio\/([^/?#]+)/i);
     if (bizMatch) {
       return { view: 'business-detail', params: { businessId: decodeURIComponent(bizMatch[1]) } };
@@ -970,6 +987,12 @@ class App {
     if (/^#\/?(login|acceso|entrar|soy-negocio)/i.test(cleanHash)) {
       setTimeout(() => this.renderAuthModal({ mode: 'login', role: 'business' }), 100);
       return { view: 'directory', params: {} };
+    }
+
+    // 11. Slug o ID directo en hash (ej. #/serenity-spa o #barberia-vintage o #biz-7)
+    const directSlug = cleanHash.replace(/^#\/?/, '').split('?')[0].trim();
+    if (directSlug && !reservedPaths.includes(directSlug.toLowerCase()) && !directSlug.includes('/')) {
+      return { view: 'business-detail', params: { businessId: decodeURIComponent(directSlug) } };
     }
 
     return { view: 'directory', params: {} };
@@ -3563,9 +3586,13 @@ class App {
           <img src="${biz.coverImage || biz.image}" alt="${biz.name}" class="w-full h-full object-cover opacity-60">
           <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent"></div>
 
-          <div class="absolute top-6 left-4 sm:left-8 z-10">
-            <button id="back-to-directory-btn" class="px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-800 text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-md transition-all">
+          <div class="absolute top-6 left-4 sm:left-8 right-4 sm:right-8 z-10 flex items-center justify-between gap-2">
+            <button id="back-to-directory-btn" class="px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-800 text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-md transition-all cursor-pointer">
               <i class="fas fa-arrow-left"></i> Volver al Directorio
+            </button>
+            <button id="share-biz-profile-btn" data-url="${window.location.origin}/#/${biz.slug || storage.slugify(biz.name || biz.id)}" class="px-4 py-2 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-md transition-all cursor-pointer">
+              <i class="fas fa-share-alt"></i>
+              <span class="hidden sm:inline">Compartir Enlace</span>
             </button>
           </div>
 
@@ -3858,6 +3885,26 @@ class App {
     });
 
     document.getElementById('back-to-directory-btn')?.addEventListener('click', () => this.goBack());
+
+    document.getElementById('share-biz-profile-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const shareUrl = `${window.location.origin}/#/${biz.slug || storage.slugify(biz.name || biz.id)}`;
+      if (navigator.share) {
+        navigator.share({
+          title: `${biz.name} • Reservas CR`,
+          text: `Reserva tu cita en línea en ${biz.name}:`,
+          url: shareUrl
+        }).catch(() => {});
+      } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          this.showToast('¡Enlace del comercio copiado al portapapeles!', 'success');
+        }).catch(() => {
+          this.showToast(shareUrl, 'info');
+        });
+      } else {
+        this.showToast(shareUrl, 'info');
+      }
+    });
 
     document.querySelectorAll('.book-service-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -6729,6 +6776,28 @@ class App {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <!-- Enlace Personalizado y Compartir -->
+            <div class="p-5 sm:p-6 bg-gradient-to-br from-blue-50/90 to-indigo-50/80 rounded-2xl border border-blue-200/90 space-y-3 shadow-xs">
+              <div class="flex items-center justify-between border-b border-blue-200/70 pb-3">
+                <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                  <i class="fas fa-link text-blue-600"></i> Tu Enlace Personalizado de Reservas
+                </h3>
+                <span class="text-[11px] text-blue-700 font-bold bg-blue-100/90 px-2.5 py-0.5 rounded-full">Exclusivo de tu negocio</span>
+              </div>
+              <p class="text-xs text-slate-600">Este es el enlace directo que puedes compartir en tu biografía de Instagram, WhatsApp y redes sociales:</p>
+              
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <div class="flex-1 flex items-center bg-white border border-blue-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs">
+                  <span class="text-slate-400 font-normal select-none pr-0.5">reservascr.app/#/</span>
+                  <input type="text" id="edit-biz-slug" value="${this.escapeHtml(currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id))}" placeholder="nombre-de-tu-negocio" class="flex-1 font-bold text-blue-700 bg-transparent focus:outline-none px-1 lowercase">
+                </div>
+                <button type="button" id="copy-public-link-btn" data-url="${window.location.origin}/#/${currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id)}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                  <i class="fas fa-copy"></i>
+                  <span>Copiar Enlace</span>
+                </button>
               </div>
             </div>
 
@@ -10385,6 +10454,22 @@ class App {
       }
     });
 
+    // Copiar enlace personalizado al portapapeles
+    document.getElementById('copy-public-link-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const slugVal = storage.slugify(document.getElementById('edit-biz-slug')?.value || currentBiz.slug || currentBiz.name || currentBiz.id);
+      const fullUrl = `${window.location.origin}/#/${slugVal}`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(fullUrl).then(() => {
+          this.showToast('¡Enlace de reservas copiado al portapapeles!', 'success');
+        }).catch(() => {
+          this.showToast(fullUrl, 'info');
+        });
+      } else {
+        this.showToast(fullUrl, 'info');
+      }
+    });
+
     const profileForm = document.getElementById('edit-profile-form');
     profileForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -10397,6 +10482,8 @@ class App {
       }
 
       const name = (form.querySelector('#edit-biz-name')?.value || '').trim();
+      const rawSlug = (form.querySelector('#edit-biz-slug')?.value || '').trim();
+      const slug = storage.slugify(rawSlug || name || currentBiz.id);
       const categoryId = form.querySelector('#edit-biz-category')?.value || currentBiz.category;
       const catObj = storage.getCategories().find(c => c.id === categoryId);
       const categoryLabel = catObj ? catObj.name : (currentBiz.categoryLabel || categoryId);
@@ -10418,6 +10505,7 @@ class App {
         await storage.saveBusiness({
           ...currentBiz,
           name,
+          slug,
           category: categoryId,
           categoryLabel,
           city,

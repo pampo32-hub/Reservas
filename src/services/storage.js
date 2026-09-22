@@ -683,13 +683,24 @@ class StorageService {
     return list;
   }
 
+  // --- HELPER SLUGIFY ---
+  slugify(text) {
+    return String(text || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'negocio';
+  }
+
   // --- NEGOCIOS ---
   getBusinesses() {
     let list = (this.businessesCache && this.businessesCache.length > 0)
       ? this.businessesCache
       : (JSON.parse(localStorage.getItem(STORAGE_KEYS.BUSINESSES) || 'null') || INITIAL_BUSINESSES);
     
-    // Normalizar límites y precios de planes para asegurar coherencia total
+    // Normalizar límites, precios de planes y SLUGS para asegurar coherencia total
     return list.map(b => {
       let sch = b.schedule;
       if (typeof sch === 'string') {
@@ -701,7 +712,8 @@ class StorageService {
       }
 
       const plan = b.plan || 'basic';
-      const baseObj = { ...b, schedule: sch || b.schedule };
+      const slug = b.slug ? this.slugify(b.slug) : this.slugify(b.name || b.id);
+      const baseObj = { ...b, slug, schedule: sch || b.schedule };
       if (plan === 'free') {
         return { ...baseObj, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
       }
@@ -718,16 +730,26 @@ class StorageService {
     });
   }
 
-  getBusinessById(id) {
+  getBusinessById(idOrSlug) {
+    if (!idOrSlug) return null;
+    const clean = String(idOrSlug).trim().toLowerCase();
     const businesses = this.getBusinesses();
-    return businesses.find(b => b.id === id) || null;
+    return businesses.find(b => 
+      b.id === idOrSlug || 
+      (b.slug && b.slug.toLowerCase() === clean) || 
+      (b.name && this.slugify(b.name) === clean)
+    ) || null;
   }
 
-  async getBusinessByIdAsync(id) {
-    let biz = this.getBusinessById(id);
+  getBusinessBySlug(slug) {
+    return this.getBusinessById(slug);
+  }
+
+  async getBusinessByIdAsync(idOrSlug) {
+    let biz = this.getBusinessById(idOrSlug);
     if (biz) return biz;
     await this.init();
-    return this.getBusinessById(id);
+    return this.getBusinessById(idOrSlug);
   }
 
   async saveBusiness(businessData) {
