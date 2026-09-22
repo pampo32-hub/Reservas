@@ -469,6 +469,114 @@ _Reservas CR • Notificación automática para comercios_ 🇨🇷`;
 }
 
 /**
+ * Envío a través de Plantilla (Template) de Meta para Alerta al Comercio
+ * (Entregado 100% 24/7 sin requerir que el comercio haya iniciado conversación)
+ */
+export async function sendMetaBusinessAlertTemplateMessage(recipientPhone, appointment, business, credentials = null) {
+  const meta = credentials || await getActiveMetaCredentials();
+  if (!meta.token || !meta.phoneNumberId) {
+    throw new Error('Credenciales de Meta incompletas (Falta META_WHATSAPP_TOKEN o META_PHONE_NUMBER_ID).');
+  }
+
+  const clientName = String(appointment.clientName || 'Cliente').trim();
+  const clientPhone = String(appointment.clientPhone || 'No especificado').trim();
+  const businessName = String(business?.name || appointment.businessName || 'Tu Negocio').trim();
+  const serviceName = String(appointment.serviceName || 'Servicio General').trim();
+  const dateStr = formatDateDMY(appointment.date);
+  const timeStr = formatTime12h(appointment.time);
+  const priceStr = formatColones(appointment.servicePrice);
+  const appointmentCode = String((appointment.id || 'APT-000').toUpperCase()).trim();
+
+  const url = `https://graph.facebook.com/v20.0/${meta.phoneNumberId}/messages`;
+  
+  // Prioridad: 1. Plantilla dedicada 'alerta_nueva_reserva', 2. Plantilla aprobada 'confirmacion_cita'
+  const templateConfigs = [
+    {
+      name: 'alerta_nueva_reserva',
+      languages: ['es', 'es_LA', 'es_ES', 'es_CR'],
+      params: [
+        { type: 'text', text: businessName },
+        { type: 'text', text: clientName },
+        { type: 'text', text: clientPhone },
+        { type: 'text', text: serviceName },
+        { type: 'text', text: dateStr },
+        { type: 'text', text: timeStr },
+        { type: 'text', text: priceStr },
+        { type: 'text', text: appointmentCode }
+      ]
+    },
+    {
+      name: 'confirmacion_cita',
+      languages: ['es', 'es_LA', 'es_ES', 'es_CR'],
+      params: [
+        { type: 'text', text: businessName },
+        { type: 'text', text: businessName },
+        { type: 'text', text: `${serviceName} (Cliente: ${clientName} - Tel: ${clientPhone})` },
+        { type: 'text', text: dateStr },
+        { type: 'text', text: timeStr },
+        { type: 'text', text: priceStr },
+        { type: 'text', text: String(business?.address || 'Tu Local').trim() },
+        { type: 'text', text: appointmentCode }
+      ]
+    }
+  ];
+
+  let lastError = null;
+
+  for (const tConfig of templateConfigs) {
+    for (const langCode of tConfig.languages) {
+      const payload = {
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: recipientPhone,
+        type: 'template',
+        template: {
+          name: tConfig.name,
+          language: { code: langCode },
+          components: [
+            {
+              type: 'body',
+              parameters: tConfig.params
+            }
+          ]
+        }
+      };
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${meta.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.messages?.[0]?.id) {
+          return {
+            provider: `Meta WhatsApp Cloud API (Template ${tConfig.name})`,
+            messageId: data.messages[0].id,
+            templateUsed: tConfig.name,
+            languageUsed: langCode,
+            data
+          };
+        }
+
+        const errorObj = data?.error || {};
+        const errorCode = errorObj.code || response.status;
+        lastError = new Error(`Meta Template Error [${errorCode}]: ${errorObj.message || response.statusText}`);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+  }
+
+  throw lastError || new Error('No se pudo enviar la plantilla de alerta al comercio.');
+}
+
+/**
  * Envío de alerta de nueva reserva al WhatsApp del dueño del negocio
  */
 export async function sendNewBookingAlertToBusinessWhatsApp(appointment, business, pool = null) {
@@ -487,9 +595,21 @@ export async function sendNewBookingAlertToBusinessWhatsApp(appointment, busines
   const messageBody = buildBusinessNewBookingNotificationText(appointment, business);
   const metaCreds = await getActiveMetaCredentials(pool);
 
+  // 1. INTENTO CON META WHATSAPP CLOUD API
   if (metaCreds.isConfigured) {
+    // 1A. Intentar primero con Plantilla Oficial (Garantiza entrega 100% 24/7 sin requerir mensaje previo)
     try {
-      console.log(`📲 [WhatsApp Comercio] Enviando alerta de cita #${appointment.id} al comercio +${metaRecipient}...`);
+      console.log(`📲 [WhatsApp Comercio] Intentando envío con plantilla a +${metaRecipient}...`);
+      const templateResult = await sendMetaBusinessAlertTemplateMessage(metaRecipient, appointment, business, metaCreds);
+      console.log(`✅ [WhatsApp Comercio] Plantilla WhatsApp entregada al comercio con ID: ${templateResult.messageId} (${templateResult.templateUsed})`);
+      return { success: true, provider: 'meta_template', messageId: templateResult.messageId };
+    } catch (templateErr) {
+      console.warn('ℹ️ Plantilla para comercio no entregada, intentando texto directo / fallback:', templateErr.message);
+    }
+
+    // 1B. Fallback con texto directo si la ventana de 24h está activa
+    try {
+      console.log(`📲 [WhatsApp Comercio] Enviando alerta texto directo a +${metaRecipient}...`);
       const result = await sendViaMetaCloudApi(metaRecipient, messageBody, metaCreds);
       console.log(`✅ [WhatsApp Comercio] Alerta entregada al negocio con ID: ${result.messageId}`);
       return { success: true, provider: 'meta', messageId: result.messageId };
@@ -498,6 +618,7 @@ export async function sendNewBookingAlertToBusinessWhatsApp(appointment, busines
     }
   }
 
+  // 2. FALLBACK CON TWILIO
   if (twilioClient) {
     const toTwilio = formatWhatsAppNumber(bizPhone);
     try {
@@ -515,4 +636,5 @@ export async function sendNewBookingAlertToBusinessWhatsApp(appointment, busines
 
   return { success: false, reason: 'no_credentials' };
 }
+
 
