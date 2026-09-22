@@ -441,7 +441,7 @@ export const INITIAL_BUSINESSES = [
     priceRange: '₡₡₡',
     address: 'Barrio Escalante, 100m Este del Parque Francia',
     city: 'San José',
-    phone: '+506 8765 4321',
+    phone: '+506 7143 3852',
     email: 'relax@serenityspa.cr',
     description: 'Un oasis de relajación en la ciudad. Tratamientos corporales, masajes relajantes y descontracturantes con piedras volcánicas y aromaterapia.',
     image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80',

@@ -10388,42 +10388,59 @@ class App {
     const profileForm = document.getElementById('edit-profile-form');
     profileForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('edit-biz-name').value;
-      const categoryId = document.getElementById('edit-biz-category')?.value || currentBiz.category;
+      const form = e.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const origBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i><span>Guardando cambios...</span>';
+      }
+
+      const name = (form.querySelector('#edit-biz-name')?.value || '').trim();
+      const categoryId = form.querySelector('#edit-biz-category')?.value || currentBiz.category;
       const catObj = storage.getCategories().find(c => c.id === categoryId);
       const categoryLabel = catObj ? catObj.name : (currentBiz.categoryLabel || categoryId);
-      const city = document.getElementById('edit-biz-city').value;
-      const phone = document.getElementById('edit-biz-phone').value;
-      const email = document.getElementById('edit-biz-email').value;
-      const address = document.getElementById('edit-biz-address').value;
-      const description = document.getElementById('edit-biz-desc').value;
-      const image = document.getElementById('edit-biz-image').value;
-      const coverImage = document.getElementById('edit-biz-cover').value;
-      const instagram = document.getElementById('edit-biz-instagram')?.value.trim() || '';
-      const facebook = document.getElementById('edit-biz-facebook')?.value.trim() || '';
-      const tiktok = document.getElementById('edit-biz-tiktok')?.value.trim() || '';
-      const website = document.getElementById('edit-biz-website')?.value.trim() || '';
+      const city = (form.querySelector('#edit-biz-city')?.value || '').trim();
+      const phone = (form.querySelector('#edit-biz-phone')?.value || '').trim();
+      const email = (form.querySelector('#edit-biz-email')?.value || '').trim();
+      const address = (form.querySelector('#edit-biz-address')?.value || '').trim();
+      const description = (form.querySelector('#edit-biz-desc')?.value || '').trim();
+      const image = (form.querySelector('#edit-biz-image')?.value || '').trim() || currentBiz.image;
+      const coverImage = (form.querySelector('#edit-biz-cover')?.value || '').trim() || currentBiz.coverImage;
+      const instagram = form.querySelector('#edit-biz-instagram')?.value.trim() || '';
+      const facebook = form.querySelector('#edit-biz-facebook')?.value.trim() || '';
+      const tiktok = form.querySelector('#edit-biz-tiktok')?.value.trim() || '';
+      const website = form.querySelector('#edit-biz-website')?.value.trim() || '';
       const socialLinks = { instagram, facebook, tiktok, website };
-      const features = Array.from(document.querySelectorAll('input[name="biz_features"]:checked')).map(cb => cb.value);
+      const features = Array.from(form.querySelectorAll('input[name="biz_features"]:checked')).map(cb => cb.value);
 
-      await storage.saveBusiness({
-        ...currentBiz,
-        name,
-        category: categoryId,
-        categoryLabel,
-        city,
-        phone,
-        email,
-        address,
-        description,
-        image,
-        coverImage,
-        features,
-        socialLinks
-      });
+      try {
+        await storage.saveBusiness({
+          ...currentBiz,
+          name,
+          category: categoryId,
+          categoryLabel,
+          city,
+          phone,
+          email,
+          address,
+          description,
+          image,
+          coverImage,
+          features,
+          socialLinks
+        });
 
-      this.showToast('¡Configuración del negocio guardada con éxito!', 'success');
-      this.renderCurrentView();
+        this.showToast('¡Configuración del negocio guardada con éxito!', 'success');
+        this.renderCurrentView();
+      } catch (err) {
+        console.error('Error guardando perfil:', err);
+        this.showToast('Error al guardar la configuración: ' + (err.message || 'Error de conexión'), 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
+        }
+      }
     });
 
     // Selector interactivo de intervalo de turnos (15 min vs 30 min)

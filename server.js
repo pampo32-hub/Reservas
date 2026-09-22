@@ -1305,7 +1305,9 @@ app.put('/api/businesses/:id', async (req, res) => {
     const { id } = req.params;
     const b = req.body;
 
-    await pool.query(`
+    const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : null);
+
+    const updateRes = await pool.query(`
       UPDATE reservas_businesses SET
         name = COALESCE($1, name),
         category = COALESCE($2, category),
@@ -1328,13 +1330,14 @@ app.put('/api/businesses/:id', async (req, res) => {
         is_hidden = COALESCE($19, is_hidden),
         is_verified = COALESCE($20, is_verified)
       WHERE id = $21
+      RETURNING *
     `, [
       b.name !== undefined ? b.name : null,
       b.category !== undefined ? b.category : null,
       b.categoryLabel !== undefined ? b.categoryLabel : null,
       b.city !== undefined ? b.city : null,
       b.address !== undefined ? b.address : null,
-      b.phone !== undefined ? b.phone : null,
+      finalPhone,
       b.email !== undefined ? b.email : null,
       b.description !== undefined ? b.description : null,
       b.image !== undefined ? b.image : null,
@@ -1352,10 +1355,111 @@ app.put('/api/businesses/:id', async (req, res) => {
       id
     ]);
 
+    if (updateRes.rowCount === 0) {
+      // Upsert: si no existía el registro, crearlo directamente en PostgreSQL
+      await pool.query(`
+        INSERT INTO reservas_businesses (
+          id, name, category, category_label, city, address, phone, email, description,
+          image, cover_image, price_range, features, schedule, social_links,
+          auto_confirm_appointments, plan, is_blocked, block_reason, is_hidden, is_verified,
+          rating, reviews_count, is_demo, subscription_status, payment_method
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+          5.0, 0, false, 'active', 'free'
+        )
+      `, [
+        id,
+        b.name || 'Negocio',
+        b.category || 'servicios',
+        b.categoryLabel || 'Servicios',
+        b.city || '',
+        b.address || '',
+        finalPhone || '',
+        b.email || '',
+        b.description || '',
+        b.image || '',
+        b.coverImage || '',
+        b.priceRange || '₡₡',
+        b.features ? JSON.stringify(b.features) : JSON.stringify([]),
+        b.schedule ? JSON.stringify(b.schedule) : JSON.stringify({ days: [1,2,3,4,5,6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 }),
+        b.socialLinks ? JSON.stringify(b.socialLinks) : JSON.stringify({}),
+        b.autoConfirmAppointments !== undefined ? Boolean(b.autoConfirmAppointments) : true,
+        b.plan || 'free',
+        Boolean(b.isBlocked),
+        b.blockReason || '',
+        Boolean(b.isHidden),
+        Boolean(b.isVerified)
+      ]);
+    }
+
     res.json({ success: true, message: 'Perfil del negocio actualizado exitosamente' });
   } catch (error) {
     console.error('Error actualizando negocio:', error);
     res.status(500).json({ error: 'Error al actualizar negocio' });
+  }
+});
+
+// Crear o sincronizar negocio
+app.post('/api/businesses', async (req, res) => {
+  try {
+    const b = req.body;
+    const bizId = b.id || `biz-${Date.now()}`;
+    const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : '');
+
+    await pool.query(`
+      INSERT INTO reservas_businesses (
+        id, name, category, category_label, city, address, phone, email, description,
+        image, cover_image, price_range, features, schedule, social_links,
+        auto_confirm_appointments, plan, is_blocked, block_reason, is_hidden, is_verified,
+        rating, reviews_count, is_demo, subscription_status, payment_method
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
+        5.0, 0, false, 'active', 'free'
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        category = EXCLUDED.category,
+        category_label = EXCLUDED.category_label,
+        city = EXCLUDED.city,
+        address = EXCLUDED.address,
+        phone = EXCLUDED.phone,
+        email = EXCLUDED.email,
+        description = EXCLUDED.description,
+        image = EXCLUDED.image,
+        cover_image = EXCLUDED.cover_image,
+        price_range = EXCLUDED.price_range,
+        features = EXCLUDED.features,
+        schedule = EXCLUDED.schedule,
+        social_links = EXCLUDED.social_links,
+        auto_confirm_appointments = EXCLUDED.auto_confirm_appointments
+    `, [
+      bizId,
+      b.name || 'Nuevo Negocio',
+      b.category || 'servicios',
+      b.categoryLabel || 'Servicios',
+      b.city || '',
+      b.address || '',
+      finalPhone,
+      b.email || '',
+      b.description || '',
+      b.image || '',
+      b.coverImage || '',
+      b.priceRange || '₡₡',
+      b.features ? JSON.stringify(b.features) : JSON.stringify([]),
+      b.schedule ? JSON.stringify(b.schedule) : JSON.stringify({ days: [1,2,3,4,5,6], openTime: '08:00', closeTime: '18:00', slotDuration: 30 }),
+      b.socialLinks ? JSON.stringify(b.socialLinks) : JSON.stringify({}),
+      b.autoConfirmAppointments !== undefined ? Boolean(b.autoConfirmAppointments) : true,
+      b.plan || 'free',
+      Boolean(b.isBlocked),
+      b.blockReason || '',
+      Boolean(b.isHidden),
+      Boolean(b.isVerified)
+    ]);
+
+    res.status(201).json({ success: true, id: bizId });
+  } catch (error) {
+    console.error('Error creando negocio:', error);
+    res.status(500).json({ error: 'Error al crear negocio' });
   }
 });
 

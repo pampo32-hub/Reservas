@@ -731,6 +731,10 @@ class StorageService {
   }
 
   async saveBusiness(businessData) {
+    if (!businessData || !businessData.id) {
+      console.warn('saveBusiness: No se proporcionó un ID de negocio válido');
+    }
+
     // 1. Guardar de inmediato en caché local y localStorage
     const businesses = this.getBusinesses();
     const existingIndex = businesses.findIndex(b => b.id === businessData.id);
@@ -745,17 +749,16 @@ class StorageService {
     localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
     this.businessesCache = businesses;
 
-    // 2. Persistir en API remota (Neon PostgreSQL) si está disponible
+    // 2. Persistir en API remota (Neon PostgreSQL)
     if (this.isOnlineApi) {
       try {
-        const existing = this.getBusinessById(businessData.id);
-        if (existing) {
-          await fetch(`${this.apiBase}/businesses/${businessData.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(businessData)
-          });
-        } else {
+        const res = await fetch(`${this.apiBase}/businesses/${businessData.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(businessData)
+        });
+        
+        if (!res.ok) {
           await fetch(`${this.apiBase}/businesses`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
