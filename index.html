@@ -5,17 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Reservas CR - Directorio y Plataforma de Citas</title>
   
-  <!-- Anti-FOUT Dark Mode Theme Initialization -->
+  <!-- Forzar Modo Claro Permanente -->
   <script>
     (function() {
       try {
-        const savedTheme = localStorage.getItem('reservas_color_theme') || localStorage.getItem('reservas_theme_mode');
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
+        document.documentElement.classList.remove('dark');
+        localStorage.removeItem('reservas_color_theme');
+        localStorage.removeItem('reservas_theme_mode');
       } catch (e) {}
     })();
   </script>

@@ -234,20 +234,13 @@ class App {
     this.initTheme();
   }
 
-  // --- GESTIÓN DE TEMA DARK MODE / LIGHT MODE ---
+  // --- GESTIÓN DE TEMA (MODO CLARO PERMANENTE) ---
   initTheme() {
     try {
-      const savedTheme = (typeof localStorage !== 'undefined') ? localStorage.getItem('reservas_color_theme') : null;
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-      this.applyTheme(isDark ? 'dark' : 'light');
-
-      if (window.matchMedia) {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-          if (!localStorage.getItem('reservas_color_theme')) {
-            this.applyTheme(e.matches ? 'dark' : 'light');
-          }
-        });
+      document.documentElement.classList.remove('dark');
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('reservas_color_theme');
+        localStorage.removeItem('reservas_theme_mode');
       }
     } catch (e) {
       console.warn('Theme init notice:', e);
@@ -255,37 +248,15 @@ class App {
   }
 
   applyTheme(mode) {
-    if (mode === 'dark') {
-      document.documentElement.classList.add('dark');
-      if (typeof localStorage !== 'undefined') localStorage.setItem('reservas_color_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      if (typeof localStorage !== 'undefined') localStorage.setItem('reservas_color_theme', 'light');
-    }
-    this.updateThemeToggleButtons();
+    document.documentElement.classList.remove('dark');
   }
 
   toggleTheme() {
-    const isDark = document.documentElement.classList.contains('dark');
-    this.applyTheme(isDark ? 'light' : 'dark');
-    this.showToast(isDark ? '☀️ Modo Claro activado' : '🌙 Modo Oscuro activado', 'info');
+    this.applyTheme('light');
   }
 
   updateThemeToggleButtons() {
-    const isDark = document.documentElement.classList.contains('dark');
-    const buttons = document.querySelectorAll('.theme-toggle-btn');
-    buttons.forEach(btn => {
-      const icon = btn.querySelector('.theme-toggle-icon');
-      const text = btn.querySelector('.theme-toggle-text');
-      if (icon) {
-        icon.className = `theme-toggle-icon fas ${isDark ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs sm:text-sm`;
-      }
-      if (text) {
-        text.textContent = isDark ? 'Claro' : 'Oscuro';
-      }
-      btn.setAttribute('title', isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
-      btn.setAttribute('aria-label', isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro');
-    });
+    // No-op
   }
 
   getTodayDateString() {
@@ -1571,10 +1542,6 @@ class App {
     `;
 
     // Eventos de Navegación y Auth
-    headerContainer.querySelectorAll('.theme-toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.toggleTheme());
-    });
-
     document.getElementById('nav-logo-btn')?.addEventListener('click', () => {
       this.navigateTo('directory');
     });
@@ -16195,14 +16162,6 @@ class App {
       if (bizRegTarget) {
         e.preventDefault();
         this.renderAuthModal({ mode: 'register', role: 'business' });
-        return;
-      }
-
-      // Botón Toggle Modo Oscuro / Claro
-      const themeToggleTarget = e.target.closest('.theme-toggle-btn, #theme-toggle-btn');
-      if (themeToggleTarget) {
-        e.preventDefault();
-        this.toggleTheme();
         return;
       }
 
