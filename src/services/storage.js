@@ -691,20 +691,30 @@ class StorageService {
     
     // Normalizar límites y precios de planes para asegurar coherencia total
     return list.map(b => {
+      let sch = b.schedule;
+      if (typeof sch === 'string') {
+        try { sch = JSON.parse(sch); } catch(e) { sch = null; }
+      }
+      if (sch && typeof sch === 'object') {
+        sch.slotDuration = (parseInt(sch.slotDuration, 10) === 15) ? 15 : 30;
+        sch.days = Array.isArray(sch.days) ? sch.days.map(Number) : [1, 2, 3, 4, 5, 6];
+      }
+
       const plan = b.plan || 'basic';
+      const baseObj = { ...b, schedule: sch || b.schedule };
       if (plan === 'free') {
-        return { ...b, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
+        return { ...baseObj, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
       }
       if (plan === 'pro') {
-        return { ...b, plan: 'pro', monthlyBookingLimit: (b.monthlyBookingLimit && b.monthlyBookingLimit > 300) ? b.monthlyBookingLimit : 300, planPriceUsd: 18.00 };
+        return { ...baseObj, plan: 'pro', monthlyBookingLimit: (b.monthlyBookingLimit && b.monthlyBookingLimit > 300) ? b.monthlyBookingLimit : 300, planPriceUsd: 18.00 };
       }
       if (plan === 'basic') {
-        return { ...b, plan: 'basic', monthlyBookingLimit: 150, planPriceUsd: 10.00 };
+        return { ...baseObj, plan: 'basic', monthlyBookingLimit: 150, planPriceUsd: 10.00 };
       }
       if (plan === 'unlimited') {
-        return { ...b, plan: 'unlimited', monthlyBookingLimit: null, planPriceUsd: 35.00 };
+        return { ...baseObj, plan: 'unlimited', monthlyBookingLimit: null, planPriceUsd: 35.00 };
       }
-      return b;
+      return baseObj;
     });
   }
 
@@ -1474,9 +1484,7 @@ class StorageService {
 
     const breakStartMin = schedule.breakStart ? timeToMinutes(schedule.breakStart) : -1;
     const breakEndMin = schedule.breakEnd ? timeToMinutes(schedule.breakEnd) : -1;
-    const slotStep = (schedule.slotDuration === 15 || schedule.slotDuration === 30)
-      ? schedule.slotDuration
-      : (parseInt(schedule.slotDuration, 10) || 30);
+    const slotStep = (parseInt(schedule.slotDuration, 10) === 15) ? 15 : 30;
     const serviceDur = parseInt(serviceDurationMinutes, 10) || slotStep || 30;
 
     // Obtener equipo activo

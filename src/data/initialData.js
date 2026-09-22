@@ -288,7 +288,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '19:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-201', name: 'Manicura Rusa & Gel Semipermanente', duration: 60, price: 16000, description: 'Limpieza profunda de cutícula, nivelación y esmaltado de alta duración.' },
@@ -388,7 +388,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '12:30',
       breakEnd: '13:30',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-501', name: 'Valoración y Diagnóstico Dental', duration: 30, price: 15000, description: 'Revisión completa con cámara intraoral y presupuesto detallado.' },
@@ -420,7 +420,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-601', name: 'Diseño de Sonrisa Digital (DSD)', duration: 60, price: 45000, description: 'Estudio fotográfico y simulación digital 3D de tu nueva sonrisa.' },
@@ -454,7 +454,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '20:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-701', name: 'Masaje Relajante con Aromaterapia', duration: 60, price: 22000, description: 'Masaje suave con aceites de lavanda para liberar el estrés y tensión.' },
@@ -486,7 +486,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '21:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-801', name: 'Envoltura de Fango Volcánico', duration: 60, price: 30000, description: 'Exfoliación mineral y envoltura corporal desintoxicante.' },
@@ -520,7 +520,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '21:30',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-901', name: 'Sesión de Entrenamiento Personalizado', duration: 60, price: 12000, description: 'Rutina individual guiada por entrenador profesional según tus metas.' },
@@ -550,7 +550,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '19:00',
       breakStart: '12:00',
       breakEnd: '14:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1001', name: 'Clase Privada de Pilates Reformer', duration: 60, price: 20000, description: 'Sesión con máquina Reformer para fortalecer postura y core.' },
@@ -615,7 +615,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '17:30',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1201', name: 'Baño Spa Completo (Raza Pequeña / Mediana)', duration: 60, price: 14000, description: 'Baño con champú de avena, secado, cepillado, corte de uñas y perfume.' },
@@ -649,7 +649,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '17:30',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1301', name: 'Diagnóstico por Escáner Computarizado', duration: 30, price: 15000, description: 'Lectura de códigos de falla OBD2 y revisión de sensores.' },
@@ -680,7 +680,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1401', name: 'Lavado y Desinfección de Tapicería', duration: 120, price: 35000, description: 'Inyección-extracción profunda en asientos, alfombras y cielo raso.' },
@@ -714,7 +714,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '22:00',
       breakStart: '16:00',
       breakEnd: '17:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1501', name: 'Reserva de Mesa con Vista Panorámica', duration: 60, price: 5000, description: 'Garantiza mesa en balcón principal (monto acreditable al consumo).' },
@@ -744,7 +744,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '19:00',
       breakStart: '14:00',
       breakEnd: '15:00',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1601', name: 'Cata de Café de Especialidad (3 Regiones)', duration: 45, price: 12000, description: 'Degustación guiada de café filtrado en métodos V60, Chemex y Aeropress.' },
@@ -778,7 +778,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1701', name: 'Sesión de Retrato en Exterior / Familiar', duration: 60, price: 45000, description: '1 hora en locación, 25 fotos editadas en alta resolución y galería privada.' },
@@ -808,7 +808,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1801', name: 'Retrato Corporativo / Headshot LinkedIn', duration: 30, price: 25000, description: '3 fotos profesionales editadas listas para tu perfil ejecutivo o web.' },
@@ -842,7 +842,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '20:00',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-1901', name: 'Clase Individual de Inglés Conversacional (1 a 1)', duration: 60, price: 14000, description: 'Sesión intensiva enfocada en fluidez, vocabulario laboral y pronunciación.' },
@@ -872,7 +872,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '19:00',
       breakStart: '12:30',
       breakEnd: '13:30',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2001', name: 'Clase Individual de Piano / Teclado', duration: 45, price: 15000, description: 'Técnica, lectura de partituras y repertorio a tu gusto.' },
@@ -906,7 +906,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '17:30',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2101', name: 'Consulta Legal Inicial (Presencial o Virtual)', duration: 45, price: 30000, description: 'Revisión de caso con abogado especialista y emisión de criterio legal.' },
@@ -970,7 +970,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2301', name: 'Visita de Diagnóstico y Presupuesto', duration: 45, price: 10000, description: 'Inspección técnica en tu domicilio (monto rebajable del trabajo final).' },
@@ -1000,7 +1000,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '17:00',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 90
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2401', name: 'Lavado de Juego de Sala (3 Piezas)', duration: 90, price: 32000, description: 'Limpieza con máquina de inyección y extracción para eliminar manchas y olores.' },
@@ -1034,7 +1034,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '19:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 50
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2501', name: 'Sesión de Psicoterapia Individual (Adultos)', duration: 50, price: 32000, description: 'Espacio seguro y profesional basado en terapia cognitivo-conductual.' },
@@ -1064,7 +1064,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '17:30',
       breakStart: '12:30',
       breakEnd: '13:30',
-      slotDuration: 45
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2601', name: 'Evaluación Psicológica / Psicopedagógica Infantil', duration: 60, price: 35000, description: 'Diagnóstico de habilidades de aprendizaje y estado emocional del niño.' },
@@ -1098,7 +1098,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '20:00',
       breakStart: '14:00',
       breakEnd: '15:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2701', name: 'Cotización y Diseño Personalizado de Tatuaje', duration: 30, price: 10000, description: 'Sesión con el artista para definir tamaño, estilo y boceto digital.' },
@@ -1129,7 +1129,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '19:00',
       breakStart: '13:30',
       breakEnd: '14:30',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-2801', name: 'Microblading & Sombreado de Cejas', duration: 90, price: 55000, description: 'Diseño pelo a pelo para cejas naturales y definidas por 1 año.' },
@@ -1194,7 +1194,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '17:30',
       breakStart: '12:00',
       breakEnd: '13:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-3001', name: 'Inspección en Sitio para Cámaras / Redes WiFi', duration: 60, price: 20000, description: 'Estudio de cobertura inalámbrica y diseño de puntos de red.' },
@@ -1258,7 +1258,7 @@ export const INITIAL_BUSINESSES = [
       closeTime: '18:00',
       breakStart: '13:00',
       breakEnd: '14:00',
-      slotDuration: 60
+      slotDuration: 30
     },
     services: [
       { id: 'srv-3201', name: 'Reunión de Planificación y Asesoría de Evento', duration: 60, price: 15000, description: 'Definición de concepto, cronograma, presupuesto y selección de proveedores.' },

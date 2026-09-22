@@ -6915,7 +6915,7 @@ class App {
             </div>
 
             <!-- Intervalo de Franjas Horarias (15 min vs 30 min) -->
-            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+            <div class="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
               <div class="flex items-center justify-between">
                 <div>
                   <label class="block font-bold text-slate-800 text-xs uppercase tracking-wider">Intervalo de Turnos / Horarios</label>
@@ -6926,20 +6926,42 @@ class App {
                 </div>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <label id="slot-duration-label-15" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
-                  <input type="radio" name="slot_duration" value="15" ${currentSlotDuration === 15 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
-                  <div>
-                    <span class="block text-xs font-bold text-slate-900">Cada 15 Minutos</span>
-                    <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:15, 8:30, 8:45...</span>
+                <button 
+                  type="button" 
+                  id="slot-duration-btn-15"
+                  data-duration="15" 
+                  class="slot-duration-choice-btn flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left ${currentSlotDuration === 15 ? 'bg-blue-50/90 border-blue-600 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}"
+                >
+                  <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center ${currentSlotDuration === 15 ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'} slot-radio-circle">
+                      <div class="w-2 h-2 rounded-full bg-white ${currentSlotDuration === 15 ? 'block' : 'hidden'} slot-radio-dot"></div>
+                    </div>
+                    <div>
+                      <span class="block text-xs font-bold text-slate-900">Cada 15 Minutos</span>
+                      <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:15, 8:30, 8:45...</span>
+                    </div>
                   </div>
-                </label>
-                <label id="slot-duration-label-30" class="slot-duration-card flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-500 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}">
-                  <input type="radio" name="slot_duration" value="30" ${currentSlotDuration === 30 ? 'checked' : ''} class="text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer">
-                  <div>
-                    <span class="block text-xs font-bold text-slate-900">Cada 30 Minutos (Estándar)</span>
-                    <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:30, 9:00, 9:30...</span>
+                  <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${currentSlotDuration === 15 ? 'bg-blue-200/80 text-blue-900' : 'hidden'} slot-active-tag">Activo</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  id="slot-duration-btn-30"
+                  data-duration="30" 
+                  class="slot-duration-choice-btn flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left ${currentSlotDuration === 30 ? 'bg-blue-50/90 border-blue-600 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}"
+                >
+                  <div class="flex items-center gap-3">
+                    <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center ${currentSlotDuration === 30 ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'} slot-radio-circle">
+                      <div class="w-2 h-2 rounded-full bg-white ${currentSlotDuration === 30 ? 'block' : 'hidden'} slot-radio-dot"></div>
+                    </div>
+                    <div>
+                      <span class="block text-xs font-bold text-slate-900">Cada 30 Minutos (Estándar)</span>
+                      <span class="block text-[10px] text-slate-500">Ej: 8:00, 8:30, 9:00, 9:30...</span>
+                    </div>
                   </div>
-                </label>
+                  <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${currentSlotDuration === 30 ? 'bg-blue-200/80 text-blue-900' : 'hidden'} slot-active-tag">Activo</span>
+                </button>
+                <input type="hidden" id="selected-slot-duration-input" name="slot_duration" value="${currentSlotDuration}">
               </div>
             </div>
 
@@ -10405,42 +10427,47 @@ class App {
     });
 
     // Selector interactivo de intervalo de turnos (15 min vs 30 min)
-    const updateSlotDurationVisuals = (durationVal) => {
-      const selectedVal = parseInt(durationVal, 10);
-      const label15 = document.getElementById('slot-duration-label-15');
-      const label30 = document.getElementById('slot-duration-label-30');
-      const radio15 = document.querySelector('input[name="slot_duration"][value="15"]');
-      const radio30 = document.querySelector('input[name="slot_duration"][value="30"]');
+    document.querySelectorAll('.slot-duration-choice-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const val = parseInt(btn.getAttribute('data-duration'), 10) || 30;
+        const hiddenInput = document.getElementById('selected-slot-duration-input');
+        if (hiddenInput) hiddenInput.value = val;
 
-      if (selectedVal === 15) {
-        if (radio15) radio15.checked = true;
-        if (radio30) radio30.checked = false;
-        label15?.classList.remove('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
-        label15?.classList.add('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
-        label30?.classList.remove('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
-        label30?.classList.add('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
-      } else {
-        if (radio30) radio30.checked = true;
-        if (radio15) radio15.checked = false;
-        label30?.classList.remove('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
-        label30?.classList.add('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
-        label15?.classList.remove('bg-blue-50/90', 'border-blue-500', 'text-blue-950', 'font-bold', 'ring-2', 'ring-blue-500/20', 'shadow-xs');
-        label15?.classList.add('bg-white', 'border-slate-200', 'text-slate-700', 'hover:bg-slate-50');
-      }
-    };
+        // Actualizar visuales de los dos botones
+        document.querySelectorAll('.slot-duration-choice-btn').forEach(b => {
+          const btnVal = parseInt(b.getAttribute('data-duration'), 10);
+          const isThis = btnVal === val;
+          const circle = b.querySelector('.slot-radio-circle');
+          const dot = b.querySelector('.slot-radio-dot');
+          const tag = b.querySelector('.slot-active-tag');
 
-    document.querySelectorAll('.slot-duration-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        const radio = card.querySelector('input[name="slot_duration"]');
-        if (radio) {
-          updateSlotDurationVisuals(radio.value);
+          if (isThis) {
+            b.className = 'slot-duration-choice-btn flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left bg-blue-50/90 border-blue-600 text-blue-950 font-bold ring-2 ring-blue-500/20 shadow-xs';
+            if (circle) circle.className = 'w-5 h-5 rounded-full border-2 flex items-center justify-center border-blue-600 bg-blue-600 slot-radio-circle';
+            if (dot) { dot.classList.remove('hidden'); dot.classList.add('block'); }
+            if (tag) { tag.classList.remove('hidden'); }
+          } else {
+            b.className = 'slot-duration-choice-btn flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left bg-white border-slate-200 text-slate-700 hover:bg-slate-50';
+            if (circle) circle.className = 'w-5 h-5 rounded-full border-2 flex items-center justify-center border-slate-300 bg-white slot-radio-circle';
+            if (dot) { dot.classList.remove('block'); dot.classList.add('hidden'); }
+            if (tag) { tag.classList.add('hidden'); }
+          }
+        });
+
+        // Actualizar objeto en memoria
+        currentBiz.schedule = {
+          ...(currentBiz.schedule || {}),
+          slotDuration: val
+        };
+
+        // Guardar automáticamente para sincronización instantánea
+        try {
+          await storage.saveBusiness(currentBiz);
+          this.showToast(`⏱️ Intervalo de agenda actualizado a cada ${val} minutos.`, 'success');
+        } catch (err) {
+          console.warn('Error al auto-guardar intervalo:', err);
         }
-      });
-    });
-
-    document.querySelectorAll('input[name="slot_duration"]').forEach(radio => {
-      radio.addEventListener('change', () => {
-        updateSlotDurationVisuals(radio.value);
       });
     });
 
@@ -10452,14 +10479,14 @@ class App {
       const closeTime = document.getElementById('close-time').value;
       const breakStart = document.getElementById('break-start').value;
       const breakEnd = document.getElementById('break-end').value;
-      const slotDurationInput = document.querySelector('input[name="slot_duration"]:checked');
+      const slotDurationInput = document.getElementById('selected-slot-duration-input');
       const slotDuration = slotDurationInput ? parseInt(slotDurationInput.value, 10) : (currentBiz.schedule?.slotDuration || 30);
 
       currentBiz.schedule = {
         ...(currentBiz.schedule || {}),
-        days: selectedDays,
-        openTime,
-        closeTime,
+        days: selectedDays.length > 0 ? selectedDays : [1, 2, 3, 4, 5, 6],
+        openTime: openTime || '08:00',
+        closeTime: closeTime || '18:00',
         breakStart: breakStart || null,
         breakEnd: breakEnd || null,
         slotDuration: slotDuration === 15 ? 15 : 30
