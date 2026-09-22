@@ -16,6 +16,7 @@ import {
 } from './emailService.js';
 import { 
   sendBookingConfirmationWhatsApp, 
+  sendNewBookingAlertToBusinessWhatsApp,
   sendPreRegistrationConfirmationWhatsApp,
   getActiveMetaCredentials, 
   sendViaMetaCloudApi, 
@@ -2095,15 +2096,28 @@ app.post('/api/appointments', async (req, res) => {
               });
           }
 
-          // 2. Enviar WhatsApp de confirmación proactivo (si proporcionó teléfono y opt-in)
+          // 2. Enviar WhatsApp de confirmación proactivo al CLIENTE (si proporcionó teléfono y opt-in)
           if (optIn && a.clientPhone) {
-            console.log(`📲 [WhatsApp Auto] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
+            console.log(`📲 [WhatsApp Cliente] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
             sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
               .then(waRes => {
-                console.log(`📲 [WhatsApp Auto] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
+                console.log(`📲 [WhatsApp Cliente] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
               })
               .catch(waErr => {
-                console.error('⚠️ Error no bloqueante al enviar WhatsApp:', waErr.message);
+                console.error('⚠️ Error no bloqueante al enviar WhatsApp a cliente:', waErr.message);
+              });
+          }
+
+          // 2.1 Enviar WhatsApp de alerta de nueva reserva al COMERCIO / DUEÑO (si el negocio tiene teléfono registrado)
+          const bizPhone = business?.phone || business?.whatsapp;
+          if (bizPhone) {
+            console.log(`📲 [WhatsApp Comercio] Enviando alerta de cita #${createdAppointment.id} al teléfono del negocio ${bizPhone}...`);
+            sendNewBookingAlertToBusinessWhatsApp(createdAppointment, business, pool)
+              .then(waBizRes => {
+                console.log(`📲 [WhatsApp Comercio] Resultado cita #${createdAppointment.id}:`, waBizRes?.success ? `Entregado (${waBizRes.provider})` : `No entregado (${waBizRes?.reason || waBizRes?.error})`);
+              })
+              .catch(waBizErr => {
+                console.error('⚠️ Error no bloqueante al enviar WhatsApp al comercio:', waBizErr.message);
               });
           }
 

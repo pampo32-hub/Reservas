@@ -431,3 +431,88 @@ export async function sendPreRegistrationConfirmationWhatsApp(lead, pool = null)
 
   return { success: false, reason: 'pending_template_approval' };
 }
+
+/**
+ * Construye el texto de notificación de nueva reserva para el dueño del negocio
+ */
+export function buildBusinessNewBookingNotificationText(appointment, business) {
+  const clientName = appointment.clientName || 'Cliente';
+  const clientPhone = appointment.clientPhone || 'No especificado';
+  const clientEmail = appointment.clientEmail || 'No especificado';
+  const businessName = business?.name || 'Tu Negocio';
+  const serviceName = appointment.serviceName || 'Servicio General';
+  const dateStr = formatDateDMY(appointment.date);
+  const timeStr = formatTime12h(appointment.time);
+  const durationStr = appointment.serviceDuration ? `${appointment.serviceDuration} min` : '30 min';
+  const priceStr = formatColones(appointment.servicePrice);
+  const appointmentCode = (appointment.id || 'APT-000').toUpperCase();
+  const staffName = appointment.staffName ? `\n👤 *Especialista:* ${appointment.staffName}` : '';
+  const notesStr = appointment.notes ? `\n📝 *Notas del cliente:* "${appointment.notes}"` : '';
+
+  return `🔔 *¡Nueva Reserva Recibida!*
+
+Hola *${businessName}*, un cliente ha agendado una nueva cita en tu plataforma:
+
+👤 *Cliente:* ${clientName}
+📞 *Teléfono:* ${clientPhone}
+📧 *Correo:* ${clientEmail}
+✨ *Servicio:* ${serviceName}${staffName}
+📅 *Fecha:* ${dateStr}
+⏰ *Hora:* ${timeStr} (${durationStr})
+💰 *Total a Cobrar:* ${priceStr}
+🔖 *Código de Reserva:* #${appointmentCode}${notesStr}
+
+📲 *Ver y Administrar en tu Panel:*
+${APP_URL}/#/panel-negocio
+
+_Reservas CR • Notificación automática para comercios_ 🇨🇷`;
+}
+
+/**
+ * Envío de alerta de nueva reserva al WhatsApp del dueño del negocio
+ */
+export async function sendNewBookingAlertToBusinessWhatsApp(appointment, business, pool = null) {
+  const bizPhone = business?.phone || business?.whatsapp;
+  if (!bizPhone) {
+    console.log('ℹ️ No se envió WhatsApp al comercio: El negocio no tiene teléfono registrado.');
+    return { success: false, reason: 'no_business_phone' };
+  }
+
+  const metaRecipient = formatMetaPhone(bizPhone);
+  if (!metaRecipient) {
+    console.warn(`⚠️ Teléfono de comercio inválido para WhatsApp: ${bizPhone}`);
+    return { success: false, reason: 'invalid_business_phone' };
+  }
+
+  const messageBody = buildBusinessNewBookingNotificationText(appointment, business);
+  const metaCreds = await getActiveMetaCredentials(pool);
+
+  if (metaCreds.isConfigured) {
+    try {
+      console.log(`📲 [WhatsApp Comercio] Enviando alerta de cita #${appointment.id} al comercio +${metaRecipient}...`);
+      const result = await sendViaMetaCloudApi(metaRecipient, messageBody, metaCreds);
+      console.log(`✅ [WhatsApp Comercio] Alerta entregada al negocio con ID: ${result.messageId}`);
+      return { success: true, provider: 'meta', messageId: result.messageId };
+    } catch (metaErr) {
+      console.warn('⚠️ Error enviando WhatsApp directo a comercio con Meta:', metaErr.message);
+    }
+  }
+
+  if (twilioClient) {
+    const toTwilio = formatWhatsAppNumber(bizPhone);
+    try {
+      const message = await twilioClient.messages.create({
+        from: twilioFrom,
+        to: toTwilio,
+        body: messageBody
+      });
+      return { success: true, provider: 'twilio', sid: message.sid };
+    } catch (twilioErr) {
+      console.error('❌ Error enviando WhatsApp al comercio con Twilio:', twilioErr.message);
+      return { success: false, error: twilioErr.message };
+    }
+  }
+
+  return { success: false, reason: 'no_credentials' };
+}
+
