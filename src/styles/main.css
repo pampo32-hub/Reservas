@@ -725,6 +725,26 @@ button[id^="close-"][id$="-btn2"] * {
   cursor: default;
 }
 
+/* ==========================================================================
+   Tarjetas de Comercios - Interactividad y Clic en toda la tarjeta (Web / Móvil / Tablet)
+   ========================================================================== */
+.business-card {
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.business-card:hover {
+  transform: translateY(-4px);
+}
+
+.business-card:active {
+  transform: scale(0.985) translateY(-1px);
+}
+
 /* Custom Scrollbar in Dark Mode */
 html.dark ::-webkit-scrollbar-track {
   background: #0F172A;

@@ -1866,7 +1866,14 @@ class App {
     const isDev = Boolean(storage.getDeveloperUser());
 
     return `
-      <div class="bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md' : isPro ? 'border-amber-300 shadow-sm' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative">
+      <div 
+        class="business-card bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md' : isPro ? 'border-amber-300 shadow-sm' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative cursor-pointer"
+        data-business-id="${biz.id}"
+        data-is-blocked="${isBlocked}"
+        role="button"
+        tabindex="0"
+        title="${isBlocked ? 'Comercio suspendido' : `Ver servicios y reservar en ${this.escapeHtml(biz.name)}`}"
+      >
         <!-- Image Header -->
         <div class="relative h-52 overflow-hidden bg-slate-100">
           <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(biz.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isBlocked ? 'grayscale filter' : ''}" loading="lazy">
@@ -2327,10 +2334,47 @@ class App {
     const catalogCountText = document.getElementById('catalog-count-text');
 
     const attachCardListeners = () => {
+      // Clic en cualquier parte de la tarjeta del comercio (Foto, Nombre, Servicios, etc.)
+      document.querySelectorAll('.business-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          // Si el clic proviene de botones administrativos del dev, no navegar
+          if (e.target.closest('.card-toggle-verify-btn, .card-toggle-block-btn, .card-edit-biz-btn, .card-delete-biz-btn')) {
+            return;
+          }
+          const isBlocked = card.getAttribute('data-is-blocked') === 'true';
+          if (isBlocked) {
+            this.showToast('Este comercio se encuentra temporalmente suspendido.', 'warning');
+            return;
+          }
+          const bId = card.getAttribute('data-business-id');
+          if (bId) {
+            this.navigateTo('business-detail', { businessId: bId });
+          }
+        });
+
+        // Soporte de navegación por teclado para accesibilidad
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.target.closest('.card-toggle-verify-btn, .card-toggle-block-btn, .card-edit-biz-btn, .card-delete-biz-btn')) return;
+            e.preventDefault();
+            card.click();
+          }
+        });
+      });
+
       document.querySelectorAll('.view-biz-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const card = btn.closest('.business-card');
+          const isBlocked = (card && card.getAttribute('data-is-blocked') === 'true') || btn.disabled;
+          if (isBlocked) {
+            this.showToast('Este comercio se encuentra temporalmente suspendido.', 'warning');
+            return;
+          }
           const bId = btn.getAttribute('data-business-id');
-          this.navigateTo('business-detail', { businessId: bId });
+          if (bId) {
+            this.navigateTo('business-detail', { businessId: bId });
+          }
         });
       });
 
@@ -16186,6 +16230,28 @@ class App {
         e.preventDefault();
         this.navigateTo('directory');
         return;
+      }
+
+      // Clic global en Tarjeta de Comercio (Foto, Nombre, Servicios o botón)
+      const bizCardTarget = e.target.closest('.business-card, .view-biz-btn');
+      if (bizCardTarget) {
+        // Evitar interceptar botones administrativos del developer
+        if (e.target.closest('.card-toggle-verify-btn, .card-toggle-block-btn, .card-edit-biz-btn, .card-delete-biz-btn')) {
+          return;
+        }
+        e.preventDefault();
+        const card = bizCardTarget.classList.contains('business-card') ? bizCardTarget : bizCardTarget.closest('.business-card');
+        const bizId = bizCardTarget.getAttribute('data-business-id') || (card && card.getAttribute('data-business-id'));
+        const isBlocked = (card && card.getAttribute('data-is-blocked') === 'true') || bizCardTarget.getAttribute('data-is-blocked') === 'true';
+
+        if (isBlocked) {
+          this.showToast('Este comercio se encuentra temporalmente suspendido.', 'warning');
+          return;
+        }
+        if (bizId) {
+          this.navigateTo('business-detail', { businessId: bizId });
+          return;
+        }
       }
 
       const navLandingTarget = e.target.closest('.nav-to-landing, #nav-landing-btn, #mobile-top-landing-btn');
