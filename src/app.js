@@ -16088,7 +16088,17 @@ class App {
       }
     });
 
-    // Delegación rápida para cierre instantáneo de modales (Touch / Pointerdown / Click)
+    // Rastrear el elemento donde se inició el mousedown/touchstart para evitar que arrastrar texto cierre el modal
+    let mousedownTarget = null;
+    document.addEventListener('mousedown', (e) => {
+      mousedownTarget = e.target;
+    }, { capture: true, passive: true });
+
+    document.addEventListener('touchstart', (e) => {
+      mousedownTarget = e.target;
+    }, { capture: true, passive: true });
+
+    // Delegación rápida para cierre instantáneo de modales (Touch / Pointerdown / Click en botón X)
     const isModalCloseTrigger = (target) => {
       if (!target || !target.closest) return null;
       return target.closest(
@@ -16096,7 +16106,7 @@ class App {
       );
     };
 
-    // Respuesta táctil instantánea: al tocar la X en móviles reacciona de inmediato (0ms de retraso, sin esperar touchend o click)
+    // Respuesta táctil instantánea: al tocar la X en móviles reacciona de inmediato (0ms de retraso)
     document.addEventListener('pointerdown', (e) => {
       const closeBtn = isModalCloseTrigger(e.target);
       if (closeBtn) {
@@ -16118,7 +16128,7 @@ class App {
 
     // Delegación global de clics para modales, navegación y accesos directos
     document.addEventListener('click', (e) => {
-      // 1. Cierre instantáneo si hace clic en botón de cerrar modal
+      // 1. Cierre instantáneo si hace clic en botón de cerrar modal (X)
       const closeBtn = isModalCloseTrigger(e.target);
       if (closeBtn) {
         e.preventDefault();
@@ -16127,8 +16137,19 @@ class App {
         return;
       }
 
-      // 2. Cierre instantáneo si hace clic en el backdrop exterior del modal
+      // 2. Cierre deliberado SOLO si el clic empezó y terminó directamente en el fondo oscuro exterior
       if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
+        // Si el mousedown empezó dentro de un input, texto o formulario del modal, NO cerrar
+        if (mousedownTarget && mousedownTarget !== e.target && !mousedownTarget.classList.contains('modal-backdrop')) {
+          return;
+        }
+
+        // Si el usuario estaba arrastrando/seleccionando texto, NO cerrar
+        const selectedText = window.getSelection ? window.getSelection().toString() : '';
+        if (selectedText.length > 0) {
+          return;
+        }
+
         e.preventDefault();
         e.stopPropagation();
         this.closeCurrentModal();
