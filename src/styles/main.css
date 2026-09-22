@@ -654,10 +654,75 @@ html.dark #app-footer {
   border-top-color: #334155 !important;
 }
 
-html.dark #mobile-bottom-nav-container nav {
-  background-color: rgba(15, 23, 42, 0.95) !important;
-  border-color: #334155 !important;
-  box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+/* Barra de Navegación Móvil Inferior con Fondo Sólido / Frosted Glass */
+#mobile-bottom-nav-container > div,
+#mobile-bottom-nav-container nav,
+.mobile-bottom-nav {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+html.dark #mobile-bottom-nav-container > div,
+html.dark #mobile-bottom-nav-container nav,
+html.dark .mobile-bottom-nav {
+  background-color: rgba(15, 23, 42, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-top: 1px solid #334155 !important;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Safe Area Inset para dispositivos móviles (iPhone / Android) */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* ==========================================================================
+   Botones de Cerrar Modals (X) - Respuesta Táctil Instantánea y Tamaño Adecuado
+   ========================================================================== */
+.modal-close-btn,
+[data-close-modal],
+button[id^="close-"][id$="-btn"],
+button[id^="close-"][id$="-btn2"] {
+  min-width: 42px !important;
+  min-height: 42px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  touch-action: manipulation !important;
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: transparent !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  transition: transform 0.08s ease, background-color 0.12s ease !important;
+}
+
+.modal-close-btn:active,
+[data-close-modal]:active,
+button[id^="close-"][id$="-btn"]:active,
+button[id^="close-"][id$="-btn2"]:active {
+  transform: scale(0.88) !important;
+  opacity: 0.8 !important;
+}
+
+.modal-close-btn *,
+[data-close-modal] *,
+button[id^="close-"][id$="-btn"] *,
+button[id^="close-"][id$="-btn2"] * {
+  pointer-events: none !important;
+}
+
+/* Clic fuera del modal en el backdrop cierra el modal de inmediato */
+.modal-backdrop {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.modal-backdrop > * {
+  cursor: default;
 }
 
 /* Custom Scrollbar in Dark Mode */

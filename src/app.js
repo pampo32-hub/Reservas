@@ -1484,10 +1484,6 @@ class App {
             <button id="mobile-top-install-pwa-btn" class="pwa-install-trigger-btn px-2 py-1.5 rounded-xl text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-700 border border-blue-200/80 dark:border-slate-700 flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Instalar App en el Celular">
               <i class="fas fa-download text-blue-600 dark:text-blue-400 text-xs"></i>
             </button>
-
-            <button class="theme-toggle-btn px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center gap-1 app-touch-btn cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Cambiar modo oscuro / claro">
-              <i class="theme-toggle-icon fas ${document.documentElement.classList.contains('dark') ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs"></i>
-            </button>
           </div>
 
           <!-- 4. DERECHA: Acciones, CTA y Perfil (Desktop >= md) -->
@@ -1503,12 +1499,6 @@ class App {
             <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-2.5 lg:px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap shrink-0 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
               <i class="fas fa-mobile-alt text-blue-600 dark:text-blue-400 text-xs"></i>
               <span class="hidden lg:inline">Instalar App</span>
-            </button>
-
-            <!-- Botón Modo Oscuro / Claro (Desktop) -->
-            <button class="theme-toggle-btn px-2.5 lg:px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap shrink-0 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Cambiar a Modo Oscuro / Claro">
-              <i class="theme-toggle-icon fas ${document.documentElement.classList.contains('dark') ? 'fa-sun text-amber-400' : 'fa-moon text-slate-600'} text-xs"></i>
-              <span class="theme-toggle-text hidden xl:inline">${document.documentElement.classList.contains('dark') ? 'Claro' : 'Oscuro'}</span>
             </button>
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
@@ -1708,56 +1698,56 @@ class App {
     const gridColsClass = colCount === 4 ? 'grid-cols-4' : (colCount === 3 ? 'grid-cols-3' : 'grid-cols-2');
 
     navContainer.innerHTML = `
-      <div class="fixed bottom-0 inset-x-0 z-40 bottom-nav-blur border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-1 pb-safe md:hidden">
+      <nav class="fixed bottom-0 inset-x-0 z-40 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl border-t border-slate-200/95 dark:border-slate-800 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] dark:shadow-[0_-8px_30px_rgba(0,0,0,0.6)] px-2 pt-1.5 pb-safe md:hidden mobile-bottom-nav">
         <div class="max-w-md mx-auto grid ${gridColsClass} gap-1 text-center">
           
           <!-- 1. Explorar -->
-          <button id="mobile-nav-explore-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDirectory ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-            <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDirectory ? 'bg-blue-50 text-blue-600' : ''}">
+          <button id="mobile-nav-explore-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isDirectory ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+            <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isDirectory ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
               <i class="fas fa-compass text-base ${isDirectory ? 'scale-110' : ''}"></i>
             </div>
-            <span class="text-[10px] mt-0.5 tracking-tight">Explorar</span>
+            <span class="text-[11px] mt-0.5 tracking-tight font-bold">Explorar</span>
           </button>
 
           <!-- 2. Mis Reservas -->
-          <button id="mobile-nav-bookings-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isBookings ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-            <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isBookings ? 'bg-blue-50 text-blue-600' : ''}">
+          <button id="mobile-nav-bookings-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isBookings ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+            <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isBookings ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
               <i class="fas fa-calendar-alt text-base ${isBookings ? 'scale-110' : ''}"></i>
             </div>
-            <span class="text-[10px] mt-0.5 tracking-tight">Mis Reservas</span>
+            <span class="text-[11px] mt-0.5 tracking-tight font-bold">Mis Reservas</span>
           </button>
 
           <!-- 3. Mi Negocio (solo visible si hay negocio activo o si los accesos rápidos están habilitados) -->
           ${showBizTab ? `
-          <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isOwner ? 'text-indigo-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-            <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isOwner ? 'bg-indigo-50 text-indigo-600' : ''}">
+          <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isOwner ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+            <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isOwner ? 'bg-indigo-100/90 dark:bg-indigo-950/90 text-indigo-600 dark:text-indigo-400 shadow-2xs border border-indigo-200/60 dark:border-indigo-800/60' : 'text-slate-500 dark:text-slate-400'}">
               <i class="fas fa-store text-base ${isOwner ? 'scale-110' : ''}"></i>
             </div>
-            <span class="text-[10px] mt-0.5 tracking-tight">${bizUser ? 'Mi Panel' : 'Soy Negocio'}</span>
+            <span class="text-[11px] mt-0.5 tracking-tight font-bold">${bizUser ? 'Mi Panel' : 'Soy Negocio'}</span>
           </button>
           ` : ''}
 
           <!-- 4. Cuenta / Dev (solo si hay sesión iniciada o si SHOW_LOGIN_BUTTON está activo) -->
           ${showAccountTab ? `
             ${devUser ? `
-              <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-500 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-                <div class="w-8 h-8 flex items-center justify-center rounded-xl ${isDev ? 'bg-amber-100 text-amber-600' : ''}">
+              <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-600 dark:text-amber-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+                <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isDev ? 'bg-amber-100/90 dark:bg-amber-950/90 text-amber-700 dark:text-amber-400 shadow-2xs border border-amber-200/60 dark:border-amber-800/60' : 'text-slate-500 dark:text-slate-400'}">
                   <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
                 </div>
-                <span class="text-[10px] mt-0.5 tracking-tight">Developer</span>
+                <span class="text-[11px] mt-0.5 tracking-tight font-bold">Developer</span>
               </button>
             ` : `
-              <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1.5 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 font-extrabold' : 'text-slate-500 hover:text-slate-800 font-medium'}">
-                <div class="w-8 h-8 flex items-center justify-center rounded-xl ${clientUser || bizUser ? 'bg-blue-50 text-blue-600' : ''}">
+              <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+                <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${clientUser || bizUser ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
                   <i class="fas fa-user-circle text-base"></i>
                 </div>
-                <span class="text-[10px] mt-0.5 tracking-tight">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
+                <span class="text-[11px] mt-0.5 tracking-tight font-bold">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
               </button>
             `}
           ` : ''}
 
         </div>
-      </div>
+      </nav>
     `;
 
     // Eventos de la barra inferior móvil
@@ -4191,8 +4181,8 @@ class App {
               <span class="text-xs uppercase tracking-wider text-blue-200 font-bold">Reserva de Turno</span>
               <h3 class="text-xl font-bold">${biz.name}</h3>
             </div>
-            <button id="close-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
-              <i class="fas fa-times"></i>
+            <button id="close-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar ventana">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
           </div>
 
@@ -4909,8 +4899,8 @@ class App {
                 <h3 class="text-xl font-black mt-0.5">${biz.name}</h3>
                 <span class="text-xs text-blue-100 font-mono">CÓDIGO RESERVA: #${appointment.id.toUpperCase()}</span>
               </div>
-              <button id="close-reschedule-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors">
-                <i class="fas fa-times"></i>
+              <button id="close-reschedule-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar ventana">
+                <i class="fas fa-times text-base pointer-events-none"></i>
               </button>
             </div>
 
@@ -5383,8 +5373,8 @@ class App {
                 <p class="text-xs text-slate-400">Actualiza tus datos de contacto</p>
               </div>
             </div>
-            <button id="close-profile-modal-btn" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
-              <i class="fas fa-times text-sm"></i>
+            <button id="close-profile-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 active:scale-90 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer" data-close-modal="true" title="Cerrar perfil">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
           </div>
 
@@ -7418,8 +7408,8 @@ class App {
           
           <!-- Header -->
           <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative shrink-0 border-b border-slate-800">
-            <button id="close-apt-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-apt-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
             
             <div class="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -9157,7 +9147,6 @@ class App {
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
           <!-- Header -->
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6
           <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6 text-white flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg">
@@ -9168,15 +9157,11 @@ class App {
                 <h3 class="text-xl font-bold">${isEdit ? 'Editar Especialista' : 'Nuevo Especialista'}</h3>
               </div>
             </div>
-            <button id="close-staff-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-
-            <button id="close-staff-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
-              <i class="fas fa-times"></i>
+            <button id="close-staff-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
-          </
-... [truncated for diff preview]
           </div>
 
-          <!-- Fo
           <!-- Form Body -->
           <form id="staff-form" class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
             <!-- Nombre y Cargo -->
@@ -9799,8 +9784,8 @@ class App {
                 <h3 class="text-base font-black">Reserva #${apt.id.toUpperCase()}</h3>
               </div>
             </div>
-            <button id="close-booked-slot-modal-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors cursor-pointer">
-              <i class="fas fa-times"></i>
+            <button id="close-booked-slot-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
           </div>
 
@@ -12706,8 +12691,8 @@ class App {
                 <span class="text-xs text-rose-300">Acción permanente de base de datos</span>
               </div>
             </div>
-            <button id="dev-cleanup-modal-close-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors cursor-pointer">
-              <i class="fas fa-times text-sm"></i>
+            <button id="dev-cleanup-modal-close-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 text-slate-300 flex items-center justify-center transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
           </div>
 
@@ -12794,8 +12779,8 @@ class App {
                 </h3>
               </div>
             </div>
-            <button id="close-auth-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-sm"></i>
+            <button id="close-auth-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar ventana">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
           </div>
 
@@ -13846,8 +13831,8 @@ class App {
           
           <!-- Header del Modal -->
           <div class="p-5 sm:p-6 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white relative shrink-0 border-b border-indigo-900/50">
-            <button id="close-prereg-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-prereg-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
             
             <div class="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -14153,8 +14138,8 @@ class App {
               <h3 class="text-base sm:text-xl font-black">Elige el plan ideal para tu comercio</h3>
               <p class="text-xs text-slate-300 hidden sm:block">Asegura tu precio de preventa con descuento especial o comienza 100% gratis de por vida.</p>
             </div>
-            <button id="close-plans-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-plans-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
           </div>
 
@@ -14344,8 +14329,8 @@ class App {
           
           <!-- Header -->
           <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white relative border-b border-blue-900/40 shrink-0">
-            <button id="close-sinpe-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-sinpe-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30 animate-pulse">
               <i class="fas fa-shield-alt"></i> Verificación Automática en Tiempo Real
@@ -14680,8 +14665,8 @@ class App {
           
           <!-- Header -->
           <div class="p-6 bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white relative border-b border-blue-900/50">
-            <button id="close-paypal-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-paypal-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30">
               <i class="fab fa-paypal text-blue-400"></i> Pasarela de Pago Seguro
@@ -14927,8 +14912,8 @@ class App {
                 <h3 class="text-base sm:text-lg font-black text-white">Modificar Datos del Negocio</h3>
               </div>
             </div>
-            <button id="close-edit-biz-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-edit-biz-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
           </div>
 
@@ -15230,8 +15215,8 @@ class App {
                 <h3 class="text-lg font-black text-slate-900">Modificar Pre-Registro</h3>
               </div>
             </div>
-            <button id="close-edit-prereg-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-edit-prereg-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 flex items-center justify-center text-slate-500 cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
           </div>
 
@@ -15391,8 +15376,8 @@ class App {
                 <h3 class="text-lg font-black text-slate-900">Modificar Usuario Cliente</h3>
               </div>
             </div>
-            <button id="close-edit-client-modal-btn" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-edit-client-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-90 flex items-center justify-center text-slate-500 cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
           </div>
 
@@ -15509,8 +15494,8 @@ class App {
                 </span>
               </div>
             </div>
-            <button id="close-forgot-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-400 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-forgot-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-400 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
           </div>
 
@@ -15922,8 +15907,8 @@ class App {
                 <span class="text-[11px] font-bold text-emerald-700">Plan Gratis: Servicio ${(biz?.services?.length || 0) + 1} de 5</span>
               ` : ''}
             </div>
-            <button id="close-srv-modal-btn" class="text-slate-400 hover:text-slate-600 cursor-pointer">
-              <i class="fas fa-times text-lg"></i>
+            <button id="close-srv-modal-btn" class="modal-close-btn w-10 h-10 rounded-full hover:bg-slate-100 active:scale-90 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
           </div>
 
@@ -16011,8 +15996,8 @@ class App {
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 p-6">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-bold text-slate-900">Editar Servicio</h3>
-            <button id="close-edit-srv-btn" class="text-slate-400 hover:text-slate-600">
-              <i class="fas fa-times text-lg"></i>
+            <button id="close-edit-srv-btn" class="modal-close-btn w-10 h-10 rounded-full hover:bg-slate-100 active:scale-90 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
             </button>
           </div>
 
@@ -16071,6 +16056,15 @@ class App {
     });
   }
 
+  // --- CIERRE CENTRALIZADO DE MODALES ---
+  closeCurrentModal() {
+    this.closeBookingModal();
+    const modalContainer = document.getElementById('modal-container');
+    if (modalContainer) modalContainer.innerHTML = '';
+    const legalContainer = document.getElementById('legal-modal-container');
+    if (legalContainer) legalContainer.innerHTML = '';
+  }
+
   // --- EVENTOS GLOBALES ---
   setupGlobalEvents() {
     if (this.globalEventsSetup) return;
@@ -16079,11 +16073,27 @@ class App {
     window.addEventListener('keydown', (e) => {
       // Escape para cerrar cualquier modal
       if (e.key === 'Escape') {
-        this.closeBookingModal();
-        const modalContainer = document.getElementById('modal-container');
-        if (modalContainer) modalContainer.innerHTML = '';
+        this.closeCurrentModal();
       }
     });
+
+    // Delegación rápida para cierre instantáneo de modales (Touch / Pointerdown / Click)
+    const isModalCloseTrigger = (target) => {
+      if (!target || !target.closest) return null;
+      return target.closest(
+        '.modal-close-btn, [data-close-modal], #close-modal-btn, #close-auth-modal-btn, #close-profile-modal-btn, #close-apt-modal-btn, #close-reschedule-modal-btn, #close-staff-modal-btn, #close-booked-slot-modal-btn, #close-booked-slot-modal-btn2, #close-prereg-modal-btn, #close-plans-modal-btn, #close-sinpe-modal-btn, #close-sinpe-footer-btn, #close-paypal-modal-btn, #close-paypal-success-btn, #close-edit-biz-modal-btn, #close-edit-prereg-modal-btn, #close-edit-client-modal-btn, #close-forgot-modal-btn, #close-srv-limit-btn, #close-staff-limit-btn, #close-srv-modal-btn, #close-edit-srv-btn, #close-faq-modal-btn, #close-faq-bottom-btn, #close-legal-modal-btn, #close-pwa-modal-btn, #modal-close-bottom-btn, button[id^="close-"][id$="-btn"], button[id^="close-"][id$="-btn2"]'
+      );
+    };
+
+    // Respuesta táctil instantánea: al tocar la X en móviles reacciona de inmediato (0ms de retraso, sin esperar touchend o click)
+    document.addEventListener('pointerdown', (e) => {
+      const closeBtn = isModalCloseTrigger(e.target);
+      if (closeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeCurrentModal();
+      }
+    }, { passive: false });
 
     // PWA Install Prompt Listener
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -16097,6 +16107,23 @@ class App {
 
     // Delegación global de clics para modales, navegación y accesos directos
     document.addEventListener('click', (e) => {
+      // 1. Cierre instantáneo si hace clic en botón de cerrar modal
+      const closeBtn = isModalCloseTrigger(e.target);
+      if (closeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeCurrentModal();
+        return;
+      }
+
+      // 2. Cierre instantáneo si hace clic en el backdrop exterior del modal
+      if (e.target && e.target.classList && e.target.classList.contains('modal-backdrop')) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.closeCurrentModal();
+        return;
+      }
+
       // FAQ Modal
       const faqTarget = e.target.closest('.open-faq-modal, #footer-faq-btn');
       if (faqTarget) {
@@ -16286,8 +16313,8 @@ class App {
           
           <!-- Header -->
           <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-blue-950 text-white relative shrink-0 border-b border-slate-800">
-            <button id="close-faq-modal-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer">
-              <i class="fas fa-times text-xs"></i>
+            <button id="close-faq-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
             </button>
             
             <div class="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -16359,8 +16386,8 @@ class App {
             
             <!-- Header -->
             <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white relative shrink-0 border-b border-slate-800">
-              <button id="close-legal-modal-btn" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer" title="Cerrar modal">
-                <i class="fas fa-times text-sm"></i>
+              <button id="close-legal-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar modal">
+                <i class="fas fa-times text-sm pointer-events-none"></i>
               </button>
               
               <div class="flex items-center gap-2 mb-2 flex-wrap">
