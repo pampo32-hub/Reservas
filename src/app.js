@@ -1,13 +1,13 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js';
 
-// FLAGS DE LA PLATAFORMA: Registro, login y suscripciones activas
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
+const SHOW_SOCIAL_AUTH_BUTTONS = false; // Ocultar inicios de sesión y registros con Google, Hotmail y Apple (fácilmente reactivable)
 
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
@@ -13036,6 +13036,7 @@ class App {
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
             ${mode === 'login' && role === 'client' ? `
               <!-- FORM 1: LOGIN CLIENTE (GOOGLE, MICROSOFT, APPLE O CONTRASEÑA) -->
+              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
               <div class="space-y-2">
                 <!-- Botón Google -->
                 <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
@@ -13072,6 +13073,7 @@ class App {
                 <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold">o con tu contraseña</span>
                 <div class="flex-grow border-t border-slate-200"></div>
               </div>
+              ` : ''}
               
               <div id="cli-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
 
@@ -13100,6 +13102,7 @@ class App {
 
             ${mode === 'login' && role === 'business' ? `
               <!-- FORM 2: LOGIN NEGOCIO (GOOGLE, MICROSOFT, APPLE O CORREO Y CONTRASEÑA) -->
+              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
               <div class="space-y-2 mb-3">
                 <!-- Botón Google -->
                 <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
@@ -13136,6 +13139,7 @@ class App {
                 <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold">o con tu correo y contraseña</span>
                 <div class="flex-grow border-t border-slate-200"></div>
               </div>
+              ` : ''}
               
               <div id="biz-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
 
@@ -13164,6 +13168,7 @@ class App {
 
             ${mode === 'register' && role === 'client' ? `
               <!-- FORM 3: REGISTRO CLIENTE (GOOGLE, MICROSOFT, APPLE O MANUAL) -->
+              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
               <div class="space-y-2 mb-3">
                 <!-- Botón Google -->
                 <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
@@ -13200,6 +13205,7 @@ class App {
                 <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold">o crea tu cuenta manual</span>
                 <div class="flex-grow border-t border-slate-200"></div>
               </div>
+              ` : ''}
               
               <form id="auth-client-reg-form" class="space-y-4 text-xs sm:text-sm">
                 <div>
@@ -13275,6 +13281,7 @@ class App {
 
             ${mode === 'register' && role === 'business' ? `
               <!-- FORM 4: REGISTRO NUEVO NEGOCIO (GOOGLE, MICROSOFT, APPLE O MANUAL) -->
+              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
               <div class="space-y-2 mb-3">
                 <!-- Botón Google -->
                 <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
@@ -13311,6 +13318,7 @@ class App {
                 <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold">o completa el registro manual</span>
                 <div class="flex-grow border-t border-slate-200"></div>
               </div>
+              ` : ''}
 
               <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
                 
