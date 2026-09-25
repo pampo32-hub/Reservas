@@ -2327,7 +2327,7 @@ class App {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
             <!-- Paso 1 -->
             <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-300 transition-all group relative overflow-hidden">
-              <div class="absolute top-4 right-4 text-3xl font-black text-slate-100 group-hover:text-blue-50 transition-colors pointer-events-none">01</div>
+              <div class="absolute top-4 right-4 text-3xl font-black text-slate-200 group-hover:text-blue-600 group-hover:scale-110 origin-top-right transition-all duration-300 pointer-events-none select-none">01</div>
               <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-2xs">
                 <i class="fas fa-search-location"></i>
               </div>
@@ -2339,12 +2339,12 @@ class App {
             </div>
 
             <!-- Paso 2 -->
-            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all group relative overflow-hidden">
-              <div class="absolute top-4 right-4 text-3xl font-black text-slate-100 group-hover:text-indigo-50 transition-colors pointer-events-none">02</div>
-              <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-2xs">
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-300 transition-all group relative overflow-hidden">
+              <div class="absolute top-4 right-4 text-3xl font-black text-slate-200 group-hover:text-blue-600 group-hover:scale-110 origin-top-right transition-all duration-300 pointer-events-none select-none">02</div>
+              <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-2xs">
                 <i class="fas fa-calendar-check"></i>
               </div>
-              <span class="text-[11px] font-black text-indigo-600 uppercase tracking-wider block mb-1">Paso 2</span>
+              <span class="text-[11px] font-black text-blue-600 uppercase tracking-wider block mb-1">Paso 2</span>
               <h3 class="text-base font-extrabold text-slate-900 mb-1.5">Elige Turno y Especialista</h3>
               <p class="text-xs text-slate-600 leading-relaxed">
                 Visualiza la agenda en vivo 24/7. Selecciona el día, la hora exacta disponible y con cuál profesional del establecimiento prefieres atenderte.
@@ -2352,12 +2352,12 @@ class App {
             </div>
 
             <!-- Paso 3 -->
-            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all group relative overflow-hidden">
-              <div class="absolute top-4 right-4 text-3xl font-black text-slate-100 group-hover:text-emerald-50 transition-colors pointer-events-none">03</div>
-              <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-2xs">
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-300 transition-all group relative overflow-hidden">
+              <div class="absolute top-4 right-4 text-3xl font-black text-slate-200 group-hover:text-blue-600 group-hover:scale-110 origin-top-right transition-all duration-300 pointer-events-none select-none">03</div>
+              <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-2xs">
                 <i class="fab fa-whatsapp"></i>
               </div>
-              <span class="text-[11px] font-black text-emerald-600 uppercase tracking-wider block mb-1">Paso 3</span>
+              <span class="text-[11px] font-black text-blue-600 uppercase tracking-wider block mb-1">Paso 3</span>
               <h3 class="text-base font-extrabold text-slate-900 mb-1.5">Confirmación a tu WhatsApp</h3>
               <p class="text-xs text-slate-600 leading-relaxed">
                 ¡Tu cita queda confirmada sin esperas! Recibe el comprobante y recordatorios directos a tu WhatsApp, y añade el turno a Google Calendar con 1 clic.
