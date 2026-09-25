@@ -1406,37 +1406,37 @@ class App {
 
     headerContainer.innerHTML = `
       <header class="sticky top-0 z-40 w-full glass-header border-b border-slate-200/80 dark:border-slate-800 shadow-xs backdrop-blur-md bg-white/95 dark:bg-slate-900/95 transition-colors">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[4rem] sm:min-h-[4.5rem] py-2 flex items-center justify-between gap-2 lg:gap-4">
+        <div class="w-full max-w-[1440px] mx-auto px-3 sm:px-4 xl:px-8 min-h-[3.75rem] sm:min-h-[4.25rem] py-1.5 flex items-center justify-between gap-1.5 sm:gap-2 xl:gap-3">
           
           <!-- 1. IZQUIERDA: Logo & Marca -->
-          <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn shrink-0" id="nav-logo-btn" title="Reservas CR">
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
+          <div class="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group app-touch-btn shrink-0" id="nav-logo-btn" title="Reservas CR">
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
               <img src="/src/assets/reservas_cr_clean_badge_1.png?v=5" alt="Reservas CR Logo" class="w-full h-full object-cover rounded-full" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
             </div>
             <div class="shrink-0 flex flex-col justify-center">
-              <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none">Reservas <span class="text-blue-600">CR</span></span>
-              <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-none mt-1">Directorio & Reservas Costa Rica</span>
+              <span class="font-black text-base sm:text-lg xl:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none">Reservas <span class="text-blue-600">CR</span></span>
+              <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium hidden 2xl:block leading-none mt-1">Directorio & Reservas Costa Rica</span>
             </div>
           </div>
 
           <!-- 2. CENTRO: Navegación Principal Centrada (Desktop) -->
-          <nav class="hidden md:flex items-center justify-center gap-1 lg:gap-2 flex-1 px-2">
+          <nav class="hidden lg:flex items-center justify-center gap-1 xl:gap-2 px-1 xl:px-2">
             <!-- Explorar -->
-            <button id="nav-directory-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-extrabold shadow-2xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}">
+            <button id="nav-directory-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${this.currentView === 'directory' || this.currentView === 'business-detail' ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 font-extrabold shadow-2xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'}">
               <i class="fas fa-compass text-blue-600 dark:text-blue-400"></i>
               <span>Explorar</span>
             </button>
 
             <!-- ¿Tienes un Negocio? -->
-            <button id="nav-landing-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${this.currentView === 'business-landing' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-extrabold shadow-2xs' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Conoce la plataforma para tu negocio">
+            <button id="nav-landing-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${this.currentView === 'business-landing' ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-extrabold shadow-2xs' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'}" title="Conoce la plataforma para tu negocio">
               <i class="fas fa-store text-indigo-600 dark:text-indigo-400"></i>
-              <span>¿Tienes un Negocio?</span>
+              <span class="hidden 2xl:inline">¿Tienes un Negocio?</span><span class="inline 2xl:hidden">¿Negocio?</span>
             </button>
 
             <!-- Planes y Precios -->
-            <button id="nav-plans-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" title="Ver Planes de Suscripción">
+            <button id="nav-plans-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" title="Ver Planes de Suscripción">
               <i class="fas fa-crown text-amber-500"></i>
-              <span>Planes & Precios</span>
+              <span class="hidden 2xl:inline">Planes & Precios</span><span class="inline 2xl:hidden">Planes</span>
             </button>
           </nav>
 
@@ -1466,7 +1466,7 @@ class App {
             ${!clientUser && !bizUser && !devUser ? `
               <button id="mobile-top-prereg-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis">
                 <i class="fas fa-gift text-blue-200 text-xs"></i>
-                <span>15 Días Gratis</span>
+                <span>15 Días</span>
               </button>
 
               <button id="mobile-top-landing-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 border border-blue-500/30 shadow-xs flex items-center gap-1 app-touch-btn shrink-0 cursor-pointer whitespace-nowrap" title="Para Negocios">
@@ -1481,24 +1481,24 @@ class App {
           </div>
 
           <!-- 4. DERECHA: Acciones, CTA y Perfil (Desktop >= md) -->
-          <div class="hidden md:flex items-center gap-2 lg:gap-2.5 shrink-0 justify-end">
+          <div class="hidden md:flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 shrink-0 justify-end">
             
             <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
-            <button id="nav-prereg-btn" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
+            <button id="nav-prereg-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
               <i class="fas fa-gift text-blue-200 text-xs"></i>
-              <span>15 Días Gratis</span>
+              <span class="hidden 2xl:inline">15 Días Gratis</span><span class="inline 2xl:hidden">15 Días</span>
             </button>
 
             <!-- Instalar PWA Desktop -->
-            <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-2.5 lg:px-3 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap shrink-0 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
+            <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap shrink-0 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
               <i class="fas fa-mobile-alt text-blue-600 dark:text-blue-400 text-xs"></i>
-              <span class="hidden lg:inline">Instalar App</span>
+              <span class="hidden 2xl:inline">Instalar App</span>
             </button>
 
             <!-- 0. SI EL DEVELOPER ESTÁ LOGUEADO -->
             ${devUser ? `
               <div class="flex items-center gap-1 bg-slate-900 text-white p-1 rounded-xl border border-slate-700 shadow-md animate-fade-in shrink-0 whitespace-nowrap">
-                <button id="nav-dev-dashboard-btn" class="px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all whitespace-nowrap ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
+                <button id="nav-dev-dashboard-btn" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-black tracking-wide flex items-center gap-1.5 transition-all whitespace-nowrap ${this.currentView === 'developer-dashboard' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-amber-400 hover:bg-slate-800'}">
                   <i class="fas fa-shield-alt text-xs"></i>
                   <span>DEV</span>
                 </button>
@@ -1511,10 +1511,10 @@ class App {
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
             ${clientUser && !devUser ? `
               <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 whitespace-nowrap border border-slate-200/80 dark:border-slate-700">
-                <button id="nav-client-bookings-btn" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'my-client-bookings' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400' : ''}">
+                <button id="nav-client-bookings-btn" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'my-client-bookings' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400' : ''}">
                   <i class="fas fa-user-circle text-blue-600 dark:text-blue-400 text-sm"></i>
-                  <span class="max-w-[100px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mi Perfil'}</span>
-                  <span class="hidden xl:inline text-[10px] text-slate-400">(Mis Reservas)</span>
+                  <span class="max-w-[85px] xl:max-w-[110px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mi Perfil'}</span>
+                  <span class="hidden 2xl:inline text-[10px] text-slate-400">(Mis Reservas)</span>
                 </button>
                 <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg shrink-0" title="Cerrar sesión de cliente">
                   <i class="fas fa-sign-out-alt text-xs"></i>
@@ -1525,9 +1525,9 @@ class App {
             <!-- 2. SI EL NEGOCIO ESTÁ LOGUEADO -->
             ${bizUser && !devUser ? `
               <div class="flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-800 p-1 rounded-xl shrink-0 whitespace-nowrap">
-                <button id="nav-biz-dashboard-btn" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 dark:text-indigo-200 hover:bg-white dark:hover:bg-indigo-900 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
+                <button id="nav-biz-dashboard-btn" class="px-2.5 xl:px-3.5 py-1.5 rounded-lg text-xs font-bold text-indigo-900 dark:text-indigo-200 hover:bg-white dark:hover:bg-indigo-900 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'owner-dashboard' ? 'bg-indigo-600 text-white shadow-xs' : ''}">
                   <i class="fas fa-store text-xs ${this.currentView === 'owner-dashboard' ? 'text-white' : 'text-indigo-600 dark:text-indigo-400'}"></i>
-                  <span class="max-w-[120px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
+                  <span class="max-w-[95px] xl:max-w-[120px] truncate">${activeBiz ? activeBiz.name : 'Mi Negocio'}</span>
                 </button>
                 <button id="nav-biz-logout-btn" class="p-1.5 text-indigo-400 hover:text-rose-600 rounded-lg shrink-0" title="Cerrar sesión de negocio">
                   <i class="fas fa-sign-out-alt text-xs"></i>
@@ -1538,14 +1538,14 @@ class App {
             <!-- 3. BOTONES INICIAR SESIÓN Y REGISTRARSE (CUANDO NO HAY SESIÓN ACTIVA) -->
             ${!clientUser && !bizUser && !devUser ? `
               ${SHOW_LOGIN_BUTTON ? `
-              <button id="nav-login-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer">
+              <button id="nav-login-btn" class="px-2.5 sm:px-3 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-xs flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer">
                 <i class="fas fa-sign-in-alt text-blue-600 dark:text-blue-400"></i>
                 <span>Iniciar Sesión</span>
               </button>
               ` : ''}
 
               ${REGISTRATION_ENABLED ? `
-              <button id="nav-register-btn" class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer">
+              <button id="nav-register-btn" class="px-3 sm:px-3.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer">
                 <i class="fas fa-user-plus"></i>
                 <span>Registrarse</span>
               </button>
@@ -1554,7 +1554,7 @@ class App {
 
             <!-- Acceso adicional si cliente logueado quiere entrar como negocio -->
             ${clientUser && !bizUser && !devUser && SHOW_BIZ_SHORTCUTS ? `
-              <button id="nav-biz-extra-btn" class="px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-indigo-200/60 dark:border-indigo-800 hidden sm:flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer" title="Acceso al panel de negocio">
+              <button id="nav-biz-extra-btn" class="px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950 hover:bg-indigo-100 dark:hover:bg-indigo-900 border border-indigo-200/60 dark:border-indigo-800 hidden sm:flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0 cursor-pointer" title="Acceso al panel de negocio">
                 <i class="fas fa-store text-indigo-600 dark:text-indigo-400"></i>
                 <span>Soy Negocio</span>
               </button>
@@ -2097,20 +2097,20 @@ class App {
       <div class="animate-fade-in pb-20">
         <!-- 1. Banner Principal: Acceso Anticipado / Cupos de Prelanzamiento -->
         ${SHOW_PREREGISTER_BANNER ? `
-        <section class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-7 px-5 sm:py-9 sm:px-9 shadow-2xl border border-blue-500/30">
+        <section class="max-w-6xl mx-auto px-3 sm:px-6 pt-3 sm:pt-4 pb-2">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 text-white py-5 px-4 sm:py-6 sm:px-7 lg:py-7 lg:px-8 shadow-2xl border border-blue-500/30">
             <!-- Luces de Fondo -->
             <div class="absolute -top-24 -right-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
             <div class="absolute -bottom-24 -left-24 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-center">
               
               <!-- Columna Principal de Texto e Incentivos -->
-              <div class="lg:col-span-8 space-y-4 text-left">
+              <div class="lg:col-span-8 space-y-3 sm:space-y-3.5 text-left">
                 
                 <!-- Badges Superiores -->
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
+                  <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
                     <span><i class="fas fa-rocket text-blue-400 mr-1.5"></i>PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA</span>
                   </span>
@@ -2120,7 +2120,7 @@ class App {
                 </div>
 
                 <!-- Titular de Impacto -->
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                <h2 class="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight">
                   ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
                 </h2>
                 
@@ -2129,50 +2129,50 @@ class App {
                 </p>
 
                 <!-- Beneficios Destacados -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 pt-1 text-xs">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-2.5 sm:p-3 rounded-2xl border border-blue-500/30 shadow-xs">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-xs sm:text-sm">
                       <i class="fas fa-gift"></i>
                     </div>
                     <div>
-                      <span class="text-white font-black block">15 Días Gratis</span>
-                      <span class="text-slate-300 text-[11px]">A partir del día de estreno</span>
+                      <span class="text-white font-black block text-xs">15 Días Gratis</span>
+                      <span class="text-slate-300 text-[10px] sm:text-[11px]">A partir del día de estreno</span>
                     </div>
                   </div>
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-2.5 sm:p-3 rounded-2xl border border-blue-500/30 shadow-xs">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-xs sm:text-sm">
                       <i class="fas fa-shield-alt"></i>
                     </div>
                     <div>
-                      <span class="text-white font-black block">Cero Riesgo</span>
-                      <span class="text-slate-300 text-[11px]">Sin tarjeta ni compromisos</span>
+                      <span class="text-white font-black block text-xs">Cero Riesgo</span>
+                      <span class="text-slate-300 text-[10px] sm:text-[11px]">Sin tarjeta ni compromisos</span>
                     </div>
                   </div>
-                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-3 rounded-2xl border border-blue-500/30 shadow-xs">
-                    <div class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-sm">
+                  <div class="flex items-start gap-2.5 bg-slate-900/80 p-2.5 sm:p-3 rounded-2xl border border-blue-500/30 shadow-xs">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 text-xs sm:text-sm">
                       <i class="fab fa-whatsapp"></i>
                     </div>
                     <div>
-                      <span class="text-white font-black block">Reservas 24/7</span>
-                      <span class="text-slate-300 text-[11px]">WhatsApp y catálogo listo</span>
+                      <span class="text-white font-black block text-xs">Reservas 24/7</span>
+                      <span class="text-slate-300 text-[10px] sm:text-[11px]">WhatsApp y catálogo listo</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- CTA Principal Pre-Registro -->
-                <div class="pt-2 flex flex-wrap items-center gap-3">
+                <div class="pt-1.5 flex flex-wrap items-center gap-2.5 sm:gap-3">
                   <button 
                     id="banner-prereg-btn" 
-                    class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                    class="px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
-                    <i class="fas fa-gift text-blue-300 text-base"></i>
+                    <i class="fas fa-gift text-blue-300 text-sm sm:text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
                   <button 
                     id="banner-view-plans-btn" 
-                    class="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+                    class="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
                   >
-                    <i class="fas fa-tags text-blue-300"></i>
+                    <i class="fas fa-tags text-blue-300 text-xs sm:text-sm"></i>
                     <span>Ver Planes & Precios</span>
                   </button>
                 </div>
@@ -2181,10 +2181,10 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
-                <div class="w-full max-w-[290px] bg-slate-900/95 rounded-3xl p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3.5">
-                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div class="w-full max-w-[270px] sm:max-w-[290px] bg-slate-900/95 rounded-3xl p-4 sm:p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3">
+                  <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
-                      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
+                      <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
                         <i class="fas fa-store"></i>
                       </div>
                       <div>
@@ -2192,35 +2192,35 @@ class App {
                         <p class="text-[10px] text-blue-300 font-medium mt-0.5">reservascr.app</p>
                       </div>
                     </div>
-                    <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
+                    <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black border border-blue-400/40">Preventa</span>
                   </div>
 
                   <div class="space-y-2 text-xs">
-                    <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
+                    <div class="p-2 sm:p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-calendar-check text-blue-400 text-xs"></i>
-                        <span class="text-slate-200 font-medium">Reservas Online</span>
+                        <span class="text-slate-200 font-medium text-[11px] sm:text-xs">Reservas Online</span>
                       </div>
-                      <span class="text-blue-400 font-bold text-[11px]">24/7</span>
+                      <span class="text-blue-400 font-bold text-[10px] sm:text-[11px]">24/7</span>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
+                    <div class="p-2 sm:p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <i class="fab fa-whatsapp text-blue-400 text-xs"></i>
-                        <span class="text-slate-200 font-medium">WhatsApp Auto</span>
+                        <span class="text-slate-200 font-medium text-[11px] sm:text-xs">WhatsApp Auto</span>
                       </div>
                       <span class="text-slate-300 text-[10px]">Instantáneo</span>
                     </div>
-                    <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
+                    <div class="p-2 sm:p-2.5 rounded-xl bg-slate-800/90 border border-slate-700/60 flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-shield-alt text-blue-400 text-xs"></i>
-                        <span class="text-slate-200 font-medium">Tarjeta requerida</span>
+                        <span class="text-slate-200 font-medium text-[11px] sm:text-xs">Tarjeta requerida</span>
                       </div>
-                      <span class="text-blue-300 font-black text-[11px]">NO (Gratis)</span>
+                      <span class="text-blue-300 font-black text-[10px] sm:text-[11px]">NO (Gratis)</span>
                     </div>
                   </div>
 
-                  <div class="py-2.5 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-xs font-black text-blue-300 shadow-xs">
-                    <i class="fas fa-gift text-sm text-blue-400"></i>
+                  <div class="py-2 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black text-blue-300 shadow-xs">
+                    <i class="fas fa-gift text-xs sm:text-sm text-blue-400"></i>
                     <span>15 DÍAS GRATIS AL ESTRENO</span>
                   </div>
                 </div>
