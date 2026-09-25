@@ -76,6 +76,8 @@ app.use((req, res, next) => {
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/src', express.static(path.join(__dirname, 'src')));
+app.use(['/directorio/src', '*/src'], express.static(path.join(__dirname, 'src')));
 
 // Rutas directas para el Manual de Usuario de Comercios
 app.get(['/manual-comercios-pdf', '/Manual_de_Usuario_Comercios_Reservas_CR.pdf', '/api/manual-pdf'], (req, res) => {
