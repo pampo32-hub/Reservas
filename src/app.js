@@ -1411,7 +1411,7 @@ class App {
           <!-- 1. IZQUIERDA: Logo & Marca -->
           <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer select-none group app-touch-btn shrink-0" id="nav-logo-btn" title="Reservas CR">
             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-xs border border-slate-200/90 dark:border-slate-700 bg-white flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
-              <img src="./src/assets/reservas_cr_clean_badge_1.jpg?v=2" alt="Reservas CR Logo" class="w-full h-full object-cover">
+              <img src="./src/assets/reservas_cr_clean_badge_1.jpg?v=3" alt="Reservas CR Logo" class="w-full h-full object-cover">
             </div>
             <div class="shrink-0 flex flex-col justify-center">
               <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none">Reservas <span class="text-blue-600">CR</span></span>
@@ -1634,7 +1634,7 @@ class App {
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         <div class="flex items-center gap-3">
           <div class="w-8 h-8 rounded-xl overflow-hidden shadow-xs border border-slate-200/60 flex items-center justify-center bg-white">
-            <img src="./src/assets/reservas_cr_clean_badge_1.jpg?v=2" alt="Reservas CR Logo" class="w-full h-full object-cover">
+            <img src="./src/assets/reservas_cr_clean_badge_1.jpg?v=3" alt="Reservas CR Logo" class="w-full h-full object-cover">
           </div>
           <span class="font-extrabold text-slate-900 text-sm">Reservas <span class="text-blue-600">CR</span></span> &copy; 2026. Todos los derechos reservados.
         </div>
@@ -2899,7 +2899,7 @@ class App {
                 <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <div class="flex items-center gap-2">
                     <div class="w-7 h-7 rounded-lg overflow-hidden bg-white border border-slate-200 flex items-center justify-center">
-                      <img src="./src/assets/reservas_cr_clean_badge_1.jpg?v=2" alt="Logo" class="w-full h-full object-cover">
+                      <img src="./src/assets/reservas_cr_clean_badge_1.jpg?v=3" alt="Logo" class="w-full h-full object-cover">
                     </div>
                     <div>
                       <span class="font-black text-xs text-slate-900 block leading-tight">Studio Barber & Spa</span>
