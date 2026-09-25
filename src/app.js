@@ -2302,17 +2302,67 @@ class App {
               </div>
             </div>
 
-            ${REGISTRATION_ENABLED && SHOW_BIZ_SHORTCUTS ? `
             <!-- Mini Banner de Acceso / Registro para Negocios en Hero -->
-            <div class="mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 bg-white/90 backdrop-blur-md py-1.5 px-3.5 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="mt-5 inline-flex flex-wrap items-center justify-center gap-2 text-xs text-slate-600 bg-white/95 backdrop-blur-md py-2 px-4 rounded-2xl border border-blue-200/80 shadow-xs">
               <span class="font-bold text-slate-800 flex items-center gap-1.5">
-                <i class="fas fa-store text-indigo-600"></i> ¿Tienes un negocio o prestas servicios?
+                <i class="fas fa-store text-indigo-600"></i> ¿Tienes un negocio o prestas servicios en Costa Rica?
               </span>
               <button id="hero-register-biz-btn" class="font-black text-blue-600 hover:text-blue-800 underline decoration-2 underline-offset-2 flex items-center gap-1 transition-colors cursor-pointer">
-                ¡Publica tu catálogo y recibe reservas aquí! <i class="fas fa-arrow-right text-[10px]"></i>
+                ¡Publica tu catálogo y recibe reservas 24/7! <i class="fas fa-arrow-right text-[10px]"></i>
               </button>
             </div>
-            ` : ''}
+          </div>
+        </section>
+
+        <!-- 2.5 Cómo Funciona en 3 Pasos (Para Clientes) -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-2">
+          <div class="text-center max-w-xl mx-auto mb-6">
+            <span class="px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 shadow-2xs">
+              <i class="fas fa-bolt text-blue-600"></i> Rápido, fácil y sin esperas
+            </span>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 mt-2 tracking-tight">¿Cómo reservar tu cita en Reservas CR?</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Olvídate de mandar audios y esperar confirmación. Tu turno queda apartado en segundos.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+            <!-- Paso 1 -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-300 transition-all group relative overflow-hidden">
+              <div class="absolute top-4 right-4 text-3xl font-black text-slate-100 group-hover:text-blue-50 transition-colors pointer-events-none">01</div>
+              <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-blue-600 group-hover:text-white transition-colors shadow-2xs">
+                <i class="fas fa-search-location"></i>
+              </div>
+              <span class="text-[11px] font-black text-blue-600 uppercase tracking-wider block mb-1">Paso 1</span>
+              <h3 class="text-base font-extrabold text-slate-900 mb-1.5">Encuentra tu Negocio</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Busca barberías, clínicas, estéticas y talleres en tu cantón. Consulta precios transparentes, fotos de trabajos anteriores y opiniones verificadas.
+              </p>
+            </div>
+
+            <!-- Paso 2 -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all group relative overflow-hidden">
+              <div class="absolute top-4 right-4 text-3xl font-black text-slate-100 group-hover:text-indigo-50 transition-colors pointer-events-none">02</div>
+              <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors shadow-2xs">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <span class="text-[11px] font-black text-indigo-600 uppercase tracking-wider block mb-1">Paso 2</span>
+              <h3 class="text-base font-extrabold text-slate-900 mb-1.5">Elige Turno y Especialista</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Visualiza la agenda en vivo 24/7. Selecciona el día, la hora exacta disponible y con cuál profesional del establecimiento prefieres atenderte.
+              </p>
+            </div>
+
+            <!-- Paso 3 -->
+            <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all group relative overflow-hidden">
+              <div class="absolute top-4 right-4 text-3xl font-black text-slate-100 group-hover:text-emerald-50 transition-colors pointer-events-none">03</div>
+              <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl font-black mb-3.5 group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-2xs">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <span class="text-[11px] font-black text-emerald-600 uppercase tracking-wider block mb-1">Paso 3</span>
+              <h3 class="text-base font-extrabold text-slate-900 mb-1.5">Confirmación a tu WhatsApp</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                ¡Tu cita queda confirmada sin esperas! Recibe el comprobante y recordatorios directos a tu WhatsApp, y añade el turno a Google Calendar con 1 clic.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -2380,6 +2430,95 @@ class App {
             ${this.renderDirectoryGridContent(filteredBusinesses)}
           </div>
         </div>
+
+        <!-- 5. Sección de Alto Impacto para Negocios (SaaS B2B) -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-14 mb-8">
+          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white p-7 sm:p-10 lg:p-12 shadow-2xl border border-indigo-500/30">
+            <!-- Luces de Fondo -->
+            <div class="absolute -right-20 -top-20 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div class="lg:col-span-7 space-y-4 text-left">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-black uppercase tracking-wider border border-indigo-400/40">
+                  <i class="fas fa-store text-amber-400"></i> Plataforma Oficial para Negocios • Costa Rica 🇨🇷
+                </div>
+                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
+                  Automatiza tu negocio y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">recibe citas 24/7</span> en piloto automático
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
+                  Salones de belleza, barberías, consultorios médicos, estéticas, spas y talleres mecánicos. Deja de perder clientes por no contestar mensajes a tiempo y reduce cancelaciones de última hora.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div class="flex items-start gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 text-sm mt-0.5 shrink-0"></i>
+                    <span class="text-xs text-slate-200"><strong>WhatsApp Automático:</strong> Tus clientes reciben confirmación y recordatorios antes de su turno.</span>
+                  </div>
+                  <div class="flex items-start gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 text-sm mt-0.5 shrink-0"></i>
+                    <span class="text-xs text-slate-200"><strong>Gestión de Especialistas:</strong> Control de turnos, horarios y servicios por cada colaborador.</span>
+                  </div>
+                  <div class="flex items-start gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 text-sm mt-0.5 shrink-0"></i>
+                    <span class="text-xs text-slate-200"><strong>Enlace Único para Redes:</strong> Pégalo en tu biografía de Instagram, TikTok o WhatsApp Business.</span>
+                  </div>
+                  <div class="flex items-start gap-2.5">
+                    <i class="fas fa-check-circle text-emerald-400 text-sm mt-0.5 shrink-0"></i>
+                    <span class="text-xs text-slate-200"><strong>100% en la Nube:</strong> Administra tu agenda desde tu teléfono celular o computadora.</span>
+                  </div>
+                </div>
+
+                <div class="pt-4 flex flex-wrap items-center gap-3">
+                  <button id="directory-biz-prereg-btn" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-950/50 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-rocket text-amber-300"></i> Registrar Mi Negocio (15 Días Gratis)
+                  </button>
+                  <button id="directory-biz-landing-btn" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-info-circle text-blue-300"></i> Conocer Todos los Beneficios
+                  </button>
+                </div>
+              </div>
+
+              <div class="lg:col-span-5 flex justify-center">
+                <div class="w-full max-w-sm bg-slate-900/90 rounded-3xl p-5 sm:p-6 border border-indigo-500/40 shadow-2xl backdrop-blur-md space-y-4">
+                  <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <span class="text-xs font-black text-indigo-300 uppercase tracking-wider">Beneficios del Lanzamiento</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/30">Cero Riesgo</span>
+                  </div>
+                  <div class="space-y-3">
+                    <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center text-base shrink-0">
+                        <i class="fas fa-gift"></i>
+                      </div>
+                      <div>
+                        <span class="text-white text-xs font-bold block">15 Días Gratis Completos</span>
+                        <span class="text-slate-400 text-[11px]">Acceso total desde el día de estreno oficial</span>
+                      </div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-base shrink-0">
+                        <i class="fas fa-credit-card"></i>
+                      </div>
+                      <div>
+                        <span class="text-white text-xs font-bold block">Sin Tarjeta de Crédito</span>
+                        <span class="text-slate-400 text-[11px]">No se requiere tarjeta para pre-registrarte</span>
+                      </div>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-base shrink-0">
+                        <i class="fas fa-headset"></i>
+                      </div>
+                      <div>
+                        <span class="text-white text-xs font-bold block">Acompañamiento en Costa Rica</span>
+                        <span class="text-slate-400 text-[11px]">Soporte directo para configurar tus servicios</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     `;
 
@@ -2652,7 +2791,9 @@ class App {
     document.getElementById('demo-showroom-register-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('banner-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('banner-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
-    document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
+    document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
+    document.getElementById('directory-biz-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
+    document.getElementById('directory-biz-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
     document.getElementById('cta-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
