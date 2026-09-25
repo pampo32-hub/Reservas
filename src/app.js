@@ -1918,8 +1918,8 @@ class App {
                 <i class="fas fa-shield-alt text-emerald-200"></i> Comercio Verificado
               </span>
             ` : isDemo ? `
-              <span class="bg-purple-700/90 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-extrabold flex items-center gap-1 shadow-md border border-purple-400/40">
-                <i class="fas fa-flask text-purple-200"></i> Comercio de Muestra
+              <span class="bg-purple-600/95 text-white backdrop-blur-md px-3 py-1 rounded-full text-[11px] font-black flex items-center gap-1.5 shadow-lg border border-purple-300/60 ring-2 ring-purple-500/25">
+                <i class="fas fa-flask text-amber-300"></i> Negocio de Muestra (Demo)
               </span>
             ` : isDev ? `
               <span class="bg-amber-500/90 text-slate-950 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1 shadow-md border border-amber-300/60">
@@ -1995,12 +1995,12 @@ class App {
           <!-- Action Buttons -->
           <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
             <button 
-              class="view-biz-btn w-full py-2.5 px-4 ${isBlocked ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (isUnlimited ? 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800' : 'bg-slate-900 hover:bg-blue-600')} text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+              class="view-biz-btn w-full py-2.5 px-4 ${isBlocked ? 'bg-slate-300 text-slate-600 cursor-not-allowed' : (isUnlimited ? 'bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800' : (isDemo ? 'bg-purple-900 hover:bg-purple-800 text-purple-100 border border-purple-500/30' : 'bg-slate-900 hover:bg-blue-600'))} text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
               data-business-id="${biz.id}"
               ${isBlocked ? 'disabled title="Este comercio se encuentra temporalmente suspendido"' : ''}
             >
-              <span>${isBlocked ? 'Comercio Bloqueado / Suspendido' : 'Ver Servicios & Reservar'}</span>
-              <i class="fas ${isBlocked ? 'fa-lock' : 'fa-arrow-right'} text-xs"></i>
+              <span>${isBlocked ? 'Comercio Bloqueado / Suspendido' : (isDemo ? 'Ver Demo & Probar Cita' : 'Ver Servicios & Reservar')}</span>
+              <i class="fas ${isBlocked ? 'fa-lock' : (isDemo ? 'fa-flask' : 'fa-arrow-right')} text-xs"></i>
             </button>
 
             <!-- Barra de Administración Rápida de Negocios (Solo visible para Developer / SuperAdmin) -->
@@ -2333,6 +2333,38 @@ class App {
 
         <!-- 4. Catálogo de Establecimientos (Contenedor Reactivo) -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+          
+          <!-- Banner Informativo Showroom / Perfiles de Demostración en Vivo -->
+          <div class="mb-6 p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white border-2 border-purple-500/40 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-purple-500/25 border border-purple-400/50 flex items-center justify-center text-amber-300 text-xl shrink-0 mt-0.5 shadow-md shadow-purple-900/50">
+                  <i class="fas fa-flask"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <span class="text-[11px] uppercase font-black px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 tracking-wider">
+                      ✨ Showroom Interactivo
+                    </span>
+                    <span class="text-xs text-purple-300 font-bold flex items-center gap-1">
+                      <i class="fas fa-info-circle text-[10px]"></i> Perfiles de Muestra y Pruebas
+                    </span>
+                  </div>
+                  <p class="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-3xl">
+                    Los establecimientos que ves a continuación son <strong>negocios de ejemplo</strong> preparados para que pruebes en vivo cómo funciona la agenda 24/7 y las confirmaciones automáticas por WhatsApp.
+                  </p>
+                </div>
+              </div>
+              <div class="shrink-0 self-start md:self-center flex items-center gap-2">
+                <button id="demo-showroom-register-btn" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shadow-md shadow-emerald-500/20 flex items-center gap-2 transition-all cursor-pointer transform hover:scale-105 active:scale-95">
+                  <i class="fas fa-store"></i>
+                  <span>¿Tienes un Negocio? Regístralo</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
             <div>
               <h2 class="text-lg sm:text-xl font-bold text-slate-900" id="catalog-category-title">
@@ -2617,6 +2649,7 @@ class App {
     attachCardListeners();
 
     // Listeners para Banners de Negocios y Planes
+    document.getElementById('demo-showroom-register-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('banner-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('banner-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
@@ -3640,6 +3673,35 @@ class App {
           </div>
         </div>
 
+        ${biz.isDemo ? `
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 animate-fade-in">
+            <div class="p-5 sm:p-6 bg-gradient-to-r from-purple-950 via-indigo-950 to-slate-900 border-2 border-purple-500/40 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden backdrop-blur-md">
+              <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-purple-600/20 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="flex items-start sm:items-center gap-4 relative z-10">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-500/25 border border-purple-400/40 flex items-center justify-center text-2xl sm:text-3xl text-purple-200 shrink-0 shadow-inner">
+                  <i class="fas fa-flask"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full bg-purple-400 text-purple-950 text-[10px] font-black uppercase tracking-wider">Showroom Demostrativo</span>
+                    <span class="text-xs text-purple-200 font-semibold hidden sm:inline">• Perfil de Muestra</span>
+                  </div>
+                  <h3 class="font-black text-lg sm:text-xl text-white mt-1">Este perfil es un Negocio de Ejemplo</h3>
+                  <p class="text-xs sm:text-sm text-purple-100/90 mt-0.5 max-w-2xl leading-relaxed">
+                    Puedes probar libremente el flujo de reservas, horarios y especialistas. Si tienes un negocio similar en Costa Rica, publica tu negocio real y empieza a recibir citas.
+                  </p>
+                </div>
+              </div>
+              <div class="flex sm:flex-col items-center gap-2 w-full md:w-auto relative z-10 shrink-0">
+                <button id="profile-demo-register-btn" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg hover:shadow-amber-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                  <i class="fas fa-rocket text-indigo-900"></i> Registrar Mi Negocio
+                </button>
+                <span class="text-[11px] text-purple-200/80 text-center font-medium">100% Gratis por lanzamiento</span>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <!-- Columna Izquierda: Servicios y Catálogo (2 cols) -->
           <div class="lg:col-span-2 space-y-6">
@@ -3909,6 +3971,10 @@ class App {
       } else {
         this.showToast(shareUrl, 'info');
       }
+    });
+
+    document.getElementById('profile-demo-register-btn')?.addEventListener('click', () => {
+      this.renderPreRegisterModal();
     });
 
     document.querySelectorAll('.book-service-btn').forEach(btn => {
@@ -4242,9 +4308,16 @@ class App {
       <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-0 sm:my-8 mobile-bottom-sheet flex flex-col max-h-[92vh]">
           <!-- Header -->
-          <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 sm:p-6 text-white flex items-center justify-between shrink-0">
+          <div class="bg-gradient-to-r ${biz.isDemo ? 'from-purple-700 via-indigo-700 to-blue-700' : 'from-blue-600 to-indigo-600'} p-5 sm:p-6 text-white flex items-center justify-between shrink-0">
             <div>
-              <span class="text-xs uppercase tracking-wider text-blue-200 font-bold">Reserva de Turno</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs uppercase tracking-wider ${biz.isDemo ? 'text-purple-200' : 'text-blue-200'} font-bold">Reserva de Turno</span>
+                ${biz.isDemo ? `
+                  <span class="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-xs">
+                    <i class="fas fa-flask mr-1"></i> Demo Interactiva
+                  </span>
+                ` : ''}
+              </div>
               <h3 class="text-xl font-bold">${biz.name}</h3>
             </div>
             <button id="close-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar ventana">
@@ -4254,6 +4327,18 @@ class App {
 
           <!-- Body -->
           <div class="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+            ${biz.isDemo ? `
+              <div class="p-3.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl flex items-start gap-3 text-purple-950 shadow-2xs animate-fade-in">
+                <div class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center text-sm shrink-0 shadow-xs mt-0.5">
+                  <i class="fas fa-flask"></i>
+                </div>
+                <div class="text-xs leading-relaxed">
+                  <strong class="text-purple-900 block font-black">Comercio de Muestra (Prueba Interactiva)</strong>
+                  Este negocio es una simulación de ejemplo en <strong>Reservas CR</strong>. Puedes agendar y vivir la experiencia tal como la experimentarán tus clientes.
+                </div>
+              </div>
+            ` : ''}
+
             <!-- Servicio seleccionado -->
             <div class="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
               <div>
@@ -4464,10 +4549,10 @@ class App {
                 type="submit" 
                 id="submit-booking-btn"
                 ${!this.bookingState.selectedTime ? 'disabled' : ''}
-                class="w-full mt-4 py-3.5 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg shadow-blue-500/25 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full mt-4 py-3.5 px-6 rounded-2xl ${biz.isDemo ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/25' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <i class="fas fa-check-circle"></i>
-                <span>Confirmar Reserva ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
+                <i class="fas ${biz.isDemo ? 'fa-flask' : 'fa-check-circle'}"></i>
+                <span>${biz.isDemo ? 'Probar y Confirmar Turno de Muestra' : 'Confirmar Reserva'} ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
               </button>
             </form>
           </div>
@@ -4583,8 +4668,8 @@ class App {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = `
-            <i class="fas fa-check-circle"></i>
-            <span>Confirmar Reserva (${this.formatTime12h(this.bookingState.selectedTime)})</span>
+            <i class="fas ${biz.isDemo ? 'fa-flask' : 'fa-check-circle'}"></i>
+            <span>${biz.isDemo ? 'Probar y Confirmar Turno de Muestra' : 'Confirmar Reserva'} (${this.formatTime12h(this.bookingState.selectedTime)})</span>
           `;
         }
       } else {
@@ -4593,8 +4678,8 @@ class App {
         if (submitBtn) {
           submitBtn.disabled = true;
           submitBtn.innerHTML = `
-            <i class="fas fa-check-circle"></i>
-            <span>Confirmar Reserva</span>
+            <i class="fas ${biz.isDemo ? 'fa-flask' : 'fa-check-circle'}"></i>
+            <span>${biz.isDemo ? 'Probar y Confirmar Turno de Muestra' : 'Confirmar Reserva'}</span>
           `;
         }
       }
@@ -4695,7 +4780,7 @@ class App {
 
         this.closeBookingModal();
         this.renderSuccessBookingModal(newAppointment, biz);
-        if (IS_DEMO_BOOKING_MODE) {
+        if (IS_DEMO_BOOKING_MODE || biz.isDemo) {
           this.showToast('¡Prueba de reserva completada con éxito!', 'info');
         } else {
           this.showToast(initialStatus === 'confirmed' ? '¡Reserva confirmada con éxito!' : '¡Solicitud de reserva enviada con éxito!', 'success');
@@ -4713,7 +4798,7 @@ class App {
 
           if (submitBtn) {
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Confirmar Reserva</span>';
+            submitBtn.innerHTML = `<i class="fas ${biz.isDemo ? 'fa-flask' : 'fa-check-circle'}"></i> <span>${biz.isDemo ? 'Probar y Confirmar Turno de Muestra' : 'Confirmar Reserva'}</span>`;
           }
 
           // Refrescar citas remotas del negocio en segundo plano para actualizar turnos libres
@@ -4739,8 +4824,8 @@ class App {
 
     const isPending = appointment.status === 'pending';
 
-    // MODO PRUEBA / SIMULACIÓN DE RESERVA (Se activa con IS_DEMO_BOOKING_MODE = true)
-    if (IS_DEMO_BOOKING_MODE) {
+    // MODO PRUEBA / SIMULACIÓN DE RESERVA (Se activa con IS_DEMO_BOOKING_MODE = true o si el comercio es de muestra)
+    if (IS_DEMO_BOOKING_MODE || business?.isDemo) {
       modalContainer.innerHTML = `
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
           <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
@@ -4854,8 +4939,11 @@ class App {
             </div>
 
             <div class="mt-6 flex flex-col gap-2">
-              <button id="success-view-bookings-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer">
-                Ver Mis Reservas
+              <button id="success-demo-register-biz-btn" class="w-full py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-500/20 cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-rocket text-amber-300"></i> ¿Tienes un negocio? Regístralo gratis
+              </button>
+              <button id="success-view-bookings-btn" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 cursor-pointer">
+                Ver Mis Reservas de Prueba
               </button>
               <button id="success-done-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
                 Seguir Explorando
@@ -4865,6 +4953,10 @@ class App {
         </div>
       `;
 
+      document.getElementById('success-demo-register-biz-btn')?.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+        this.renderPreRegisterModal();
+      });
       document.getElementById('success-download-ics-btn')?.addEventListener('click', () => {
         this.downloadIcsFile(appointment, business);
       });
