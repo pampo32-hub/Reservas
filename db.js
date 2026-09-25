@@ -350,12 +350,13 @@ export async function initDatabase() {
     for (const biz of INITIAL_BUSINESSES) {
       await client.query(`
         INSERT INTO reservas_businesses (
-          id, name, category, category_label, rating, reviews_count,
+          id, name, slug, category, category_label, rating, reviews_count,
           price_range, address, city, phone, email, description,
-          image, cover_image, schedule, features, is_demo
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+          image, cover_image, schedule, features, is_demo, portfolio
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
+          slug = COALESCE(EXCLUDED.slug, reservas_businesses.slug),
           category = EXCLUDED.category,
           category_label = EXCLUDED.category_label,
           image = EXCLUDED.image,
@@ -367,11 +368,17 @@ export async function initDatabase() {
           description = EXCLUDED.description,
           features = EXCLUDED.features,
           schedule = EXCLUDED.schedule,
-          is_demo = EXCLUDED.is_demo
+          is_demo = EXCLUDED.is_demo,
+          portfolio = CASE 
+            WHEN EXCLUDED.is_demo = true OR reservas_businesses.portfolio IS NULL OR jsonb_array_length(reservas_businesses.portfolio) = 0 
+            THEN EXCLUDED.portfolio 
+            ELSE reservas_businesses.portfolio 
+          END
       `, [
-        biz.id, biz.name, biz.category, biz.categoryLabel, biz.rating, biz.reviewsCount,
+        biz.id, biz.name, biz.slug || biz.id, biz.category, biz.categoryLabel, biz.rating, biz.reviewsCount,
         biz.priceRange, biz.address, biz.city, biz.phone, biz.email, biz.description,
-        biz.image, biz.coverImage, JSON.stringify(biz.schedule), JSON.stringify(biz.features || []), Boolean(biz.isDemo)
+        biz.image, biz.coverImage, JSON.stringify(biz.schedule), JSON.stringify(biz.features || []), Boolean(biz.isDemo),
+        JSON.stringify(biz.portfolio || [])
       ]);
 
       if (biz.services && Array.isArray(biz.services)) {

@@ -721,9 +721,12 @@ class StorageService {
       const plan = b.plan || 'basic';
       const slug = b.slug ? this.slugify(b.slug) : this.slugify(b.name || b.id);
       const initMatch = INITIAL_BUSINESSES.find(ib => ib.id === b.id);
-      const portfolio = Array.isArray(b.portfolio) && b.portfolio.length > 0 
-        ? b.portfolio 
-        : (initMatch && Array.isArray(initMatch.portfolio) ? initMatch.portfolio : (Array.isArray(b.portfolio) ? b.portfolio : []));
+      const isDemoBiz = Boolean(b.isDemo || (initMatch && initMatch.isDemo));
+      const portfolio = (isDemoBiz && initMatch && Array.isArray(initMatch.portfolio) && initMatch.portfolio.length > 0)
+        ? initMatch.portfolio
+        : (Array.isArray(b.portfolio) && b.portfolio.length > 0 
+            ? b.portfolio 
+            : (initMatch && Array.isArray(initMatch.portfolio) ? initMatch.portfolio : []));
       const baseObj = { ...b, slug, portfolio, schedule: sch || b.schedule };
       if (plan === 'free') {
         return { ...baseObj, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
