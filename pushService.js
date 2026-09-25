@@ -78,6 +78,11 @@ export async function savePushSubscription(pool, { businessId, subscription, use
   const auth = subscription.keys.auth;
   const id = `push-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
+  // Limpiar cualquier registro previo de este mismo endpoint en otros comercios para evitar alertas cruzadas
+  try {
+    await pool.query(`DELETE FROM reservas_push_subscriptions WHERE endpoint = $1 AND business_id != $2`, [endpoint, businessId]);
+  } catch (_) {}
+
   await pool.query(`
     INSERT INTO reservas_push_subscriptions (id, business_id, endpoint, p256dh, auth, user_agent, created_at)
     VALUES ($1, $2, $3, $4, $5, $6, NOW())
@@ -93,16 +98,24 @@ export async function savePushSubscription(pool, { businessId, subscription, use
  * Elimina una suscripción Push
  */
 export async function removePushSubscription(pool, { businessId, endpoint }) {
-  if (!businessId || !endpoint) {
-    throw new Error('Datos de desuscripción incompletos');
+  if (!endpoint) {
+    throw new Error('Endpoint requerido para desuscribir');
   }
 
-  await pool.query(`
-    DELETE FROM reservas_push_subscriptions
-    WHERE business_id = $1 AND endpoint = $2
-  `, [businessId, endpoint]);
+  if (businessId) {
+    await pool.query(`
+      DELETE FROM reservas_push_subscriptions
+      WHERE business_id = $1 AND endpoint = $2
+    `, [businessId, endpoint]);
+    console.log(`🔕 [Web Push] Suscripción eliminada para comercio ${businessId}`);
+  } else {
+    await pool.query(`
+      DELETE FROM reservas_push_subscriptions
+      WHERE endpoint = $1
+    `, [endpoint]);
+    console.log(`🔕 [Web Push] Suscripción eliminada por endpoint`);
+  }
 
-  console.log(`🔕 [Web Push] Suscripción eliminada para comercio ${businessId}`);
   return { success: true };
 }
 

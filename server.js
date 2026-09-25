@@ -4444,8 +4444,8 @@ app.post('/api/push/subscribe', async (req, res) => {
 app.post('/api/push/unsubscribe', async (req, res) => {
   try {
     const { businessId, endpoint } = req.body;
-    if (!businessId || !endpoint) {
-      return res.status(400).json({ error: 'Faltan datos para desuscribir' });
+    if (!endpoint) {
+      return res.status(400).json({ error: 'Endpoint requerido para desuscribir' });
     }
     const result = await removePushSubscription(pool, { businessId, endpoint });
     res.json(result);

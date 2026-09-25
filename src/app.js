@@ -1092,7 +1092,7 @@ class App {
   // --- CONEXIÓN REALTIME PUSH (SERVER-SENT EVENTS) ---
   initRealtimePush() {
     const bizUser = storage.getBusinessUser();
-    const activeBizId = (bizUser && bizUser.businessId) || storage.getActiveBusinessId();
+    const activeBizId = bizUser && bizUser.businessId;
     
     if (!activeBizId) {
       if (this.realtimeEventSource) {
@@ -1606,8 +1606,13 @@ class App {
 
     // Negocio logueado
     document.getElementById('nav-biz-dashboard-btn')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
-    document.getElementById('nav-biz-logout-btn')?.addEventListener('click', () => {
-      storage.logoutBusiness();
+    document.getElementById('nav-biz-logout-btn')?.addEventListener('click', async () => {
+      if (this.realtimeEventSource) {
+        this.realtimeEventSource.close();
+        this.realtimeEventSource = null;
+        this.realtimeBusinessId = null;
+      }
+      await storage.logoutBusiness();
       this.showToast('Sesión de negocio cerrada.', 'info');
       this.renderHeader();
       this.renderMobileBottomNav();
@@ -5873,8 +5878,13 @@ class App {
       </div>
     `;
 
-    document.getElementById('dash-logout-btn')?.addEventListener('click', () => {
-      storage.logoutBusiness();
+    document.getElementById('dash-logout-btn')?.addEventListener('click', async () => {
+      if (this.realtimeEventSource) {
+        this.realtimeEventSource.close();
+        this.realtimeEventSource = null;
+        this.realtimeBusinessId = null;
+      }
+      await storage.logoutBusiness();
       if (typeof sessionStorage !== 'undefined') {
         sessionStorage.removeItem('reservas_current_view');
         sessionStorage.removeItem('reservas_active_owner_tab');
@@ -5938,6 +5948,18 @@ class App {
       status = await storage.checkPushSubscriptionStatus();
     } catch (e) {
       console.warn('Error obteniendo estado push:', e);
+    }
+
+    // Auto-reactivación si el navegador ya tenía permisos concedidos previamente y no fue desactivado manualmente
+    const isManuallyDisabled = localStorage.getItem('reservas_push_manual_disabled') === 'true';
+    if (status.supported && status.permission === 'granted' && !status.isSubscribed && !status.needsIosInstall && !isManuallyDisabled) {
+      try {
+        console.log('🔄 [Push] Permiso previamente concedido detectado. Reactivando notificaciones automáticamente para el comercio...');
+        await storage.registerPushForBusiness(currentBiz.id);
+        status = await storage.checkPushSubscriptionStatus();
+      } catch (autoErr) {
+        console.warn('No se pudo reactivar push automáticamente:', autoErr);
+      }
     }
 
     // Caso 1: iPhone / iPad en navegador Safari normal (requiere guardar en pantalla de inicio)
@@ -6043,6 +6065,7 @@ class App {
 
       document.getElementById('btn-disable-push-notifications')?.addEventListener('click', async () => {
         if (confirm('¿Deseas desactivar las notificaciones push en este dispositivo?')) {
+          localStorage.setItem('reservas_push_manual_disabled', 'true');
           await storage.unregisterPushForBusiness(currentBiz.id);
           this.showToast('Notificaciones push desactivadas en este dispositivo.', 'info');
           this.updatePushNotificationBanner(currentBiz);
@@ -6082,6 +6105,7 @@ class App {
           btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Solicitando permiso...';
         }
         try {
+          localStorage.removeItem('reservas_push_manual_disabled');
           await storage.registerPushForBusiness(currentBiz.id);
           this.showToast('✅ ¡Notificaciones push activadas con éxito!', 'success');
           // Enviar inmediatamente una notificación de confirmación

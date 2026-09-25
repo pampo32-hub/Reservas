@@ -369,8 +369,15 @@ class StorageService {
     }
   }
 
-  logoutBusiness() {
+  async logoutBusiness() {
+    const user = this.getBusinessUser();
+    const bizId = user ? user.businessId : null;
     localStorage.removeItem(STORAGE_KEYS.BIZ_USER);
+    try {
+      await this.unregisterPushForBusiness(bizId);
+    } catch (e) {
+      console.warn('Error desuscribiendo push en logout:', e);
+    }
   }
 
   async loginBusiness(email, password) {
@@ -2442,21 +2449,33 @@ class StorageService {
     return { success: true, subscription };
   }
 
-  async unregisterPushForBusiness(businessId) {
+  async unregisterPushForBusiness(businessId = null) {
     if (!this.isPushSupported()) return { success: true };
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const subscription = await reg.pushManager.getSubscription();
-      if (subscription) {
-        await fetch(`${this.apiBase}/push/unsubscribe`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            businessId,
-            endpoint: subscription.endpoint
-          })
-        });
-        await subscription.unsubscribe();
+      if ('serviceWorker' in navigator) {
+        const getReadyPromise = navigator.serviceWorker.ready;
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('SW timeout')), 3000));
+        const reg = await Promise.race([getReadyPromise, timeoutPromise]).catch(() => null);
+        
+        if (reg && reg.pushManager) {
+          const subscription = await reg.pushManager.getSubscription().catch(() => null);
+          if (subscription) {
+            try {
+              await fetch(`${this.apiBase}/push/unsubscribe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  businessId: businessId || null,
+                  endpoint: subscription.endpoint
+                })
+              });
+            } catch (netErr) {
+              console.warn('Error notificando unsubscribe al backend:', netErr);
+            }
+            await subscription.unsubscribe().catch(() => {});
+            console.log('🔕 [Web Push] Dispositivo desuscrito exitosamente de notificaciones.');
+          }
+        }
       }
       return { success: true };
     } catch (e) {
