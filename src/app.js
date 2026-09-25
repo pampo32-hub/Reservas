@@ -471,7 +471,7 @@ class App {
       `Precio: ₡${Number(appointment.servicePrice || 0).toLocaleString('es-CR')}\n` +
       `Código de reserva: #${(appointment.id || '').toUpperCase()}\n` +
       (appointment.notes ? `Notas: ${appointment.notes}\n` : '') +
-      `Gestionado por Reservas CR (Costa Rica 🇨🇷)`;
+      `Gestionado por Reservas CR (Costa Rica)`;
 
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datesStr}&ctz=America/Costa_Rica&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
   }
@@ -1118,7 +1118,7 @@ class App {
       this.realtimeEventSource = new EventSource(url);
 
       this.realtimeEventSource.addEventListener('connected', () => {
-        console.log(`⚡ [Realtime SSE] Conectado en vivo al comercio: ${activeBizId}`);
+        console.log(`[Realtime SSE] Conectado en vivo al comercio: ${activeBizId}`);
       });
 
       this.realtimeEventSource.addEventListener('appointment_created', async (e) => {
@@ -1129,12 +1129,12 @@ class App {
 
           // Deduplicar: Si ya fue notificada en esta sesión, omitir toast y timbre repetidos
           if (this.notifiedAppointmentIds.has(apt.id)) {
-            console.log('⚡ [Realtime SSE] Cita ya notificada previamente, omitiendo notificación duplicada:', apt.id);
+            console.log('[Realtime SSE] Cita ya notificada previamente, omitiendo notificación duplicada:', apt.id);
             return;
           }
           this.notifiedAppointmentIds.add(apt.id);
 
-          console.log('⚡ [Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
+          console.log('[Realtime SSE] ¡Nueva cita agendada en vivo!', apt);
 
           // 1. Guardar ID de cita recién llegada para animarla con acomodo y resplandor
           // 1. Guardar ID de cita recién llegada e insertar inmediatamente en memoria local para render instantáneo
@@ -1187,7 +1187,7 @@ class App {
           const srvName = apt.serviceName || 'Servicio';
           const aptTime = apt.time ? this.formatTime12h(apt.time) : '';
           const aptDate = apt.date ? this.formatDateDMY(apt.date) : '';
-          this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
+          this.showToast(`¡Nueva Reserva Recibida!\n${cliName} agendó "${srvName}" para el ${aptDate} (${aptTime})`, 'success');
 
           // 4. Sincronizar appointments cache de Neon
           // 4. Si el comercio tiene abierta la pantalla del dashboard, actualizar la agenda de inmediato
@@ -1256,7 +1256,7 @@ class App {
           const newApts = freshApts.filter(a => a && a.id && !prevIds.has(a.id) && !this.notifiedAppointmentIds.has(a.id));
           if (newApts.length > 0) {
             newApts.forEach(a => this.notifiedAppointmentIds.add(a.id));
-            console.log('⚡ [AutoSync Fallback] Nuevas citas detectadas:', newApts);
+            console.log('[AutoSync Fallback] Nuevas citas detectadas:', newApts);
             const first = newApts[0];
             if (first && first.id) {
               this.newlyArrivedAppointmentId = first.id;
@@ -1282,7 +1282,7 @@ class App {
             this.playNotificationChime();
             const fTime = first.time ? this.formatTime12h(first.time) : '';
             const fDate = first.date ? this.formatDateDMY(first.date) : '';
-            this.showToast(`🔔 ¡Nueva Reserva Recibida!\n${first.clientName} agendó "${first.serviceName}" para ${fDate} (${fTime})`, 'success');
+            this.showToast(`¡Nueva Reserva Recibida!\n${first.clientName} agendó "${first.serviceName}" para ${fDate} (${fTime})`, 'success');
 
             if (this.currentView === 'owner-dashboard') {
               const mainContent = document.getElementById('main-content');
@@ -1415,7 +1415,7 @@ class App {
             </div>
             <div class="shrink-0 flex flex-col justify-center">
               <span class="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none">Reservas <span class="text-blue-600">CR</span></span>
-              <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-none mt-1">Directorio & Reservas Costa Rica 🇨🇷</span>
+              <span class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block leading-none mt-1">Directorio & Reservas Costa Rica</span>
             </div>
           </div>
 
@@ -1664,7 +1664,7 @@ class App {
         </div>
 
         <div class="flex flex-col sm:flex-row items-center gap-3">
-          <p class="text-slate-400">Directorio digital & agendamiento en Costa Rica 🇨🇷.</p>
+          <p class="text-slate-400">Directorio digital & agendamiento en Costa Rica.</p>
         </div>
       </div>
     `;
@@ -2112,7 +2112,7 @@ class App {
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider border border-blue-400/50 shadow-sm shadow-blue-500/10">
                     <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
-                    <span>🚀 PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA 🇨🇷</span>
+                    <span><i class="fas fa-rocket text-blue-400 mr-1.5"></i>PRE-LANZAMIENTO EXCLUSIVO • COSTA RICA</span>
                   </span>
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-xs font-bold border border-blue-400/30">
                     <i class="fas fa-check-circle text-blue-400 text-xs"></i> Sin Tarjeta • Sin Pagos Hoy
@@ -2235,7 +2235,7 @@ class App {
         <section class="relative bg-gradient-to-b from-blue-50/70 via-white to-slate-50 border-b border-slate-200/70 py-10 px-4 sm:px-6 lg:px-8 ${SHOW_BIZ_SHORTCUTS ? 'mt-4' : 'mt-1'}">
           <div class="max-w-4xl mx-auto text-center">
             <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-3">
-              <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica 🇨🇷
+              <i class="fas fa-bolt text-blue-600"></i> Reserva tu turno en línea en Costa Rica
             </span>
             <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Encuentra los mejores comercios y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">agenda tu reserva al instante</span>
@@ -2266,7 +2266,7 @@ class App {
               </button>
             </div>
 
-            <!-- Filtro Geográfico por Provincia y Cantón de Costa Rica 🇨🇷 -->
+            <!-- Filtro Geográfico por Provincia y Cantón de Costa Rica -->
             <div class="mt-3.5 max-w-2xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
               <!-- Selector de Provincia -->
               <div class="relative flex items-center bg-white rounded-2xl border border-slate-200/90 px-3.5 py-2 shadow-xs focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -2276,7 +2276,7 @@ class App {
                 <div class="flex-1 min-w-0">
                   <label for="province-filter-select" class="block text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-0.5">Provincia (Costa Rica)</label>
                   <select id="province-filter-select" class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 focus:outline-none cursor-pointer truncate">
-                    <option value="all" ${this.selectedProvince === 'all' ? 'selected' : ''}>🇨🇷 Todas las Provincias</option>
+                    <option value="all" ${this.selectedProvince === 'all' ? 'selected' : ''}>Todas las Provincias</option>
                     ${provinces.map(p => `<option value="${p.id}" ${this.selectedProvince === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                   </select>
                 </div>
@@ -2290,7 +2290,7 @@ class App {
                 <div class="flex-1 min-w-0">
                   <label for="canton-filter-select" class="block text-[10px] font-black uppercase tracking-wider text-slate-400 leading-none mb-0.5">Cantón / Zona</label>
                   <select id="canton-filter-select" class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 focus:outline-none cursor-pointer truncate">
-                    <option value="all" ${this.selectedCanton === 'all' ? 'selected' : ''}>📍 Todos los Cantones</option>
+                    <option value="all" ${this.selectedCanton === 'all' ? 'selected' : ''}>Todos los Cantones</option>
                     ${availableCantons.map(c => `<option value="${c}" ${this.selectedCanton === c ? 'selected' : ''}>${c}</option>`).join('')}
                   </select>
                 </div>
@@ -2395,7 +2395,7 @@ class App {
                 <div>
                   <div class="flex items-center gap-2 flex-wrap mb-1">
                     <span class="text-[11px] uppercase font-black px-2.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 tracking-wider">
-                      ✨ Showroom Interactivo
+                      <i class="fas fa-flask text-purple-300 mr-1.5"></i>Showroom Interactivo
                     </span>
                     <span class="text-xs text-purple-300 font-bold flex items-center gap-1">
                       <i class="fas fa-info-circle text-[10px]"></i> Perfiles de Muestra y Pruebas
@@ -2441,7 +2441,7 @@ class App {
             <div class="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div class="lg:col-span-7 space-y-4 text-left">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-black uppercase tracking-wider border border-indigo-400/40">
-                  <i class="fas fa-store text-amber-400"></i> Plataforma Oficial para Negocios • Costa Rica 🇨🇷
+                  <i class="fas fa-store text-amber-400"></i> Plataforma Oficial para Negocios • Costa Rica
                 </div>
                 <h2 class="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
                   Automatiza tu negocio y <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">recibe citas 24/7</span> en piloto automático
@@ -2594,7 +2594,7 @@ class App {
             try {
               btn.disabled = true;
               await storage.toggleBusinessVerification(bizId, newStatus);
-              this.showToast(newStatus ? `✅ "${bizName}" ahora es un Comercio Verificado.` : `ℹ️ Verificación retirada para "${bizName}".`, 'success');
+              this.showToast(newStatus ? `"${bizName}" ahora es un Comercio Verificado.` : `Verificación retirada para "${bizName}".`, 'success');
               updateLiveSearch();
             } catch (err) {
               this.showToast(err.message || 'Error al actualizar verificación.', 'error');
@@ -2658,7 +2658,7 @@ class App {
           e.stopPropagation();
           const bizId = btn.getAttribute('data-biz-id');
           const bizName = btn.getAttribute('data-biz-name');
-          if (confirm(`⚠️ ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará el comercio, sus servicios y reservas asociadas en la base de datos.`)) {
+          if (confirm(`¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará el comercio, sus servicios y reservas asociadas en la base de datos.`)) {
             try {
               btn.disabled = true;
               await storage.deleteBusiness(bizId);
@@ -2680,7 +2680,7 @@ class App {
         if (searchInput) searchInput.value = '';
         if (provinceFilterSelect) provinceFilterSelect.value = 'all';
         if (cantonFilterSelect) {
-          cantonFilterSelect.innerHTML = '<option value="all" selected>📍 Todos los Cantones</option>';
+          cantonFilterSelect.innerHTML = '<option value="all" selected>Todos los Cantones</option>';
         }
         updateLiveSearch();
         this.renderCurrentView();
@@ -2753,7 +2753,7 @@ class App {
       const curCantons = curProvObj ? curProvObj.cantons : [];
 
       if (cantonFilterSelect) {
-        cantonFilterSelect.innerHTML = `<option value="all" selected>📍 Todos los Cantones</option>` +
+        cantonFilterSelect.innerHTML = `<option value="all" selected>Todos los Cantones</option>` +
           curCantons.map(c => `<option value="${c}">${c}</option>`).join('');
       }
 
@@ -2772,7 +2772,7 @@ class App {
       this.selectedCanton = 'all';
       if (provinceFilterSelect) provinceFilterSelect.value = 'all';
       if (cantonFilterSelect) {
-        cantonFilterSelect.innerHTML = '<option value="all" selected>📍 Todos los Cantones</option>';
+        cantonFilterSelect.innerHTML = '<option value="all" selected>Todos los Cantones</option>';
       }
       updateLiveSearch();
     });
@@ -2823,7 +2823,7 @@ class App {
               <!-- Badge Superior -->
               <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-blue-500/40 text-blue-300 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/10 animate-fade-in">
                 <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping"></span>
-                <span>🚀 PLATAFORMA OFICIAL PARA NEGOCIOS • COSTA RICA 🇨🇷</span>
+                <span><i class="fas fa-rocket text-blue-400 mr-1.5"></i>PLATAFORMA OFICIAL PARA NEGOCIOS • COSTA RICA</span>
               </div>
 
               <!-- Titular de Impacto -->
@@ -2866,10 +2866,10 @@ class App {
 
               <!-- Pequeño recordatorio de prueba gratis -->
               <p class="text-xs text-slate-400">
-                ✨ <strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
+                <i class="fas fa-gift text-blue-400 mr-1.5"></i><strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
               </p>
               <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-bold shadow-sm">
-                <span class="text-base">🎁</span>
+                <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs shrink-0"><i class="fas fa-gift"></i></div>
                 <span><strong>Pre-registro Especial:</strong> Obtén <strong>15 Días de Prueba Gratis del Plan Profesional (Pro)</strong> a partir del lanzamiento. ¡Sin tarjeta ni pagos hoy!</span>
               </div>
 
@@ -2906,7 +2906,9 @@ class App {
                       <span class="text-[10px] text-blue-600 font-bold">● Abierto Ahora</span>
                     </div>
                   </div>
-                  <span class="text-[10px] bg-slate-100 font-bold px-2 py-0.5 rounded-full text-slate-600">⭐ 4.9 (128)</span>
+                  <span class="text-[10px] bg-slate-100 font-bold px-2 py-0.5 rounded-full text-slate-700 flex items-center gap-1 border border-slate-200">
+                    <i class="fas fa-star text-amber-500 text-[10px]"></i> 4.9 (128)
+                  </span>
                 </div>
 
                 <!-- Paso 1: Selecciona Servicio -->
@@ -2914,23 +2916,38 @@ class App {
                   <span class="text-[11px] font-black text-slate-500 uppercase tracking-wide block mb-1.5">1. Elige Servicio:</span>
                   <div class="space-y-1.5" id="demo-services-list">
                     <div class="demo-service-item p-2.5 rounded-xl border-2 border-blue-600 bg-blue-50/50 flex justify-between items-center cursor-pointer transition-all" data-service="Corte & Barba VIP" data-price="12000">
-                      <div>
-                        <span class="font-black text-xs text-slate-900 block">✂️ Corte & Barba VIP</span>
-                        <span class="text-[10px] text-slate-500">45 min</span>
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                          <i class="fas fa-scissors"></i>
+                        </div>
+                        <div>
+                          <span class="font-black text-xs text-slate-900 block">Corte & Barba VIP</span>
+                          <span class="text-[10px] text-slate-500"><i class="far fa-clock mr-1 text-[9px]"></i>45 min</span>
+                        </div>
                       </div>
                       <span class="font-black text-xs text-blue-700">₡12,000</span>
                     </div>
                     <div class="demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all" data-service="Manicura Spa" data-price="15000">
-                      <div>
-                        <span class="font-black text-xs text-slate-900 block">💅 Manicura Spa Completa</span>
-                        <span class="text-[10px] text-slate-500">60 min</span>
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                          <i class="fas fa-hand-sparkles"></i>
+                        </div>
+                        <div>
+                          <span class="font-black text-xs text-slate-900 block">Manicura Spa Completa</span>
+                          <span class="text-[10px] text-slate-500"><i class="far fa-clock mr-1 text-[9px]"></i>60 min</span>
+                        </div>
                       </div>
                       <span class="font-black text-xs text-slate-700">₡15,000</span>
                     </div>
                     <div class="demo-service-item p-2.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex justify-between items-center cursor-pointer transition-all" data-service="Masaje Relajante" data-price="25000">
-                      <div>
-                        <span class="font-black text-xs text-slate-900 block">💆 Masaje Relajante</span>
-                        <span class="text-[10px] text-slate-500">60 min</span>
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                          <i class="fas fa-spa"></i>
+                        </div>
+                        <div>
+                          <span class="font-black text-xs text-slate-900 block">Masaje Relajante</span>
+                          <span class="text-[10px] text-slate-500"><i class="far fa-clock mr-1 text-[9px]"></i>60 min</span>
+                        </div>
                       </div>
                       <span class="font-black text-xs text-slate-700">₡25,000</span>
                     </div>
@@ -2941,10 +2958,10 @@ class App {
                 <div>
                   <span class="text-[11px] font-black text-slate-500 uppercase tracking-wide block mb-1.5">2. Horarios para Hoy:</span>
                   <div class="grid grid-cols-2 gap-1.5" id="demo-slots-list">
-                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">09:30 AM</button>
-                    <button class="demo-slot-btn py-2 px-3 rounded-xl border-2 border-blue-600 text-xs font-black text-blue-900 bg-blue-50 shadow-xs">10:30 AM ✓</button>
-                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">02:00 PM</button>
-                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100">04:30 PM</button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-1 cursor-pointer" data-slot="09:30 AM"><span>09:30 AM</span></button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border-2 border-blue-600 text-xs font-black text-blue-900 bg-blue-50 shadow-xs flex items-center justify-between gap-1 cursor-pointer" data-slot="10:30 AM"><span>10:30 AM</span> <i class="fas fa-check text-[10px] text-blue-600"></i></button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-1 cursor-pointer" data-slot="02:00 PM"><span>02:00 PM</span></button>
+                    <button class="demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-1 cursor-pointer" data-slot="04:30 PM"><span>04:30 PM</span></button>
                   </div>
                 </div>
 
@@ -3001,7 +3018,7 @@ class App {
 
               <div class="pt-2">
                 <button id="landing-demo-register-btn" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-sm shadow-md transition-all cursor-pointer">
-                  🎁 ¡Quiero 15 Días de Prueba Pro Gratis! >
+                  <i class="fas fa-rocket mr-1 text-amber-300"></i> Quiero 15 Días de Prueba Pro Gratis <i class="fas fa-arrow-right ml-1"></i>
                 </button>
               </div>
             </div>
@@ -3162,7 +3179,7 @@ class App {
               </div>
 
               <button id="landing-plan-pro-btn" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs shadow-lg shadow-blue-950/25 transition-all cursor-pointer transform hover:scale-102">
-                🎁 Probar 15 Días Pro Gratis
+                <i class="fas fa-rocket mr-1.5 text-amber-300"></i> Probar 15 Días Pro Gratis
               </button>
             </div>
 
@@ -3281,7 +3298,7 @@ class App {
             </p>
             <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
               <button id="landing-bottom-register-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-base shadow-xl shadow-blue-950/30 transition-transform transform hover:scale-105 cursor-pointer">
-                🎁 Pre-registrarme con 15 Días Pro Gratis
+                <i class="fas fa-rocket mr-2 text-amber-300"></i> Pre-registrarme con 15 Días Pro Gratis
               </button>
             </div>
           </div>
@@ -3337,12 +3354,17 @@ class App {
     document.querySelectorAll('.demo-slot-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.demo-slot-btn').forEach(b => {
-          b.className = 'demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100';
-          b.textContent = b.textContent.replace(' ✓', '');
+          b.className = 'demo-slot-btn py-2 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 flex items-center justify-between gap-1 cursor-pointer';
+          const icon = b.querySelector('.fa-check');
+          if (icon) icon.remove();
         });
-        btn.className = 'demo-slot-btn py-2 px-3 rounded-xl border-2 border-blue-600 text-xs font-black text-blue-900 bg-blue-50 shadow-xs';
-        if (!btn.textContent.includes('✓')) btn.textContent = `${btn.textContent} ✓`;
-        selectedDemoSlot = btn.textContent.replace(' ✓', '').trim();
+        btn.className = 'demo-slot-btn py-2 px-3 rounded-xl border-2 border-blue-600 text-xs font-black text-blue-900 bg-blue-50 shadow-xs flex items-center justify-between gap-1 cursor-pointer';
+        if (!btn.querySelector('.fa-check')) {
+          const checkIcon = document.createElement('i');
+          checkIcon.className = 'fas fa-check text-[10px] text-blue-600';
+          btn.appendChild(checkIcon);
+        }
+        selectedDemoSlot = btn.getAttribute('data-slot') || btn.querySelector('span')?.textContent || '10:30 AM';
       });
     });
 
@@ -3425,7 +3447,7 @@ class App {
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 font-black uppercase text-[10px] tracking-wider border border-cyan-400/30 animate-pulse">
                 <i class="fas fa-flask"></i> Entorno de Pruebas
               </span>
-              <span class="text-slate-300 hidden sm:inline">Ambiente seguro para pruebas de pago con <strong>SINPE Móvil Costa Rica 🇨🇷</strong></span>
+              <span class="text-slate-300 hidden sm:inline">Ambiente seguro para pruebas de pago con <strong>SINPE Móvil Costa Rica</strong></span>
             </div>
             <div class="flex items-center gap-2">
               <button id="test-back-directory-btn" class="px-3 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-bold transition-all text-xs flex items-center gap-1 cursor-pointer">
@@ -3446,7 +3468,7 @@ class App {
 
           <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
             Pruebas de Pago con <br class="hidden sm:inline">
-            <span class="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">SINPE Móvil 🇨🇷</span>
+            <span class="bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 bg-clip-text text-transparent">SINPE Móvil</span>
           </h1>
 
           <p class="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
@@ -3526,7 +3548,7 @@ class App {
             <!-- PLAN 2: ₡10 COLONES -->
             <div class="relative rounded-3xl bg-slate-900/90 border-2 border-cyan-500/60 p-6 sm:p-8 flex flex-col justify-between shadow-2xl shadow-cyan-500/15 hover:border-cyan-400 transition-all">
               <div class="absolute -top-3.5 right-6 px-3.5 py-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow-md">
-                🔥 Test Pro Completo
+                <i class="fas fa-bolt mr-1"></i> Test Pro Completo
               </div>
 
               <div class="space-y-4">
@@ -3672,7 +3694,7 @@ class App {
     document.getElementById('test-copy-sinpe-phone-btn')?.addEventListener('click', () => {
       if (navigator.clipboard) {
         navigator.clipboard.writeText('71433852').then(() => {
-          this.showToast('📋 Número SINPE 7143-3852 copiado al portapapeles', 'success');
+          this.showToast('Número SINPE 7143-3852 copiado al portapapeles', 'success');
         }).catch(() => {
           this.showToast('Número SINPE: 7143-3852', 'info');
         });
@@ -4062,7 +4084,7 @@ class App {
                 <div>
                   <div class="flex items-center gap-1.5">
                     <span class="font-bold text-xs text-slate-900">${this.escapeHtml(rev.clientName)}</span>
-                    <span class="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded font-semibold">✓ Verificado</span>
+                    <span class="text-[10px] text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded font-semibold flex items-center gap-1"><i class="fas fa-check-circle"></i> Verificado</span>
                   </div>
                   <span class="text-[11px] text-blue-600 font-medium">Servicio: ${this.escapeHtml(rev.serviceName || 'Atención')}</span>
                 </div>
@@ -4166,11 +4188,11 @@ class App {
     let currentSelectedRating = preselectedRating && preselectedRating >= 1 && preselectedRating <= 5 ? preselectedRating : (review ? review.rating : 5);
 
     const ratingLabels = {
-      1: 'Malo 😞',
-      2: 'Regular 😐',
-      3: 'Bueno 🙂',
-      4: 'Muy Bueno 😊',
-      5: '¡Excelente! 🤩'
+      1: 'Malo',
+      2: 'Regular',
+      3: 'Bueno',
+      4: 'Muy Bueno',
+      5: '¡Excelente!'
     };
 
     if (alreadyReviewed && review && !allowEdit) {
@@ -4278,7 +4300,7 @@ class App {
                     data-rating="${num}"
                     title="${ratingLabels[num]}"
                   >
-                    ★
+                    <i class="fas fa-star pointer-events-none"></i>
                   </button>
                 `).join('')}
               </div>
@@ -5386,10 +5408,10 @@ class App {
                   <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Estado de la Reserva</label>
                     <select id="reschedule-status-select" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
-                      <option value="confirmed" ${appointment.status === 'confirmed' ? 'selected' : ''}>✅ Confirmada / Aceptada</option>
-                      <option value="pending" ${appointment.status === 'pending' ? 'selected' : ''}>⏳ Pendiente de Confirmación</option>
-                      <option value="completed" ${appointment.status === 'completed' ? 'selected' : ''}>🎉 Completada / Atendida</option>
-                      <option value="cancelled" ${appointment.status === 'cancelled' ? 'selected' : ''}>❌ Cancelada</option>
+                      <option value="confirmed" ${appointment.status === 'confirmed' ? 'selected' : ''}>Confirmada / Aceptada</option>
+                      <option value="pending" ${appointment.status === 'pending' ? 'selected' : ''}>Pendiente de Confirmación</option>
+                      <option value="completed" ${appointment.status === 'completed' ? 'selected' : ''}>Completada / Atendida</option>
+                      <option value="cancelled" ${appointment.status === 'cancelled' ? 'selected' : ''}>Cancelada</option>
                     </select>
                   </div>
                 </div>
@@ -5655,7 +5677,7 @@ class App {
                   ${apt.status === 'completed' ? `
                     ${(apt.isReviewed || apt.reviewRating) ? `
                       <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
-                        <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}★)
+                        <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}/5)
                       </button>
                     ` : `
                       <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer" data-apt-id="${apt.id}">
@@ -6020,7 +6042,7 @@ class App {
             <h3 class="text-base sm:text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
             <p class="text-xs text-slate-300 leading-relaxed">
               ${isUnlimited 
-                ? `🚀 Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
+                ? `Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
                 : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas permitidas este mes.`}
             </p>
           </div>
@@ -6227,7 +6249,7 @@ class App {
     const isManuallyDisabled = localStorage.getItem('reservas_push_manual_disabled') === 'true';
     if (status.supported && status.permission === 'granted' && !status.isSubscribed && !status.needsIosInstall && !isManuallyDisabled) {
       try {
-        console.log('🔄 [Push] Permiso previamente concedido detectado. Reactivando notificaciones automáticamente para el comercio...');
+        console.log('[Push] Permiso previamente concedido detectado. Reactivando notificaciones automáticamente para el comercio...');
         await storage.registerPushForBusiness(currentBiz.id);
         status = await storage.checkPushSubscriptionStatus();
       } catch (autoErr) {
@@ -6325,7 +6347,7 @@ class App {
         }
         try {
           await storage.sendTestPushNotification(currentBiz.id);
-          this.showToast('🔔 Notificación de prueba enviada. ¡Revisa la barra de notificaciones de tu teléfono o navegador!', 'success');
+          this.showToast('Notificación de prueba enviada. ¡Revisa la barra de notificaciones de tu teléfono o navegador!', 'success');
         } catch (err) {
           this.showToast('Error enviando notificación: ' + err.message, 'error');
         } finally {
@@ -6380,7 +6402,7 @@ class App {
         try {
           localStorage.removeItem('reservas_push_manual_disabled');
           await storage.registerPushForBusiness(currentBiz.id);
-          this.showToast('✅ ¡Notificaciones push activadas con éxito!', 'success');
+          this.showToast('¡Notificaciones push activadas con éxito!', 'success');
           // Enviar inmediatamente una notificación de confirmación
           await storage.sendTestPushNotification(currentBiz.id).catch(() => {});
           this.updatePushNotificationBanner(currentBiz);
@@ -6508,7 +6530,7 @@ class App {
                   </div>
                   <h3 class="text-sm font-black text-slate-900">Autoconfirmación de Reservas</h3>
                   <span class="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${isAutoConfirm ? 'bg-emerald-200/70 text-emerald-900 border border-emerald-300/60' : 'bg-amber-200/80 text-amber-950 border border-amber-300/70'}">
-                    ${isAutoConfirm ? '⚡ Modo Automático Activo' : '✋ Modo Manual (Aprobación Requerida)'}
+                    ${isAutoConfirm ? '<i class="fas fa-bolt text-amber-500 mr-1"></i> Modo Automático Activo' : '<i class="fas fa-hand-paper text-slate-500 mr-1"></i> Modo Manual (Aprobación Requerida)'}
                   </span>
                 </div>
                 <p class="text-xs text-slate-700 leading-relaxed max-w-3xl">
@@ -6560,13 +6582,13 @@ class App {
                 ⏳ Pendientes (${pendingCount})
               </button>
               <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'confirmed' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="confirmed">
-                ✅ Confirmadas (${confirmedCount})
+                Confirmadas (${confirmedCount})
               </button>
               <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="completed">
-                🎉 Completadas (${completedCount})
+                Completadas (${completedCount})
               </button>
               <button class="owner-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${filter === 'cancelled' ? 'bg-rose-600 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="cancelled">
-                ❌ Canceladas (${cancelledCount})
+                Canceladas (${cancelledCount})
               </button>
             </div>
 
@@ -6596,9 +6618,9 @@ class App {
                     <span>Ordenar por:</span>
                   </label>
                   <select id="owner-sort-order-select" class="bg-transparent text-xs font-extrabold text-blue-700 focus:outline-none cursor-pointer truncate max-w-[190px] sm:max-w-none">
-                    <option value="date-asc" ${sortOrder === 'date-asc' ? 'selected' : ''}>📅 Fecha y Hora de Cita</option>
-                    <option value="arrival-desc" ${sortOrder === 'arrival-desc' ? 'selected' : ''}>🕒 Orden de Llegada (Nuevas primero)</option>
-                    <option value="arrival-asc" ${sortOrder === 'arrival-asc' ? 'selected' : ''}>⏳ Orden de Llegada (Antiguas primero)</option>
+                    <option value="date-asc" ${sortOrder === 'date-asc' ? 'selected' : ''}>Fecha y Hora de Cita</option>
+                    <option value="arrival-desc" ${sortOrder === 'arrival-desc' ? 'selected' : ''}>Orden de Llegada (Nuevas primero)</option>
+                    <option value="arrival-asc" ${sortOrder === 'arrival-asc' ? 'selected' : ''}>Orden de Llegada (Antiguas primero)</option>
                   </select>
                 </div>
 
@@ -6637,7 +6659,7 @@ class App {
                     ${isNewlyArrived ? `
                       <div class="flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs mb-1">
                         <i class="fas fa-sparkles text-emerald-600 animate-pulse"></i>
-                        <span>✨ ¡Nueva reserva en vivo! Acomodada cronológicamente</span>
+                        <span>¡Nueva reserva en vivo! Acomodada cronológicamente</span>
                       </div>
                     ` : ''}
                     <!-- Cabecera Tarjeta Móvil -->
@@ -7339,7 +7361,7 @@ class App {
                     <i class="fas ${currentBiz.autoConfirmAppointments !== false ? 'fa-magic text-emerald-600' : 'fa-hand-paper text-amber-600'} text-base"></i>
                     <span class="font-bold text-slate-900 text-sm">Autoconfirmación de Reservas</span>
                     <span class="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full ${currentBiz.autoConfirmAppointments !== false ? 'bg-emerald-200/70 text-emerald-900' : 'bg-amber-200/80 text-amber-950'}">
-                      ${currentBiz.autoConfirmAppointments !== false ? '⚡ Automático' : '✋ Manual'}
+                      ${currentBiz.autoConfirmAppointments !== false ? 'Automático' : 'Manual'}
                     </span>
                   </div>
                   <p class="text-xs text-slate-600 leading-relaxed">
@@ -7635,7 +7657,7 @@ class App {
                       ${isNewlyArrived ? `
                         <div class="flex items-center gap-1.5 text-xs font-black text-emerald-800 bg-emerald-100/90 px-3 py-1.5 rounded-xl border border-emerald-300 shadow-2xs mb-1">
                           <i class="fas fa-sparkles text-emerald-600 animate-pulse"></i>
-                          <span>✨ ¡Nueva reserva en vivo! Acomodada cronológicamente</span>
+                          <span>¡Nueva reserva en vivo! Acomodada cronológicamente</span>
                         </div>
                       ` : ''}
                       <div class="flex items-start justify-between gap-2">
@@ -7804,7 +7826,7 @@ class App {
                         <div 
                           class="cal-apt-chip p-1.5 rounded-lg border ${chipStyle} text-[10px] font-semibold transition-all shadow-2xs hover:scale-[1.02] cursor-pointer"
                           data-apt-id="${apt.id}"
-                          title="${isNewlyArrived ? '✨ ¡Nueva cita recién llegada!' : 'Click para ver detalle y gestionar cita de ' + this.escapeHtml(apt.clientName)}"
+                          title="${isNewlyArrived ? '¡Nueva cita recién llegada!' : 'Click para ver detalle y gestionar cita de ' + this.escapeHtml(apt.clientName)}"
                         >
                           <div class="flex items-center justify-between gap-1">
                             <span class="font-bold font-mono text-[10px]">${this.formatTime12h(apt.time)}</span>
@@ -7838,7 +7860,7 @@ class App {
         </div>
 
         <div class="text-[11px] text-slate-500 flex items-center justify-between flex-wrap gap-2 px-1">
-          <span>💡 <strong>Consejo:</strong> Toca cualquier cita para ver sus detalles completos, aceptar, completar o reprogramar. Toca un día vacío para agendar una reserva manual.</span>
+          <span><i class="fas fa-lightbulb text-amber-500 mr-1"></i> <strong>Consejo:</strong> Toca cualquier cita para ver sus detalles completos, aceptar, completar o reprogramar. Toca un día vacío para agendar una reserva manual.</span>
           <span class="text-[10px] text-slate-400 font-medium">Tema activo: <strong>${theme.name}</strong></span>
         </div>
       </div>
@@ -7985,14 +8007,14 @@ class App {
 
     document.getElementById('modal-confirm-apt-btn')?.addEventListener('click', async () => {
       await storage.updateAppointmentStatus(apt.id, 'confirmed');
-      this.showToast('✅ ¡Reserva confirmada exitosamente!', 'success');
+      this.showToast('¡Reserva confirmada exitosamente!', 'success');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
     });
 
     document.getElementById('modal-complete-apt-btn')?.addEventListener('click', async () => {
       await storage.updateAppointmentStatus(apt.id, 'completed');
-      this.showToast('🎉 ¡Reserva completada! Se envió solicitud de calificación.', 'success');
+      this.showToast('¡Reserva completada! Se envió solicitud de calificación.', 'success');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
     });
@@ -8004,7 +8026,7 @@ class App {
 
     document.getElementById('modal-cancel-apt-btn')?.addEventListener('click', async () => {
       await storage.updateAppointmentStatus(apt.id, 'cancelled');
-      this.showToast('❌ Reserva cancelada.', 'info');
+      this.showToast('Reserva cancelada.', 'info');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
     });
@@ -10083,7 +10105,7 @@ class App {
                 </span>
                 ${!isWorkingDay ? `
                   <span class="bg-amber-100 text-amber-900 px-2 py-0.5 rounded-md font-bold text-[10px]">
-                    ⚠️ Día No Laboral según Horarios
+                    <i class="fas fa-calendar-times text-amber-700 mr-1"></i> Día No Laboral según Horarios
                   </span>
                 ` : ''}
               </div>
@@ -10348,8 +10370,8 @@ class App {
       currentBiz.autoConfirmAppointments = isChecked;
       this.showToast(
         isChecked 
-          ? '⚡ ¡Autoconfirmación activada! Las reservas se confirmarán y notificarán al instante.' 
-          : '✋ Modo manual activado: Las reservas requerirán tu aprobación antes de enviar correo y WhatsApp.',
+          ? '¡Autoconfirmación activada! Las reservas se confirmarán y notificarán al instante.' 
+          : 'Modo manual activado: Las reservas requerirán tu aprobación antes de enviar correo y WhatsApp.',
         'success'
       );
       this.renderCurrentView();
@@ -10390,9 +10412,9 @@ class App {
         await storage.updateAppointmentStatus(aptId, newStatus);
         const isBizEmailOnly = currentBiz && (currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan);
         const statusMsgs = {
-          confirmed: isBizEmailOnly ? '✅ ¡Reserva confirmada! Se envió el correo de confirmación al cliente.' : '✅ ¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
-          completed: '🎉 ¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
-          cancelled: '❌ Reserva cancelada.'
+          confirmed: isBizEmailOnly ? '¡Reserva confirmada! Se envió el correo de confirmación al cliente.' : '¡Reserva confirmada! Se enviaron las notificaciones por WhatsApp y correo al cliente.',
+          completed: '¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
+          cancelled: 'Reserva cancelada.'
         };
         this.showToast(statusMsgs[newStatus] || `Estado actualizado a: ${newStatus}`, newStatus === 'cancelled' ? 'info' : 'success');
         this.renderCurrentView();
@@ -10957,9 +10979,9 @@ class App {
         try {
           const res = await storage.toggleBlockedSlot(currentBiz.id, selectedDate, timeStr);
           if (res && res.action === 'blocked') {
-            this.showToast(`🔒 Franja ${this.formatTime12h(timeStr)} bloqueada exitosamente.`, 'info');
+            this.showToast(`Franja ${this.formatTime12h(timeStr)} bloqueada exitosamente.`, 'info');
           } else {
-            this.showToast(`🔓 Franja ${this.formatTime12h(timeStr)} liberada y disponible para reservas.`, 'success');
+            this.showToast(`Franja ${this.formatTime12h(timeStr)} liberada y disponible para reservas.`, 'success');
           }
         } catch (err) {
           this.showToast('Error al actualizar disponibilidad de horario.', 'error');
@@ -11019,7 +11041,7 @@ class App {
 
       if (confirm(`¿Deseas bloquear todas las franjas horarias (${allTimes.length} turnos) del día ${this.formatDateDMY(selectedDate)} para que nadie pueda agendar?`)) {
         await storage.setDayBlockedSlots(currentBiz.id, selectedDate, allTimes, 'block_all');
-        this.showToast(`🔒 Todas las horas del ${this.formatDateDMY(selectedDate)} han sido bloqueadas.`, 'info');
+        this.showToast(`Todas las horas del ${this.formatDateDMY(selectedDate)} han sido bloqueadas.`, 'info');
         this.renderCurrentView();
       }
     });
@@ -11029,7 +11051,7 @@ class App {
       const selectedDate = this.selectedBlockedSlotsDate || this.getTodayDateString();
       if (confirm(`¿Deseas eliminar todos los bloqueos manuales y restablecer la disponibilidad normal para el día ${this.formatDateDMY(selectedDate)}?`)) {
         await storage.setDayBlockedSlots(currentBiz.id, selectedDate, [], 'unblock_all');
-        this.showToast(`🔓 Todos los bloqueos del ${this.formatDateDMY(selectedDate)} han sido eliminados.`, 'success');
+        this.showToast(`Todos los bloqueos del ${this.formatDateDMY(selectedDate)} han sido eliminados.`, 'success');
         this.renderCurrentView();
       }
     });
@@ -11302,7 +11324,7 @@ class App {
                       <p class="text-xs text-slate-500">Lista de dueños de negocio inscritos en la etapa de prelanzamiento para contactar vía WhatsApp.</p>
                     </div>
                     <span class="px-3.5 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl text-xs font-black flex items-center gap-1.5 self-start shadow-xs">
-                      🎁 15 Días Gratis + Catálogo Asistido
+                      <i class="fas fa-gift text-amber-600 mr-1.5"></i>15 Días Gratis + Catálogo Asistido
                     </span>
                   </div>
 
@@ -11711,10 +11733,10 @@ class App {
                                   data-id="${b.id}" 
                                   data-name="${this.escapeHtml(b.name)}"
                                 >
-                                  <option value="free" ${b.plan === 'free' ? 'selected' : ''}>🎁 Gratis (₡0 • 25)</option>
-                                  <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>🔹 Básico ($10 • 150)</option>
-                                  <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>⭐ Pro ($18 • 300)</option>
-                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>🚀 Ilimitado ($35 • ∞)</option>
+                                  <option value="free" ${b.plan === 'free' ? 'selected' : ''}>Gratis (₡0 • 25)</option>
+                                  <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>Básico ($10 • 150)</option>
+                                  <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>Pro ($18 • 300)</option>
+                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>Ilimitado ($35 • ∞)</option>
                                 </select>
                               </td>
                               <td class="p-3">
@@ -12470,7 +12492,7 @@ class App {
                             <i class="fas fa-store text-indigo-400 mr-1"></i> Seleccionar Comercio:
                           </label>
                           <select id="dev-export-biz-select" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                            <option value="all">🏢 Todos los Comercios (${businesses.length})</option>
+                            <option value="all">Todos los Comercios (${businesses.length})</option>
                             ${businesses.map(b => `
                               <option value="${b.id}">${this.escapeHtml(b.name)} (${b.categoryLabel || 'General'})</option>
                             `).join('')}
@@ -12483,9 +12505,9 @@ class App {
                             <i class="fas fa-check-circle text-emerald-400 mr-1"></i> Estado de Cita:
                           </label>
                           <select id="dev-export-status-select" class="w-full px-3 py-2.5 bg-slate-800/90 border border-slate-700 text-white rounded-xl text-xs font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                            <option value="completed" selected>✅ Solo Completadas / Atendidas (Recomendado)</option>
-                            <option value="confirmed">📅 Confirmadas</option>
-                            <option value="all">📋 Todas (Atendidas, Confirmadas, Pendientes, Canceladas)</option>
+                            <option value="completed" selected>Solo Completadas / Atendidas (Recomendado)</option>
+                            <option value="confirmed">Confirmadas</option>
+                            <option value="all">Todas (Atendidas, Confirmadas, Pendientes, Canceladas)</option>
                           </select>
                         </div>
 
@@ -12742,25 +12764,25 @@ class App {
           syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Conectando con PayPal API...';
         }
         if (consoleText) {
-          consoleText.innerHTML = '<span class="text-amber-400">⏳ Conectando con API de PayPal y generando planes ($8, $15, $25)...</span>';
+          consoleText.innerHTML = '<span class="text-amber-400"><i class="fas fa-spinner fa-spin mr-1"></i> Conectando con API de PayPal y generando planes ($8, $15, $25)...</span>';
         }
 
         try {
           const res = await storage.syncPayPalPlans();
           if (consoleText) {
             consoleText.innerHTML = `
-              <span class="text-emerald-400">✅ ¡Planes creados y sincronizados exitosamente!</span><br>
-              <span class="text-slate-300">📦 Producto ID: ${res.productId}</span><br>
-              <span class="text-slate-300">🔹 Plan Básico: ${res.plans.paypal_plan_basic_id}</span><br>
-              <span class="text-amber-300">⭐ Plan Pro: ${res.plans.paypal_plan_pro_id}</span><br>
-              <span class="text-purple-300">👑 Plan Ilimitado: ${res.plans.paypal_plan_unlimited_id}</span>
+              <span class="text-emerald-400 font-bold"><i class="fas fa-check-circle mr-1"></i> ¡Planes creados y sincronizados exitosamente!</span><br>
+              <span class="text-slate-300"><i class="fas fa-box text-blue-400 mr-1"></i> Producto ID: ${res.productId}</span><br>
+              <span class="text-slate-300"><i class="fas fa-gem text-blue-400 mr-1"></i> Plan Básico: ${res.plans.paypal_plan_basic_id}</span><br>
+              <span class="text-amber-300"><i class="fas fa-star text-amber-400 mr-1"></i> Plan Pro: ${res.plans.paypal_plan_pro_id}</span><br>
+              <span class="text-purple-300"><i class="fas fa-crown text-purple-400 mr-1"></i> Plan Ilimitado: ${res.plans.paypal_plan_unlimited_id}</span>
             `;
           }
           this.showToast('¡Planes sincronizados con PayPal!', 'success');
           setTimeout(() => this.renderDeveloperDashboardView(container), 2000);
         } catch (err) {
           if (consoleText) {
-            consoleText.innerHTML = `<span class="text-rose-400">❌ Error: ${err.message}</span>`;
+            consoleText.innerHTML = `<span class="text-rose-400"><i class="fas fa-times-circle mr-1"></i> Error: ${err.message}</span>`;
           }
           this.showToast(err.message || 'Error al sincronizar planes.', 'error');
         } finally {
@@ -12838,21 +12860,21 @@ class App {
           if (res.result?.success) {
             if (resultText) {
               resultText.className = 'text-emerald-400 font-bold';
-              resultText.textContent = `✅ ÉXITO: Mensaje enviado por ${res.result.provider || 'Meta'} (ID: ${res.result.messageId || res.result.sid || 'OK'})`;
+              resultText.innerHTML = `<i class="fas fa-check-circle mr-1"></i> ÉXITO: Mensaje enviado por ${res.result.provider || 'Meta'} (ID: ${res.result.messageId || res.result.sid || 'OK'})`;
             }
             this.showToast('¡WhatsApp de prueba entregado con éxito!', 'success');
           } else {
             const errDetail = res.result?.error || res.error || res.result?.reason || 'Error desconocido';
             if (resultText) {
               resultText.className = 'text-rose-400';
-              resultText.textContent = `❌ FALLO DE META: ${errDetail}`;
+              resultText.innerHTML = `<i class="fas fa-times-circle mr-1"></i> FALLO DE META: ${errDetail}`;
             }
             this.showToast('Error al enviar WhatsApp. Revisa la consola abajo.', 'error');
           }
         } catch (e) {
           if (resultText) {
             resultText.className = 'text-rose-400';
-            resultText.textContent = `❌ ERROR: ${e.message}`;
+            resultText.innerHTML = `<i class="fas fa-times-circle mr-1"></i> ERROR: ${e.message}`;
           }
           this.showToast('Error de conexión al enviar WhatsApp.', 'error');
         } finally {
@@ -12914,8 +12936,8 @@ class App {
               await storage.toggleBusinessVerification(bizId, isVerified);
               this.showToast(
                 isVerified 
-                  ? `✅ El comercio "${bizName}" ahora está VERIFICADO oficialmente.` 
-                  : `ℹ️ Se retiró la verificación de "${bizName}".`,
+                  ? `El comercio "${bizName}" ahora está VERIFICADO oficialmente.` 
+                  : `Se retiró la verificación de "${bizName}".`,
                 'success'
               );
               this.renderDeveloperDashboardView(container);
@@ -13007,7 +13029,7 @@ class App {
         btn.addEventListener('click', async (e) => {
           const bizId = e.currentTarget.getAttribute('data-id');
           const bizName = e.currentTarget.getAttribute('data-name');
-          if (confirm(`⚠️ ATENCIÓN: ¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, reservas asociadas y usuarios en la base de datos.`)) {
+          if (confirm(`¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE el negocio "${bizName}"?\n\nEsta acción borrará todos sus servicios, reservas asociadas y usuarios en la base de datos.`)) {
             try {
               await storage.deleteBusinessByDeveloper(bizId);
               this.showToast(`Negocio "${bizName}" eliminado definitivamente.`, 'success');
@@ -13092,7 +13114,7 @@ class App {
         btn.addEventListener('click', async (e) => {
           const prId = e.currentTarget.getAttribute('data-id');
           const name = e.currentTarget.getAttribute('data-name');
-          if (confirm(`⚠️ ¿Estás seguro de que deseas ELIMINAR el pre-registro de "${name}"?\n\nEsta acción no se puede deshacer.`)) {
+          if (confirm(`¿Estás seguro de que deseas ELIMINAR el pre-registro de "${name}"?\n\nEsta acción no se puede deshacer.`)) {
             try {
               await storage.deletePreRegistrationByDeveloper(prId);
               this.showToast(`Pre-registro de "${name}" eliminado.`, 'success');
@@ -13152,7 +13174,7 @@ class App {
         btn.addEventListener('click', async (e) => {
           const clientId = e.currentTarget.getAttribute('data-id');
           const name = e.currentTarget.getAttribute('data-name');
-          if (confirm(`⚠️ ¿Estás seguro de que deseas ELIMINAR al usuario "${name}"?\n\nEsta acción borrará su cuenta del sistema.`)) {
+          if (confirm(`¿Estás seguro de que deseas ELIMINAR al usuario "${name}"?\n\nEsta acción borrará su cuenta del sistema.`)) {
             try {
               await storage.deleteClientByDeveloper(clientId);
               this.showToast(`Usuario "${name}" eliminado permanentemente.`, 'success');
@@ -13186,11 +13208,11 @@ class App {
     if (!modalContainer) return;
 
     const items = [];
-    if (options.otp) items.push('🔑 Códigos OTP de recuperación de contraseña expirados (>15 min) o usados');
-    if (options.dateBlocks) items.push('📅 Bloqueos de fechas y feriados pasados');
-    if (options.categoryAlerts) items.push('🏷️ Alertas de solicitudes de categorías antiguas (>30 días)');
-    if (options.cancelledAppointments) items.push('❌ Historial de citas canceladas antiguas (>60 días)');
-    if (options.handledPreRegistrations) items.push('🚀 Pre-registros de comercios contactados/gestionados (>60 días)');
+    if (options.otp) items.push('Códigos OTP de recuperación de contraseña expirados (>15 min) o usados');
+    if (options.dateBlocks) items.push('Bloqueos de fechas y feriados pasados');
+    if (options.categoryAlerts) items.push('Alertas de solicitudes de categorías antiguas (>30 días)');
+    if (options.cancelledAppointments) items.push('Historial de citas canceladas antiguas (>60 días)');
+    if (options.handledPreRegistrations) items.push('Pre-registros de comercios contactados/gestionados (>60 días)');
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
@@ -13705,7 +13727,7 @@ class App {
                 <div id="biz-paymethod-wrapper" class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
                   <div id="biz-paymethod-free-note" class="${selectedPlanId === 'free' ? 'block' : 'hidden'} p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2.5 text-xs text-emerald-300 font-bold">
                     <i class="fas fa-gift text-emerald-400 text-base flex-shrink-0"></i>
-                    <span>🎁 Plan 100% Gratis de por vida: No requiere método de pago. Tu cuenta se activará de inmediato.</span>
+                    <span>Plan 100% Gratis de por vida: No requiere método de pago. Tu cuenta se activará de inmediato.</span>
                   </div>
 
                   <div id="biz-paymethod-options" class="${selectedPlanId === 'free' ? 'hidden' : 'block'} space-y-3">
@@ -13722,7 +13744,7 @@ class App {
                         <div class="flex-1">
                           <div class="flex items-center justify-between">
                             <span class="font-black text-xs text-white">SINPE Móvil</span>
-                            <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica 🇨🇷</span>
+                            <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica</span>
                           </div>
                           <p class="text-[10px] text-slate-300 mt-0.5">Transfiere al 7143-3852 y envía el comprobante por WhatsApp para activación rápida.</p>
                         </div>
@@ -13790,7 +13812,7 @@ class App {
                       <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
                       <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                        <option value="otra" class="font-bold text-blue-600">➕ Otra Categoría (Personalizada)</option>
+                        <option value="otra" class="font-bold text-blue-600">Otra Categoría (Personalizada)</option>
                       </select>
                     </div>
 
@@ -14315,7 +14337,7 @@ class App {
         const createdBizId = regData?.user?.businessId || storage.getActiveBusinessId();
         if (createdBizId) {
           if (isFreePlan) {
-            this.showToast('¡Negocio creado con éxito en el Plan Gratis de por vida! 🎉', 'success');
+            this.showToast('¡Negocio creado con éxito en el Plan Gratis de por vida!', 'success');
           } else if (isSinpe) {
             this.showToast(`¡Negocio creado con éxito! Realiza tu SINPE para activar tu ${planConfig.name}`, 'success');
             this.renderSinpePaymentModal({ businessId: createdBizId, planId: planConfig.id });
@@ -14360,7 +14382,7 @@ class App {
             
             <div class="flex items-center gap-2 mb-1.5 flex-wrap">
               <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/40">
-                <i class="fas fa-rocket text-blue-400"></i> Preventa & Prelanzamiento Costa Rica 🇨🇷
+                <i class="fas fa-rocket text-blue-400"></i> Preventa & Prelanzamiento Costa Rica
               </span>
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-600/20 text-blue-200 text-[10px] font-black border border-blue-400/30">
                 <i class="fas fa-check-circle text-[9px] text-blue-400"></i> Sin Tarjeta
@@ -14375,7 +14397,7 @@ class App {
 
           <!-- Beneficio Highlight -->
           <div class="bg-blue-50/90 border-b border-blue-200 px-5 py-2.5 flex items-center gap-2.5 text-xs text-blue-950 font-semibold shrink-0">
-            <span class="text-base flex-shrink-0">🎁</span>
+            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs shrink-0"><i class="fas fa-gift"></i></div>
             <span><strong>0% Pago / 0% Tarjeta hoy:</strong> Te contactaremos por WhatsApp antes del estreno oficial para dejar tu catálogo y horarios listos.</span>
           </div>
 
@@ -14403,7 +14425,7 @@ class App {
               <div>
                 <label class="block font-black text-slate-800 mb-1">WhatsApp de Contacto *</label>
                 <div class="relative">
-                  <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
+                  <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">+506</span>
                   <input type="tel" id="prereg-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
                 </div>
               </div>
@@ -14595,7 +14617,7 @@ class App {
               </div>
               
               <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 text-[11px] font-black uppercase tracking-wider border border-blue-200">
-                🎉 ¡Lugar y 15 Días Gratis Reservados!
+                <i class="fas fa-check-circle text-blue-600 mr-1.5"></i> ¡Lugar y 15 Días Gratis Reservados!
               </span>
 
               <h3 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight">¡Bienvenido a Reservas CR,<br>${this.escapeHtml(bizName)}!</h3>
@@ -14771,7 +14793,7 @@ class App {
               <i class="fas fa-gift text-blue-600 text-xs"></i>
               <span class="text-slate-700 font-semibold">15 Días Gratis de prueba del Plan Pro o Plan Gratis de por vida. Sin compromisos.</span>
             </div>
-            <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica 🇨🇷</span>
+            <span class="font-bold text-slate-700">Aceptamos SINPE Móvil, Tarjetas y PayPal en Costa Rica</span>
           </div>
         </div>
       </div>
@@ -14792,7 +14814,7 @@ class App {
         if (activeBizId) {
           if (planId === 'free') {
             await storage.updateBusinessPlan(activeBizId, 'free');
-            this.showToast('✅ ¡Plan cambiado a Plan Gratis de por vida exitosamente!', 'success');
+            this.showToast('¡Plan cambiado a Plan Gratis de por vida exitosamente!', 'success');
             this.renderCurrentView();
             return;
           }
@@ -14821,7 +14843,7 @@ class App {
         await storage.updateBusinessPlan(businessId, 'free');
       }
       modalContainer.innerHTML = '';
-      this.showToast('✅ ¡Plan Gratis activado de por vida!', 'success');
+      this.showToast('¡Plan Gratis activado de por vida!', 'success');
       if (this.currentView === 'owner-dashboard') {
         this.renderCurrentView();
       }
@@ -14932,7 +14954,7 @@ class App {
                 <div>
                   <label class="block font-bold text-slate-700 mb-1 text-xs">Número de Teléfono Emisor (Opcional)</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">🇨🇷 +506</span>
+                    <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">+506</span>
                     <input 
                       type="tel" 
                       id="sinpe-verify-phone" 
@@ -14979,7 +15001,7 @@ class App {
 
           <!-- Footer -->
           <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
-            <span>Validación y activación automática SINPE CR 🇨🇷</span>
+            <span>Validación y activación automática SINPE CR</span>
             <button type="button" id="close-sinpe-footer-btn" class="font-bold text-slate-600 hover:text-slate-900 cursor-pointer">Cerrar</button>
           </div>
         </div>
@@ -14994,7 +15016,7 @@ class App {
     // 2. Copiar Teléfono
     document.getElementById('modal-copy-sinpe-phone')?.addEventListener('click', () => {
       navigator.clipboard.writeText(sinpePhoneRaw).then(() => {
-        this.showToast('📋 Número SINPE 7143-3852 copiado', 'success');
+        this.showToast('Número SINPE 7143-3852 copiado', 'success');
       }).catch(() => {
         this.showToast('Número: 7143-3852', 'info');
       });
@@ -15052,12 +15074,12 @@ class App {
                   ${data.message || 'No se encontró ninguna transferencia SINPE coincidente con este comprobante y monto.'}
                 </p>
                 <div class="pt-1 text-[11px] text-rose-700">
-                  💡 Si ya realizaste el SINPE, por favor espera unos 10-20 segundos a que el banco emita el comprobante y vuelve a presionar el botón de verificar.
+                  <i class="fas fa-lightbulb text-amber-500 mr-1"></i> Si ya realizaste el SINPE, por favor espera unos 10-20 segundos a que el banco emita el comprobante y vuelve a presionar el botón de verificar.
                 </div>
               </div>
             </div>
           `;
-          this.showToast('❌ Comprobante no encontrado todavía. Verifica o espera unos segundos.', 'error');
+          this.showToast('Comprobante no encontrado todavía. Verifica o espera unos segundos.', 'error');
         } else {
           // --- ESTADO: ÉXITO / VERIFICADO ---
           this.playNotificationChime();
@@ -15079,7 +15101,7 @@ class App {
                 <i class="fas fa-check-circle"></i>
               </div>
               <div class="space-y-1 flex-1">
-                <strong class="text-sm font-black text-emerald-900 block">¡Pago de ${formattedAmount} Verificado con Éxito! 🎉</strong>
+                <strong class="text-sm font-black text-emerald-900 block">¡Pago de ${formattedAmount} Verificado con Éxito!</strong>
                 <p class="text-xs text-emerald-800 leading-relaxed">
                   Se ha conciliado correctamente la transferencia de SINPE Móvil y se ha activado tu <strong>${activePlanName}</strong>.
                 </p>
@@ -15110,7 +15132,7 @@ class App {
             }
           });
 
-          this.showToast(`🎉 ¡SINPE de ${formattedAmount} confirmado con éxito! Plan ${activePlanName} activado.`, 'success');
+          this.showToast(`¡SINPE de ${formattedAmount} confirmado con éxito! Plan ${activePlanName} activado.`, 'success');
           this.renderHeader();
         }
       } catch (err) {
@@ -15147,7 +15169,7 @@ class App {
         });
         const data = await res.json();
         if (data.success) {
-          this.showToast(`⚡ Comprobante #${testRef} simulado. Verificando automáticamente...`, 'info');
+          this.showToast(`Comprobante #${testRef} simulado. Verificando automáticamente...`, 'info');
           verifyForm?.dispatchEvent(new Event('submit'));
         }
       } catch (simErr) {
@@ -15171,7 +15193,7 @@ class App {
         await storage.updateBusinessPlan(businessId, 'free');
       }
       modalContainer.innerHTML = '';
-      this.showToast('✅ ¡Plan Gratis activado de por vida!', 'success');
+      this.showToast('¡Plan Gratis activado de por vida!', 'success');
       if (this.currentView === 'owner-dashboard') {
         this.renderCurrentView();
       }
@@ -15548,16 +15570,16 @@ class App {
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Estado de Operación</label>
                 <select id="edit-biz-status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
-                  <option value="active" ${!biz.isBlocked ? 'selected' : ''}>🟢 Activo & Operando</option>
-                  <option value="blocked" ${biz.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Suspendido</option>
+                  <option value="active" ${!biz.isBlocked ? 'selected' : ''}>Activo & Operando</option>
+                  <option value="blocked" ${biz.isBlocked ? 'selected' : ''}>Bloqueado / Suspendido</option>
                 </select>
               </div>
 
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Visibilidad</label>
                 <select id="edit-biz-visibility" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs">
-                  <option value="visible" ${!biz.isHidden ? 'selected' : ''}>👁️ Visible en Directorio</option>
-                  <option value="hidden" ${biz.isHidden ? 'selected' : ''}>🙈 Oculto en Inicio</option>
+                  <option value="visible" ${!biz.isHidden ? 'selected' : ''}>Visible en Directorio</option>
+                  <option value="hidden" ${biz.isHidden ? 'selected' : ''}>Oculto en Inicio</option>
                 </select>
               </div>
             </div>
@@ -15795,10 +15817,10 @@ class App {
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Estado / Bloqueo</label>
                 <select id="edit-prereg-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  <option value="pending" ${!pr.isBlocked ? 'selected' : ''}>🟡 Pendiente de Contacto</option>
-                  <option value="contacted" ${pr.status === 'contacted' ? 'selected' : ''}>💬 Contactado</option>
-                  <option value="active" ${pr.status === 'active' ? 'selected' : ''}>🟢 Activado en la Plataforma</option>
-                  <option value="blocked" ${pr.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Descartado</option>
+                  <option value="pending" ${!pr.isBlocked ? 'selected' : ''}>Pendiente de Contacto</option>
+                  <option value="contacted" ${pr.status === 'contacted' ? 'selected' : ''}>Contactado</option>
+                  <option value="active" ${pr.status === 'active' ? 'selected' : ''}>Activado en la Plataforma</option>
+                  <option value="blocked" ${pr.isBlocked ? 'selected' : ''}>Bloqueado / Descartado</option>
                 </select>
               </div>
             </div>
@@ -15930,8 +15952,8 @@ class App {
               <div>
                 <label class="block font-bold text-slate-700 mb-1 text-xs">Estado de Acceso</label>
                 <select id="edit-client-status" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  <option value="active" ${!c.isBlocked ? 'selected' : ''}>🟢 Activo (Puede Reservar)</option>
-                  <option value="blocked" ${c.isBlocked ? 'selected' : ''}>🔴 Bloqueado / Suspendido</option>
+                  <option value="active" ${!c.isBlocked ? 'selected' : ''}>Activo (Puede Reservar)</option>
+                  <option value="blocked" ${c.isBlocked ? 'selected' : ''}>Bloqueado / Suspendido</option>
                 </select>
               </div>
               <div>
@@ -16491,7 +16513,7 @@ class App {
 
       try {
         await storage.addService(businessId, { name, price, duration, description });
-        this.showToast('✅ Servicio agregado al catálogo con éxito.', 'success');
+        this.showToast('Servicio agregado al catálogo con éxito.', 'success');
         modalContainer.innerHTML = '';
         this.renderCurrentView();
       } catch (err) {
@@ -16825,7 +16847,7 @@ class App {
     const faqs = [
       {
         q: '1. ¿Qué es Reservas CR y cómo funciona?',
-        a: 'Reservas CR es la plataforma integral de directorio comercial y agendamiento digital en Costa Rica 🇨🇷. Permite a los clientes descubrir negocios locales (barberías, salones de belleza, spas, talleres mecánicos, clínicas estéticas y profesionales), seleccionar el servicio, el especialista deseado y la fecha/hora en tiempo real sin llamadas telefónicas ni tiempos de espera.'
+        a: 'Reservas CR es la plataforma integral de directorio comercial y agendamiento digital en Costa Rica. Permite a los clientes descubrir negocios locales (barberías, salones de belleza, spas, talleres mecánicos, clínicas estéticas y profesionales), seleccionar el servicio, el especialista deseado y la fecha/hora en tiempo real sin llamadas telefónicas ni tiempos de espera.'
       },
       {
         q: '2. ¿Cómo me registro y cómo reservo una cita como cliente?',
@@ -16845,7 +16867,7 @@ class App {
       },
       {
         q: '6. ¿Cómo registro mi negocio o comercio en Reservas CR?',
-        a: 'Presiona el botón "Registrarse" o "🎁 Pre-Registro 15 Días Gratis" en la parte superior, completa los datos básicos de tu negocio (nombre, categoría comercial, provincia, cantón y datos de contacto). Obtendrás de inmediato 15 días de prueba 100% gratuita con acceso total a tu panel de administración.'
+        a: 'Presiona el botón "Registrarse" o "Pre-Registro 15 Días Gratis" en la parte superior, completa los datos básicos de tu negocio (nombre, categoría comercial, provincia, cantón y datos de contacto). Obtendrás de inmediato 15 días de prueba 100% gratuita con acceso total a tu panel de administración.'
       },
       {
         q: '7. ¿Cuáles son los planes de suscripción para comercios y cómo se pagan?',
@@ -16953,7 +16975,7 @@ class App {
                   <i class="fas fa-shield-alt text-blue-400"></i> Marco Legal & Confidencialidad
                 </span>
                 <span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-400/30">
-                  <i class="fas fa-certificate text-[9px] text-emerald-400"></i> Ley N° 8968 Costa Rica 🇨🇷
+                  <i class="fas fa-certificate text-[9px] text-emerald-400"></i> Ley N° 8968 Costa Rica
                 </span>
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-semibold border border-slate-700">
                   <i class="fas fa-lock text-[9px] text-slate-400"></i> Cifrado SSL 256-bit
@@ -17483,7 +17505,7 @@ class App {
             <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               <div class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
                 <i class="fas fa-lock text-blue-600"></i>
-                <span>Última actualización: Septiembre 2026 • Reservas CR (Costa Rica 🇨🇷)</span>
+                <span>Última actualización: Septiembre 2026 • Reservas CR (Costa Rica)</span>
               </div>
               <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-7 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2">
                 <i class="fas fa-check"></i>
