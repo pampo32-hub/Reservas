@@ -181,6 +181,21 @@ app.get('/api/realtime/stream', (req, res) => {
   });
 });
 
+// Helper global para convertir horarios ("10:30 AM", "14:00", etc.) a minutos del día
+export function timeToMinutes(timeStr) {
+  if (!timeStr) return 0;
+  let str = String(timeStr).trim().toUpperCase();
+  const isPM = str.includes('PM');
+  const isAM = str.includes('AM');
+  str = str.replace(/[APM\s]/g, '');
+  const parts = str.split(':');
+  let h = parseInt(parts[0], 10) || 0;
+  const m = parseInt(parts[1], 10) || 0;
+  if (isPM && h < 12) h += 12;
+  if (isAM && h === 12) h = 0;
+  return h * 60 + m;
+}
+
 // ==========================================
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
@@ -2070,19 +2085,34 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   }
 });
 
-// Crear nueva reserva (con notificación por correo electrónico y asignación de especialista)
+// Crear nueva reserva (con protección estricta anti-colisión, soporte transaccional y notificaciones)
 app.post('/api/appointments', async (req, res) => {
+  const client = await pool.connect();
   try {
     const a = req.body;
+    if (!a.businessId || !a.date || !a.time || !a.serviceId) {
+      client.release();
+      return res.status(400).json({ error: 'Faltan datos obligatorios para la reserva (comercio, fecha, hora o servicio).' });
+    }
 
-    // 1. Validar que el comercio no esté bloqueado/suspendido
-    const bizCheck = await pool.query('SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments FROM reservas_businesses WHERE id = $1', [a.businessId]);
+    await client.query('BEGIN');
+
+    // 1. Validar comercio con bloqueo de fila para evitar condiciones de carrera (Race Conditions)
+    const bizCheck = await client.query(
+      'SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments FROM reservas_businesses WHERE id = $1 FOR UPDATE',
+      [a.businessId]
+    );
+
     if (bizCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(404).json({ error: 'Comercio no encontrado' });
     }
 
     const bizData = bizCheck.rows[0];
     if (bizData.is_blocked) {
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(403).json({ 
         error: 'Este comercio se encuentra temporalmente suspendido / bloqueado para nuevas reservas.',
         isBlocked: true,
@@ -2097,13 +2127,15 @@ app.post('/api/appointments', async (req, res) => {
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      const countRes = await pool.query(`
+      const countRes = await client.query(`
         SELECT COUNT(*) as total FROM reservas_appointments 
         WHERE business_id = $1 AND created_at >= $2 AND status != 'cancelled'
       `, [a.businessId, startOfMonth]);
 
       const currentCount = parseInt(countRes.rows[0].total, 10) || 0;
       if (currentCount >= bookingLimit) {
+        await client.query('ROLLBACK');
+        client.release();
         const planName = bizData.plan === 'basic' ? 'Plan Básico ($10 / 150 citas)' : (bizData.plan === 'pro' ? 'Plan Profesional ($18 / 300 citas)' : 'su plan actual');
         return res.status(403).json({
           error: `El comercio "${bizData.name}" ha alcanzado el límite de ${bookingLimit} reservas de este mes de su ${planName}. Para recibir más citas este mes, debe actualizar a un plan superior.`,
@@ -2115,50 +2147,138 @@ app.post('/api/appointments', async (req, res) => {
       }
     }
 
+    // 3. Rango de tiempo de la reserva solicitada
+    const reqStart = timeToMinutes(a.time);
+    const reqDuration = parseInt(a.serviceDuration, 10) || 30;
+    const reqEnd = reqStart + reqDuration;
+
+    // 4. Verificación de Bloqueos Manuales del Comercio (reservas_blocked_slots)
+    const blockedRes = await client.query(
+      'SELECT time FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2',
+      [a.businessId, a.date]
+    );
+    const hasBlockedConflict = blockedRes.rows.some(b => {
+      const bStart = timeToMinutes(b.time);
+      const is15 = (bStart % 30 !== 0);
+      const bDur = is15 ? 15 : 30;
+      return (reqStart < (bStart + bDur) && reqEnd > bStart);
+    });
+    if (hasBlockedConflict) {
+      await client.query('ROLLBACK');
+      client.release();
+      return res.status(409).json({
+        error: 'El horario seleccionado se encuentra bloqueado por el comercio. Por favor elige otro horario.',
+        conflict: true
+      });
+    }
+
+    // 5. Verificación de Citas Existentes Activas en la misma fecha
+    const existingRes = await client.query(`
+      SELECT id, time, service_duration, staff_id, client_name 
+      FROM reservas_appointments 
+      WHERE business_id = $1 AND date = $2 AND status != 'cancelled'
+    `, [a.businessId, a.date]);
+
+    // Consultar especialistas activos del negocio
+    const allStaffRes = await client.query(
+      'SELECT id, name, role_title, services, is_active FROM reservas_staff WHERE business_id = $1 AND is_active = TRUE',
+      [a.businessId]
+    );
+    const activeStaff = allStaffRes.rows;
+
+    let assignedStaffId = null;
+    let assignedStaffName = null;
+
+    // CASO A: Negocio sin equipo configurado (Operador único / Dueño solo)
+    if (activeStaff.length === 0) {
+      const hasConflict = existingRes.rows.some(row => {
+        const aptStart = timeToMinutes(row.time);
+        const aptDur = parseInt(row.service_duration, 10) || 30;
+        return (reqStart < (aptStart + aptDur) && reqEnd > aptStart);
+      });
+      if (hasConflict) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(409).json({
+          error: 'El horario seleccionado ya se encuentra ocupado por otra cita. Por favor elige otro horario disponible.',
+          conflict: true
+        });
+      }
+    } 
+    // CASO B: Especialista específico seleccionado por el cliente
+    else if (a.staffId && a.staffId !== 'any') {
+      const targetStaff = activeStaff.find(s => s.id === a.staffId);
+      if (!targetStaff) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(404).json({ error: 'El especialista seleccionado no se encuentra disponible.' });
+      }
+
+      const hasStaffConflict = existingRes.rows.some(row => {
+        if (row.staff_id !== a.staffId) return false;
+        const aptStart = timeToMinutes(row.time);
+        const aptDur = parseInt(row.service_duration, 10) || 30;
+        return (reqStart < (aptStart + aptDur) && reqEnd > aptStart);
+      });
+
+      if (hasStaffConflict) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(409).json({
+          error: `El especialista ${targetStaff.name} ya tiene una reserva en ese horario (${a.time}). Por favor elige otra hora o selecciona otro especialista.`,
+          conflict: true
+        });
+      }
+
+      assignedStaffId = targetStaff.id;
+      assignedStaffName = `${targetStaff.name}${targetStaff.role_title ? ' (' + targetStaff.role_title + ')' : ''}`;
+    } 
+    // CASO C: Asignación automática ('any' o no especificado)
+    else {
+      let eligible = activeStaff.filter(st => {
+        const svcs = st.services || ['all'];
+        return Array.isArray(svcs) && (svcs.includes('all') || svcs.includes(a.serviceId));
+      });
+      if (eligible.length === 0) eligible = activeStaff;
+
+      const busyStaffIds = new Set();
+      let unassignedOverlapCount = 0;
+
+      existingRes.rows.forEach(row => {
+        const aptStart = timeToMinutes(row.time);
+        const aptDur = parseInt(row.service_duration, 10) || 30;
+        if (reqStart < (aptStart + aptDur) && reqEnd > aptStart) {
+          if (row.staff_id) {
+            busyStaffIds.add(row.staff_id);
+          } else {
+            unassignedOverlapCount++;
+          }
+        }
+      });
+
+      const availableStaff = eligible.filter(st => !busyStaffIds.has(st.id));
+
+      if (availableStaff.length - unassignedOverlapCount <= 0) {
+        await client.query('ROLLBACK');
+        client.release();
+        return res.status(409).json({
+          error: 'No hay especialistas disponibles en el horario seleccionado. Por favor elige otro horario.',
+          conflict: true
+        });
+      }
+
+      const assigned = availableStaff[0];
+      assignedStaffId = assigned.id;
+      assignedStaffName = `${assigned.name}${assigned.role_title ? ' (' + assigned.role_title + ')' : ''}`;
+    }
+
     const isAutoConfirm = bizData.auto_confirm_appointments !== false;
     const initialStatus = a.status ? a.status : (isAutoConfirm ? 'confirmed' : 'pending');
-
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
-    // 3. Resolver especialista asignado (si se seleccionó uno o es 'any' / asignación automática)
-    let assignedStaffId = a.staffId && a.staffId !== 'any' ? a.staffId : null;
-    let assignedStaffName = a.staffName || null;
-
-    if (assignedStaffId) {
-      const stRes = await pool.query('SELECT name, role_title FROM reservas_staff WHERE id = $1', [assignedStaffId]);
-      if (stRes.rows.length > 0) {
-        assignedStaffName = `${stRes.rows[0].name}${stRes.rows[0].role_title ? ' (' + stRes.rows[0].role_title + ')' : ''}`;
-      }
-    } else {
-      // Asignación automática: buscar especialista disponible para este servicio en la fecha/hora
-      const allStaffRes = await pool.query('SELECT * FROM reservas_staff WHERE business_id = $1 AND is_active = TRUE', [a.businessId]);
-      if (allStaffRes.rows.length > 0) {
-        const eligible = allStaffRes.rows.filter(st => {
-          const svcs = st.services || ['all'];
-          return Array.isArray(svcs) && (svcs.includes('all') || svcs.includes(a.serviceId));
-        });
-
-        if (eligible.length > 0) {
-          const bookedStaffRes = await pool.query(`
-            SELECT staff_id FROM reservas_appointments 
-            WHERE business_id = $1 AND date = $2 AND time = $3 AND status != 'cancelled' AND staff_id IS NOT NULL
-          `, [a.businessId, a.date, a.time]);
-          const bookedIds = new Set(bookedStaffRes.rows.map(r => r.staff_id));
-          const available = eligible.find(st => !bookedIds.has(st.id));
-
-          if (available) {
-            assignedStaffId = available.id;
-            assignedStaffName = `${available.name}${available.role_title ? ' (' + available.role_title + ')' : ''}`;
-          } else {
-            assignedStaffId = eligible[0].id;
-            assignedStaffName = `${eligible[0].name}${eligible[0].role_title ? ' (' + eligible[0].role_title + ')' : ''}`;
-          }
-        }
-      }
-    }
-
-    await pool.query(`
+    // 6. Inserción de la nueva cita garantizada sin colisión
+    await client.query(`
       INSERT INTO reservas_appointments (
         id, business_id, service_id, service_name, service_price,
         service_duration, date, time, client_name, client_phone,
@@ -2166,23 +2286,27 @@ app.post('/api/appointments', async (req, res) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
     `, [
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
-      a.serviceDuration, a.date, a.time, a.clientName, a.clientPhone,
+      reqDuration, a.date, a.time, a.clientName, a.clientPhone,
       a.clientEmail || '', a.notes || '', initialStatus, optIn,
       assignedStaffId, assignedStaffName
     ]);
 
     // Registrar o actualizar automáticamente el cliente
     if (a.clientName && a.clientPhone) {
-      await pool.query(`
+      await client.query(`
         INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (id) DO NOTHING
       `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '', optIn]);
     }
 
+    await client.query('COMMIT');
+    client.release();
+
     const createdAppointment = { 
       id: newId, 
       ...a, 
+      serviceDuration: reqDuration,
       staffId: assignedStaffId,
       staffName: assignedStaffName,
       whatsappOptIn: optIn, 
@@ -2197,39 +2321,40 @@ app.post('/api/appointments', async (req, res) => {
       message: `¡Nueva cita agendada por ${a.clientName || 'un cliente'}!`
     });
 
-    // Notificaciones automáticas de citas (Email y WhatsApp)
+    // Notificaciones automáticas de citas (Email, WhatsApp y Web Push)
     const ENABLE_BOOKING_NOTIFICATIONS = process.env.ENABLE_BOOKING_NOTIFICATIONS !== 'false';
 
-    if (ENABLE_BOOKING_NOTIFICATIONS && isAutoConfirm && initialStatus === 'confirmed') {
+    if (ENABLE_BOOKING_NOTIFICATIONS) {
       pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [a.businessId])
         .then(bizRes => {
-          const business = bizRes.rows[0] || { name: 'Comercio Reservas CR', phone: '+506 2200 0000', plan: 'pro' };
+          const business = bizRes.rows[0] || { name: bizData.name || 'Comercio Reservas CR', phone: '+506 2200 0000', plan: bizData.plan || 'pro' };
 
-          // 1. Enviar correo de confirmación (si proporcionó email)
-          if (a.clientEmail && a.clientEmail.includes('@')) {
-            console.log(`📧 [Email Auto] Enviando confirmación de cita #${createdAppointment.id} a ${a.clientEmail}...`);
-            sendBookingConfirmationEmail(createdAppointment, business)
-              .then(emailRes => {
-                console.log(`📧 [Email Auto] Resultado cita #${createdAppointment.id}:`, emailRes?.success ? `Enviado con éxito (ID: ${emailRes?.data?.id || 'ok'})` : `No enviado (${emailRes?.reason || emailRes?.error?.message || emailRes?.error})`);
-              })
-              .catch(emailErr => {
-                console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
-              });
+          // 1. Si es autoconfirmada: enviar confirmación directa al CLIENTE
+          if (isAutoConfirm && initialStatus === 'confirmed') {
+            if (a.clientEmail && a.clientEmail.includes('@')) {
+              console.log(`📧 [Email Auto] Enviando confirmación de cita #${createdAppointment.id} a ${a.clientEmail}...`);
+              sendBookingConfirmationEmail(createdAppointment, business)
+                .then(emailRes => {
+                  console.log(`📧 [Email Auto] Resultado cita #${createdAppointment.id}:`, emailRes?.success ? `Enviado con éxito (ID: ${emailRes?.data?.id || 'ok'})` : `No enviado (${emailRes?.reason || emailRes?.error?.message || emailRes?.error})`);
+                })
+                .catch(emailErr => {
+                  console.error('⚠️ Error no bloqueante al enviar correo:', emailErr.message);
+                });
+            }
+
+            if (optIn && a.clientPhone) {
+              console.log(`📲 [WhatsApp Cliente] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
+              sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
+                .then(waRes => {
+                  console.log(`📲 [WhatsApp Cliente] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
+                })
+                .catch(waErr => {
+                  console.error('⚠️ Error no bloqueante al enviar WhatsApp a cliente:', waErr.message);
+                });
+            }
           }
 
-          // 2. Enviar WhatsApp de confirmación proactivo al CLIENTE (si proporcionó teléfono y opt-in)
-          if (optIn && a.clientPhone) {
-            console.log(`📲 [WhatsApp Cliente] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
-            sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
-              .then(waRes => {
-                console.log(`📲 [WhatsApp Cliente] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
-              })
-              .catch(waErr => {
-                console.error('⚠️ Error no bloqueante al enviar WhatsApp a cliente:', waErr.message);
-              });
-          }
-
-          // 2.1 Enviar WhatsApp de alerta de nueva reserva al COMERCIO / DUEÑO (si el negocio tiene teléfono registrado)
+          // 2. Alertar SIEMPRE al COMERCIO / DUEÑO (WhatsApp y Web Push)
           const bizPhone = business?.phone || business?.whatsapp;
           if (bizPhone) {
             console.log(`📲 [WhatsApp Comercio] Enviando alerta de cita #${createdAppointment.id} al teléfono del negocio ${bizPhone}...`);
@@ -2242,10 +2367,17 @@ app.post('/api/appointments', async (req, res) => {
               });
           }
 
-          // 3. Enviar Notificación Push Móvil a los celulares/dispositivos suscritos del comercio
+          // 3. Enviar Notificación Push Móvil a los dispositivos suscritos del comercio
+          const pushTitle = isAutoConfirm 
+            ? '🔔 ¡Nueva Reserva Recibida!' 
+            : '⏳ ¡Nueva Solicitud de Cita (Pendiente)!';
+          const pushBody = isAutoConfirm 
+            ? `${a.clientName} ha reservado "${a.serviceName}" para el ${a.date} a las ${a.time}.`
+            : `${a.clientName} solicitó "${a.serviceName}" para el ${a.date} a las ${a.time}. Entra a tu panel para aprobarla.`;
+
           sendPushToBusiness(pool, a.businessId, {
-            title: '🔔 ¡Nueva Reserva Recibida!',
-            body: `${a.clientName} ha reservado "${a.serviceName}" para el ${a.date} a las ${a.time}.`,
+            title: pushTitle,
+            body: pushBody,
             icon: '/src/assets/reservas_cr_clean_badge_1.jpg',
             badge: '/src/assets/reservas_cr_clean_badge_1.jpg',
             data: {
@@ -2259,8 +2391,8 @@ app.post('/api/appointments', async (req, res) => {
             console.error('⚠️ Error no bloqueante al enviar Push a comercio:', pushErr.message);
           });
 
-          // 4. Sincronizar automáticamente con Google Calendar / Outlook vía Nylas
-          if (business && business.nylas_grant_id) {
+          // 4. Sincronizar automáticamente con Google Calendar / Outlook vía Nylas (si está confirmada)
+          if (isAutoConfirm && business && business.nylas_grant_id) {
             console.log(`📅 [Nylas Sync] Sincronizando cita #${createdAppointment.id} con Google Calendar (${business.nylas_email})...`);
             createNylasAppointmentEvent(business.nylas_grant_id, createdAppointment, business)
               .then(nylasEventId => {
@@ -2277,12 +2409,12 @@ app.post('/api/appointments', async (req, res) => {
         .catch(err => {
           console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
         });
-    } else if (!ENABLE_BOOKING_NOTIFICATIONS) {
-      console.log(`ℹ️ [Notificaciones Citas] Deshabilitadas por configuración para cita ${createdAppointment.id}`);
     }
 
     res.status(201).json(createdAppointment);
   } catch (error) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    client.release();
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });
   }
@@ -2457,6 +2589,77 @@ app.put('/api/appointments/:id', async (req, res) => {
 
     const prevAptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1', [id]);
     const prevApt = prevAptRes.rows[0];
+    if (!prevApt) {
+      return res.status(404).json({ error: 'Cita no encontrada' });
+    }
+
+    // Validación anti-colisión si se reprograma fecha u hora
+    if (a.date || a.time) {
+      const targetDate = a.date || prevApt.date;
+      const targetTime = a.time || prevApt.time;
+      const targetDuration = a.serviceDuration !== undefined ? parseInt(a.serviceDuration, 10) : (parseInt(prevApt.service_duration, 10) || 30);
+      const targetStaffId = a.staffId !== undefined ? (a.staffId === 'any' ? null : a.staffId) : prevApt.staff_id;
+      const reqStart = timeToMinutes(targetTime);
+      const reqEnd = reqStart + targetDuration;
+
+      // 1. Verificar bloqueos manuales
+      const blockedRes = await pool.query(
+        'SELECT time FROM reservas_blocked_slots WHERE business_id = $1 AND date = $2',
+        [prevApt.business_id, targetDate]
+      );
+      const hasBlockedConflict = blockedRes.rows.some(b => {
+        const bStart = timeToMinutes(b.time);
+        const is15 = (bStart % 30 !== 0);
+        const bDur = is15 ? 15 : 30;
+        return (reqStart < (bStart + bDur) && reqEnd > bStart);
+      });
+      if (hasBlockedConflict) {
+        return res.status(409).json({
+          error: 'El nuevo horario seleccionado se encuentra bloqueado por el comercio.',
+          conflict: true
+        });
+      }
+
+      // 2. Verificar colisión con otras citas activas (excluyendo la misma cita)
+      const existingRes = await pool.query(`
+        SELECT id, time, service_duration, staff_id 
+        FROM reservas_appointments 
+        WHERE business_id = $1 AND date = $2 AND status != 'cancelled' AND id != $3
+      `, [prevApt.business_id, targetDate, id]);
+
+      if (targetStaffId) {
+        const staffConflict = existingRes.rows.some(row => {
+          if (row.staff_id !== targetStaffId) return false;
+          const aptStart = timeToMinutes(row.time);
+          const aptDur = parseInt(row.service_duration, 10) || 30;
+          return (reqStart < (aptStart + aptDur) && reqEnd > aptStart);
+        });
+        if (staffConflict) {
+          return res.status(409).json({
+            error: 'El especialista ya tiene otra cita agendada en el nuevo horario seleccionado.',
+            conflict: true
+          });
+        }
+      } else {
+        const allStaffRes = await pool.query(
+          'SELECT id FROM reservas_staff WHERE business_id = $1 AND is_active = TRUE',
+          [prevApt.business_id]
+        );
+        if (allStaffRes.rows.length === 0) {
+          const overlap = existingRes.rows.some(row => {
+            const aptStart = timeToMinutes(row.time);
+            const aptDur = parseInt(row.service_duration, 10) || 30;
+            return (reqStart < (aptStart + aptDur) && reqEnd > aptStart);
+          });
+          if (overlap) {
+            return res.status(409).json({
+              error: 'El nuevo horario seleccionado ya se encuentra ocupado por otra cita.',
+              conflict: true
+            });
+          }
+        }
+      }
+    }
 
     await pool.query(`
       UPDATE reservas_appointments SET
@@ -2470,13 +2673,18 @@ app.put('/api/appointments/:id', async (req, res) => {
         status = COALESCE($8, status),
         client_name = COALESCE($9, client_name),
         client_phone = COALESCE($10, client_phone),
-        client_email = COALESCE($11, client_email)
-      WHERE id = $12
+        client_email = COALESCE($11, client_email),
+        staff_id = COALESCE($12, staff_id),
+        staff_name = COALESCE($13, staff_name)
+      WHERE id = $14
     `, [
       a.date, a.time, a.serviceId, a.serviceName,
       a.servicePrice !== undefined ? parseFloat(a.servicePrice) : null,
       a.serviceDuration !== undefined ? parseInt(a.serviceDuration, 10) : null,
-      a.notes, a.status, a.clientName, a.clientPhone, a.clientEmail, id
+      a.notes, a.status, a.clientName, a.clientPhone, a.clientEmail,
+      a.staffId !== undefined ? a.staffId : null,
+      a.staffName !== undefined ? a.staffName : null,
+      id
     ]);
 
     // Si pasó a confirmed y antes no lo estaba, disparar notificaciones
@@ -2618,6 +2826,16 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
       }
 
       notificationsSent = true;
+    }
+
+    // 2. Si se canceló la cita ('cancelled') y tenía evento en Nylas Calendar, eliminarlo
+    if (status === 'cancelled' && prevApt && prevApt.nylas_event_id) {
+      const bizRes = await pool.query('SELECT nylas_grant_id FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
+      const grantId = bizRes.rows[0]?.nylas_grant_id;
+      if (grantId) {
+        deleteNylasAppointmentEvent(grantId, prevApt.nylas_event_id)
+          .catch(err => console.error('⚠️ Error no bloqueante al eliminar evento de Nylas al cancelar cita:', err.message));
+      }
     }
 
     // 2. Si se marcó como completada ('completed') y aún no se ha enviado el correo de valoración, enviarlo de inmediato

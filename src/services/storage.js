@@ -1200,10 +1200,18 @@ class StorageService {
           created = await res.json();
         } else {
           const errData = await res.json().catch(() => ({}));
-          console.warn('API error creando reserva en Neon, guardando local:', errData);
+          console.warn('API error creando reserva en Neon:', errData);
+          const err = new Error(errData.error || 'No fue posible registrar la reserva.');
+          err.status = res.status;
+          err.data = errData;
+          throw err;
         }
       } catch (e) {
-        console.error('Error creando reserva en API Neon:', e);
+        if (e.status) {
+          throw e;
+        }
+        console.error('Error de red creando reserva en API Neon:', e);
+        throw new Error('No se pudo conectar con el servidor para agendar tu cita. Revisa tu conexión a internet.');
       }
     }
 
@@ -1226,13 +1234,21 @@ class StorageService {
   async updateAppointment(appointmentId, updatedData) {
     if (this.isOnlineApi) {
       try {
-        await fetch(`${this.apiBase}/appointments/${appointmentId}`, {
+        const res = await fetch(`${this.apiBase}/appointments/${appointmentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedData)
         });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const err = new Error(errData.error || 'Error actualizando cita');
+          err.status = res.status;
+          err.data = errData;
+          throw err;
+        }
       } catch (e) {
         console.error('Error actualizando y reprogramando cita en Neon:', e);
+        throw e;
       }
     }
 

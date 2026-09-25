@@ -4191,8 +4191,11 @@ class App {
       selectedTime: null
     };
 
-    // Asegurar carga fresca de especialistas
-    storage.getBusinessStaff(businessId).then(() => {
+    // Asegurar carga fresca de especialistas y citas de este comercio
+    Promise.all([
+      storage.getBusinessStaff(businessId),
+      storage.getAppointmentsByBusinessAsync(businessId)
+    ]).then(() => {
       if (this.bookingState.isOpen && this.bookingState.businessId === businessId) {
         this.renderBookingModal();
       }
@@ -4647,6 +4650,13 @@ class App {
         return;
       }
 
+      const submitBtn = document.getElementById('submit-booking-btn');
+      const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Confirmando reserva...';
+      }
+
       const clientName = document.getElementById('client-name').value;
       const clientPhone = document.getElementById('client-phone').value;
       const clientEmail = document.getElementById('client-email').value;
@@ -4664,30 +4674,60 @@ class App {
       const assignedStaffObj = assignedStaffId ? qualifiedStaff.find(s => s.id === assignedStaffId) : null;
       const assignedStaffName = assignedStaffObj ? `${assignedStaffObj.name}${assignedStaffObj.roleTitle ? ' (' + assignedStaffObj.roleTitle + ')' : ''}` : null;
 
-      const newAppointment = await storage.createAppointment({
-        businessId: biz.id,
-        serviceId: service.id,
-        serviceName: service.name,
-        servicePrice: service.price,
-        serviceDuration: service.duration,
-        date: this.bookingState.selectedDate,
-        time: this.bookingState.selectedTime,
-        clientName,
-        clientPhone,
-        clientEmail,
-        notes: clientNotes,
-        whatsappOptIn,
-        status: initialStatus,
-        staffId: assignedStaffId,
-        staffName: assignedStaffName
-      });
+      try {
+        const newAppointment = await storage.createAppointment({
+          businessId: biz.id,
+          serviceId: service.id,
+          serviceName: service.name,
+          servicePrice: service.price,
+          serviceDuration: service.duration,
+          date: this.bookingState.selectedDate,
+          time: this.bookingState.selectedTime,
+          clientName,
+          clientPhone,
+          clientEmail,
+          notes: clientNotes,
+          whatsappOptIn,
+          status: initialStatus,
+          staffId: assignedStaffId,
+          staffName: assignedStaffName
+        });
 
-      this.closeBookingModal();
-      this.renderSuccessBookingModal(newAppointment, biz);
-      if (IS_DEMO_BOOKING_MODE) {
-        this.showToast('¡Prueba de reserva completada con éxito!', 'info');
-      } else {
-        this.showToast(initialStatus === 'confirmed' ? '¡Reserva confirmada con éxito!' : '¡Solicitud de reserva enviada con éxito!', 'success');
+        this.closeBookingModal();
+        this.renderSuccessBookingModal(newAppointment, biz);
+        if (IS_DEMO_BOOKING_MODE) {
+          this.showToast('¡Prueba de reserva completada con éxito!', 'info');
+        } else {
+          this.showToast(initialStatus === 'confirmed' ? '¡Reserva confirmada con éxito!' : '¡Solicitud de reserva enviada con éxito!', 'success');
+        }
+      } catch (err) {
+        console.error('Error procesando reserva:', err);
+        const errMsg = err?.data?.error || err?.message || 'Error al procesar la reserva';
+        this.showToast(errMsg, 'error');
+
+        // Si fue conflicto (horario ocupado o bloqueado)
+        if (err?.status === 409 || err?.data?.conflict) {
+          this.bookingState.selectedTime = null;
+          const selectedBadge = document.getElementById('booking-selected-time-badge');
+          if (selectedBadge) selectedBadge.innerHTML = '';
+
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Confirmar Reserva</span>';
+          }
+
+          // Refrescar citas remotas del negocio en segundo plano para actualizar turnos libres
+          try {
+            await storage.getAppointmentsByBusinessAsync(biz.id);
+          } catch (_) {}
+
+          updateSlotsView();
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+          }
+        }
       }
     });
   }
