@@ -1141,6 +1141,7 @@ app.get('/api/businesses', async (req, res) => {
       coverImage: b.cover_image,
       schedule: b.schedule,
       features: Array.isArray(b.features) ? b.features : [],
+      portfolio: Array.isArray(b.portfolio) ? b.portfolio : (typeof b.portfolio === 'string' ? JSON.parse(b.portfolio || '[]') : []),
       isDemo: Boolean(b.is_demo),
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
@@ -1198,6 +1199,7 @@ app.get('/api/developer/businesses', async (req, res) => {
       coverImage: b.cover_image,
       schedule: b.schedule,
       features: Array.isArray(b.features) ? b.features : [],
+      portfolio: Array.isArray(b.portfolio) ? b.portfolio : (typeof b.portfolio === 'string' ? JSON.parse(b.portfolio || '[]') : []),
       isDemo: Boolean(b.is_demo),
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
@@ -1259,6 +1261,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       coverImage: b.cover_image,
       schedule: b.schedule,
       features: Array.isArray(b.features) ? b.features : [],
+      portfolio: Array.isArray(b.portfolio) ? b.portfolio : (typeof b.portfolio === 'string' ? JSON.parse(b.portfolio || '[]') : []),
       isDemo: Boolean(b.is_demo),
       isHidden: Boolean(b.is_hidden),
       isBlocked: Boolean(b.is_blocked),
@@ -1356,8 +1359,9 @@ app.put('/api/businesses/:id', async (req, res) => {
         block_reason = COALESCE($18, block_reason),
         is_hidden = COALESCE($19, is_hidden),
         is_verified = COALESCE($20, is_verified),
-        slug = COALESCE($21, slug)
-      WHERE id = $22 OR LOWER(slug) = LOWER($22)
+        slug = COALESCE($21, slug),
+        portfolio = COALESCE($22, portfolio)
+      WHERE id = $23 OR LOWER(slug) = LOWER($23)
       RETURNING *
     `, [
       b.name !== undefined ? b.name : null,
@@ -1381,6 +1385,7 @@ app.put('/api/businesses/:id', async (req, res) => {
       b.isHidden !== undefined ? Boolean(b.isHidden) : null,
       b.isVerified !== undefined ? Boolean(b.isVerified) : null,
       rawSlug,
+      b.portfolio ? JSON.stringify(b.portfolio) : null,
       id
     ]);
 
@@ -1392,10 +1397,10 @@ app.put('/api/businesses/:id', async (req, res) => {
           id, name, slug, category, category_label, city, address, phone, email, description,
           image, cover_image, price_range, features, schedule, social_links,
           auto_confirm_appointments, plan, is_blocked, block_reason, is_hidden, is_verified,
-          rating, reviews_count, is_demo, subscription_status, payment_method
+          portfolio, rating, reviews_count, is_demo, subscription_status, payment_method
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
-          5.0, 0, false, 'active', 'free'
+          $23, 5.0, 0, false, 'active', 'free'
         )
       `, [
         id,
@@ -1419,7 +1424,8 @@ app.put('/api/businesses/:id', async (req, res) => {
         Boolean(b.isBlocked),
         b.blockReason || '',
         Boolean(b.isHidden),
-        Boolean(b.isVerified)
+        Boolean(b.isVerified),
+        b.portfolio ? JSON.stringify(b.portfolio) : JSON.stringify([])
       ]);
     }
 
@@ -1443,10 +1449,10 @@ app.post('/api/businesses', async (req, res) => {
         id, name, slug, category, category_label, city, address, phone, email, description,
         image, cover_image, price_range, features, schedule, social_links,
         auto_confirm_appointments, plan, is_blocked, block_reason, is_hidden, is_verified,
-        rating, reviews_count, is_demo, subscription_status, payment_method
+        portfolio, rating, reviews_count, is_demo, subscription_status, payment_method
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
-        5.0, 0, false, 'active', 'free'
+        $23, 5.0, 0, false, 'active', 'free'
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -1464,7 +1470,8 @@ app.post('/api/businesses', async (req, res) => {
         features = EXCLUDED.features,
         schedule = EXCLUDED.schedule,
         social_links = EXCLUDED.social_links,
-        auto_confirm_appointments = EXCLUDED.auto_confirm_appointments
+        auto_confirm_appointments = EXCLUDED.auto_confirm_appointments,
+        portfolio = COALESCE(EXCLUDED.portfolio, reservas_businesses.portfolio)
     `, [
       bizId,
       b.name || 'Nuevo Negocio',
@@ -1487,7 +1494,8 @@ app.post('/api/businesses', async (req, res) => {
       Boolean(b.isBlocked),
       b.blockReason || '',
       Boolean(b.isHidden),
-      Boolean(b.isVerified)
+      Boolean(b.isVerified),
+      b.portfolio ? JSON.stringify(b.portfolio) : JSON.stringify([])
     ]);
 
     res.status(201).json({ success: true, id: bizId, slug: finalSlug });

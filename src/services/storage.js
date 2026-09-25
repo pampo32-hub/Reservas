@@ -720,7 +720,11 @@ class StorageService {
 
       const plan = b.plan || 'basic';
       const slug = b.slug ? this.slugify(b.slug) : this.slugify(b.name || b.id);
-      const baseObj = { ...b, slug, schedule: sch || b.schedule };
+      const initMatch = INITIAL_BUSINESSES.find(ib => ib.id === b.id);
+      const portfolio = Array.isArray(b.portfolio) && b.portfolio.length > 0 
+        ? b.portfolio 
+        : (initMatch && Array.isArray(initMatch.portfolio) ? initMatch.portfolio : (Array.isArray(b.portfolio) ? b.portfolio : []));
+      const baseObj = { ...b, slug, portfolio, schedule: sch || b.schedule };
       if (plan === 'free') {
         return { ...baseObj, plan: 'free', monthlyBookingLimit: 25, planPriceUsd: 0.00 };
       }
@@ -915,7 +919,34 @@ class StorageService {
     return true;
   }
 
+  async addPortfolioImage(businessId, imageItem) {
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (!biz) return false;
+    if (!Array.isArray(biz.portfolio)) {
+      biz.portfolio = [];
+    }
+    const item = typeof imageItem === 'string' ? { id: `port-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, url: imageItem } : imageItem;
+    biz.portfolio.push(item);
+    await this.saveBusiness(biz);
+    return true;
+  }
 
+  async removePortfolioImage(businessId, imageIndexOrId) {
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (!biz || !Array.isArray(biz.portfolio)) return false;
+    if (typeof imageIndexOrId === 'number') {
+      biz.portfolio.splice(imageIndexOrId, 1);
+    } else {
+      biz.portfolio = biz.portfolio.filter((img, idx) => {
+        if (typeof img === 'string') return img !== imageIndexOrId;
+        return img.id !== imageIndexOrId && img.url !== imageIndexOrId;
+      });
+    }
+    await this.saveBusiness(biz);
+    return true;
+  }
 
   // --- SERVICIOS ---
   async addService(businessId, serviceData) {

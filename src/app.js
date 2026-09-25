@@ -3735,6 +3735,243 @@ class App {
   }
 
   // ==========================================
+  // PORTAFOLIO Y GALERÍA ESTILO FRESHA
+  // ==========================================
+  renderPortfolioSection(biz) {
+    const portfolio = Array.isArray(biz.portfolio) ? biz.portfolio : [];
+    if (portfolio.length === 0) return '';
+
+    const count = portfolio.length;
+    const firstImg = portfolio[0];
+    const firstUrl = typeof firstImg === 'string' ? firstImg : firstImg.url;
+    const firstTitle = typeof firstImg === 'string' ? '' : (firstImg.title || '');
+
+    const restImgs = portfolio.slice(1, 5);
+    const remainingCount = count > 5 ? count - 4 : 0;
+
+    return `
+      <!-- Portafolio / Galería de Trabajos (Estilo Fresha) -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 shadow-xs space-y-4 animate-fade-in">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-xl font-black text-slate-900">Portafolio</h2>
+            <span class="px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-black">
+              ${count} ${count === 1 ? 'foto' : 'fotos'}
+            </span>
+          </div>
+          <button class="open-all-portfolio-btn text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors cursor-pointer group" data-portfolio-index="0">
+            <span>Ver todas las fotos</span>
+            <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+          </button>
+        </div>
+
+        ${count === 1 ? `
+          <div class="rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[21/9] cursor-pointer group relative shadow-inner open-portfolio-item bg-slate-100" data-portfolio-index="0">
+            <img src="${firstUrl}" alt="${this.escapeHtml(firstTitle || biz.name)}" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+              <span class="text-white text-xs font-bold flex items-center gap-1.5"><i class="fas fa-search-plus"></i> Ver en pantalla completa</span>
+            </div>
+          </div>
+        ` : `
+          <!-- Mosaico Fresha: 1 Foto Destacada (Izquierda) + Miniaturas (Derecha) -->
+          <div class="grid grid-cols-4 grid-rows-2 gap-2 sm:gap-2.5 rounded-2xl sm:rounded-3xl overflow-hidden h-[230px] sm:h-[350px]">
+            <!-- Foto Destacada Principal -->
+            <div class="col-span-2 row-span-2 relative group overflow-hidden cursor-pointer rounded-xl sm:rounded-2xl shadow-xs bg-slate-100 open-portfolio-item" data-portfolio-index="0">
+              <img src="${firstUrl}" alt="${this.escapeHtml(firstTitle || 'Trabajo')}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              <span class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold pointer-events-none flex items-center gap-1">
+                <i class="fas fa-star text-amber-400 text-[9px]"></i> Destacada
+              </span>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3 sm:p-4">
+                <span class="text-white text-xs font-bold drop-shadow flex items-center gap-1.5">
+                  <i class="fas fa-expand"></i> ${this.escapeHtml(firstTitle || 'Ver trabajo')}
+                </span>
+              </div>
+            </div>
+
+            <!-- Miniaturas Secundarias -->
+            ${restImgs.map((img, idx) => {
+              const actualIdx = idx + 1;
+              const isLastSlot = idx === 3 && remainingCount > 0;
+              const imgUrl = typeof img === 'string' ? img : img.url;
+              const imgTitle = typeof img === 'string' ? '' : (img.title || '');
+
+              return `
+                <div class="col-span-1 row-span-1 relative group overflow-hidden cursor-pointer rounded-xl sm:rounded-2xl shadow-xs bg-slate-100 open-portfolio-item" data-portfolio-index="${actualIdx}">
+                  <img src="${imgUrl}" alt="${this.escapeHtml(imgTitle || 'Trabajo')}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  ${isLastSlot ? `
+                    <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center text-white p-1 sm:p-2 text-center group-hover:bg-slate-950/80 transition-all">
+                      <span class="text-lg sm:text-2xl font-black tracking-tight">+${remainingCount}</span>
+                      <span class="text-[9px] sm:text-xs font-bold text-slate-200 mt-0.5">Ver más</span>
+                    </div>
+                  ` : `
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                      <i class="fas fa-search-plus text-xs sm:text-sm"></i>
+                    </div>
+                  `}
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  // ==========================================
+  // LIGHTBOX MODAL DE FOTOS EN PANTALLA COMPLETA
+  // ==========================================
+  openPortfolioLightbox(portfolio, startIndex = 0, bizName = '') {
+    if (!portfolio || portfolio.length === 0) return;
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    let currentIndex = Math.max(0, Math.min(startIndex, portfolio.length - 1));
+
+    const renderLightboxContent = () => {
+      const currentItem = portfolio[currentIndex];
+      const imgUrl = typeof currentItem === 'string' ? currentItem : currentItem.url;
+      const imgTitle = typeof currentItem === 'string' ? '' : (currentItem.title || '');
+
+      return `
+        <div id="portfolio-lightbox-modal" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-5 select-none animate-fade-in" style="touch-action: pan-y;">
+          <!-- Top Bar -->
+          <div class="flex items-center justify-between gap-3 text-white z-20 pb-2 border-b border-white/10">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="w-8 h-8 rounded-xl bg-blue-600/80 flex items-center justify-center text-sm shrink-0">
+                <i class="fas fa-camera-retro"></i>
+              </span>
+              <div class="min-w-0">
+                <h3 class="font-extrabold text-sm sm:text-base text-white truncate">${this.escapeHtml(bizName || 'Portafolio')}</h3>
+                <span class="text-[11px] text-slate-300">Galería de Trabajos</span>
+              </div>
+            </div>
+
+            <!-- Contador -->
+            <div class="px-3.5 py-1 rounded-full bg-white/10 border border-white/15 text-xs sm:text-sm font-black tracking-wider text-slate-100">
+              <span id="lb-counter">${currentIndex + 1}</span> / ${portfolio.length}
+            </div>
+
+            <!-- Cerrar -->
+            <button id="close-lightbox-btn" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center text-base transition-all cursor-pointer" title="Cerrar (Esc)">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Stage Central -->
+          <div class="relative flex-1 flex items-center justify-center min-h-0 py-2 sm:py-4 overflow-hidden" id="lb-stage">
+            <!-- Botón Anterior -->
+            ${portfolio.length > 1 ? `
+              <button id="lb-prev-btn" class="absolute left-1 sm:left-4 z-20 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/50 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center text-base sm:text-xl backdrop-blur-md transition-all cursor-pointer shadow-xl border border-white/15" title="Anterior (←)">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+            ` : ''}
+
+            <!-- Imagen Principal -->
+            <div class="relative max-h-full max-w-full flex items-center justify-center px-10 sm:px-16" id="lb-img-wrapper">
+              <img id="lb-main-image" src="${imgUrl}" alt="${this.escapeHtml(imgTitle || bizName)}" class="max-h-[70vh] sm:max-h-[75vh] max-w-full object-contain rounded-2xl shadow-2xl transition-all duration-200">
+              ${imgTitle ? `
+                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 max-w-[90%] px-4 py-1.5 rounded-xl bg-black/70 backdrop-blur-md text-white text-xs sm:text-sm font-semibold text-center border border-white/10 pointer-events-none">
+                  ${this.escapeHtml(imgTitle)}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Botón Siguiente -->
+            ${portfolio.length > 1 ? `
+              <button id="lb-next-btn" class="absolute right-1 sm:right-4 z-20 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/50 hover:bg-black/80 active:scale-90 text-white flex items-center justify-center text-base sm:text-xl backdrop-blur-md transition-all cursor-pointer shadow-xl border border-white/15" title="Siguiente (→)">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Bottom Thumbnail Strip -->
+          ${portfolio.length > 1 ? `
+            <div class="z-20 pt-2 border-t border-white/10">
+              <div id="lb-thumbs-scroll" class="flex items-center gap-2 overflow-x-auto py-1 px-2 max-w-3xl mx-auto scrollbar-thin">
+                ${portfolio.map((item, idx) => {
+                  const tUrl = typeof item === 'string' ? item : item.url;
+                  const isActive = idx === currentIndex;
+                  return `
+                    <button class="lb-thumb-btn w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer relative ${isActive ? 'border-blue-500 scale-105 ring-2 ring-blue-500/50 opacity-100 shadow-lg' : 'border-white/15 opacity-40 hover:opacity-80'}" data-thumb-index="${idx}">
+                      <img src="${tUrl}" alt="" class="w-full h-full object-cover">
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    };
+
+    modalContainer.innerHTML = renderLightboxContent();
+
+    const closeModal = () => {
+      window.removeEventListener('keydown', handleKeydown);
+      modalContainer.innerHTML = '';
+    };
+
+    const goToIndex = (newIdx) => {
+      if (newIdx < 0) newIdx = portfolio.length - 1;
+      if (newIdx >= portfolio.length) newIdx = 0;
+      currentIndex = newIdx;
+      modalContainer.innerHTML = renderLightboxContent();
+      attachEvents();
+      const activeThumb = modalContainer.querySelector(`[data-thumb-index="${currentIndex}"]`);
+      activeThumb?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    };
+
+    const handleKeydown = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      } else if (e.key === 'ArrowLeft') {
+        goToIndex(currentIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        goToIndex(currentIndex + 1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeydown);
+
+    const attachEvents = () => {
+      document.getElementById('close-lightbox-btn')?.addEventListener('click', closeModal);
+      document.getElementById('lb-prev-btn')?.addEventListener('click', () => goToIndex(currentIndex - 1));
+      document.getElementById('lb-next-btn')?.addEventListener('click', () => goToIndex(currentIndex + 1));
+
+      document.getElementById('lb-stage')?.addEventListener('click', (e) => {
+        if (e.target.id === 'lb-stage' || e.target.id === 'lb-img-wrapper') {
+          closeModal();
+        }
+      });
+
+      modalContainer.querySelectorAll('.lb-thumb-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tIdx = parseInt(btn.getAttribute('data-thumb-index') || '0', 10);
+          goToIndex(tIdx);
+        });
+      });
+
+      let touchStartX = 0;
+      let touchEndX = 0;
+      const stage = document.getElementById('lb-stage');
+      stage?.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+      stage?.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchEndX - touchStartX;
+        if (diff > 50) {
+          goToIndex(currentIndex - 1);
+        } else if (diff < -50) {
+          goToIndex(currentIndex + 1);
+        }
+      }, { passive: true });
+    };
+
+    attachEvents();
+  }
+
+  // ==========================================
   // VISTA 2: DETALLE DEL NEGOCIO & SERVICIOS
   // ==========================================
   async renderBusinessDetailView(container) {
@@ -3879,6 +4116,9 @@ class App {
                 </div>
               </div>
             ` : ''}
+
+            <!-- Portafolio / Galería de Trabajos (Estilo Fresha) -->
+            ${this.renderPortfolioSection(biz)}
 
             <!-- Servicios -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
@@ -4138,6 +4378,14 @@ class App {
 
     document.getElementById('profile-demo-register-btn')?.addEventListener('click', () => {
       this.renderPreRegisterModal();
+    });
+
+    // Abrir Lightbox del Portafolio al hacer clic en fotos o en "Ver todas las fotos"
+    document.querySelectorAll('.open-portfolio-item, .open-all-portfolio-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.getAttribute('data-portfolio-index') || '0', 10);
+        this.openPortfolioLightbox(biz.portfolio || [], idx, biz.name);
+      });
     });
 
     document.querySelectorAll('.book-service-btn').forEach(btn => {
@@ -6146,6 +6394,10 @@ class App {
               <i class="fas fa-tag text-xs"></i>
               <span>Servicios (${currentBiz.services ? currentBiz.services.length : 0})</span>
             </button>
+            <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'portfolio' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="portfolio">
+              <i class="fas fa-camera-retro text-xs ${this.activeDashboardTab === 'portfolio' ? 'text-white' : 'text-purple-600'}"></i>
+              <span>Portafolio (${currentBiz.portfolio ? currentBiz.portfolio.length : 0})</span>
+            </button>
             <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-blue-700 border border-slate-200/70 shadow-2xs'}" data-tab="schedule">
               <i class="fas fa-clock text-xs"></i>
               <span>Horarios</span>
@@ -6971,6 +7223,182 @@ class App {
       `;
     }
 
+    if (this.activeDashboardTab === 'portfolio') {
+      const portfolio = Array.isArray(currentBiz.portfolio) ? currentBiz.portfolio : [];
+
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 md:p-8 shadow-xs max-w-5xl mx-auto space-y-6 animate-fade-in">
+          <!-- Encabezado de Sección -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <span class="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg shadow-xs">
+                  <i class="fas fa-camera-retro"></i>
+                </span>
+                <div>
+                  <h2 class="text-xl sm:text-2xl font-black text-slate-900">Portafolio y Galería de Trabajos</h2>
+                  <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+                    Muestra fotos reales de tus servicios, transformaciones, instalaciones y equipo en tu perfil.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <a href="#/${currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id)}" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer" title="Ver cómo lo ven tus clientes">
+                <i class="fas fa-external-link-alt text-xs"></i>
+                <span>Ver Perfil Público</span>
+              </a>
+              <input type="file" id="upload-portfolio-files" accept="image/*" multiple class="hidden">
+              <button type="button" id="trigger-portfolio-upload-btn" class="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition-all shadow-md shadow-purple-500/20 cursor-pointer">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Subir Fotos</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Banner Informativo Estilo Fresha -->
+          <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border border-purple-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-purple-950">
+            <div class="flex items-start sm:items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-base shrink-0 shadow-xs">
+                <i class="fas fa-magic"></i>
+              </div>
+              <div>
+                <strong class="font-black text-purple-900 block sm:inline">Mosaico Inteligente Estilo Fresha:</strong>
+                <span class="text-purple-800"> La primera foto será la portada destacada grande. Con 5 o más fotos se activa automáticamente el contador "+N Ver más".</span>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-purple-200/80 text-purple-900 font-extrabold text-[11px] shrink-0">
+              ${portfolio.length} ${portfolio.length === 1 ? 'foto' : 'fotos'} en galería
+            </span>
+          </div>
+
+          <!-- Acciones de Agregar Fotos: Drag & Drop + URL -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Dropzone / Picker -->
+            <div id="portfolio-dropzone" class="md:col-span-2 border-2 border-dashed border-purple-300 hover:border-purple-500 bg-purple-50/30 hover:bg-purple-50/60 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all group">
+              <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 group-hover:scale-110 flex items-center justify-center text-2xl transition-transform shadow-xs mb-3">
+                <i class="fas fa-images"></i>
+              </div>
+              <h4 class="font-bold text-slate-800 text-sm sm:text-base">Haz clic aquí o arrastra fotos para subirlas</h4>
+              <p class="text-xs text-slate-500 mt-1 max-w-md">
+                Selecciona múltiples fotos desde tu PC, Tablet o Teléfono. Se comprimen inteligentemente.
+              </p>
+              <div class="mt-4 flex items-center gap-2 flex-wrap justify-center">
+                <span class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 text-[11px] font-bold shadow-2xs">
+                  <i class="fas fa-check-circle text-emerald-500 mr-1"></i> JPG, PNG, WEBP
+                </span>
+                <span class="px-3 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 text-[11px] font-bold shadow-2xs">
+                  <i class="fas fa-bolt text-amber-500 mr-1"></i> Carga Múltiple
+                </span>
+              </div>
+            </div>
+
+            <!-- Agregar por Enlace Web -->
+            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between space-y-3">
+              <div>
+                <h4 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
+                  <i class="fas fa-link text-blue-600"></i> Agregar por Enlace Web
+                </h4>
+                <p class="text-[11px] text-slate-500 mt-1">Si ya tienes la foto en línea (Instagram, Imgur, Cloudinary):</p>
+                
+                <div class="space-y-2 mt-3">
+                  <input type="url" id="portfolio-url-input" placeholder="https://ejemplo.com/trabajo.jpg" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                  <input type="text" id="portfolio-title-input" placeholder="Descripción opcional (Ej: Corte Fade)" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+              </div>
+
+              <button type="button" id="portfolio-add-url-btn" class="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm">
+                <i class="fas fa-plus"></i> Agregar al Portafolio
+              </button>
+            </div>
+          </div>
+
+          <!-- Grilla de Fotos Actuales -->
+          <div class="space-y-3 pt-4 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                <span>Fotos en tu Portafolio</span>
+                <span class="text-xs font-normal text-slate-400">(${portfolio.length})</span>
+              </h3>
+              ${portfolio.length > 0 ? `
+                <span class="text-[11px] text-slate-500 italic">
+                  Tip: La primera foto es la portada grande del mosaico.
+                </span>
+              ` : ''}
+            </div>
+
+            ${portfolio.length === 0 ? `
+              <div class="text-center py-12 px-4 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200">
+                <div class="w-16 h-16 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-3xl mx-auto mb-3">
+                  <i class="far fa-images"></i>
+                </div>
+                <h4 class="text-base font-bold text-slate-800">Tu portafolio está vacío</h4>
+                <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                  Sube fotos de tus mejores trabajos para que los clientes vean la calidad de tus servicios antes de reservar.
+                </p>
+                <button type="button" id="empty-trigger-upload-btn" class="mt-4 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-500/20 cursor-pointer inline-flex items-center gap-2">
+                  <i class="fas fa-upload"></i> Subir Mi Primera Foto
+                </button>
+              </div>
+            ` : `
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                ${portfolio.map((img, idx) => {
+                  const url = typeof img === 'string' ? img : img.url;
+                  const title = typeof img === 'string' ? '' : (img.title || '');
+                  const imgId = typeof img === 'string' ? idx : (img.id || idx);
+                  const isFeatured = idx === 0;
+
+                  return `
+                    <div class="group relative bg-white rounded-2xl border-2 ${isFeatured ? 'border-purple-500 shadow-md ring-2 ring-purple-500/20' : 'border-slate-200'} overflow-hidden flex flex-col transition-all hover:shadow-md">
+                      <div class="aspect-square w-full relative overflow-hidden bg-slate-100 cursor-pointer preview-portfolio-lightbox-item" data-index="${idx}">
+                        <img src="${url}" alt="${this.escapeHtml(title || 'Trabajo')}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                        
+                        <!-- Badges -->
+                        ${isFeatured ? `
+                          <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+                            <i class="fas fa-star text-[9px]"></i> Destacada
+                          </span>
+                        ` : `
+                          <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold">
+                            #${idx + 1}
+                          </span>
+                        `}
+
+                        <!-- Hover Overlay to View -->
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-2">
+                          <span class="px-3 py-1 rounded-lg bg-white/20 backdrop-blur-md text-xs font-bold flex items-center gap-1">
+                            <i class="fas fa-search-plus"></i> Ver
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="p-2.5 flex items-center justify-between gap-1 bg-white border-t border-slate-100">
+                        <span class="text-xs font-semibold text-slate-700 truncate flex-1" title="${this.escapeHtml(title || `Foto #${idx + 1}`)}">
+                          ${this.escapeHtml(title || `Foto #${idx + 1}`)}
+                        </span>
+
+                        <div class="flex items-center gap-1 shrink-0">
+                          ${!isFeatured ? `
+                            <button type="button" class="btn-make-featured p-1.5 rounded-lg text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-colors cursor-pointer" data-index="${idx}" title="Poner como foto destacada">
+                              <i class="fas fa-star text-xs"></i>
+                            </button>
+                          ` : ''}
+                          <button type="button" class="btn-delete-portfolio-photo p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" data-id="${imgId}" data-index="${idx}" title="Eliminar foto">
+                            <i class="far fa-trash-alt text-xs"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
     if (this.activeDashboardTab === 'profile') {
       const allFeatures = [
         'Sinpe Móvil', 'Acepta Tarjeta', 'Parqueo Gratis', 'Parqueo Bajo Techo',
@@ -7095,6 +7523,38 @@ class App {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <!-- Portafolio y Galería de Trabajos (Acceso Directo) -->
+              <div class="space-y-3 pt-4 border-t border-slate-200/80">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <label class="font-bold text-slate-800 text-xs sm:text-sm block">Portafolio y Galería de Trabajos</label>
+                    <p class="text-[11px] text-slate-500">Mosaico estilo Fresha visible para los clientes con tus mejores trabajos.</p>
+                  </div>
+                  <button type="button" class="btn-go-to-portfolio-tab px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer">
+                    <i class="fas fa-camera-retro"></i>
+                    <span>Administrar Portafolio (${(currentBiz.portfolio || []).length} fotos)</span>
+                  </button>
+                </div>
+                ${(currentBiz.portfolio && currentBiz.portfolio.length > 0) ? `
+                  <div class="flex items-center gap-2 overflow-x-auto py-2">
+                    ${currentBiz.portfolio.slice(0, 6).map((img, i) => `
+                      <div class="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100 relative group cursor-pointer btn-go-to-portfolio-tab" title="Clic para administrar">
+                        <img src="${typeof img === 'string' ? img : img.url}" class="w-full h-full object-cover">
+                        ${i === 0 ? '<span class="absolute bottom-0 inset-x-0 bg-purple-600 text-white text-[8px] font-black text-center py-0.5">Portada</span>' : ''}
+                      </div>
+                    `).join('')}
+                    ${currentBiz.portfolio.length > 6 ? `
+                      <button type="button" class="btn-go-to-portfolio-tab w-16 h-16 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 font-black text-xs flex flex-col items-center justify-center shrink-0 cursor-pointer hover:bg-purple-100 transition-colors">
+                        <span>+${currentBiz.portfolio.length - 6}</span>
+                        <span class="text-[9px] font-medium">más</span>
+                      </button>
+                    ` : ''}
+                  </div>
+                ` : `
+                  <p class="text-xs text-slate-400 italic">Aún no has agregado fotos a tu portafolio. Haz clic en "Administrar Portafolio" para subir tus primeros trabajos.</p>
+                `}
               </div>
             </div>
 
@@ -11054,6 +11514,115 @@ class App {
         this.showToast(`Todos los bloqueos del ${this.formatDateDMY(selectedDate)} han sido eliminados.`, 'success');
         this.renderCurrentView();
       }
+    });
+
+    // Accesos directos a la pestaña de Portafolio
+    document.querySelectorAll('.btn-go-to-portfolio-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.activeDashboardTab = 'portfolio';
+        this.renderOwnerDashboardView(container);
+      });
+    });
+
+    // --- LISTENERS DEL PORTAFOLIO EN PANEL DUEÑO ---
+    const uploadPortFiles = document.getElementById('upload-portfolio-files');
+    const triggerPortBtn = document.getElementById('trigger-portfolio-upload-btn');
+    const emptyTriggerPortBtn = document.getElementById('empty-trigger-upload-btn');
+    const portDropzone = document.getElementById('portfolio-dropzone');
+
+    triggerPortBtn?.addEventListener('click', () => uploadPortFiles?.click());
+    emptyTriggerPortBtn?.addEventListener('click', () => uploadPortFiles?.click());
+    portDropzone?.addEventListener('click', (e) => {
+      if (e.target.closest('#upload-portfolio-files') || e.target.closest('input')) return;
+      uploadPortFiles?.click();
+    });
+
+    // Subida múltiple de fotos desde PC / Móvil
+    uploadPortFiles?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      this.showToast(`Procesando y optimizando ${files.length} ${files.length === 1 ? 'foto' : 'fotos'}...`, 'info');
+      try {
+        let count = 0;
+        for (const file of files) {
+          const compressed = await this.compressImageFile(file, 1200, 1200, 0.82);
+          await storage.addPortfolioImage(currentBiz.id, {
+            url: compressed,
+            title: file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
+          });
+          count++;
+        }
+        this.showToast(`¡${count} ${count === 1 ? 'foto agregada' : 'fotos agregadas'} a tu portafolio exitosamente!`, 'success');
+        this.renderCurrentView();
+      } catch (err) {
+        console.error('Error subiendo fotos al portafolio:', err);
+        this.showToast('Error al procesar las fotos: ' + (err.message || 'Error desconocido'), 'error');
+      }
+    });
+
+    // Agregar foto por URL
+    document.getElementById('portfolio-add-url-btn')?.addEventListener('click', async () => {
+      const urlInput = document.getElementById('portfolio-url-input');
+      const titleInput = document.getElementById('portfolio-title-input');
+      const url = (urlInput?.value || '').trim();
+      const title = (titleInput?.value || '').trim();
+
+      if (!url) {
+        this.showToast('Por favor ingresa un enlace URL válido de la imagen.', 'warning');
+        return;
+      }
+
+      if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:')) {
+        this.showToast('El enlace debe comenzar con https://', 'warning');
+        return;
+      }
+
+      try {
+        await storage.addPortfolioImage(currentBiz.id, { url, title });
+        this.showToast('¡Foto agregada a tu portafolio!', 'success');
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast('Error al agregar foto: ' + (err.message || 'Error de conexión'), 'error');
+      }
+    });
+
+    // Poner foto como destacada (portada principal)
+    document.querySelectorAll('.btn-make-featured').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.getAttribute('data-index') || '0', 10);
+        if (!Array.isArray(currentBiz.portfolio) || idx <= 0 || idx >= currentBiz.portfolio.length) return;
+        const item = currentBiz.portfolio.splice(idx, 1)[0];
+        currentBiz.portfolio.unshift(item);
+        await storage.saveBusiness(currentBiz);
+        this.showToast('Foto marcada como portada principal del portafolio.', 'success');
+        this.renderCurrentView();
+      });
+    });
+
+    // Eliminar foto del portafolio
+    document.querySelectorAll('.btn-delete-portfolio-photo').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idOrIdx = btn.getAttribute('data-id');
+        const numIdx = parseInt(btn.getAttribute('data-index') || '-1', 10);
+        if (!confirm('¿Deseas eliminar esta foto de tu portafolio?')) return;
+
+        try {
+          await storage.removePortfolioImage(currentBiz.id, idOrIdx !== null ? idOrIdx : numIdx);
+          this.showToast('Foto eliminada del portafolio.', 'info');
+          this.renderCurrentView();
+        } catch (err) {
+          this.showToast('Error al eliminar foto: ' + (err.message || 'Error'), 'error');
+        }
+      });
+    });
+
+    // Vista previa en Lightbox desde el panel
+    document.querySelectorAll('.preview-portfolio-lightbox-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const idx = parseInt(item.getAttribute('data-index') || '0', 10);
+        this.openPortfolioLightbox(currentBiz.portfolio || [], idx, currentBiz.name);
+      });
     });
   }
 

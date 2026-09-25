@@ -259,7 +259,49 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '14:00',
       slotDuration: 30 // minutos
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p1-1",
+            "url": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=800&q=80",
+            "caption": "Degradado Fade & Textura Superior"
+      },
+      {
+            "id": "p1-2",
+            "url": "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?auto=format&fit=crop&w=800&q=80",
+            "caption": "Perfilado Clásico de Barba a Navaja"
+      },
+      {
+            "id": "p1-3",
+            "url": "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=800&q=80",
+            "caption": "Corte Ejecutivo & Peinado Pompadour"
+      },
+      {
+            "id": "p1-4",
+            "url": "https://images.unsplash.com/photo-1517832606589-7629c3395909?auto=format&fit=crop&w=800&q=80",
+            "caption": "Tratamiento con Toalla Caliente"
+      },
+      {
+            "id": "p1-5",
+            "url": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=800&q=80",
+            "caption": "Estación de Barbería Clásica"
+      },
+      {
+            "id": "p1-6",
+            "url": "https://images.unsplash.com/photo-1534778101976-62847782c213?auto=format&fit=crop&w=800&q=80",
+            "caption": "Corte Moderno Crop Texturizado"
+      },
+      {
+            "id": "p1-7",
+            "url": "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=800&q=80",
+            "caption": "Diseño y Acabado con Cera Mate"
+      },
+      {
+            "id": "p1-8",
+            "url": "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80",
+            "caption": "Afeitado Tradicional Premium"
+      }
+],
+services: [
       { id: 'srv-101', name: 'Corte de Cabello Clásico', duration: 30, price: 7000, description: 'Corte personalizado, lavado y peinado con cera mate.' },
       { id: 'srv-102', name: 'Arreglo y Perfilado de Barba', duration: 30, price: 5000, description: 'Toalla caliente, aceites esenciales, afeitado a navaja y bálsamo.' },
       { id: 'srv-103', name: 'Combo Premium (Corte + Barba)', duration: 60, price: 11000, description: 'La experiencia completa: corte, barba, exfoliación y masaje capilar.' },
@@ -292,7 +334,54 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '14:00',
       slotDuration: 30
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p2-1",
+            "url": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80",
+            "caption": "Balayage Rubio Cenizo y Ondas"
+      },
+      {
+            "id": "p2-2",
+            "url": "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80",
+            "caption": "Diseño de Uñas Acrílicas & Nail Art"
+      },
+      {
+            "id": "p2-3",
+            "url": "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+            "caption": "Alisado de Keratina Brillo Espejo"
+      },
+      {
+            "id": "p2-4",
+            "url": "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=800&q=80",
+            "caption": "Corte y Tinte Fantasía"
+      },
+      {
+            "id": "p2-5",
+            "url": "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=800&q=80",
+            "caption": "Peinado Elegante para Eventos"
+      },
+      {
+            "id": "p2-6",
+            "url": "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=800&q=80",
+            "caption": "Manicura Rusa Semipermanente"
+      },
+      {
+            "id": "p2-7",
+            "url": "https://images.unsplash.com/photo-1582095133179-bfd08e2fc6b3?auto=format&fit=crop&w=800&q=80",
+            "caption": "Tratamiento Capilar Reparador"
+      },
+      {
+            "id": "p2-8",
+            "url": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80",
+            "caption": "Maquillaje de Gala"
+      },
+      {
+            "id": "p2-9",
+            "url": "https://images.unsplash.com/photo-1634449571010-02389ed0f9b0?auto=format&fit=crop&w=800&q=80",
+            "caption": "Efecto Morena Iluminada"
+      }
+],
+services: [
       { id: 'srv-201', name: 'Manicura Rusa & Gel Semipermanente', duration: 60, price: 16000, description: 'Limpieza profunda de cutícula, nivelación y esmaltado de alta duración.' },
       { id: 'srv-202', name: 'Pedicura Spa Hidratante', duration: 60, price: 18000, description: 'Exfoliación con sales minerales, mascarilla y masaje relajante de pies.' },
       { id: 'srv-203', name: 'Tratamiento de Keratina Brasileña', duration: 120, price: 45000, description: 'Alisado e hidratación profunda con brillo espejo.' }
@@ -328,7 +417,29 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '13:00',
       slotDuration: 30
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p3-1",
+            "url": "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=800&q=80",
+            "caption": "Consultorio Odontológico Moderno"
+      },
+      {
+            "id": "p3-2",
+            "url": "https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=800&q=80",
+            "caption": "Diseño de Sonrisa y Blanqueamiento"
+      },
+      {
+            "id": "p3-3",
+            "url": "https://images.unsplash.com/photo-1606811841689-23dfddce3e95?auto=format&fit=crop&w=800&q=80",
+            "caption": "Escaner Intraoral 3D"
+      },
+      {
+            "id": "p3-4",
+            "url": "https://images.unsplash.com/photo-1598256989800-fe5f95da9787?auto=format&fit=crop&w=800&q=80",
+            "caption": "Ortodoncia Invisible e Higiene"
+      }
+],
+services: [
       { id: 'srv-301', name: 'Consulta Médica General', duration: 30, price: 25000, description: 'Evaluación integral, toma de signos y receta médica digital.' },
       { id: 'srv-302', name: 'Chequeo Preventivo Integral', duration: 45, price: 40000, description: 'Incluye electrocardiograma básico, glucosa capilar y perfil de salud.' },
       { id: 'srv-303', name: 'Certificado Médico Oficial', duration: 20, price: 15000, description: 'Dictamen para licencia o requisitos laborales.' }
@@ -360,7 +471,29 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '13:00',
       slotDuration: 30
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p4-1",
+            "url": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80",
+            "caption": "Masaje Terapéutico y Descontracturante"
+      },
+      {
+            "id": "p4-2",
+            "url": "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=800&q=80",
+            "caption": "Terapia de Puntos Gatillo"
+      },
+      {
+            "id": "p4-3",
+            "url": "https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=800&q=80",
+            "caption": "Gimnasio de Rehabilitación Funcional"
+      },
+      {
+            "id": "p4-4",
+            "url": "https://images.unsplash.com/photo-1600334089648-b0d9d3028eb2?auto=format&fit=crop&w=800&q=80",
+            "caption": "Tratamiento Integral de Bienestar"
+      }
+],
+services: [
       { id: 'srv-401', name: 'Consulta Medicina Interna', duration: 40, price: 35000, description: 'Diagnóstico y control de hipertensión, diabetes y salud general.' },
       { id: 'srv-402', name: 'Control Pediátrico del Niño Sano', duration: 30, price: 30000, description: 'Monitoreo de crecimiento, vacunas y desarrollo infantil.' }
     ]
@@ -395,7 +528,29 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '13:30',
       slotDuration: 30
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p5-1",
+            "url": "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?auto=format&fit=crop&w=800&q=80",
+            "caption": "Lavado Espumoso Detallado"
+      },
+      {
+            "id": "p5-2",
+            "url": "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=800&q=80",
+            "caption": "Corrección de Pintura y Pulido"
+      },
+      {
+            "id": "p5-3",
+            "url": "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80",
+            "caption": "Aplicación de Recubrimiento Cerámico"
+      },
+      {
+            "id": "p5-4",
+            "url": "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=800&q=80",
+            "caption": "Limpieza de Tapicería en Cuero"
+      }
+],
+services: [
       { id: 'srv-501', name: 'Valoración y Diagnóstico Dental', duration: 30, price: 15000, description: 'Revisión completa con cámara intraoral y presupuesto detallado.' },
       { id: 'srv-502', name: 'Limpieza Dental con Ultrasonido', duration: 45, price: 25000, description: 'Eliminación profunda de sarro, profilaxis y aplicación de flúor.' },
       { id: 'srv-503', name: 'Blanqueamiento Dental LED', duration: 60, price: 75000, description: 'Sesión intensiva para aclarar hasta 4 tonos en una sola visita.' },
@@ -428,7 +583,29 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '14:00',
       slotDuration: 30
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p6-1",
+            "url": "https://images.unsplash.com/photo-1529900241450-4d57c79d123b?auto=format&fit=crop&w=800&q=80",
+            "caption": "Canchas Iluminadas Fútbol 5 y 7"
+      },
+      {
+            "id": "p6-2",
+            "url": "https://images.unsplash.com/photo-1575361204480-aadea25e6e68?auto=format&fit=crop&w=800&q=80",
+            "caption": "Grama Sintética Certificada"
+      },
+      {
+            "id": "p6-3",
+            "url": "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&w=800&q=80",
+            "caption": "Torneo Nocturno en Acción"
+      },
+      {
+            "id": "p6-4",
+            "url": "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80",
+            "caption": "Área de Graderías y Club"
+      }
+],
+services: [
       { id: 'srv-601', name: 'Diseño de Sonrisa Digital (DSD)', duration: 60, price: 45000, description: 'Estudio fotográfico y simulación digital 3D de tu nueva sonrisa.' },
       { id: 'srv-602', name: 'Restauración Estética de Resina', duration: 45, price: 28000, description: 'Calza estética del color natural de tu diente.' }
     ]
@@ -463,7 +640,29 @@ export const INITIAL_BUSINESSES = [
       breakEnd: '14:00',
       slotDuration: 30
     },
-    services: [
+        portfolio: [
+      {
+            "id": "p7-1",
+            "url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80",
+            "caption": "Retrato Editorial en Estudio"
+      },
+      {
+            "id": "p7-2",
+            "url": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80",
+            "caption": "Sesión de Maternidad y Familia"
+      },
+      {
+            "id": "p7-3",
+            "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+            "caption": "Headshot Corporativo LinkedIn"
+      },
+      {
+            "id": "p7-4",
+            "url": "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80",
+            "caption": "Fotografía de Moda y Marca"
+      }
+],
+services: [
       { id: 'srv-701', name: 'Masaje Relajante con Aromaterapia', duration: 60, price: 22000, description: 'Masaje suave con aceites de lavanda para liberar el estrés y tensión.' },
       { id: 'srv-702', name: 'Masaje Descontracturante Profundo', duration: 60, price: 26000, description: 'Técnica focalizada en nudos musculares en espalda, cuello y hombros.' },
       { id: 'srv-703', name: 'Terapia con Piedras Volcánicas Calientes', duration: 75, price: 32000, description: 'Piedras a temperatura ideal para calmar el sistema nervioso.' },

@@ -73,6 +73,7 @@ export async function initDatabase() {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_connected_at TIMESTAMP DEFAULT NULL;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_calendar_id VARCHAR(150) DEFAULT NULL;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS slug VARCHAR(255);
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS portfolio JSONB DEFAULT '[]';
       CREATE UNIQUE INDEX IF NOT EXISTS idx_reservas_businesses_slug ON reservas_businesses (slug);
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS nylas_event_id VARCHAR(150) DEFAULT NULL;
     `);
