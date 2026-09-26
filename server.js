@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import * as XLSX from 'xlsx';
 import { pool, initDatabase } from './db.js';
@@ -79,14 +80,35 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/src', express.static(path.join(__dirname, 'src')));
 app.use(['/directorio/src', '*/src'], express.static(path.join(__dirname, 'src')));
 
-// Rutas directas para el Manual de Usuario de Comercios
-app.get(['/manual-comercios-pdf', '/Manual_de_Usuario_Comercios_Reservas_CR.pdf', '/api/manual-pdf'], (req, res) => {
-  const pdfPath = path.join(__dirname, 'public', 'Manual_de_Usuario_Comercios_Reservas_CR.pdf');
+// Rutas directas para el Manual de Usuario de Comercios (PDF y Guía Web)
+app.get([
+  '/manual-comercios-pdf', 
+  '/manual-comercios.pdf', 
+  '/Manual_de_Usuario_Comercios_Reservas_CR.pdf', 
+  '/public/Manual_de_Usuario_Comercios_Reservas_CR.pdf', 
+  '/api/manual-pdf'
+], (req, res) => {
+  let pdfPath = path.join(__dirname, 'public', 'Manual_de_Usuario_Comercios_Reservas_CR.pdf');
+  if (!fs.existsSync(pdfPath)) {
+    pdfPath = path.join(__dirname, 'Manual_de_Usuario_Comercios_Reservas_CR.pdf');
+  }
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="Manual_de_Usuario_Comercios_Reservas_CR.pdf"');
   res.sendFile(pdfPath);
 });
 
-app.get(['/manual-comercios', '/manual-comercios-html'], (req, res) => {
-  const htmlPath = path.join(__dirname, 'public', 'manual_usuario_comercios.html');
+app.get([
+  '/manual-comercios', 
+  '/manual-comercios-html', 
+  '/manual-comercios.html', 
+  '/manual_usuario_comercios.html', 
+  '/public/manual_usuario_comercios.html'
+], (req, res) => {
+  let htmlPath = path.join(__dirname, 'public', 'manual_usuario_comercios.html');
+  if (!fs.existsSync(htmlPath)) {
+    htmlPath = path.join(__dirname, 'manual_usuario_comercios.html');
+  }
+  res.setHeader('Content-Type', 'text/html; charset=UTF-8');
   res.sendFile(htmlPath);
 });
 

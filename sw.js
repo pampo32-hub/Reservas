@@ -1,5 +1,5 @@
 // Service Worker para Reservas CR (PWA)
-const CACHE_NAME = 'reservascr-pwa-v31';
+const CACHE_NAME = 'reservascr-pwa-v32';
 
 const STATIC_ASSETS = [
   './',
@@ -50,8 +50,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Ignorar peticiones API del backend
-  if (requestUrl.pathname.startsWith('/api/') || event.request.method !== 'GET') {
+  // Ignorar peticiones API del backend y documentos de manuales (para abrir directo por red sin interferencia)
+  if (
+    requestUrl.pathname.startsWith('/api/') || 
+    requestUrl.pathname.startsWith('/manual-comercios') ||
+    requestUrl.pathname.includes('Manual_de_Usuario') ||
+    requestUrl.pathname.includes('manual_usuario') ||
+    requestUrl.pathname.endsWith('.pdf') ||
+    event.request.method !== 'GET'
+  ) {
     return;
   }
 

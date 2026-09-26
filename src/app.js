@@ -9044,6 +9044,7 @@ class App {
               href="/manual-comercios-pdf" 
               target="_blank" 
               rel="noopener noreferrer" 
+              id="btn-open-manual-pdf"
               class="px-5 py-3.5 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer transform hover:scale-102"
             >
               <i class="fas fa-file-pdf text-base text-rose-700"></i>
@@ -9053,6 +9054,7 @@ class App {
               href="/manual-comercios" 
               target="_blank" 
               rel="noopener noreferrer" 
+              id="btn-open-manual-web"
               class="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 border border-white/20 transition-all cursor-pointer"
             >
               <i class="fas fa-external-link-alt text-xs"></i>
@@ -10866,6 +10868,17 @@ class App {
 
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
   setupDashboardTabEvents(currentBiz) {
+    // Apertura directa garantizada de Manuales para Comercios (PDF y Guía Web)
+    document.getElementById('btn-open-manual-pdf')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open('/manual-comercios-pdf', '_blank');
+    });
+
+    document.getElementById('btn-open-manual-web')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.open('/manual-comercios', '_blank');
+    });
+
     // Desconectar Calendario Nylas (Google Calendar / Outlook)
     document.getElementById('btn-disconnect-nylas')?.addEventListener('click', async () => {
       if (confirm('¿Estás seguro de que deseas desconectar la sincronización de Google Calendar / Outlook? Las nuevas citas ya no se crearán automáticamente en tu calendario.')) {
@@ -17508,18 +17521,17 @@ class App {
         return;
       }
 
-      // Enlaces al Manual de Comercios PDF
-      const manualPdfLink = e.target.closest('a[href="/manual-comercios-pdf"], a[href="/manual-comercios"]');
-      if (manualPdfLink) {
+      // Enlaces al Manual de Comercios PDF / Web
+      const manualDocLink = e.target.closest('a[href="/manual-comercios-pdf"], a[href="/manual-comercios"], a[href*="manual_usuario_comercios"], a[href*="Manual_de_Usuario"]');
+      if (manualDocLink) {
         const isBiz = Boolean(storage.getBusinessUser());
-        if (isBiz) {
-          e.preventDefault();
-          this.navigateTo('owner-dashboard', { tab: 'manual' });
-        } else {
+        if (!isBiz) {
           e.preventDefault();
           this.showToast('El Manual de Usuario requiere inicio de sesión de comercio.', 'info');
           this.renderAuthModal({ mode: 'login', role: 'business' });
+          return;
         }
+        // Usuario comercio autenticado: permitir la apertura o descarga del documento sin bloquear con preventDefault
         return;
       }
 
