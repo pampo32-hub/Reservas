@@ -9064,41 +9064,53 @@ class App {
         </div>
 
         <!-- Módulos de Aprendizaje Rápido -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
             <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">1</div>
             <h3 class="font-bold text-slate-900 text-sm">Perfil y Fotos</h3>
-            <p class="text-slate-600">Sube el logo de tu negocio, portada y dirección exacta para destacar en el directorio de Costa Rica.</p>
+            <p class="text-slate-600">Sube tu logo y portada directamente desde tu celular para destacar en el directorio de Costa Rica.</p>
           </div>
 
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">2</div>
-            <h3 class="font-bold text-slate-900 text-sm">Servicios y Precios (₡)</h3>
-            <p class="text-slate-600">Configura tu catálogo con precios en colones, duración en minutos y descripción clara.</p>
+            <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">2</div>
+            <h3 class="font-bold text-slate-900 text-sm">Enlace Corto & QR</h3>
+            <p class="text-slate-600">Personaliza tu link amigable (reservascr.app/#/tu-nombre) con validación única y botón de copiar.</p>
           </div>
 
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
             <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">3</div>
+            <h3 class="font-bold text-slate-900 text-sm">Servicios y Precios (₡)</h3>
+            <p class="text-slate-600">Configura tu catálogo con precios en colones, duración (15-60m) y foto descriptiva.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">4</div>
             <h3 class="font-bold text-slate-900 text-sm">Equipo y Especialistas</h3>
             <p class="text-slate-600">Asigna colaboradores a servicios específicos para que cada uno reciba sus citas individuales.</p>
           </div>
 
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">4</div>
+            <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-sm">5</div>
+            <h3 class="font-bold text-slate-900 text-sm">Portafolio de Trabajos</h3>
+            <p class="text-slate-600">Sube fotos de tus mejores trabajos para que tus clientes las vean en un mosaico interactivo tipo Fresha.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-sm">6</div>
             <h3 class="font-bold text-slate-900 text-sm">Horarios y Almuerzo</h3>
-            <p class="text-slate-600">Define tus días laborables y hora de comida para ocultar automáticamente esos bloques.</p>
+            <p class="text-slate-600">Define tus días de apertura y hora de comida para ocultar automáticamente esos bloques al público.</p>
           </div>
 
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-            <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm">5</div>
-            <h3 class="font-bold text-slate-900 text-sm">Bloqueo con 1 Clic</h3>
-            <p class="text-slate-600">Toca cualquier hora en el calendario para inhabilitarla en rojo de inmediato sin formularios.</p>
+            <div class="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-sm">7</div>
+            <h3 class="font-bold text-slate-900 text-sm">Google / Outlook</h3>
+            <p class="text-slate-600">Sincroniza tus reservas directamente con el calendario personal de tu teléfono móvil.</p>
           </div>
 
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">6</div>
-            <h3 class="font-bold text-slate-900 text-sm">Reportes a Excel</h3>
-            <p class="text-slate-600">Descarga tu histórico contable de ingresos por rango de fecha y especialista en formato .xlsx.</p>
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">8</div>
+            <h3 class="font-bold text-slate-900 text-sm">Reportes Excel & PDF</h3>
+            <p class="text-slate-600">Descarga tu histórico contable de ingresos por rango de fecha en formato Excel (.xlsx) y PDF oficial.</p>
           </div>
         </div>
 
