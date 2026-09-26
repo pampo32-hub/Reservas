@@ -1335,9 +1335,22 @@ app.put('/api/businesses/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const b = req.body;
-
     const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : null);
     const rawSlug = b.slug !== undefined ? slugify(b.slug) : (b.name ? slugify(b.name) : null);
+
+    // Validar si el slug nuevo ya está en uso por otro negocio
+    if (rawSlug) {
+      const existingSlugCheck = await pool.query(
+        'SELECT id, name FROM reservas_businesses WHERE LOWER(slug) = LOWER($1) AND id != $2 LIMIT 1',
+        [rawSlug, id]
+      );
+      if (existingSlugCheck.rows.length > 0) {
+        const fallbackSuggestion = `${rawSlug}-${slugify(b.city || 'cr')}`;
+        return res.status(409).json({ 
+          error: `Este enlace ya está en uso por otro negocio. Prueba con otro (por ejemplo agregando tu zona, cantón o provincia como '${fallbackSuggestion}').` 
+        });
+      }
+    }
 
     const updateRes = await pool.query(`
       UPDATE reservas_businesses SET

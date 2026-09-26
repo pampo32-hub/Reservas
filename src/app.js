@@ -7616,7 +7616,7 @@ class App {
             </div>
 
             <!-- Enlace Personalizado y Compartir -->
-            <div class="p-5 sm:p-6 bg-gradient-to-br from-blue-50/90 to-indigo-50/80 rounded-2xl border border-blue-200/90 space-y-3 shadow-xs">
+            <div class="p-5 sm:p-6 bg-gradient-to-br from-blue-50/90 to-indigo-50/80 rounded-2xl border border-blue-200/90 space-y-3.5 shadow-xs">
               <div class="flex items-center justify-between border-b border-blue-200/70 pb-3">
                 <h3 class="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
                   <i class="fas fa-link text-blue-600"></i> Tu Enlace Personalizado de Reservas
@@ -7625,15 +7625,30 @@ class App {
               </div>
               <p class="text-xs text-slate-600">Este es el enlace directo que puedes compartir en tu biografía de Instagram, WhatsApp y redes sociales:</p>
               
-              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                <div class="flex-1 flex items-center bg-white border border-blue-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs">
-                  <span class="text-slate-400 font-normal select-none pr-0.5">reservascr.app/#/</span>
-                  <input type="text" id="edit-biz-slug" value="${this.escapeHtml(currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id))}" placeholder="nombre-de-tu-negocio" class="flex-1 font-bold text-blue-700 bg-transparent focus:outline-none px-1 lowercase">
+              <div class="space-y-1.5">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                  <div id="slug-input-wrapper" class="flex-1 flex items-center bg-white border border-blue-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs transition-all focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-400">
+                    <span class="text-slate-400 font-normal select-none pr-0.5">reservascr.app/#/</span>
+                    <input type="text" id="edit-biz-slug" value="${this.escapeHtml(currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id))}" placeholder="nombre-de-tu-negocio" class="flex-1 font-bold text-blue-700 bg-transparent focus:outline-none px-1 lowercase">
+                  </div>
+                  <button type="button" id="copy-public-link-btn" data-url="${window.location.origin}/#/${currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id)}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer">
+                    <i class="fas fa-copy"></i>
+                    <span>Copiar Enlace</span>
+                  </button>
                 </div>
-                <button type="button" id="copy-public-link-btn" data-url="${window.location.origin}/#/${currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id)}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer">
-                  <i class="fas fa-copy"></i>
-                  <span>Copiar Enlace</span>
-                </button>
+                <!-- Mensaje de estado / validación en tiempo real -->
+                <div id="slug-feedback-msg" class="text-xs font-semibold px-1 min-h-[1.25rem]"></div>
+              </div>
+
+              <!-- Mensaje de advertencia visual -->
+              <div class="flex items-start gap-2.5 text-xs text-amber-900 bg-amber-50/90 border border-amber-200/90 rounded-xl p-3 shadow-2xs">
+                <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5 shrink-0 text-sm"></i>
+                <div class="space-y-0.5">
+                  <span class="font-bold text-amber-950">Aviso importante si decides cambiar tu enlace:</span>
+                  <p class="text-amber-900/90 leading-relaxed text-[11px] sm:text-xs">
+                    Puedes personalizar este enlace en cualquier momento. Sin embargo, si ya lo compartiste en redes sociales, estados de WhatsApp o mandaste a imprimir tarjetas con código QR, <strong>los enlaces anteriores dejarán de funcionar</strong>.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -11306,6 +11321,70 @@ class App {
       }
     });
 
+    // Validación interactiva en tiempo real del slug / enlace
+    const slugInput = document.getElementById('edit-biz-slug');
+    const slugFeedback = document.getElementById('slug-feedback-msg');
+    const slugWrapper = document.getElementById('slug-input-wrapper');
+
+    const validateSlugLive = (val) => {
+      if (!slugFeedback) return;
+      const clean = storage.slugify(val);
+      const currentClean = storage.slugify(currentBiz.slug || currentBiz.name || currentBiz.id);
+      const currentCity = storage.slugify(currentBiz.city || 'cr');
+
+      if (!clean) {
+        slugFeedback.innerHTML = `<span class="text-amber-600"><i class="fas fa-info-circle mr-1"></i>Escribe un nombre para tu enlace personalizado.</span>`;
+        if (slugWrapper) slugWrapper.className = 'flex-1 flex items-center bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs';
+        return;
+      }
+
+      if (clean === currentClean) {
+        slugFeedback.innerHTML = `<span class="text-slate-500 font-normal"><i class="fas fa-check-circle text-blue-500 mr-1"></i>Este es tu enlace actual.</span>`;
+        if (slugWrapper) slugWrapper.className = 'flex-1 flex items-center bg-white border border-blue-200 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs';
+        return;
+      }
+
+      // Buscar si otro negocio ya tiene este slug
+      const businesses = storage.getBusinesses();
+      const conflictBiz = businesses.find(b => {
+        if (b.id === currentBiz.id) return false;
+        const bSlug = (b.slug || storage.slugify(b.name || '')).toLowerCase();
+        return bSlug === clean || b.id === clean;
+      });
+
+      if (conflictBiz) {
+        const suggestion = `${clean}-${currentCity}`;
+        slugFeedback.innerHTML = `
+          <div class="text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2.5 mt-1">
+            <div class="font-bold flex items-center gap-1.5">
+              <i class="fas fa-times-circle text-rose-500 text-sm"></i>
+              <span>Este enlace ya está en uso por otro negocio. Prueba con otro.</span>
+            </div>
+            <p class="text-[11px] text-rose-700 mt-1 font-normal">
+              Sugerencia: Puedes agregar tu zona, provincia o lugar, por ejemplo:
+              <strong class="underline cursor-pointer hover:text-blue-700 font-bold" id="apply-slug-suggestion" data-suggestion="${suggestion}">${suggestion}</strong>
+            </p>
+          </div>
+        `;
+        if (slugWrapper) slugWrapper.className = 'flex-1 flex items-center bg-white border-2 border-rose-400 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs';
+        
+        document.getElementById('apply-slug-suggestion')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (slugInput) {
+            slugInput.value = suggestion;
+            validateSlugLive(suggestion);
+          }
+        });
+      } else {
+        slugFeedback.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fas fa-check-circle mr-1"></i>¡Disponible! Tu nuevo enlace será: reservascr.app/#/${clean}</span>`;
+        if (slugWrapper) slugWrapper.className = 'flex-1 flex items-center bg-white border-2 border-emerald-400 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs';
+      }
+    };
+
+    slugInput?.addEventListener('input', (e) => {
+      validateSlugLive(e.target.value);
+    });
+
     const profileForm = document.getElementById('edit-profile-form');
     profileForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -11320,6 +11399,37 @@ class App {
       const name = (form.querySelector('#edit-biz-name')?.value || '').trim();
       const rawSlug = (form.querySelector('#edit-biz-slug')?.value || '').trim();
       const slug = storage.slugify(rawSlug || name || currentBiz.id);
+
+      // Validar si el enlace ya existe en otro negocio antes de guardar
+      const businesses = storage.getBusinesses();
+      const conflictBiz = businesses.find(b => {
+        if (b.id === currentBiz.id) return false;
+        const bSlug = (b.slug || storage.slugify(b.name || '')).toLowerCase();
+        return bSlug === slug || b.id === slug;
+      });
+
+      if (conflictBiz) {
+        const currentCity = storage.slugify(form.querySelector('#edit-biz-city')?.value || currentBiz.city || 'cr');
+        const suggestion = `${slug}-${currentCity}`;
+        this.showToast(`Este enlace ya está en uso por otro negocio. Prueba con otro como '${suggestion}'.`, 'error');
+        const slugWrapper = document.getElementById('slug-input-wrapper');
+        const slugFeedback = document.getElementById('slug-feedback-msg');
+        if (slugWrapper) slugWrapper.className = 'flex-1 flex items-center bg-white border-2 border-rose-400 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-medium shadow-2xs';
+        if (slugFeedback) {
+          slugFeedback.innerHTML = `
+            <div class="text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2.5 mt-1">
+              <span class="font-bold"><i class="fas fa-times-circle mr-1"></i>Este enlace ya está en uso por otro negocio. Prueba con otro.</span>
+              <p class="text-[11px] text-rose-700 mt-1 font-normal">Sugerencia: Puedes agregar tu zona o cantón: <strong>${suggestion}</strong></p>
+            </div>
+          `;
+        }
+        form.querySelector('#edit-biz-slug')?.focus();
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origBtnHtml;
+        }
+        return;
+      }
       const categoryId = form.querySelector('#edit-biz-category')?.value || currentBiz.category;
       const catObj = storage.getCategories().find(c => c.id === categoryId);
       const categoryLabel = catObj ? catObj.name : (currentBiz.categoryLabel || categoryId);
