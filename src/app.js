@@ -6227,152 +6227,8 @@ class App {
     const usageCount = monthAppointments.length;
     const percentUsed = isUnlimitedLimit ? 0 : Math.min(100, Math.round((usageCount / (monthlyLimit || 1)) * 100));
 
-    // Definición centralizada de pestañas del panel
-    const dashboardTabs = [
-      {
-        id: 'appointments',
-        label: `Agenda (${appointments.length})`,
-        shortLabel: `Agenda (${appointments.length})`,
-        icon: 'fa-calendar-alt',
-        category: 'Operación & Citas',
-        badge: appointments.length > 0 ? appointments.length : null,
-        badgeColor: 'bg-blue-500/20 text-blue-300',
-        iconColor: 'text-blue-400'
-      },
-      {
-        id: 'blocked-slots',
-        label: 'Bloqueos de Turno',
-        shortLabel: 'Bloqueos',
-        icon: 'fa-calendar-times',
-        category: 'Operación & Citas',
-        iconColor: 'text-rose-400'
-      },
-      {
-        id: 'team',
-        label: 'Equipo y Especialistas',
-        shortLabel: 'Equipo',
-        icon: 'fa-users-cog',
-        category: 'Operación & Citas',
-        iconColor: 'text-indigo-400'
-      },
-      {
-        id: 'schedule',
-        label: 'Horarios de Atención',
-        shortLabel: 'Horarios',
-        icon: 'fa-clock',
-        category: 'Operación & Citas',
-        iconColor: 'text-sky-400'
-      },
-      {
-        id: 'services',
-        label: `Servicios (${currentBiz.services ? currentBiz.services.length : 0})`,
-        shortLabel: `Servicios (${currentBiz.services ? currentBiz.services.length : 0})`,
-        icon: 'fa-tag',
-        category: 'Catálogo',
-        badge: (currentBiz.services && currentBiz.services.length > 0) ? currentBiz.services.length : null,
-        badgeColor: 'bg-amber-500/20 text-amber-300',
-        iconColor: 'text-amber-400'
-      },
-      {
-        id: 'portfolio',
-        label: `Portafolio (${currentBiz.portfolio ? currentBiz.portfolio.length : 0})`,
-        shortLabel: `Portafolio (${currentBiz.portfolio ? currentBiz.portfolio.length : 0})`,
-        icon: 'fa-camera-retro',
-        category: 'Catálogo',
-        badge: (currentBiz.portfolio && currentBiz.portfolio.length > 0) ? currentBiz.portfolio.length : null,
-        badgeColor: 'bg-purple-500/20 text-purple-300',
-        iconColor: 'text-purple-400'
-      },
-      {
-        id: 'integrations',
-        label: 'Google / Outlook Calendar',
-        shortLabel: 'Google / Outlook',
-        icon: 'fa-calendar-check',
-        category: 'Gestión & Ajustes',
-        hasDot: Boolean(currentBiz.nylasGrantId || currentBiz.nylas_grant_id),
-        iconColor: 'text-blue-400'
-      },
-      ...(!isFree && !isBasic ? [{
-        id: 'reports',
-        label: 'Reportes y Métricas',
-        shortLabel: 'Reportes',
-        icon: 'fa-chart-pie',
-        category: 'Gestión & Ajustes',
-        iconColor: 'text-emerald-400'
-      }] : []),
-      {
-        id: 'profile',
-        label: 'Configuración del Perfil',
-        shortLabel: 'Configuración',
-        icon: 'fa-sliders-h',
-        category: 'Gestión & Ajustes',
-        iconColor: 'text-indigo-400'
-      },
-      {
-        id: 'manual',
-        label: 'Manual de Usuario & Ayuda',
-        shortLabel: 'Manual & Ayuda',
-        icon: 'fa-book-open',
-        category: 'Gestión & Ajustes',
-        iconColor: 'text-amber-400'
-      }
-    ];
-
-    const currentTabObj = dashboardTabs.find(t => t.id === this.activeDashboardTab) || dashboardTabs[0];
-
-    const renderSidebarNavItems = (isDrawer = false) => {
-      let html = '';
-      let lastCategory = '';
-      dashboardTabs.forEach(tab => {
-        if (tab.category !== lastCategory) {
-          lastCategory = tab.category;
-          html += `
-            <div class="px-3 pt-3 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-400 select-none">
-              ${lastCategory}
-            </div>
-          `;
-        }
-        const isActive = this.activeDashboardTab === tab.id;
-        const activeClasses = isActive 
-          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30 font-black ring-1 ring-blue-400/50' 
-          : 'text-slate-300 hover:text-white hover:bg-slate-800/80 font-semibold border border-transparent';
-
-        html += `
-          <button class="dash-tab-btn w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer group text-left ${activeClasses}" data-tab="${tab.id}">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <i class="fas ${tab.icon} text-xs w-4 text-center shrink-0 ${isActive ? 'text-white' : (tab.iconColor || 'text-slate-400')} group-hover:scale-110 transition-transform"></i>
-              <span class="truncate">${tab.label}</span>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0 ml-2">
-              ${tab.hasDot ? `<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-2xs"></span>` : ''}
-              ${tab.badge ? `
-                <span class="text-[10px] font-black px-2 py-0.5 rounded-md ${isActive ? 'bg-white/20 text-white' : (tab.badgeColor || 'bg-slate-800 text-slate-300')}">
-                  ${tab.badge}
-                </span>
-              ` : ''}
-              ${isActive ? `<i class="fas fa-chevron-right text-[10px] text-blue-200"></i>` : ''}
-            </div>
-          </button>
-        `;
-      });
-      return html;
-    };
-
-    const renderMobileQuickPills = () => {
-      return dashboardTabs.map(tab => {
-        const isActive = this.activeDashboardTab === tab.id;
-        return `
-          <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${isActive ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black' : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-2xs'}" data-tab="${tab.id}">
-            <i class="fas ${tab.icon} text-xs ${isActive ? 'text-white' : (tab.iconColor || 'text-slate-500')}"></i>
-            <span>${tab.shortLabel}</span>
-            ${tab.hasDot ? `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>` : ''}
-          </button>
-        `;
-      }).join('');
-    };
-
     container.innerHTML = `
-      <div class="animate-fade-in pb-20 max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 w-full">
+      <div class="animate-fade-in pb-20 max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 w-full">
         <!-- Top Bar -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-6 rounded-3xl border border-slate-200 shadow-xs mb-6 w-full">
           <div class="flex items-center gap-4">
@@ -6398,6 +6254,10 @@ class App {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            <a href="/comercio/${currentBiz.slug || currentBiz.id}" target="_blank" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Ver cómo ven los clientes tu página pública">
+              <i class="fas fa-external-link-alt text-xs text-blue-600"></i>
+              <span>Ver Tienda</span>
+            </a>
             <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Abrir y descargar Manual de Usuario en PDF">
               <i class="fas fa-book-open text-xs"></i>
               <span>Manual (PDF)</span>
@@ -6408,232 +6268,219 @@ class App {
           </div>
         </div>
 
-        <!-- Barra Móvil: Sección Activa + Botón Menú + Píldoras Deslizables (Sólo en pantallas < 1024px) -->
-        <div class="lg:hidden mb-6 space-y-2.5">
-          <div class="flex items-center justify-between gap-3 bg-slate-900 text-white p-3.5 rounded-2xl border border-slate-800 shadow-sm">
-            <div class="flex items-center gap-2.5 min-w-0">
-              <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <i class="fas ${currentTabObj.icon} text-xs"></i>
+        <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
+        ${(currentBiz.subscriptionStatus === 'pending_sinpe' || currentBiz.subscription_status === 'pending_sinpe') ? `
+          <div class="bg-amber-500/10 border-2 border-amber-400 p-4 sm:p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md w-full">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
+                <i class="fas fa-clock"></i>
               </div>
-              <div class="min-w-0">
-                <span class="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Sección Activa</span>
-                <span class="text-xs font-black text-white truncate block">${currentTabObj.label}</span>
-              </div>
-            </div>
-            <button id="open-dash-mobile-drawer-btn" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 shrink-0 cursor-pointer">
-              <i class="fas fa-bars text-xs"></i>
-              <span>Menú (${dashboardTabs.length})</span>
-            </button>
-          </div>
-
-          <div class="bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/90 shadow-2xs w-full overflow-hidden">
-            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scroll-smooth no-scrollbar">
-              ${renderMobileQuickPills()}
-            </div>
-          </div>
-        </div>
-
-        <!-- Layout Dividido Principal: Sidebar a la Izquierda en Desktop + Contenido Principal a la Derecha -->
-        <div class="flex flex-col lg:flex-row gap-6 items-start w-full">
-          <!-- SIDEBAR VERTICAL EN ESCRITORIO (STICKY) -->
-          <aside class="hidden lg:flex flex-col w-64 xl:w-72 shrink-0 sticky top-20 bg-slate-900 text-slate-200 rounded-3xl border border-slate-800 p-3.5 shadow-xl space-y-3 z-10">
-            <!-- Encabezado del Comercio en Sidebar -->
-            <div class="flex items-center gap-3 p-2.5 bg-slate-800/60 rounded-2xl border border-slate-700/60">
-              <img src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${currentBiz.name}" class="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0">
-              <div class="min-w-0 flex-1">
-                <h4 class="font-black text-white text-xs truncate leading-snug">${currentBiz.name}</h4>
-                <span class="text-[10px] text-blue-400 font-bold block truncate uppercase tracking-wider">Menú del Comercio</span>
-              </div>
-            </div>
-
-            <!-- Lista Vertical de Pestañas con Categorías -->
-            <nav class="space-y-0.5 overflow-y-auto max-h-[calc(100vh-230px)] pr-1 no-scrollbar">
-              ${renderSidebarNavItems(false)}
-            </nav>
-
-            <!-- Pie del Sidebar con Estado del Plan y Acceso Directo -->
-            <div class="pt-2 border-t border-slate-800/80 space-y-2">
-              <div class="px-3 py-2 rounded-xl bg-slate-800/50 border border-slate-700/50 text-[11px]">
-                <div class="flex items-center justify-between text-slate-300 font-bold mb-1">
-                  <span class="text-[10px] uppercase text-slate-400">Plan ${planConfig.name}</span>
-                  <span class="text-[10px] font-black ${percentUsed > 90 ? 'text-rose-400' : 'text-emerald-400'}">${usageCount}/${isUnlimitedLimit ? '∞' : monthlyLimit}</span>
-                </div>
-                <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                  <div class="h-full bg-blue-500 rounded-full" style="width: ${percentUsed}%"></div>
-                </div>
-              </div>
-              <a href="/comercio/${currentBiz.slug || currentBiz.id}" target="_blank" class="w-full py-2 px-3 rounded-xl bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer" title="Ver cómo ven los clientes tu página pública">
-                <i class="fas fa-external-link-alt text-[11px] text-blue-400"></i>
-                <span>Ver Página Pública</span>
-              </a>
-            </div>
-          </aside>
-
-          <!-- COLUMNA PRINCIPAL DE CONTENIDO -->
-          <div class="flex-1 min-w-0 w-full space-y-6">
-            <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
-            ${(currentBiz.subscriptionStatus === 'pending_sinpe' || currentBiz.subscription_status === 'pending_sinpe') ? `
-              <div class="bg-amber-500/10 border-2 border-amber-400 p-4 sm:p-5 rounded-3xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md w-full">
-                <div class="flex items-center gap-3.5">
-                  <div class="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center text-xl flex-shrink-0 shadow-sm">
-                    <i class="fas fa-clock"></i>
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <span class="text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md">Activación SINPE Pendiente</span>
-                      <span class="text-xs font-bold text-amber-900">${planConfig.name}</span>
-                    </div>
-                    <p class="text-xs text-amber-900 mt-1 leading-relaxed">
-                      Tu comercio está pendiente de verificación SINPE. Transfiere <strong>~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))} CRC</strong> al <strong>7143-3852</strong> (Juan Jose Jiménez) y envía el comprobante por WhatsApp.
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
-                  <button id="dash-view-sinpe-instructions-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
-                    <i class="fab fa-whatsapp text-sm"></i>
-                    <span>Ver Datos SINPE & WhatsApp</span>
-                  </button>
-                </div>
-              </div>
-            ` : ''}
-
-            <!-- Banner de Suscripción y Cuota Mensual -->
-            <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-5 w-full">
-              <div class="space-y-1.5 max-w-xl">
+              <div>
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
-                    <i class="fas ${currentPlanId === 'unlimited' ? 'fa-infinity' : currentPlanId === 'pro' ? 'fa-crown' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
-                    ${planConfig.name}
-                  </span>
-                  <span class="text-xs ${currentPlanId === 'free' ? 'text-emerald-300' : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
-                    ${planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`}
-                  </span>
+                  <span class="text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md">Activación SINPE Pendiente</span>
+                  <span class="text-xs font-bold text-amber-900">${planConfig.name}</span>
                 </div>
-                <h3 class="text-base sm:text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
-                <p class="text-xs text-slate-300 leading-relaxed">
-                  ${isUnlimited 
-                    ? `Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
-                    : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas permitidas este mes.`}
+                <p class="text-xs text-amber-900 mt-1 leading-relaxed">
+                  Tu comercio está pendiente de verificación SINPE. Transfiere <strong>~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))} CRC</strong> al <strong>7143-3852</strong> (Juan Jose Jiménez) y envía el comprobante por WhatsApp.
                 </p>
               </div>
-
-              <div class="w-full md:w-80 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-xs space-y-3 shrink-0">
-                ${!isUnlimited ? `
-                  <div class="space-y-1.5">
-                    <div class="flex justify-between text-xs font-bold">
-                      <span class="text-slate-300">Progreso mensual</span>
-                      <span class="${percentUsed > 90 ? 'text-rose-400' : percentUsed > 75 ? 'text-amber-400' : 'text-emerald-400'}">${usageCount} / ${monthlyLimit}</span>
-                    </div>
-                    <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
-                      <div class="h-full rounded-full transition-all duration-500 ${percentUsed > 90 ? 'bg-rose-500' : percentUsed > 75 ? 'bg-amber-400' : 'bg-emerald-500'}" style="width: ${percentUsed}%"></div>
-                    </div>
-                    <div class="flex justify-between text-[11px] text-slate-400 font-medium">
-                      <span>${percentUsed}% ocupado</span>
-                      <span>${monthlyLimit - usageCount > 0 ? `${monthlyLimit - usageCount} restantes` : 'Cupo alcanzado'}</span>
-                    </div>
-                  </div>
-                ` : `
-                  <div class="text-center py-1">
-                    <div class="inline-flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                      <i class="fas fa-check-double"></i>
-                      <span>Sin límite de reservas</span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-0.5">${usageCount} reservas recibidas este mes</p>
-                  </div>
-                `}
-
-                <button id="dash-change-plan-btn" class="w-full py-2.5 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
-                  <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-                  <span>Cambiar o Mejorar Plan</span>
-                </button>
-              </div>
             </div>
-
-            <!-- Web Push Notifications Status / Action Banner -->
-            <div id="push-notification-container"></div>
-
-            <!-- Metric Stat Cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
-                  <span class="text-[10px] sm:text-xs font-semibold uppercase">Reservas Hoy</span>
-                  <i class="fas fa-calendar-day text-blue-600 text-sm"></i>
-                </div>
-                <span class="text-xl sm:text-2xl font-black text-slate-900">${todayAppointments.length}</span>
-                <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">turnos agendados</span>
-              </div>
-
-              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
-                  <span class="text-[10px] sm:text-xs font-semibold uppercase">Total Reservas</span>
-                  <i class="fas fa-users text-indigo-600 text-sm"></i>
-                </div>
-                <span class="text-xl sm:text-2xl font-black text-slate-900">${appointments.length}</span>
-                <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">histórico total</span>
-              </div>
-
-              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
-                  <span class="text-[10px] sm:text-xs font-semibold uppercase">Ingresos Est.</span>
-                  <span class="font-extrabold text-emerald-600 text-xs sm:text-sm">CRC</span>
-                </div>
-                <span class="text-lg sm:text-2xl font-black text-slate-900 truncate block">${this.formatColones(estimatedRevenue)}</span>
-                <span class="text-[10px] sm:text-[11px] text-emerald-600 block mt-0.5">confirmadas</span>
-              </div>
-
-              <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
-                <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
-                  <span class="text-[10px] sm:text-xs font-semibold uppercase">Servicios</span>
-                  <i class="fas fa-list text-amber-600 text-sm"></i>
-                </div>
-                <span class="text-xl sm:text-2xl font-black text-slate-900">${currentBiz.services ? currentBiz.services.length : 0}</span>
-                <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">en catálogo</span>
-              </div>
-            </div>
-
-            <!-- Dynamic Tab Content -->
-            <div id="dashboard-tab-content" class="w-full max-w-full">
-              ${this.renderDashboardTabContent(currentBiz, appointments)}
+            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button id="dash-view-sinpe-instructions-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                <i class="fab fa-whatsapp text-sm"></i>
+                <span>Ver Datos SINPE & WhatsApp</span>
+              </button>
             </div>
           </div>
-        </div>
-      </div>
+        ` : ''}
 
-      <!-- Cortina / Cajón Desplegable Móvil (Off-Canvas Drawer) -->
-      <div id="dash-mobile-drawer-backdrop" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 hidden transition-opacity opacity-0"></div>
-      <aside id="dash-mobile-drawer" class="fixed inset-y-0 left-0 w-80 max-w-[85vw] bg-slate-900 text-white z-50 p-5 shadow-2xl flex flex-col justify-between overflow-y-auto transform -translate-x-full transition-transform duration-300 ease-in-out">
-        <div class="space-y-4">
-          <!-- Encabezado del Cajón -->
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div class="flex items-center gap-3 min-w-0">
-              <img src="${currentBiz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" class="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0">
-              <div class="min-w-0">
-                <h4 class="font-black text-white text-sm truncate max-w-[170px]">${currentBiz.name}</h4>
-                <span class="text-[10px] text-blue-400 font-bold block uppercase tracking-wider">Menú del Comercio</span>
-              </div>
+        <!-- Banner de Suscripción y Cuota Mensual -->
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 w-full">
+          <div class="space-y-1.5 max-w-xl">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
+                <i class="fas ${currentPlanId === 'unlimited' ? 'fa-infinity' : currentPlanId === 'pro' ? 'fa-crown' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
+                ${planConfig.name}
+              </span>
+              <span class="text-xs ${currentPlanId === 'free' ? 'text-emerald-300' : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
+                ${planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`}
+              </span>
             </div>
-            <button id="close-dash-mobile-drawer-btn" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center cursor-pointer transition-colors shrink-0">
-              <i class="fas fa-times text-sm"></i>
+            <h3 class="text-base sm:text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              ${isUnlimited 
+                ? `Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
+                : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas permitidas este mes.`}
+            </p>
+          </div>
+
+          <div class="w-full md:w-80 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-xs space-y-3 shrink-0">
+            ${!isUnlimited ? `
+              <div class="space-y-1.5">
+                <div class="flex justify-between text-xs font-bold">
+                  <span class="text-slate-300">Progreso mensual</span>
+                  <span class="${percentUsed > 90 ? 'text-rose-400' : percentUsed > 75 ? 'text-amber-400' : 'text-emerald-400'}">${usageCount} / ${monthlyLimit}</span>
+                </div>
+                <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
+                  <div class="h-full rounded-full transition-all duration-500 ${percentUsed > 90 ? 'bg-rose-500' : percentUsed > 75 ? 'bg-amber-400' : 'bg-emerald-500'}" style="width: ${percentUsed}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+                  <span>${percentUsed}% ocupado</span>
+                  <span>${monthlyLimit - usageCount > 0 ? `${monthlyLimit - usageCount} restantes` : 'Cupo alcanzado'}</span>
+                </div>
+              </div>
+            ` : `
+              <div class="text-center py-1">
+                <div class="inline-flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                  <i class="fas fa-check-double"></i>
+                  <span>Sin límite de reservas</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">${usageCount} reservas recibidas este mes</p>
+              </div>
+            `}
+
+            <button id="dash-change-plan-btn" class="w-full py-2.5 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
+              <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+              <span>Cambiar o Mejorar Plan</span>
             </button>
           </div>
-
-          <!-- Opciones del Menú en Móvil -->
-          <nav class="space-y-0.5">
-            ${renderSidebarNavItems(true)}
-          </nav>
         </div>
 
-        <div class="pt-4 border-t border-slate-800 space-y-2 mt-6">
-          <a href="/comercio/${currentBiz.slug || currentBiz.id}" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2">
-            <i class="fas fa-external-link-alt text-blue-400"></i>
-            <span>Ver Mi Página Pública</span>
-          </a>
-          <a href="/manual-comercios-pdf" target="_blank" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2">
-            <i class="fas fa-file-pdf text-rose-400"></i>
-            <span>Descargar Manual PDF</span>
-          </a>
+        <!-- Web Push Notifications Status / Action Banner -->
+        <div id="push-notification-container"></div>
+
+        <!-- Metric Stat Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Reservas Hoy</span>
+              <i class="fas fa-calendar-day text-blue-600 text-sm"></i>
+            </div>
+            <span class="text-xl sm:text-2xl font-black text-slate-900">${todayAppointments.length}</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">turnos agendados</span>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Total Reservas</span>
+              <i class="fas fa-users text-indigo-600 text-sm"></i>
+            </div>
+            <span class="text-xl sm:text-2xl font-black text-slate-900">${appointments.length}</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">histórico total</span>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Ingresos Est.</span>
+              <span class="font-extrabold text-emerald-600 text-xs sm:text-sm">CRC</span>
+            </div>
+            <span class="text-lg sm:text-2xl font-black text-slate-900 truncate block">${this.formatColones(estimatedRevenue)}</span>
+            <span class="text-[10px] sm:text-[11px] text-emerald-600 block mt-0.5">confirmadas</span>
+          </div>
+
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
+              <span class="text-[10px] sm:text-xs font-semibold uppercase">Servicios</span>
+              <i class="fas fa-list text-amber-600 text-sm"></i>
+            </div>
+            <span class="text-xl sm:text-2xl font-black text-slate-900">${currentBiz.services ? currentBiz.services.length : 0}</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">en catálogo</span>
+          </div>
         </div>
-      </aside>
+
+        <!-- Tabs Navigation: Dos Filas Temáticas -->
+        <div class="bg-white p-3.5 sm:p-5 rounded-3xl border border-slate-200 shadow-xs mb-6 w-full space-y-4">
+          <!-- Fila 1: Operación Diaria -->
+          <div>
+            <div class="flex items-center gap-2 mb-2.5 px-1">
+              <span class="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i class="fas fa-calendar-check text-blue-600"></i> Operación Diaria
+              </span>
+              <div class="h-px bg-slate-200/80 flex-1"></div>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1.5 sm:pb-0 scroll-smooth no-scrollbar flex-nowrap sm:flex-wrap">
+              <!-- 1. Agenda -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'appointments' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="appointments">
+                <i class="fas fa-calendar-alt text-xs ${this.activeDashboardTab === 'appointments' ? 'text-white' : 'text-blue-600'}"></i>
+                <span>Agenda (${appointments.length})</span>
+              </button>
+
+              <!-- 2. Bloqueos -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="blocked-slots">
+                <i class="fas fa-calendar-times text-xs ${this.activeDashboardTab === 'blocked-slots' ? 'text-white' : 'text-rose-500'}"></i>
+                <span>Bloqueos</span>
+              </button>
+
+              <!-- 3. Horarios -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="schedule">
+                <i class="fas fa-clock text-xs ${this.activeDashboardTab === 'schedule' ? 'text-white' : 'text-sky-600'}"></i>
+                <span>Horarios</span>
+              </button>
+
+              <!-- 4. Google / Outlook -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'integrations' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="integrations">
+                <i class="fas fa-calendar-check text-xs ${this.activeDashboardTab === 'integrations' ? 'text-white' : 'text-blue-600'}"></i>
+                <span>Google / Outlook</span>
+                ${(currentBiz.nylasGrantId || currentBiz.nylas_grant_id) ? `<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-2xs"></span>` : ''}
+              </button>
+            </div>
+          </div>
+
+          <!-- Fila 2: Gestión & Catálogo -->
+          <div>
+            <div class="flex items-center gap-2 mb-2.5 px-1">
+              <span class="text-[10px] sm:text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <i class="fas fa-sliders-h text-indigo-600"></i> Gestión & Catálogo
+              </span>
+              <div class="h-px bg-slate-200/80 flex-1"></div>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1.5 sm:pb-0 scroll-smooth no-scrollbar flex-nowrap sm:flex-wrap">
+              <!-- 5. Equipo -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="team">
+                <i class="fas fa-users-cog text-xs ${this.activeDashboardTab === 'team' ? 'text-white' : 'text-indigo-500'}"></i>
+                <span>Equipo</span>
+              </button>
+
+              <!-- 6. Servicios -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'services' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="services">
+                <i class="fas fa-tag text-xs ${this.activeDashboardTab === 'services' ? 'text-white' : 'text-amber-500'}"></i>
+                <span>Servicios (${currentBiz.services ? currentBiz.services.length : 0})</span>
+              </button>
+
+              <!-- 7. Portafolio -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'portfolio' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="portfolio">
+                <i class="fas fa-camera-retro text-xs ${this.activeDashboardTab === 'portfolio' ? 'text-white' : 'text-purple-600'}"></i>
+                <span>Portafolio (${currentBiz.portfolio ? currentBiz.portfolio.length : 0})</span>
+              </button>
+
+              <!-- 8. Reportes (Si aplica) -->
+              ${(!isFree && !isBasic) ? `
+                <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="reports">
+                  <i class="fas fa-chart-pie text-xs ${this.activeDashboardTab === 'reports' ? 'text-white' : 'text-emerald-500'}"></i>
+                  <span>Reportes</span>
+                </button>
+              ` : ''}
+
+              <!-- 9. Configuración -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="profile">
+                <i class="fas fa-sliders-h text-xs ${this.activeDashboardTab === 'profile' ? 'text-white' : 'text-indigo-600'}"></i>
+                <span>Configuración</span>
+              </button>
+
+              <!-- 10. Manual & Ayuda -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="manual">
+                <i class="fas fa-book-open text-xs ${this.activeDashboardTab === 'manual' ? 'text-white' : 'text-amber-500'}"></i>
+                <span>Manual & Ayuda</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Tab Content -->
+        <div id="dashboard-tab-content" class="w-full max-w-full">
+          ${this.renderDashboardTabContent(currentBiz, appointments)}
+        </div>
+      </div>
     `;
 
     document.getElementById('dash-logout-btn')?.addEventListener('click', async () => {
@@ -6678,7 +6525,6 @@ class App {
 
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        this.activeDashboardTab = btn.getAttribute('data-tab');
         const tab = btn.getAttribute('data-tab');
         this.activeDashboardTab = tab;
         if (typeof sessionStorage !== 'undefined') {
@@ -6691,33 +6537,6 @@ class App {
         this.renderCurrentView();
       });
     });
-
-    // Setup Mobile Drawer Toggle
-    const drawer = document.getElementById('dash-mobile-drawer');
-    const backdrop = document.getElementById('dash-mobile-drawer-backdrop');
-    const openBtn = document.getElementById('open-dash-mobile-drawer-btn');
-    const closeBtn = document.getElementById('close-dash-mobile-drawer-btn');
-
-    if (openBtn && drawer && backdrop) {
-      openBtn.addEventListener('click', () => {
-        backdrop.classList.remove('hidden');
-        requestAnimationFrame(() => {
-          backdrop.classList.remove('opacity-0');
-          drawer.classList.remove('-translate-x-full');
-        });
-      });
-
-      const closeDrawer = () => {
-        backdrop.classList.add('opacity-0');
-        drawer.classList.add('-translate-x-full');
-        setTimeout(() => {
-          backdrop.classList.add('hidden');
-        }, 300);
-      };
-
-      closeBtn?.addEventListener('click', closeDrawer);
-      backdrop?.addEventListener('click', closeDrawer);
-    }
 
     this.setupDashboardTabEvents(currentBiz);
     this.updatePushNotificationBanner(currentBiz);
