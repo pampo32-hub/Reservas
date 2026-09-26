@@ -821,6 +821,10 @@ class App {
         return { view: 'directory', params: {} };
       }
       if (/^\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)$/i.test(pathname)) {
+        if (!storage.getDeveloperUser()) {
+          setTimeout(() => this.showToast('Acceso restringido: El entorno de pruebas SINPE está reservado para el Developer.', 'warning', 4500), 250);
+          return { view: 'directory', params: {} };
+        }
         return { view: 'business-test-pricing', params: {} };
       }
       if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)$/i.test(pathname)) {
@@ -954,6 +958,10 @@ class App {
 
     // 5.2 Landing de Pruebas de Planes (₡5 y ₡10) en hash
     if (/^#\/?(pruebas|planes-prueba|test-planes|planes-test|demo-planes)/i.test(cleanHash)) {
+      if (!storage.getDeveloperUser()) {
+        setTimeout(() => this.showToast('Acceso restringido: El entorno de pruebas SINPE está reservado para el Developer.', 'warning', 4500), 250);
+        return { view: 'directory', params: {} };
+      }
       return { view: 'business-test-pricing', params: {} };
     }
 
@@ -1629,6 +1637,7 @@ class App {
     if (!footer) return;
 
     const bizUser = storage.getBusinessUser();
+    const devUser = storage.getDeveloperUser();
 
     footer.innerHTML = `
       <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -1649,11 +1658,13 @@ class App {
           <button type="button" class="open-terms-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Términos y Condiciones</button>
           <span class="text-slate-300">•</span>
           <button type="button" class="open-privacy-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Privacidad</button>
-          <span class="text-slate-300">•</span>
-          <button type="button" id="footer-test-plans-btn" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 font-bold border border-emerald-500/30 transition-all cursor-pointer text-[11px] flex items-center gap-1" title="Entorno de pruebas SINPE Móvil (₡5 y ₡10)">
-            <i class="fas fa-flask text-emerald-600"></i>
-            <span>Pruebas SINPE (₡5/₡10)</span>
-          </button>
+          ${devUser ? `
+            <span class="text-slate-300">•</span>
+            <button type="button" id="footer-test-plans-btn" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 font-bold border border-emerald-500/30 transition-all cursor-pointer text-[11px] flex items-center gap-1 animate-fade-in" title="Entorno de pruebas SINPE Móvil (₡5 y ₡10) - Modo Developer">
+              <i class="fas fa-flask text-emerald-600"></i>
+              <span>Pruebas SINPE (₡5/₡10)</span>
+            </button>
+          ` : ''}
           ${bizUser ? `
             <span class="text-slate-300">•</span>
             <a href="/manual-comercios-pdf" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer flex items-center gap-1.5 font-bold shadow-2xs animate-fade-in" title="Abrir y descargar Manual de Usuario en PDF">
@@ -3394,6 +3405,12 @@ class App {
   // VISTA 1.6: LANDING DE PRUEBAS SINPE MÓVIL (/pruebas)
   // ==========================================
   renderBusinessTestPricingView(container) {
+    if (!storage.getDeveloperUser()) {
+      setTimeout(() => this.showToast('Acceso restringido: El entorno de pruebas SINPE está reservado para el Developer.', 'warning', 4500), 100);
+      this.navigateTo('directory');
+      return;
+    }
+
     const testPlans = storage.getTestSubscriptionPlans ? storage.getTestSubscriptionPlans() : [
       {
         id: 'test_5',
@@ -11870,6 +11887,11 @@ class App {
                   <span>Mantenimiento & Exportación</span>
                   ${(cleanupStats.totalPurgeable || 0) > 0 ? `<span class="px-2 py-0.5 bg-rose-500 text-white text-[10px] rounded-full font-black">${cleanupStats.totalPurgeable}</span>` : ''}
                 </button>
+
+                <button id="dev-btn-test-sinpe" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs cursor-pointer ml-auto" title="Abrir simulador y entorno de pruebas SINPE Móvil (₡5 / ₡10)">
+                  <i class="fas fa-flask text-emerald-600"></i>
+                  <span>Pruebas SINPE (₡5/₡10)</span>
+                </button>
               </div>
 
               <!-- Buscador Rápido -->
@@ -13161,6 +13183,9 @@ class App {
       document.getElementById('dev-tab-sinpe')?.addEventListener('click', () => setDevTab('sinpe'));
       document.getElementById('dev-tab-paypal')?.addEventListener('click', () => setDevTab('paypal'));
       document.getElementById('dev-tab-maintenance')?.addEventListener('click', () => setDevTab('maintenance'));
+      document.getElementById('dev-btn-test-sinpe')?.addEventListener('click', () => {
+        this.navigateTo('business-test-pricing');
+      });
 
       // MANTENIMIENTO: Checkboxes y Acciones de Depuración
       const updateCleanupCount = () => {
@@ -14313,7 +14338,7 @@ class App {
                             <span class="font-black text-xs text-white">SINPE Móvil</span>
                             <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica</span>
                           </div>
-                          <p class="text-[10px] text-slate-300 mt-0.5">Transfiere al 7143-3852 y envía el comprobante por WhatsApp para activación rápida.</p>
+                          <p class="text-[10px] text-slate-300 mt-0.5">Paga fácil y rápido por SINPE Móvil sin necesidad de tarjeta. Recibirás los datos para tu activación inmediata.</p>
                         </div>
                       </label>
 
