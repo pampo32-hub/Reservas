@@ -66,7 +66,12 @@
   - Se creó un enlace simbólico entre `/home/Juan/web/reservas/public/uploads` y `/home/masteradmin/web/reservascr.app/public_html/uploads` para que Nginx sirva las fotos directamente a nivel de web server sin saturar Node.js.
   - Endpoint utilitario: `POST /api/upload`.
 
-### 7. Optimizaciones Previas de la Aplicación
+### 7. Escritorio Remoto (XRDP), Google Chrome y Hardening de VPS
+- **XRDP / Conexión Remota:** Se solucionó el fallo de conexión abriendo el puerto 3389 en el firewall de HestiaCP, añadiendo `xrdp` al grupo `ssl-cert`, y configurando `startxfce4` en `/etc/xrdp/startwm.sh` y `/root/.xsession`.
+- **Google Chrome:** Instalado paquete oficial (`google-chrome-stable`) con bandera `--no-sandbox` para ejecución como root y acceso directo en el escritorio `/root/Desktop/google-chrome.desktop`.
+- **Limpieza de Cortafuegos (Firewall):** Se eliminaron las reglas redundantes que exponían el puerto `5432` (PostgreSQL local) al internet, blindando el servidor de escaneos y ataques de fuerza bruta externos (la BD productiva se encuentra protegida en Neon Tech).
+
+### 8. Optimizaciones Previas de la Aplicación
 - **Botón "15 Días Gratis":** Controlado por la constante `SHOW_15_DAYS_FREE_BUTTON` en `src/app.js`.
 - **Caché PWA:** `sw.js` en versión activa `v35`.
 - **Evitación de parpadeo (Zero-Jitter):** Clases y propiedades en `main.css` y `index.html`.
@@ -80,3 +85,4 @@ Si inicias sesión con otra cuenta de Antigravity, simplemente escribe en el pri
 > **"Por favor lee `HISTORIAL_CONVERSACIONES_Y_SESIONES.md` para retomar el contexto del proyecto ReservasCR."**
 
 El asistente leerá este archivo y tendrá inmediatamente el 100% del contexto técnico, credenciales de arquitectura y estado del proyecto sin perder ningún avance.
+
