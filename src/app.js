@@ -5830,8 +5830,12 @@ class App {
       storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email).then((fresh) => {
         this.clientSyncingInFlight = false;
         if (fresh && this.currentView === 'my-client-bookings') {
+          const localMap = new Map(allAppointments.map(a => [a.id, a]));
           const hasDiff = fresh.length !== allAppointments.length ||
-            fresh.some((f, idx) => !allAppointments[idx] || f.status !== allAppointments[idx].status || f.businessName !== allAppointments[idx].businessName || f.isReviewed !== allAppointments[idx].isReviewed);
+            fresh.some(f => {
+              const local = localMap.get(f.id);
+              return !local || f.status !== local.status || f.businessName !== local.businessName || f.isReviewed !== local.isReviewed;
+            });
           if (hasDiff) {
             const main = document.getElementById('main-content');
             if (main) this.renderClientBookingsView(main);

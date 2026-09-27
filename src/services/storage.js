@@ -1199,10 +1199,16 @@ class StorageService {
     const cleanPhone = (phone || '').trim();
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanPhone && !cleanEmail) return [];
+    const seen = new Set();
     return all.filter(a => {
+      if (!a || !a.id || seen.has(a.id)) return false;
       const matchPhone = cleanPhone && a.clientPhone && a.clientPhone.trim() === cleanPhone;
       const matchEmail = cleanEmail && a.clientEmail && a.clientEmail.trim().toLowerCase() === cleanEmail;
-      return Boolean(matchPhone || matchEmail);
+      if (matchPhone || matchEmail) {
+        seen.add(a.id);
+        return true;
+      }
+      return false;
     }).map(a => ({
       ...a,
       businessName: a.businessName || a.business_name || this.getBusinessById(a.businessId)?.name || 'Comercio'
@@ -1225,9 +1231,15 @@ class StorageService {
                 updated.push(f);
               }
             });
-            this.appointmentsCache = updated;
+            // Deduplicar appointments por id para garantizar integridad en localStorage
+            const uniqueMap = new Map();
+            updated.forEach(u => {
+              if (u && u.id) uniqueMap.set(u.id, u);
+            });
+            const dedupedUpdated = Array.from(uniqueMap.values());
+            this.appointmentsCache = dedupedUpdated;
             try {
-              localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(updated));
+              localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(dedupedUpdated));
             } catch (err) {
               console.warn('No se pudo guardar appointments en localStorage:', err);
             }

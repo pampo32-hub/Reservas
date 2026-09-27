@@ -861,30 +861,33 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
 
     // Buscar si ya existe por teléfono o correo
     const existing = await pool.query(
-      'SELECT * FROM reservas_clients WHERE phone = $1 OR (email = $2 AND email != \'\')',
+      'SELECT * FROM reservas_clients WHERE phone = $1 OR (email != \'\' AND LOWER(email) = LOWER($2)) ORDER BY (password IS NOT NULL) DESC, created_at ASC LIMIT 1',
       [cleanPhone, cleanEmail]
     );
-
 
     let clientUser;
     if (existing.rows.length > 0) {
       clientUser = existing.rows[0];
-      await pool.query('UPDATE reservas_clients SET name = $1, email = $2, whatsapp_opt_in = COALESCE($3, whatsapp_opt_in) WHERE id = $4', [name.trim(), (email || clientUser.email).trim(), Boolean(whatsappOptIn), clientUser.id]);
-      clientUser.name = name.trim();
-      clientUser.email = (email || clientUser.email).trim();
+      await pool.query(
+        'UPDATE reservas_clients SET name = $1, phone = $2, email = $3, whatsapp_opt_in = COALESCE($4, whatsapp_opt_in) WHERE id = $5',
+        [cleanName, cleanPhone, cleanEmail, Boolean(whatsappOptIn), clientUser.id]
+      );
+      clientUser.name = cleanName;
+      clientUser.phone = cleanPhone;
+      clientUser.email = cleanEmail;
       clientUser.whatsappOptIn = Boolean(whatsappOptIn);
     } else {
       const newClientId = `cli-${Date.now()}`;
       await pool.query(`
         INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in)
         VALUES ($1, $2, $3, $4, $5)
-      `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), Boolean(whatsappOptIn)]);
+      `, [newClientId, cleanName, cleanPhone, cleanEmail, Boolean(whatsappOptIn)]);
 
       clientUser = {
         id: newClientId,
-        name: name.trim(),
-        phone: phone.trim(),
-        email: (email || '').trim(),
+        name: cleanName,
+        phone: cleanPhone,
+        email: cleanEmail,
         whatsappOptIn: Boolean(whatsappOptIn)
       };
 
@@ -2641,13 +2644,23 @@ app.post('/api/appointments', async (req, res) => {
       assignedStaffId, assignedStaffName
     ]);
 
-    // Registrar o actualizar automáticamente el cliente
-    if (a.clientName && a.clientPhone) {
-      await client.query(`
-        INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in)
-        VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (id) DO NOTHING
-      `, [`cli-${Date.now()}`, a.clientName, a.clientPhone, a.clientEmail || '', optIn]);
+    // Registrar o actualizar automáticamente el cliente (evitar duplicados por teléfono o email)
+    if (cleanClientName && cleanClientPhone) {
+      const existingClient = await client.query(
+        'SELECT id FROM reservas_clients WHERE phone = $1 OR (email != \'\' AND LOWER(email) = LOWER($2)) ORDER BY (password IS NOT NULL) DESC, created_at ASC LIMIT 1',
+        [cleanClientPhone, cleanClientEmail]
+      );
+      if (existingClient.rows.length > 0) {
+        await client.query(
+          'UPDATE reservas_clients SET name = $1, email = COALESCE(NULLIF($2, \'\'), email), whatsapp_opt_in = $3 WHERE id = $4',
+          [cleanClientName, cleanClientEmail, optIn, existingClient.rows[0].id]
+        );
+      } else {
+        await client.query(
+          'INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in) VALUES ($1, $2, $3, $4, $5)',
+          [`cli-${Date.now()}`, cleanClientName, cleanClientPhone, cleanClientEmail, optIn]
+        );
+      }
     }
 
     await client.query('COMMIT');
