@@ -846,15 +846,25 @@ app.post('/api/auth/client/login', async (req, res) => {
 app.post('/api/auth/client/login-or-register', async (req, res) => {
   try {
     const { name, phone, email, whatsappOptIn = true } = req.body;
-    if (!name || !phone) {
+    const cleanName = (name || '').trim();
+    const cleanPhone = (phone || '').trim();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!cleanName || !cleanPhone) {
       return res.status(400).json({ error: 'Nombre y Teléfono son requeridos.' });
+    }
+
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      return res.status(400).json({ error: 'El Correo Electrónico es obligatorio y debe tener un formato válido.' });
     }
 
     // Buscar si ya existe por teléfono o correo
     const existing = await pool.query(
       'SELECT * FROM reservas_clients WHERE phone = $1 OR (email = $2 AND email != \'\')',
-      [phone.trim(), (email || '').trim()]
+      [cleanPhone, cleanEmail]
     );
+
 
     let clientUser;
     if (existing.rows.length > 0) {
@@ -2401,7 +2411,28 @@ app.post('/api/appointments', async (req, res) => {
       return res.status(400).json({ error: 'Faltan datos obligatorios para la reserva (comercio, fecha, hora o servicio).' });
     }
 
+    const cleanClientName = (a.clientName || '').trim();
+    const cleanClientPhone = (a.clientPhone || '').trim();
+    const cleanClientEmail = (a.clientEmail || '').trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!cleanClientName) {
+      client.release();
+      return res.status(400).json({ error: 'El nombre completo del cliente es obligatorio para confirmar la reserva.' });
+    }
+
+    if (!cleanClientPhone) {
+      client.release();
+      return res.status(400).json({ error: 'El número de teléfono / WhatsApp es obligatorio para confirmar la reserva.' });
+    }
+
+    if (!cleanClientEmail || !emailRegex.test(cleanClientEmail)) {
+      client.release();
+      return res.status(400).json({ error: 'El correo electrónico es obligatorio y debe tener un formato válido.' });
+    }
+
     await client.query('BEGIN');
+
 
     // 1. Validar comercio con bloqueo de fila para evitar condiciones de carrera (Race Conditions)
     const bizCheck = await client.query(

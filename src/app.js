@@ -4931,9 +4931,11 @@ class App {
                   type="email" 
                   id="client-email" 
                   value="${clientUser ? clientUser.email || '' : ''}"
-                  placeholder="Correo Electrónico" 
+                  placeholder="Correo Electrónico *" 
+                  required 
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
+
               </div>
 
               <div>
@@ -5170,6 +5172,31 @@ class App {
         return;
       }
 
+      const clientName = document.getElementById('client-name')?.value.trim() || '';
+      const clientPhone = document.getElementById('client-phone')?.value.trim() || '';
+      const clientEmail = document.getElementById('client-email')?.value.trim() || '';
+      const clientNotes = document.getElementById('client-notes')?.value.trim() || '';
+      const whatsappOptIn = document.getElementById('client-whatsapp-optin')?.checked ?? true;
+
+      if (!clientName) {
+        this.showToast('Por favor ingresa tu nombre y apellidos.', 'error');
+        document.getElementById('client-name')?.focus();
+        return;
+      }
+
+      if (!clientPhone) {
+        this.showToast('Por favor ingresa tu número de teléfono / WhatsApp.', 'error');
+        document.getElementById('client-phone')?.focus();
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!clientEmail || !emailRegex.test(clientEmail)) {
+        this.showToast('Por favor ingresa un correo electrónico válido para tu comprobante de reserva.', 'error');
+        document.getElementById('client-email')?.focus();
+        return;
+      }
+
       const submitBtn = document.getElementById('submit-booking-btn');
       const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
       if (submitBtn) {
@@ -5177,15 +5204,10 @@ class App {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Confirmando reserva...';
       }
 
-      const clientName = document.getElementById('client-name').value;
-      const clientPhone = document.getElementById('client-phone').value;
-      const clientEmail = document.getElementById('client-email').value;
-      const clientNotes = document.getElementById('client-notes').value;
-      const whatsappOptIn = document.getElementById('client-whatsapp-optin')?.checked ?? true;
-
       // Guardar o actualizar sesión de cliente
       await storage.loginOrRegisterClient(clientName, clientPhone, clientEmail, whatsappOptIn);
       this.renderHeader();
+
 
       const isAutoConfirm = biz.autoConfirmAppointments !== false;
       const initialStatus = isAutoConfirm ? 'confirmed' : 'pending';
