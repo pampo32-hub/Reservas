@@ -6,7 +6,7 @@ const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
-const SHOW_15_DAYS_FREE_BUTTON = false; // Flag temporal (Prueba): Oculta el botón "15 Días Gratis". Cambiar a true para volver a mostrarlo.
+const SHOW_15_DAYS_FREE_BUTTON = true; // Botón "15 Días Gratis" visible en la página principal.
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 const SHOW_SOCIAL_AUTH_BUTTONS = false; // Ocultar inicios de sesión y registros con Google, Hotmail y Apple (fácilmente reactivable)
 
