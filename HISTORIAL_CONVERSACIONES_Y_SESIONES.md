@@ -121,6 +121,17 @@
   - Ubicado en `/var/lib/gitea/data/gitea-repositories/pampo32/reservascr.git/hooks/post-receive.d/01-deploy`.
   - Al detectar un push en `refs/heads/main`, invoca de inmediato el script de despliegue.
 
+### 12. Servicio Transaccional de Correo con Brevo (notificaciones@reservascr.app)
+- **Motivo:** Superar el límite estricto de Resend en modo gratuito sin pagar suscripciones altas ni depender de la reputación de IP del VPS.
+- **Capacidad:** Plan de Brevo con 300 correos al día (9,000 correos al mes) gratuitos y permanentes.
+- **Autenticación de Dominio:** `reservascr.app` verificado en Brevo con registros DKIM y DMARC validados por Google, Yahoo y Microsoft.
+- **Remitente Oficial:** `Reservas CR <notificaciones@reservascr.app>`.
+- **Implementación Técnica:**
+  - `emailService.js` actualizado con el helper universal `sendEmailCore()`.
+  - Comunicación mediante API REST nativa vía HTTPS (`https://api.brevo.com/v3/smtp/email`) utilizando `fetch`, sin necesidad de paquetes pesados como Nodemailer ni problemas con puertos bloqueados.
+  - Fallback automático a Resend en caso de contingencia.
+  - Variables añadidas a `.env`: `BREVO_API_KEY`, `BREVO_FROM_EMAIL` y `BREVO_FROM_NAME`.
+
 ---
 
 ## 📌 Guía para Retomar Sesión desde Otra Cuenta

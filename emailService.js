@@ -3,11 +3,83 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const resendApiKey = process.env.RESEND_API_KEY || ['re_', 'GnYg1Aqq_', 'GPRjZqRkrqcXKNZeNT4CHY3i'].join('');
+const brevoApiKey = process.env.BREVO_API_KEY || '';
+const DEFAULT_FROM_EMAIL = process.env.BREVO_FROM_EMAIL || 'notificaciones@reservascr.app';
+const DEFAULT_FROM_NAME = process.env.BREVO_FROM_NAME || 'Reservas CR';
+const DEFAULT_FROM = `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`;
+
+const resendApiKey = process.env.RESEND_API_KEY || '';
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
-const DEFAULT_FROM = process.env.RESEND_FROM_EMAIL || 'Reservas CR <onboarding@resend.dev>';
 const APP_URL = process.env.APP_URL || 'https://reservascr.app';
 export const ADMIN_NOTIFICATION_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'pampo32@gmail.com';
+
+/**
+ * Motor central de envío de correos (Brevo API REST con fallback a Resend)
+ */
+export async function sendEmailCore({ to, subject, html, fromName = DEFAULT_FROM_NAME, fromEmail = DEFAULT_FROM_EMAIL }) {
+  const recipients = (Array.isArray(to) ? to : [to])
+    .map(email => String(email || '').trim())
+    .filter(email => email.includes('@'));
+
+  if (recipients.length === 0) {
+    return { success: false, reason: 'no_valid_recipient' };
+  }
+
+  // 1. Envío prioritario con Brevo REST API (HTTPS puerto 443)
+  if (brevoApiKey) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': brevoApiKey,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender: { name: fromName, email: fromEmail },
+          to: recipients.map(email => ({ email })),
+          subject: subject,
+          htmlContent: html
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok && data?.messageId) {
+        console.log(`✅ [Brevo] Correo entregado exitosamente a ${recipients.join(', ')} (ID: ${data.messageId})`);
+        return { success: true, data: { id: data.messageId, provider: 'brevo' } };
+      } else {
+        console.warn(`⚠️ [Brevo] Error o aviso en envío (${response.status}):`, data?.message || data);
+      }
+    } catch (err) {
+      console.error('❌ [Brevo] Excepción en llamada HTTP:', err.message);
+    }
+  }
+
+  // 2. Fallback a Resend si Brevo no está configurado o falla
+  if (resend) {
+    try {
+      const { data, error } = await resend.emails.send({
+        from: `${fromName} <onboarding@resend.dev>`,
+        to: recipients,
+        subject: subject,
+        html: html
+      });
+      if (!error && data?.id) {
+        console.log(`✅ [Resend] Correo enviado exitosamente (ID: ${data.id})`);
+        return { success: true, data: { id: data.id, provider: 'resend' } };
+      }
+      if (error) {
+        console.warn('⚠️ [Resend] Error:', error.message || error);
+        return { success: false, error };
+      }
+    } catch (err) {
+      console.error('❌ [Resend] Excepción:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  return { success: false, reason: 'no_email_service_available' };
+}
 
 /**
  * Formatea montos en Colones costarricenses (₡)
@@ -61,8 +133,8 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     return { success: false, reason: 'no_email' };
   }
 
-  if (!resend) {
-    console.warn('⚠️ No se ha configurado RESEND_API_KEY en las variables de entorno.');
+  if (!brevoApiKey && !resend) {
+    console.warn('⚠️ No se ha configurado ningún servicio de correo (BREVO_API_KEY o RESEND_API_KEY).');
     return { success: false, reason: 'no_api_key' };
   }
 
@@ -184,26 +256,13 @@ export async function sendBookingConfirmationEmail(appointment, business) {
 
   try {
     console.log(`📧 Enviando correo de confirmación a: ${appointment.clientEmail}...`);
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: [appointment.clientEmail.trim()],
+    return await sendEmailCore({
+      to: appointment.clientEmail,
       subject: `✅ Reserva Confirmada en ${businessName} (Código: #${appointmentCode})`,
       html: htmlContent
     });
-
-    if (error) {
-      console.warn('⚠️ Resend reportó un aviso al enviar el correo:', error.message || error);
-      // En modo prueba de Resend, solo se puede enviar al correo de la cuenta registrada
-      if (error.message && error.message.includes('validation_error') && error.message.includes('resend.dev')) {
-        console.warn('ℹ️ NOTA MODO PRUEBA RESEND: En el modo prueba de resend.dev solo puedes enviar correos a la dirección con la que te registraste en Resend. Para enviar a cualquier cliente, registra tu propio dominio en Resend.');
-      }
-      return { success: false, error };
-    }
-
-    console.log(`✅ Correo de confirmación enviado exitosamente con ID: ${data?.id}`);
-    return { success: true, data };
   } catch (err) {
-    console.error('❌ Error inesperado enviando correo con Resend:', err.message);
+    console.error('❌ Error inesperado enviando correo de confirmación:', err.message);
     return { success: false, error: err.message };
   }
 }
@@ -217,8 +276,8 @@ export async function sendReviewRequestEmail(appointment, business) {
     return { success: false, reason: 'no_email' };
   }
 
-  if (!resend) {
-    console.warn('⚠️ No se ha configurado RESEND_API_KEY en las variables de entorno.');
+  if (!brevoApiKey && !resend) {
+    console.warn('⚠️ No se ha configurado ningún servicio de correo (BREVO_API_KEY o RESEND_API_KEY).');
     return { success: false, reason: 'no_api_key' };
   }
 
@@ -312,20 +371,11 @@ export async function sendReviewRequestEmail(appointment, business) {
 
   try {
     console.log(`⭐ Enviando correo de solicitud de calificación a: ${appointment.clientEmail}...`);
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: [appointment.clientEmail.trim()],
+    return await sendEmailCore({
+      to: appointment.clientEmail,
       subject: `⭐ ¿Cómo fue tu experiencia en ${businessName}? Califica tu experiencia`,
       html: htmlContent
     });
-
-    if (error) {
-      console.warn('⚠️ Resend reportó un aviso al enviar solicitud de reseña:', error.message || error);
-      return { success: false, error };
-    }
-
-    console.log(`✅ Correo de solicitud de calificación enviado exitosamente (ID: ${data?.id})`);
-    return { success: true, data };
   } catch (err) {
     console.error('❌ Error enviando correo de calificación:', err.message);
     return { success: false, error: err.message };
@@ -341,8 +391,8 @@ export async function sendPasswordResetEmail({ to, code, name = 'Usuario', userT
     return { success: false, reason: 'invalid_email' };
   }
 
-  if (!resend) {
-    console.warn('⚠️ No se ha configurado RESEND_API_KEY en las variables de entorno.');
+  if (!brevoApiKey && !resend) {
+    console.warn('⚠️ No se ha configurado ningún servicio de correo (BREVO_API_KEY o RESEND_API_KEY).');
     return { success: false, reason: 'resend_not_configured' };
   }
 
@@ -504,20 +554,11 @@ export async function sendPasswordResetEmail({ to, code, name = 'Usuario', userT
 
   try {
     console.log(`🔐 Enviando correo de restablecimiento de contraseña a: ${to}...`);
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: [to.trim()],
+    return await sendEmailCore({
+      to: to,
       subject: `🔐 ${code} es tu código de recuperación de contraseña - Reservas CR`,
       html: htmlContent
     });
-
-    if (error) {
-      console.warn('⚠️ Resend reportó un aviso al enviar correo de recuperación:', error.message || error);
-      return { success: false, error };
-    }
-
-    console.log(`✅ Correo de recuperación de contraseña enviado exitosamente (ID: ${data?.id})`);
-    return { success: true, data };
   } catch (err) {
     console.error('❌ Error enviando correo de recuperación:', err.message);
     return { success: false, error: err.message };
@@ -528,9 +569,9 @@ export async function sendPasswordResetEmail({ to, code, name = 'Usuario', userT
  * Notificación por correo al administrador cuando un comercio hace PRE-REGISTRO
  */
 export async function sendAdminPreRegistrationNotificationEmail(lead) {
-  if (!resend) {
-    console.warn('⚠️ No se pudo enviar notificación de pre-registro: Resend no está inicializado.');
-    return { success: false, reason: 'no_resend' };
+  if (!brevoApiKey && !resend) {
+    console.warn('⚠️ No se pudo enviar notificación de pre-registro: Ningún proveedor de correo configurado.');
+    return { success: false, reason: 'no_email_service' };
   }
 
   const cleanPhone = (lead.phone || '').replace(/\D/g, '');
@@ -620,19 +661,11 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
 
   try {
     console.log(`📧 Enviando notificación de pre-registro a ${ADMIN_NOTIFICATION_EMAIL}...`);
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: [ADMIN_NOTIFICATION_EMAIL.trim()],
+    return await sendEmailCore({
+      to: ADMIN_NOTIFICATION_EMAIL,
       subject: `🚀 [Nuevo Pre-Registro] ${lead.businessName} (${lead.contactName})`,
       html: htmlContent
     });
-
-    if (error) {
-      console.warn('⚠️ Error enviando correo al admin de pre-registro:', error.message || error);
-      return { success: false, error };
-    }
-    console.log(`✅ Correo de pre-registro entregado al admin (${ADMIN_NOTIFICATION_EMAIL}) con ID: ${data?.id}`);
-    return { success: true, data };
   } catch (err) {
     console.error('❌ Excepción enviando correo al admin:', err.message);
     return { success: false, error: err.message };
@@ -643,7 +676,7 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
  * Notificación por correo al administrador cuando un comercio crea su CUENTA OFICIAL
  */
 export async function sendAdminBusinessRegistrationNotificationEmail({ business, ownerName, email }) {
-  if (!resend) return { success: false, reason: 'no_resend' };
+  if (!brevoApiKey && !resend) return { success: false, reason: 'no_email_service' };
 
   const cleanPhone = (business.phone || '').replace(/\D/g, '');
   const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
@@ -727,13 +760,11 @@ export async function sendAdminBusinessRegistrationNotificationEmail({ business,
 
   try {
     console.log(`📧 Enviando notificación de registro de negocio a ${ADMIN_NOTIFICATION_EMAIL}...`);
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: [ADMIN_NOTIFICATION_EMAIL.trim()],
+    return await sendEmailCore({
+      to: ADMIN_NOTIFICATION_EMAIL,
       subject: `🏪 [Nuevo Comercio] ${business.name} (${ownerName || email})`,
       html: htmlContent
     });
-    return { success: !error, data, error };
   } catch (err) {
     console.error('❌ Error enviando correo al admin de registro de negocio:', err.message);
     return { success: false, error: err.message };
@@ -744,7 +775,7 @@ export async function sendAdminBusinessRegistrationNotificationEmail({ business,
  * Notificación por correo al administrador cuando un CLIENTE se registra
  */
 export async function sendAdminClientRegistrationNotificationEmail(client) {
-  if (!resend) return { success: false, reason: 'no_resend' };
+  if (!brevoApiKey && !resend) return { success: false, reason: 'no_email_service' };
 
   const cleanPhone = (client.phone || '').replace(/\D/g, '');
   const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
@@ -807,13 +838,11 @@ export async function sendAdminClientRegistrationNotificationEmail(client) {
 
   try {
     console.log(`📧 Enviando notificación de nuevo cliente a ${ADMIN_NOTIFICATION_EMAIL}...`);
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to: [ADMIN_NOTIFICATION_EMAIL.trim()],
+    return await sendEmailCore({
+      to: ADMIN_NOTIFICATION_EMAIL,
       subject: `👤 [Nuevo Cliente] ${client.name} (${client.phone})`,
       html: htmlContent
     });
-    return { success: !error, data, error };
   } catch (err) {
     console.error('❌ Error enviando correo al admin de nuevo cliente:', err.message);
     return { success: false, error: err.message };
