@@ -92,8 +92,16 @@
 - **Caché PWA:** `sw.js` en versión activa `v38`.
 - **Evitación de parpadeo (Zero-Jitter):** Clases y propiedades en `main.css` y `index.html`.
 - **Gestión de Citas:** Sincronización Nylas (Google / Apple Calendar), WhatsApp Cloud API, comprobantes SINPE Móvil.
-
-
+### 10. Servidor Git Privado (Gitea) en el VPS
+- **Propósito:** Plataforma Git completa autohospedada, idéntica en funciones a GitHub, para alojar repositorios ilimitados privados y públicos sin costos ni dependencias de terceros.
+- **Servicio:** `gitea.service` administrado por `systemd` (habilitado y arrancando con el sistema).
+- **Binario:** `/usr/local/bin/gitea` (versión 1.27.3).
+- **Usuario del sistema:** `git` (home `/home/git`).
+- **Base de datos:** `giteadb` en PostgreSQL 14 (`127.0.0.1:5432`), usuario `gitea`.
+- **Puerto interno:** `3001` (HTTP).
+- **Configuración:** `/etc/gitea/app.ini` (permisos `640`, propiedad `git:git`).
+- **Datos y repositorios:** `/var/lib/gitea/data/gitea-repositories`.
+- **Acceso Web / Proxy Inverso:** Subdominio `git.reservascr.app` configurado en Nginx (`/home/masteradmin/conf/web/git.reservascr.app/nginx.conf` y `nginx.ssl.conf`) con soporte SSL y límite de carga de archivos de hasta 512 MB.
 
 ---
 
