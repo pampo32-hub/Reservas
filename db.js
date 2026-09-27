@@ -6,9 +6,13 @@ dotenv.config();
 
 const { Pool } = pg;
 
+const isLocalDb = !process.env.DATABASE_URL || 
+                  process.env.DATABASE_URL.includes('localhost') || 
+                  process.env.DATABASE_URL.includes('127.0.0.1');
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
+  ssl: isLocalDb ? false : {
     rejectUnauthorized: false
   },
   max: 20,
@@ -16,11 +20,13 @@ export const pool = new Pool({
   connectionTimeoutMillis: 10000
 });
 
-// Inicializar tablas y datos iniciales en Neon PostgreSQL
-export async function initDatabase() {
-  const client = await pool.connect();
+
+// Inicializar tablas y datos iniciales en PostgreSQL
+export async function initDatabase(customPool = null) {
+  const client = await (customPool || pool).connect();
   try {
-    console.log('🔗 Conectando a Neon PostgreSQL...');
+    console.log('🔗 Conectando a PostgreSQL para verificar/crear esquema...');
+
 
     // 1. Crear tabla de negocios
     await client.query(`
