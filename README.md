@@ -18,3 +18,7 @@ Reservas CR es una aplicación web interactiva que conecta negocios locales en C
 - JavaScript Vanilla (ES Modules)
 - Arquitectura desacoplada con LocalStorage y soporte para backend PostgreSQL / Firebase / Supabase.
 
+## 📦 Repositorios y Control de Versiones
+
+- **GitHub (Público/Respaldo):** https://github.com/pampo32-hub/Reservas
+- **Gitea (Servidor Git Privado):** https://git.reservascr.app/Pampo32/reservascr
