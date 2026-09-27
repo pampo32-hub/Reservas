@@ -117,8 +117,8 @@
   - Registra cada despliegue con fecha y hora en `/var/log/reservas-deploy.log`.
 - **Permisos Sudoers (`/etc/sudoers.d/gitea-deploy`):**
   - Permite al usuario `git` ejecutar `/usr/local/bin/deploy-reservas` sin contraseña (`NOPASSWD`).
-- **Hook Post-Receive (`custom_hooks/post-receive`):**
-  - Ubicado en `/var/lib/gitea/data/gitea-repositories/pampo32/reservascr.git/custom_hooks/post-receive`.
+- **Hook Post-Receive (`hooks/post-receive.d/01-deploy` y `custom_hooks/post-receive`):**
+  - Ubicado en `/var/lib/gitea/data/gitea-repositories/pampo32/reservascr.git/hooks/post-receive.d/01-deploy`.
   - Al detectar un push en `refs/heads/main`, invoca de inmediato el script de despliegue.
 
 ---
