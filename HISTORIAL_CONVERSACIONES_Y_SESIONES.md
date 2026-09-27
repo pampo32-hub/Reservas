@@ -103,6 +103,24 @@
 - **Datos y repositorios:** `/var/lib/gitea/data/gitea-repositories`.
 - **Acceso Web / Proxy Inverso:** Subdominio `git.reservascr.app` configurado en Nginx (`/home/masteradmin/conf/web/git.reservascr.app/nginx.conf` y `nginx.ssl.conf`) con soporte SSL y límite de carga de archivos de hasta 512 MB.
 
+### 11. Flujo de Trabajo y Despliegue Automático (Gitea + GitHub Backup)
+- **Objetivo:** Actualización instantánea (< 1 segundo) del sitio en producción (`reservascr.app`) al hacer `git push`, manteniendo una copia sincronizada en GitHub como respaldo en la nube.
+- **Configuración Local Dual-Push (`origin`):**
+  - Push URL 1 (Despliegue): `git@194.163.189.190:Pampo32/reservascr.git` (Gitea en el VPS por SSH).
+  - Push URL 2 (Respaldo): `https://github.com/pampo32-hub/Reservas.git` (GitHub por HTTPS).
+  - Un único comando `git push origin main` o `git push` envía el código a ambos destinos simultáneamente.
+- **Script de Despliegue en VPS (`/usr/local/bin/deploy-reservas`):**
+  - Limpia variables de entorno de Git para aislar el contexto.
+  - Se sitúa en `/home/Juan/web/reservas`.
+  - Hace `git pull /var/lib/gitea/data/gitea-repositories/pampo32/reservascr.git main` directamente desde el sistema de archivos local en milisegundos (sin tráfico de internet ni límites de tasa).
+  - Ejecuta `/usr/bin/pm2 reload reservas --update-env` recargando la aplicación sin tiempo de inactividad (*zero-downtime*).
+  - Registra cada despliegue con fecha y hora en `/var/log/reservas-deploy.log`.
+- **Permisos Sudoers (`/etc/sudoers.d/gitea-deploy`):**
+  - Permite al usuario `git` ejecutar `/usr/local/bin/deploy-reservas` sin contraseña (`NOPASSWD`).
+- **Hook Post-Receive (`custom_hooks/post-receive`):**
+  - Ubicado en `/var/lib/gitea/data/gitea-repositories/pampo32/reservascr.git/custom_hooks/post-receive`.
+  - Al detectar un push en `refs/heads/main`, invoca de inmediato el script de despliegue.
+
 ---
 
 ## 📌 Guía para Retomar Sesión desde Otra Cuenta
