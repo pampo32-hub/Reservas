@@ -2351,22 +2351,35 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   try {
     const { phone } = req.params;
     const { email } = req.query;
+
+    const cleanPhone = (phone && phone !== 'null' && phone !== 'undefined') ? phone.trim() : '';
+    const cleanEmail = (email && email !== 'null' && email !== 'undefined') ? email.trim().toLowerCase() : '';
+
+    if (!cleanPhone && !cleanEmail) {
+      return res.json([]);
+    }
+
     let query = `
       SELECT a.*, b.name as business_name, r.id as review_id, r.rating as review_rating, r.comment as review_comment
       FROM reservas_appointments a 
       LEFT JOIN reservas_businesses b ON a.business_id = b.id 
       LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
-      WHERE a.client_phone = $1
-      WHERE (a.client_phone = $1 AND $1 != '' AND $1 != 'null' AND $1 != 'undefined')
+      WHERE 
     `;
-    const params = [phone];
+    const params = [];
+    const conditions = [];
 
-    if (email && email.trim() !== '') {
-      query += ' OR (a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
-      query += ' OR (a.client_email IS NOT NULL AND a.client_email != \'\' AND LOWER(a.client_email) = LOWER($2))';
-      params.push(email.trim());
+    if (cleanPhone) {
+      params.push(cleanPhone);
+      conditions.push(`a.client_phone = $${params.length}`);
     }
-    query += ' ORDER BY a.date DESC, a.time ASC';
+
+    if (cleanEmail) {
+      params.push(cleanEmail);
+      conditions.push(`(a.client_email IS NOT NULL AND a.client_email != '' AND LOWER(a.client_email) = LOWER($${params.length}))`);
+    }
+
+    query += `(${conditions.join(' OR ')}) ORDER BY a.date DESC, a.time ASC`;
 
     const result = await pool.query(query, params);
 
@@ -2643,6 +2656,7 @@ app.post('/api/appointments', async (req, res) => {
     const createdAppointment = { 
       id: newId, 
       ...a, 
+      businessName: (bizData && bizData.name) || a.businessName || 'Comercio',
       serviceDuration: reqDuration,
       staffId: assignedStaffId,
       staffName: assignedStaffName,

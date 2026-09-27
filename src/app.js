@@ -4459,6 +4459,7 @@ class App {
     }
 
     const { appointment: apt, alreadyReviewed, review } = info;
+    const bizName = (apt && (apt.businessName || storage.getBusinessById(apt.businessId)?.name)) || 'Comercio';
     let currentSelectedRating = preselectedRating && preselectedRating >= 1 && preselectedRating <= 5 ? preselectedRating : (review ? review.rating : 5);
 
     const ratingLabels = {
@@ -4489,7 +4490,7 @@ class App {
             <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-left space-y-3">
               <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="font-black text-slate-900 text-sm">${apt.businessName}</h3>
+                  <h3 class="font-black text-slate-900 text-sm">${bizName}</h3>
                   <span class="text-xs text-blue-600 font-semibold">${apt.serviceName}</span>
                 </div>
                 <div class="flex text-amber-400 text-base">
@@ -4509,7 +4510,7 @@ class App {
                 <i class="fas fa-edit"></i> Modificar mi Calificación
               </button>
               <button id="view-biz-page-btn" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
-                Ver Ficha de ${apt.businessName}
+                Ver Ficha de ${bizName}
               </button>
               <button id="go-explore-home-btn" class="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
                 Explorar Más Comercios
@@ -4548,10 +4549,10 @@ class App {
           <!-- Tarjeta del Comercio & Servicio -->
           <div class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
             <div class="w-14 h-14 rounded-xl overflow-hidden bg-white flex-shrink-0 border border-slate-200">
-              <img src="${apt.businessImage || '/src/assets/reservas_cr_clean_badge_1.png'}" alt="${apt.businessName}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+              <img src="${apt.businessImage || '/src/assets/reservas_cr_clean_badge_1.png'}" alt="${bizName}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-extrabold text-sm text-slate-900 truncate">${apt.businessName}</h3>
+              <h3 class="font-extrabold text-sm text-slate-900 truncate">${bizName}</h3>
               <p class="text-xs text-blue-600 font-bold">${apt.serviceName}</p>
               <p class="text-[11px] text-slate-400 mt-0.5">Atendido el ${this.formatDateDMY(apt.date)} • ${this.formatTime12h(apt.time)}</p>
             </div>
@@ -5219,6 +5220,7 @@ class App {
       try {
         const newAppointment = await storage.createAppointment({
           businessId: biz.id,
+          businessName: biz.name,
           serviceId: service.id,
           serviceName: service.name,
           servicePrice: service.price,
@@ -5827,9 +5829,13 @@ class App {
       this.clientSyncingInFlight = true;
       storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email).then((fresh) => {
         this.clientSyncingInFlight = false;
-        if (fresh && fresh.length !== allAppointments.length && this.currentView === 'my-client-bookings') {
-          const main = document.getElementById('main-content');
-          if (main) this.renderClientBookingsView(main);
+        if (fresh && this.currentView === 'my-client-bookings') {
+          const hasDiff = fresh.length !== allAppointments.length ||
+            fresh.some((f, idx) => !allAppointments[idx] || f.status !== allAppointments[idx].status || f.businessName !== allAppointments[idx].businessName || f.isReviewed !== allAppointments[idx].isReviewed);
+          if (hasDiff) {
+            const main = document.getElementById('main-content');
+            if (main) this.renderClientBookingsView(main);
+          }
         }
       }).catch(() => {
         this.clientSyncingInFlight = false;
@@ -5906,7 +5912,7 @@ class App {
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
-                      <span class="font-black text-lg text-slate-900">${apt.businessName || 'Comercio'}</span>
+                      <span class="font-black text-lg text-slate-900">${apt.businessName || storage.getBusinessById(apt.businessId)?.name || 'Comercio'}</span>
                       <span class="badge-status badge-status-${apt.status}">
                         ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'pending' ? 'Pendiente' : apt.status === 'completed' ? 'Completada' : 'Cancelada'}
                       </span>

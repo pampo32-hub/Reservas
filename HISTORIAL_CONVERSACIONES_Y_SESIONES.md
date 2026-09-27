@@ -84,9 +84,10 @@
 - **Respaldos:** El script `scripts/backup-drive.js` respalda la base de datos local y transmite a Google Drive todos los días a las 11:59 PM.
 
 ### 9. Optimizaciones Previas de la Aplicación
+- **Resolución de Nombre del Comercio en Reservas del Cliente:** Se corrigió un error de sintaxis SQL en `/api/clients/:phone/appointments` (WHERE duplicado) que causaba error 500 y forzaba el fallback local con el nombre genérico "Comercio". Se normalizó la inyección de `businessName` en creación (`POST /api/appointments`), sincronización en segundo plano con el servidor y fallback jerárquico a `storage.getBusinessById(apt.businessId)?.name` tanto en la lista de reservas como en las vistas de calificación y reseñas.
 - **Validación Obligatoria de Datos de Cliente:** Se configuró como obligatorio el Nombre, Teléfono y Correo Electrónico en frontend y backend (`POST /api/appointments` y `POST /api/auth/client/login-or-register`) para toda reserva (incluso sin registro formal de cuenta), garantizando que todo cliente tenga sus datos completos para confirmaciones y recordatorios.
 - **Botón "15 Días Gratis":** Controlado por la constante `SHOW_15_DAYS_FREE_BUTTON` en `src/app.js`.
-- **Caché PWA:** `sw.js` en versión activa `v36`.
+- **Caché PWA:** `sw.js` en versión activa `v37`.
 - **Evitación de parpadeo (Zero-Jitter):** Clases y propiedades en `main.css` y `index.html`.
 - **Gestión de Citas:** Sincronización Nylas (Google / Apple Calendar), WhatsApp Cloud API, comprobantes SINPE Móvil.
 

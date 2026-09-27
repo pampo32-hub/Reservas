@@ -1203,7 +1203,10 @@ class StorageService {
       const matchPhone = cleanPhone && a.clientPhone && a.clientPhone.trim() === cleanPhone;
       const matchEmail = cleanEmail && a.clientEmail && a.clientEmail.trim().toLowerCase() === cleanEmail;
       return Boolean(matchPhone || matchEmail);
-    });
+    }).map(a => ({
+      ...a,
+      businessName: a.businessName || a.business_name || this.getBusinessById(a.businessId)?.name || 'Comercio'
+    }));
   }
 
   async getClientAppointmentsAsync(phone, email = '') {
@@ -1212,7 +1215,27 @@ class StorageService {
         const url = `${this.apiBase}/clients/${encodeURIComponent(phone || 'null')}/appointments?email=${encodeURIComponent(email || '')}`;
         const res = await fetch(url);
         if (res.ok) {
-          return await res.json();
+          const fresh = await res.json();
+          if (Array.isArray(fresh)) {
+            const currentAppointments = this.getAppointments() || [];
+            const freshMap = new Map(fresh.map(f => [f.id, f]));
+            const updated = currentAppointments.map(a => freshMap.has(a.id) ? { ...a, ...freshMap.get(a.id) } : a);
+            fresh.forEach(f => {
+              if (!updated.some(u => u.id === f.id)) {
+                updated.push(f);
+              }
+            });
+            this.appointmentsCache = updated;
+            try {
+              localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(updated));
+            } catch (err) {
+              console.warn('No se pudo guardar appointments en localStorage:', err);
+            }
+            return fresh.map(a => ({
+              ...a,
+              businessName: a.businessName || a.business_name || this.getBusinessById(a.businessId)?.name || 'Comercio'
+            }));
+          }
         }
       } catch (e) {
         console.warn('Error consultando citas de cliente:', e);
@@ -1256,6 +1279,10 @@ class StorageService {
         status: appointmentData.status || 'confirmed',
         createdAt: new Date().toISOString()
       };
+    }
+
+    if (created && !created.businessName) {
+      created.businessName = appointmentData.businessName || this.getBusinessById(appointmentData.businessId)?.name || 'Comercio';
     }
 
     const appointments = this.getAppointments().filter(a => a.id !== created.id);
