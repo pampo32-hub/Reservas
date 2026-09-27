@@ -221,6 +221,105 @@ export function timeToMinutes(timeStr) {
 }
 
 // ==========================================
+// SEGURIDAD: CONTROL DE INTENTOS FALLIDOS Y RATE LIMITING DE LOGIN
+// ==========================================
+const loginAttempts = new Map(); // key: ip + identifier -> { count: number, blockedUntil: timestamp, lastAttempt: timestamp }
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_BLOCK_DURATION_MS = 5 * 60 * 1000; // 5 minutos de bloqueo
+
+function getClientIp(req) {
+  const forwarded = req.headers['cf-connecting-ip'] || 
+                    (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : null) || 
+                    req.ip || 
+                    req.connection?.remoteAddress || 
+                    'unknown';
+  return String(forwarded).replace(/^::ffff:/, '');
+}
+
+function checkLoginRateLimit(req, identifier) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  const cleanId = (identifier || '').trim().toLowerCase();
+  const key = `${ip}_${cleanId}`;
+
+  // Verificar bloqueo por combinación IP+usuario o solo por IP
+  const record = loginAttempts.get(key) || loginAttempts.get(`ip_${ip}`);
+  if (record && record.blockedUntil && record.blockedUntil > now) {
+    return {
+      blocked: true,
+      message: 'Demasiados intentos. Inténtalo más tarde.'
+    };
+  }
+
+  // Si el tiempo de bloqueo ya expiró, limpiar el bloqueo
+  if (record && record.blockedUntil && record.blockedUntil <= now) {
+    loginAttempts.delete(key);
+    loginAttempts.delete(`ip_${ip}`);
+  }
+
+  return { blocked: false };
+}
+
+function recordFailedLoginAttempt(req, identifier) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  const cleanId = (identifier || '').trim().toLowerCase();
+  const key = `${ip}_${cleanId}`;
+
+  let record = loginAttempts.get(key) || { count: 0, blockedUntil: 0, lastAttempt: now };
+  record.count += 1;
+  record.lastAttempt = now;
+
+  if (record.count >= MAX_LOGIN_ATTEMPTS) {
+    record.blockedUntil = now + LOGIN_BLOCK_DURATION_MS;
+    loginAttempts.set(key, record);
+    loginAttempts.set(`ip_${ip}`, record);
+    return {
+      blocked: true,
+      message: 'Demasiados intentos. Inténtalo más tarde.'
+    };
+  }
+
+  loginAttempts.set(key, record);
+
+  const remaining = MAX_LOGIN_ATTEMPTS - record.count;
+  if (remaining === 2) {
+    return {
+      blocked: false,
+      message: 'Contraseña incorrecta. Te quedan 2 intentos restantes.'
+    };
+  } else if (remaining === 1) {
+    return {
+      blocked: false,
+      message: 'Contraseña incorrecta. Te queda 1 intento restante.'
+    };
+  }
+
+  return {
+    blocked: false,
+    message: 'Credenciales inválidas. Verifica tu correo/teléfono y contraseña.'
+  };
+}
+
+function recordSuccessfulLogin(req, identifier) {
+  const ip = getClientIp(req);
+  const cleanId = (identifier || '').trim().toLowerCase();
+  const key = `${ip}_${cleanId}`;
+  loginAttempts.delete(key);
+  loginAttempts.delete(`ip_${ip}`);
+}
+
+// Limpieza periódica de registros viejos de intentos fallidos cada 15 minutos
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of loginAttempts.entries()) {
+    if (now - v.lastAttempt > 30 * 60 * 1000 && (!v.blockedUntil || v.blockedUntil <= now)) {
+      loginAttempts.delete(k);
+    }
+  }
+}, 15 * 60 * 1000);
+
+// ==========================================
 // ENDPOINTS DE AUTENTICACIÓN
 // ==========================================
 
@@ -236,10 +335,17 @@ app.post('/api/auth/developer/login', async (req, res) => {
     const cleanEmail = (rawEmail || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
+    // Verificación de Rate Limit
+    const rateCheck = checkLoginRateLimit(req, cleanEmail);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ error: rateCheck.message });
+    }
+
     // 1. Master Developer Check (Fail-safe)
     const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanEmail);
     const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
     if (isMasterEmail && isMasterPass) {
+      recordSuccessfulLogin(req, cleanEmail);
       return res.json({
         success: true,
         role: 'developer',
@@ -258,10 +364,12 @@ app.post('/api/auth/developer/login', async (req, res) => {
     );
 
     if (devRes.rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciales de desarrollador inválidas.' });
+      const failInfo = recordFailedLoginAttempt(req, cleanEmail);
+      return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
     }
 
     const dev = devRes.rows[0];
+    recordSuccessfulLogin(req, cleanEmail);
     res.json({
       success: true,
       role: 'developer',
@@ -290,10 +398,17 @@ app.post('/api/auth/business/login', async (req, res) => {
     const cleanEmail = (rawEmail || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
+    // Verificación de Rate Limit
+    const rateCheck = checkLoginRateLimit(req, cleanEmail);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ error: rateCheck.message });
+    }
+
     // 1. Master Developer Check (Fail-safe)
     const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanEmail);
     const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
     if (isMasterEmail && isMasterPass) {
+      recordSuccessfulLogin(req, cleanEmail);
       return res.json({
         success: true,
         role: 'developer',
@@ -315,6 +430,7 @@ app.post('/api/auth/business/login', async (req, res) => {
 
       if (devRes.rows.length > 0) {
         const dev = devRes.rows[0];
+        recordSuccessfulLogin(req, cleanEmail);
         return res.json({
           success: true,
           role: 'developer',
@@ -341,6 +457,7 @@ app.post('/api/auth/business/login', async (req, res) => {
       const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
       const business = bizRes.rows[0] || null;
 
+      recordSuccessfulLogin(req, cleanEmail);
       return res.json({
         success: true,
         role: 'business',
@@ -362,6 +479,7 @@ app.post('/api/auth/business/login', async (req, res) => {
 
     if (clientRes.rows.length > 0) {
       const clientRow = clientRes.rows[0];
+      recordSuccessfulLogin(req, cleanEmail);
       return res.json({
         success: true,
         role: 'client',
@@ -374,7 +492,8 @@ app.post('/api/auth/business/login', async (req, res) => {
       });
     }
 
-    return res.status(401).json({ error: 'Credenciales inválidas. Verifica tu correo y contraseña.' });
+    const failInfo = recordFailedLoginAttempt(req, cleanEmail);
+    return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
   } catch (error) {
     console.error('Error en login negocio:', error);
     res.status(500).json({ error: 'Error en el servidor al autenticar.' });
@@ -547,10 +666,17 @@ app.post('/api/auth/client/login', async (req, res) => {
     const cleanIdent = (rawIdent || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
+    // Verificación de Rate Limit
+    const rateCheck = checkLoginRateLimit(req, cleanIdent);
+    if (rateCheck.blocked) {
+      return res.status(429).json({ error: rateCheck.message });
+    }
+
     // 1. Master Developer Check (Fail-safe)
     const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanIdent);
     const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
     if (isMasterEmail && isMasterPass) {
+      recordSuccessfulLogin(req, cleanIdent);
       return res.json({
         success: true,
         role: 'developer',
@@ -572,6 +698,7 @@ app.post('/api/auth/client/login', async (req, res) => {
 
       if (devRes.rows.length > 0) {
         const dev = devRes.rows[0];
+        recordSuccessfulLogin(req, cleanIdent);
         return res.json({
           success: true,
           role: 'developer',
@@ -598,6 +725,7 @@ app.post('/api/auth/client/login', async (req, res) => {
       const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
       const business = bizRes.rows[0] || null;
 
+      recordSuccessfulLogin(req, cleanIdent);
       return res.json({
         success: true,
         role: 'business',
@@ -618,18 +746,22 @@ app.post('/api/auth/client/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'No se encontró cuenta con esos datos.' });
+      const failInfo = recordFailedLoginAttempt(req, cleanIdent);
+      return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
     }
 
     const clientRow = result.rows[0];
     if (clientRow.password && clientRow.password !== cleanPass) {
-      return res.status(401).json({ error: 'Contraseña incorrecta.' });
+      const failInfo = recordFailedLoginAttempt(req, cleanIdent);
+      return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
     }
 
     // Si no tenía contraseña guardada previamente, se le asigna esta
     if (!clientRow.password) {
       await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [cleanPass, clientRow.id]);
     }
+
+    recordSuccessfulLogin(req, cleanIdent);
 
     res.json({
       success: true,
