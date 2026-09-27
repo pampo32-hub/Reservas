@@ -79,6 +79,66 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.use('/src', express.static(path.join(__dirname, 'src')));
 app.use(['/directorio/src', '*/src'], express.static(path.join(__dirname, 'src')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), { maxAge: '30d' }));
+
+// --- GESTIÓN DE ARCHIVOS FÍSICOS Y FOTOS EN EL DISCO DURO DEL SERVIDOR (VPS) ---
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+function ensureDirExists(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+ensureDirExists(path.join(UPLOADS_DIR, 'businesses'));
+ensureDirExists(path.join(UPLOADS_DIR, 'portfolio'));
+ensureDirExists(path.join(UPLOADS_DIR, 'staff'));
+ensureDirExists(path.join(UPLOADS_DIR, 'clients'));
+
+/**
+ * Guarda una imagen enviada en formato base64 directamente en el disco duro del VPS.
+ * Retorna la URL pública relativa (/uploads/...) para guardar solo la ruta en Neon PostgreSQL.
+ * Si ya es una URL (http, https, /uploads), la retorna intacta.
+ */
+function processAndSaveImage(dataStr, subfolder = 'businesses', prefix = 'img') {
+  if (!dataStr || typeof dataStr !== 'string') return dataStr;
+  
+  const trimmed = dataStr.trim();
+  if (!trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  try {
+    const matches = trimmed.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/s);
+    if (!matches || matches.length < 3) {
+      return trimmed;
+    }
+
+    let ext = matches[1].toLowerCase();
+    if (ext === 'jpeg') ext = 'jpg';
+    if (ext === 'svg+xml') ext = 'svg';
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext)) {
+      ext = 'jpg';
+    }
+
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const cleanPrefix = (prefix || 'img').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `${cleanPrefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+    const targetDir = path.join(UPLOADS_DIR, subfolder);
+    ensureDirExists(targetDir);
+
+    const filePath = path.join(targetDir, fileName);
+    fs.writeFileSync(filePath, buffer);
+
+    const publicUrl = `/uploads/${subfolder}/${fileName}`;
+    console.log(`📸 Foto guardada en disco VPS: ${publicUrl} (${(buffer.length / 1024).toFixed(1)} KB)`);
+    return publicUrl;
+  } catch (err) {
+    console.error('Error guardando imagen en disco:', err);
+    return dataStr;
+  }
+}
 
 // Rutas directas para el Manual de Usuario de Comercios (PDF y Guía Web)
 app.get([
@@ -1506,6 +1566,28 @@ app.put('/api/businesses/:id', async (req, res) => {
       }
     }
 
+    // Procesar imágenes Base64 y guardarlas físicamente en el disco del VPS
+    if (b.image) {
+      b.image = processAndSaveImage(b.image, 'businesses', `${id}_logo`);
+    }
+    if (b.coverImage) {
+      b.coverImage = processAndSaveImage(b.coverImage, 'businesses', `${id}_cover`);
+    }
+    if (Array.isArray(b.portfolio)) {
+      b.portfolio = b.portfolio.map((item, idx) => {
+        if (typeof item === 'string') {
+          return processAndSaveImage(item, 'portfolio', `${id}_port_${idx}`);
+        }
+        if (item && item.url) {
+          return {
+            ...item,
+            url: processAndSaveImage(item.url, 'portfolio', `${id}_port_${idx}`)
+          };
+        }
+        return item;
+      });
+    }
+
     const updateRes = await pool.query(`
       UPDATE reservas_businesses SET
         name = COALESCE($1, name),
@@ -1612,6 +1694,28 @@ app.post('/api/businesses', async (req, res) => {
     const bizId = b.id || `biz-${Date.now()}`;
     const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : '');
     const finalSlug = slugify(b.slug || b.name || bizId);
+
+    // Procesar imágenes Base64 y guardarlas físicamente en el disco del VPS
+    if (b.image) {
+      b.image = processAndSaveImage(b.image, 'businesses', `${bizId}_logo`);
+    }
+    if (b.coverImage) {
+      b.coverImage = processAndSaveImage(b.coverImage, 'businesses', `${bizId}_cover`);
+    }
+    if (Array.isArray(b.portfolio)) {
+      b.portfolio = b.portfolio.map((item, idx) => {
+        if (typeof item === 'string') {
+          return processAndSaveImage(item, 'portfolio', `${bizId}_port_${idx}`);
+        }
+        if (item && item.url) {
+          return {
+            ...item,
+            url: processAndSaveImage(item.url, 'portfolio', `${bizId}_port_${idx}`)
+          };
+        }
+        return item;
+      });
+    }
 
     await pool.query(`
       INSERT INTO reservas_businesses (
@@ -2082,6 +2186,7 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
     }
 
     const newStaffId = `staff-${Date.now()}`;
+    const cleanAvatar = s.avatarUrl ? processAndSaveImage(s.avatarUrl, 'staff', `staff_${newStaffId}`) : '';
     await pool.query(`
       INSERT INTO reservas_staff (id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -2090,7 +2195,7 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       businessId, 
       s.name.trim(), 
       s.roleTitle?.trim() || 'Especialista', 
-      s.avatarUrl?.trim() || '', 
+      cleanAvatar, 
       s.phone?.trim() || '', 
       JSON.stringify(s.services || ['all']), 
       s.schedule ? JSON.stringify(s.schedule) : null, 
@@ -2102,7 +2207,7 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       businessId,
       name: s.name.trim(),
       roleTitle: s.roleTitle?.trim() || 'Especialista',
-      avatarUrl: s.avatarUrl?.trim() || '',
+      avatarUrl: cleanAvatar,
       phone: s.phone?.trim() || '',
       services: s.services || ['all'],
       schedule: s.schedule || null,
@@ -2119,6 +2224,7 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
   try {
     const { id: businessId, staffId } = req.params;
     const s = req.body;
+    const cleanUpdateAvatar = s.avatarUrl !== undefined ? (s.avatarUrl ? processAndSaveImage(s.avatarUrl, 'staff', `staff_${staffId}`) : '') : null;
 
     await pool.query(`
       UPDATE reservas_staff SET
@@ -2133,7 +2239,7 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
     `, [
       s.name ? s.name.trim() : null,
       s.roleTitle ? s.roleTitle.trim() : null,
-      s.avatarUrl !== undefined ? s.avatarUrl.trim() : null,
+      cleanUpdateAvatar,
       s.phone !== undefined ? s.phone.trim() : null,
       s.services ? JSON.stringify(s.services) : null,
       s.schedule ? JSON.stringify(s.schedule) : null,
@@ -2158,6 +2264,21 @@ app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
   } catch (error) {
     console.error('Error eliminando especialista:', error);
     res.status(500).json({ error: 'Error al eliminar especialista.' });
+  }
+});
+
+// Endpoint general para subida directa de imágenes al disco del VPS
+app.post('/api/upload', (req, res) => {
+  try {
+    const { image, folder = 'misc', prefix = 'file' } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: 'No se envió ninguna imagen.' });
+    }
+    const savedUrl = processAndSaveImage(image, folder, prefix);
+    res.json({ success: true, url: savedUrl });
+  } catch (err) {
+    console.error('Error en /api/upload:', err);
+    res.status(500).json({ error: 'Error al procesar y guardar la imagen en disco.' });
   }
 });
 
