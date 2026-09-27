@@ -70,6 +70,7 @@
 - **XRDP / Conexión Remota:** Se solucionó el fallo de conexión abriendo el puerto 3389 en el firewall de HestiaCP, añadiendo `xrdp` al grupo `ssl-cert`, y configurando `startxfce4` en `/etc/xrdp/startwm.sh` y `/root/.xsession`.
 - **Google Chrome:** Instalado paquete oficial (`google-chrome-stable`) con bandera `--no-sandbox` para ejecución como root y acceso directo en el escritorio `/root/Desktop/google-chrome.desktop`.
 - **Limpieza de Cortafuegos (Firewall):** Se eliminaron las reglas redundantes que exponían el puerto `5432` (PostgreSQL local) al internet, blindando el servidor de escaneos y ataques de fuerza bruta externos (la BD productiva se encuentra protegida en Neon Tech).
+- **Forzado de HTTPS:** Activado `SSL_FORCE: yes` en HestiaCP / Nginx para el dominio `reservascr.app`. Cualquier petición a `http://` es redirigida de forma transparente e inmediata con código `301 Moved Permanently` a `https://`.
 
 ### 8. Optimizaciones Previas de la Aplicación
 - **Botón "15 Días Gratis":** Controlado por la constante `SHOW_15_DAYS_FREE_BUTTON` en `src/app.js`.
