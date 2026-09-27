@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "backup:drive": "node scripts/backup-drive.js",
+    "restore:business": "node scripts/restore-business.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
