@@ -2262,26 +2262,32 @@ class App {
               Barberías, spas, dentistas, talleres mecánicos y más. Filtra por provincia, cantón o busca cualquier servicio.
             </p>
 
-            <!-- Buscador Inteligente -->
-            <div class="mt-6 max-w-2xl mx-auto relative flex items-center shadow-lg rounded-2xl bg-white border border-slate-200 p-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <div class="pl-3.5 text-blue-600">
-                <i class="fas fa-search text-base"></i>
+            <!-- Buscador Inteligente con Sugerencias en Vivo -->
+            <div class="mt-6 max-w-2xl mx-auto relative text-left">
+              <div class="relative flex items-center shadow-lg rounded-2xl bg-white border border-slate-200 p-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <div class="pl-3.5 text-blue-600">
+                  <i class="fas fa-search text-base"></i>
+                </div>
+                <input 
+                  type="text" 
+                  id="search-input" 
+                  value="${this.searchQuery}" 
+                  placeholder="Busca por comercio, servicio ('corte', 'spa', 'frenos')..." 
+                  class="w-full px-3.5 py-2.5 text-slate-800 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
+                  autocomplete="off"
+                />
+                <button id="clear-search-btn" class="${this.searchQuery ? '' : 'hidden'} p-2 text-slate-400 hover:text-slate-600 mr-1 transition-all cursor-pointer" title="Limpiar búsqueda">
+                  <i class="fas fa-times-circle text-base"></i>
+                </button>
+                <button id="do-search-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+                  <i class="fas fa-search text-xs"></i>
+                  <span>Buscar</span>
+                </button>
               </div>
-              <input 
-                type="text" 
-                id="search-input" 
-                value="${this.searchQuery}" 
-                placeholder="Busca por comercio, servicio ('corte', 'spa', 'frenos')..." 
-                class="w-full px-3.5 py-2.5 text-slate-800 placeholder-slate-400 bg-transparent text-sm sm:text-base focus:outline-none"
-                autocomplete="off"
-              />
-              <button id="clear-search-btn" class="${this.searchQuery ? '' : 'hidden'} p-2 text-slate-400 hover:text-slate-600 mr-1 transition-all cursor-pointer" title="Limpiar búsqueda">
-                <i class="fas fa-times-circle text-base"></i>
-              </button>
-              <button id="do-search-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-blue-500/20 text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer flex-shrink-0">
-                <i class="fas fa-search text-xs"></i>
-                <span>Buscar</span>
-              </button>
+
+              <!-- Lista Desplegable de Sugerencias en Vivo (Live Search) -->
+              <div id="search-suggestions-dropdown" class="hidden absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 text-left max-h-96 overflow-y-auto divide-y divide-slate-100">
+              </div>
             </div>
 
             <!-- Filtro Geográfico por Provincia y Cantón de Costa Rica -->
@@ -2551,6 +2557,7 @@ class App {
     const clearGeoFilterBtn = document.getElementById('clear-geo-filter-btn');
     const catalogGridContainer = document.getElementById('catalog-grid-container');
     const catalogCountText = document.getElementById('catalog-count-text');
+    const suggestionsDropdown = document.getElementById('search-suggestions-dropdown');
 
     const attachCardListeners = () => {
       // Clic en cualquier parte de la tarjeta del comercio (Foto, Nombre, Servicios, etc.)
@@ -2739,19 +2746,140 @@ class App {
       attachCardListeners();
     };
 
+    // Renderizado de Sugerencias en Vivo (Live Search Dropdown)
+    const renderSuggestions = (query) => {
+      if (!suggestionsDropdown) return;
+      const cleanQ = (query || '').trim().toLowerCase();
+      if (cleanQ.length < 2) {
+        suggestionsDropdown.innerHTML = '';
+        suggestionsDropdown.classList.add('hidden');
+        return;
+      }
+
+      const allBiz = storage.getBusinesses();
+      // 1. Coincidencias en Comercios (Nombre, Categoría, Descripción, Cantón)
+      const matchedBusinesses = allBiz.filter(b => 
+        (b.name && b.name.toLowerCase().includes(cleanQ)) ||
+        (b.category && b.category.toLowerCase().includes(cleanQ)) ||
+        (b.description && b.description.toLowerCase().includes(cleanQ)) ||
+        (b.canton && b.canton.toLowerCase().includes(cleanQ))
+      ).slice(0, 4);
+
+      // 2. Coincidencias en Servicios
+      const matchedServices = [];
+      for (const b of allBiz) {
+        if (b.services && Array.isArray(b.services)) {
+          for (const s of b.services) {
+            if (s.name && s.name.toLowerCase().includes(cleanQ)) {
+              matchedServices.push({ service: s, business: b });
+              if (matchedServices.length >= 4) break;
+            }
+          }
+        }
+        if (matchedServices.length >= 4) break;
+      }
+
+      if (matchedBusinesses.length === 0 && matchedServices.length === 0) {
+        suggestionsDropdown.innerHTML = `
+          <div class="p-4 text-center text-sm text-slate-500">
+            <i class="fas fa-search text-slate-300 text-lg mb-1 block"></i>
+            No encontramos sugerencias directas para "<b>${this.escapeHtml(query)}</b>"
+          </div>
+        `;
+        suggestionsDropdown.classList.remove('hidden');
+        return;
+      }
+
+      let html = '';
+
+      if (matchedBusinesses.length > 0) {
+        html += `
+          <div class="px-3.5 py-2 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100">
+            <i class="fas fa-store text-blue-600"></i> Comercios Encontrados
+          </div>
+        `;
+        html += matchedBusinesses.map(b => `
+          <div class="suggestion-item p-3 hover:bg-blue-50/70 transition-colors cursor-pointer flex items-center justify-between gap-3" data-biz-id="${b.id}" data-type="business">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                ${b.logo_url || b.image_url ? `<img src="${b.logo_url || b.image_url}" class="w-full h-full object-cover">` : (b.name ? b.name.charAt(0).toUpperCase() : '🏪')}
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-slate-800 truncate">${this.escapeHtml(b.name)}</p>
+                <p class="text-xs text-slate-500 truncate">${this.escapeHtml(b.category || '')} • ${this.escapeHtml(b.province || 'Costa Rica')}</p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-blue-600 shrink-0 flex items-center gap-1">
+              Ver perfil <i class="fas fa-chevron-right text-[10px]"></i>
+            </span>
+          </div>
+        `).join('');
+      }
+
+      if (matchedServices.length > 0) {
+        html += `
+          <div class="px-3.5 py-2 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5 border-b border-slate-100">
+            <i class="fas fa-concierge-bell text-indigo-600"></i> Servicios Disponibles
+          </div>
+        `;
+        html += matchedServices.map(item => `
+          <div class="suggestion-item p-3 hover:bg-indigo-50/70 transition-colors cursor-pointer flex items-center justify-between gap-3" data-biz-id="${item.business.id}" data-service="${this.escapeHtml(item.service.name)}" data-type="service">
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-slate-800 truncate">${this.escapeHtml(item.service.name)}</p>
+              <p class="text-xs text-slate-500 truncate">en <b>${this.escapeHtml(item.business.name)}</b></p>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-xs font-bold text-emerald-600 block">₡${Number(item.service.price || 0).toLocaleString('es-CR')}</span>
+              <span class="text-[10px] text-slate-400">${item.service.duration || 30} min</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      suggestionsDropdown.innerHTML = html;
+      suggestionsDropdown.classList.remove('hidden');
+
+      // Click listeners en cada sugerencia
+      suggestionsDropdown.querySelectorAll('.suggestion-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const type = el.getAttribute('data-type');
+          const bizId = el.getAttribute('data-biz-id');
+          const serviceName = el.getAttribute('data-service');
+          suggestionsDropdown.classList.add('hidden');
+
+          if (bizId) {
+            this.navigateTo('business-detail', { businessId: bizId });
+          } else if (serviceName && searchInput) {
+            searchInput.value = serviceName;
+            updateLiveSearch();
+          }
+        });
+      });
+    };
+
     // Filtrado en vivo mientras el usuario escribe
     searchInput?.addEventListener('input', () => {
+      const q = searchInput.value;
       updateLiveSearch();
+      renderSuggestions(q);
+    });
+
+    searchInput?.addEventListener('focus', () => {
+      if (searchInput.value.trim().length >= 2) {
+        renderSuggestions(searchInput.value);
+      }
     });
 
     searchInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        if (suggestionsDropdown) suggestionsDropdown.classList.add('hidden');
         updateLiveSearch();
       }
     });
 
     doSearchBtn?.addEventListener('click', () => {
+      if (suggestionsDropdown) suggestionsDropdown.classList.add('hidden');
       updateLiveSearch();
     });
 
@@ -2760,7 +2888,18 @@ class App {
         searchInput.value = '';
         searchInput.focus();
       }
+      if (suggestionsDropdown) {
+        suggestionsDropdown.innerHTML = '';
+        suggestionsDropdown.classList.add('hidden');
+      }
       updateLiveSearch();
+    });
+
+    // Cerrar sugerencias al hacer clic fuera del buscador
+    document.addEventListener('click', (e) => {
+      if (suggestionsDropdown && !suggestionsDropdown.contains(e.target) && e.target !== searchInput) {
+        suggestionsDropdown.classList.add('hidden');
+      }
     });
 
     // Selector de Provincia de Costa Rica
