@@ -55,8 +55,13 @@
 ### 6. Almacenamiento Físico de Imágenes en Disco VPS (Zero Base64 en Base de Datos)
 - **Problema Solucionado:** Las fotos de perfil, banners y portafolios subidas por comercios en base64 inflaban la base de datos de Neon y consumían almacenamiento innecesariamente.
 - **Arquitectura Implementada:**
-  - Las imágenes se procesan en el backend (`processAndSaveImage`) y se guardan físicamente en el disco del VPS (`public/uploads/{businesses,portfolio,staff,clients}`).
-  - En la base de datos Neon PostgreSQL solo se guarda la URL limpia (ej. `/uploads/businesses/biz-1_cover_123.jpg`), que pesa menos de 50 bytes.
+  - Las imágenes se procesan en el backend (`processAndSaveImage`) y se guardan físicamente en el disco del VPS organizadas en una carpeta propia por cada comercio:
+    `📁 public/uploads/comercios/:id_comercio/`
+    - Logo: `/uploads/comercios/:id/logo_...`
+    - Portada: `/uploads/comercios/:id/portada_...`
+    - Portafolio: `/uploads/comercios/:id/portafolio/port_...`
+    - Equipo: `/uploads/comercios/:id/equipo/staff_...`
+  - En la base de datos Neon PostgreSQL solo se guarda la URL limpia (ej. `/uploads/comercios/biz-1/portada_123.jpg`), que pesa menos de 50 bytes.
   - Se configuró la ruta estática `/uploads` con caché de 30 días para carga ultra rápida en navegadores.
   - Se creó un enlace simbólico entre `/home/Juan/web/reservas/public/uploads` y `/home/masteradmin/web/reservascr.app/public_html/uploads` para que Nginx sirva las fotos directamente a nivel de web server sin saturar Node.js.
   - Endpoint utilitario: `POST /api/upload`.
