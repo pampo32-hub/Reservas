@@ -10,10 +10,10 @@ let isChecking = false;
 let pollingTimer = null;
 
 const getImapConfig = () => {
-  const cleanPassword = (process.env.SINPE_EMAIL_PASSWORD || 'nbanoxskrwrgwwvy').replace(/\s+/g, '');
+  const cleanPassword = (process.env.SINPE_EMAIL_PASSWORD || '').replace(/\s+/g, '');
   return {
     imap: {
-      user: process.env.SINPE_EMAIL_USER || 'pampo32@gmail.com',
+      user: process.env.SINPE_EMAIL_USER || '',
       password: cleanPassword,
       host: process.env.SINPE_IMAP_HOST || 'imap.gmail.com',
       port: parseInt(process.env.SINPE_IMAP_PORT || '993', 10),
@@ -29,13 +29,16 @@ const getImapConfig = () => {
  */
 export async function checkSinpeEmailsOnce() {
   if (isChecking) return;
+  // Solo se ejecuta si está explícitamente activado y con credenciales dedicadas del negocio
+  if (process.env.SINPE_IMAP_ENABLED !== 'true' || !process.env.SINPE_EMAIL_USER || !process.env.SINPE_EMAIL_PASSWORD) {
+    return;
+  }
   isChecking = true;
 
   let connection = null;
   try {
     const config = getImapConfig();
-    if (!config.imap.password) {
-      console.warn('⚠️ [SINPE IMAP] No se ha configurado SINPE_EMAIL_PASSWORD');
+    if (!config.imap.user || !config.imap.password) {
       return;
     }
 
@@ -134,6 +137,11 @@ export async function checkSinpeEmailsOnce() {
  * @param {number} intervalMs Intervalo en milisegundos (por defecto 15 segundos)
  */
 export function startSinpeImapWorker(intervalMs = 15000) {
+  if (process.env.SINPE_IMAP_ENABLED !== 'true' || !process.env.SINPE_EMAIL_USER || !process.env.SINPE_EMAIL_PASSWORD) {
+    console.log('ℹ️ [SINPE IMAP] Lector automático en segundo plano desactivado.');
+    return;
+  }
+
   console.log(`🚀 [SINPE IMAP] Lector automático de SINPE iniciado (revisión cada ${intervalMs / 1000}s)`);
   
   checkSinpeEmailsOnce();
