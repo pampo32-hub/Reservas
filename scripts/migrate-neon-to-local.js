@@ -149,17 +149,12 @@ async function run() {
       }
     }
 
-    // Desactivar temporalmente restricciones de llaves foráneas para inserción ultrarrápida y segura
-    await localClient.query('SET session_replication_role = replica;');
-
     const results = [];
     for (const table of tablesToMigrate) {
       const res = await migrateTable(table, neonClient, localClient);
       results.push(res);
     }
 
-    // Reactivar restricciones de llaves foráneas
-    await localClient.query('SET session_replication_role = DEFAULT;');
 
     console.log('\n========================================');
     console.log('📊 RESUMEN DE LA MIGRACIÓN DE DATOS');

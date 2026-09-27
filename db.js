@@ -81,7 +81,6 @@ export async function initDatabase(customPool = null) {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS slug VARCHAR(255);
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS portfolio JSONB DEFAULT '[]';
       CREATE UNIQUE INDEX IF NOT EXISTS idx_reservas_businesses_slug ON reservas_businesses (slug);
-      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS nylas_event_id VARCHAR(150) DEFAULT NULL;
     `);
 
     // 2. Crear tabla de servicios
@@ -126,7 +125,9 @@ export async function initDatabase(customPool = null) {
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS review_email_sent_at TIMESTAMP DEFAULT NULL;
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS staff_id VARCHAR(50) DEFAULT NULL;
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS staff_name VARCHAR(255) DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS nylas_event_id VARCHAR(150) DEFAULT NULL;
     `);
+
 
     // 3.0. Crear tabla de equipo y colaboradores/especialistas del negocio
     await client.query(`
