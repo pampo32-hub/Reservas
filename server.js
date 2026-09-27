@@ -98,7 +98,7 @@ ensureDirExists(path.join(UPLOADS_DIR, 'clients'));
  * Retorna la URL pública relativa (/uploads/...) para guardar solo la ruta en Neon PostgreSQL.
  * Si ya es una URL (http, https, /uploads), la retorna intacta.
  */
-function processAndSaveImage(dataStr, subfolder = 'businesses', prefix = 'img') {
+function processAndSaveImage(dataStr, subfolder = 'general', prefix = 'img') {
   if (!dataStr || typeof dataStr !== 'string') return dataStr;
   
   const trimmed = dataStr.trim();
@@ -122,16 +122,19 @@ function processAndSaveImage(dataStr, subfolder = 'businesses', prefix = 'img') 
     const base64Data = matches[2];
     const buffer = Buffer.from(base64Data, 'base64');
 
+    // Limpiar subcarpeta para URLs y rutas del sistema operativo
+    const cleanSubfolder = String(subfolder).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '') || 'general';
     const cleanPrefix = (prefix || 'img').replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileName = `${cleanPrefix}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
-    const targetDir = path.join(UPLOADS_DIR, subfolder);
+    const folderParts = cleanSubfolder.split('/');
+    const targetDir = path.join(UPLOADS_DIR, ...folderParts);
     ensureDirExists(targetDir);
 
     const filePath = path.join(targetDir, fileName);
     fs.writeFileSync(filePath, buffer);
 
-    const publicUrl = `/uploads/${subfolder}/${fileName}`;
+    const publicUrl = `/uploads/${cleanSubfolder}/${fileName}`;
     console.log(`📸 Foto guardada en disco VPS: ${publicUrl} (${(buffer.length / 1024).toFixed(1)} KB)`);
     return publicUrl;
   } catch (err) {
@@ -1566,22 +1569,23 @@ app.put('/api/businesses/:id', async (req, res) => {
       }
     }
 
-    // Procesar imágenes Base64 y guardarlas físicamente en el disco del VPS
+    // Procesar imágenes Base64 y guardarlas físicamente en la carpeta de este comercio
+    const bizFolder = `comercios/${id}`;
     if (b.image) {
-      b.image = processAndSaveImage(b.image, 'businesses', `${id}_logo`);
+      b.image = processAndSaveImage(b.image, bizFolder, 'logo');
     }
     if (b.coverImage) {
-      b.coverImage = processAndSaveImage(b.coverImage, 'businesses', `${id}_cover`);
+      b.coverImage = processAndSaveImage(b.coverImage, bizFolder, 'portada');
     }
     if (Array.isArray(b.portfolio)) {
       b.portfolio = b.portfolio.map((item, idx) => {
         if (typeof item === 'string') {
-          return processAndSaveImage(item, 'portfolio', `${id}_port_${idx}`);
+          return processAndSaveImage(item, `${bizFolder}/portafolio`, `port_${idx}`);
         }
         if (item && item.url) {
           return {
             ...item,
-            url: processAndSaveImage(item.url, 'portfolio', `${id}_port_${idx}`)
+            url: processAndSaveImage(item.url, `${bizFolder}/portafolio`, `port_${idx}`)
           };
         }
         return item;
@@ -1695,22 +1699,23 @@ app.post('/api/businesses', async (req, res) => {
     const finalPhone = b.phone !== undefined ? String(b.phone).trim() : (b.whatsapp !== undefined ? String(b.whatsapp).trim() : '');
     const finalSlug = slugify(b.slug || b.name || bizId);
 
-    // Procesar imágenes Base64 y guardarlas físicamente en el disco del VPS
+    // Procesar imágenes Base64 y guardarlas físicamente en la carpeta de este comercio
+    const bizFolder = `comercios/${bizId}`;
     if (b.image) {
-      b.image = processAndSaveImage(b.image, 'businesses', `${bizId}_logo`);
+      b.image = processAndSaveImage(b.image, bizFolder, 'logo');
     }
     if (b.coverImage) {
-      b.coverImage = processAndSaveImage(b.coverImage, 'businesses', `${bizId}_cover`);
+      b.coverImage = processAndSaveImage(b.coverImage, bizFolder, 'portada');
     }
     if (Array.isArray(b.portfolio)) {
       b.portfolio = b.portfolio.map((item, idx) => {
         if (typeof item === 'string') {
-          return processAndSaveImage(item, 'portfolio', `${bizId}_port_${idx}`);
+          return processAndSaveImage(item, `${bizFolder}/portafolio`, `port_${idx}`);
         }
         if (item && item.url) {
           return {
             ...item,
-            url: processAndSaveImage(item.url, 'portfolio', `${bizId}_port_${idx}`)
+            url: processAndSaveImage(item.url, `${bizFolder}/portafolio`, `port_${idx}`)
           };
         }
         return item;
@@ -2186,7 +2191,7 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
     }
 
     const newStaffId = `staff-${Date.now()}`;
-    const cleanAvatar = s.avatarUrl ? processAndSaveImage(s.avatarUrl, 'staff', `staff_${newStaffId}`) : '';
+    const cleanAvatar = s.avatarUrl ? processAndSaveImage(s.avatarUrl, `comercios/${businessId}/equipo`, `staff_${newStaffId}`) : '';
     await pool.query(`
       INSERT INTO reservas_staff (id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -2224,7 +2229,7 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
   try {
     const { id: businessId, staffId } = req.params;
     const s = req.body;
-    const cleanUpdateAvatar = s.avatarUrl !== undefined ? (s.avatarUrl ? processAndSaveImage(s.avatarUrl, 'staff', `staff_${staffId}`) : '') : null;
+    const cleanUpdateAvatar = s.avatarUrl !== undefined ? (s.avatarUrl ? processAndSaveImage(s.avatarUrl, `comercios/${businessId}/equipo`, `staff_${staffId}`) : '') : null;
 
     await pool.query(`
       UPDATE reservas_staff SET
@@ -2270,11 +2275,14 @@ app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
 // Endpoint general para subida directa de imágenes al disco del VPS
 app.post('/api/upload', (req, res) => {
   try {
-    const { image, folder = 'misc', prefix = 'file' } = req.body;
+    const { image, businessId, folder, prefix = 'file' } = req.body;
     if (!image) {
       return res.status(400).json({ error: 'No se envió ninguna imagen.' });
     }
-    const savedUrl = processAndSaveImage(image, folder, prefix);
+    const targetFolder = businessId 
+      ? `comercios/${businessId}/${folder || 'general'}`
+      : (folder || 'general');
+    const savedUrl = processAndSaveImage(image, targetFolder, prefix);
     res.json({ success: true, url: savedUrl });
   } catch (err) {
     console.error('Error en /api/upload:', err);
