@@ -52,7 +52,16 @@
 - Archivo: `.github/workflows/deploy.yml`.
 - Cada `git push origin main` activa el flujo de GitHub Actions que se conecta al VPS por SSH y ejecuta `/home/masteradmin/deploy.sh` (actualizando el código en `/home/Juan/web/reservas` y reiniciando con PM2).
 
-### 6. Optimizaciones Previas de la Aplicación
+### 6. Almacenamiento Físico de Imágenes en Disco VPS (Zero Base64 en Base de Datos)
+- **Problema Solucionado:** Las fotos de perfil, banners y portafolios subidas por comercios en base64 inflaban la base de datos de Neon y consumían almacenamiento innecesariamente.
+- **Arquitectura Implementada:**
+  - Las imágenes se procesan en el backend (`processAndSaveImage`) y se guardan físicamente en el disco del VPS (`public/uploads/{businesses,portfolio,staff,clients}`).
+  - En la base de datos Neon PostgreSQL solo se guarda la URL limpia (ej. `/uploads/businesses/biz-1_cover_123.jpg`), que pesa menos de 50 bytes.
+  - Se configuró la ruta estática `/uploads` con caché de 30 días para carga ultra rápida en navegadores.
+  - Se creó un enlace simbólico entre `/home/Juan/web/reservas/public/uploads` y `/home/masteradmin/web/reservascr.app/public_html/uploads` para que Nginx sirva las fotos directamente a nivel de web server sin saturar Node.js.
+  - Endpoint utilitario: `POST /api/upload`.
+
+### 7. Optimizaciones Previas de la Aplicación
 - **Botón "15 Días Gratis":** Controlado por la constante `SHOW_15_DAYS_FREE_BUTTON` en `src/app.js`.
 - **Caché PWA:** `sw.js` en versión activa `v35`.
 - **Evitación de parpadeo (Zero-Jitter):** Clases y propiedades en `main.css` y `index.html`.
