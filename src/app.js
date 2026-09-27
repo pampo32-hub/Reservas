@@ -6,6 +6,7 @@ const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
 const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
+const SHOW_15_DAYS_FREE_BUTTON = false; // Flag temporal (Prueba): Oculta el botón "15 Días Gratis". Cambiar a true para volver a mostrarlo.
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 const SHOW_SOCIAL_AUTH_BUTTONS = false; // Ocultar inicios de sesión y registros con Google, Hotmail y Apple (fácilmente reactivable)
 
@@ -1472,10 +1473,12 @@ class App {
             ` : ''}
 
             ${!clientUser && !bizUser && !devUser ? `
+              ${SHOW_15_DAYS_FREE_BUTTON ? `
               <button id="mobile-top-prereg-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis">
                 <i class="fas fa-gift text-blue-200 text-xs"></i>
                 <span>15 Días</span>
               </button>
+              ` : ''}
 
               <button id="mobile-top-landing-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-slate-950 via-slate-900 to-blue-900 border border-blue-500/30 shadow-xs flex items-center gap-1 app-touch-btn shrink-0 cursor-pointer whitespace-nowrap" title="Para Negocios">
                 <i class="fas fa-rocket text-blue-400 text-xs"></i>
@@ -1492,10 +1495,12 @@ class App {
           <div class="hidden md:flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 shrink-0 justify-end">
             
             <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
+            ${SHOW_15_DAYS_FREE_BUTTON ? `
             <button id="nav-prereg-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
               <i class="fas fa-gift text-blue-200 text-xs"></i>
               <span class="hidden 2xl:inline">15 Días Gratis</span><span class="inline 2xl:hidden">15 Días</span>
             </button>
+            ` : ''}
 
             <!-- Instalar PWA Desktop -->
             <button id="nav-install-pwa-btn" class="pwa-install-trigger-btn px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-bold text-blue-700 dark:text-blue-400 whitespace-nowrap shrink-0 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/80 dark:border-blue-800 shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer" title="Instalar aplicación en tu dispositivo">
@@ -2172,6 +2177,7 @@ class App {
 
                 <!-- CTA Principal Pre-Registro -->
                 <div class="pt-1.5 flex flex-wrap items-center gap-2.5 sm:gap-3">
+                  ${SHOW_15_DAYS_FREE_BUTTON ? `
                   <button 
                     id="banner-prereg-btn" 
                     class="px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
@@ -2179,6 +2185,7 @@ class App {
                     <i class="fas fa-gift text-blue-300 text-sm sm:text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
                   </button>
+                  ` : ''}
                   <button 
                     id="banner-view-plans-btn" 
                     class="px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
@@ -2481,9 +2488,11 @@ class App {
                 </div>
 
                 <div class="pt-4 flex flex-wrap items-center gap-3">
+                  ${SHOW_15_DAYS_FREE_BUTTON ? `
                   <button id="directory-biz-prereg-btn" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-950/50 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-rocket text-amber-300"></i> Registrar Mi Negocio (15 Días Gratis)
                   </button>
+                  ` : ''}
                   <button id="directory-biz-landing-btn" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer">
                     <i class="fas fa-info-circle text-blue-300"></i> Conocer Todos los Beneficios
                   </button>
