@@ -4012,7 +4012,7 @@ async function processPendingWhatsAppReminders() {
       SELECT a.*, 
              b.name as business_name, 
              b.phone as business_phone, 
-             b.whatsapp as business_whatsapp, 
+             b.phone as business_whatsapp, 
              b.address as business_address, 
              b.city as business_city, 
              b.plan as business_plan,
