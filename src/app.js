@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.43.0';
+import storage from './services/storage.js?v=3.44.0';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -5965,7 +5965,21 @@ class App {
   // VISTA 4: MIS RESERVAS (HISTORIAL DE CLIENTE)
   // ==========================================
   async renderClientBookingsView(container) {
-    const clientUser = storage.getClientUser();
+    let clientUser = storage.getClientUser();
+    if (!clientUser) {
+      // Intentar auto-recuperar sesión si se completó una reserva reciente
+      const localApts = storage.getAppointments() || [];
+      const recent = localApts.find(a => a && (a.clientPhone || a.clientEmail) && a.clientName);
+      if (recent) {
+        clientUser = {
+          name: recent.clientName,
+          phone: recent.clientPhone || '',
+          email: recent.clientEmail || ''
+        };
+        storage.setClientUser(clientUser);
+      }
+    }
+
     if (!clientUser) {
       this.renderAuthModal({ mode: 'login', role: 'client' });
       this.navigateTo('directory');
@@ -5974,6 +5988,20 @@ class App {
 
     // Obtener citas locales de inmediato (render instantáneo)
     let allAppointments = storage.getClientAppointments(clientUser.phone, clientUser.email);
+
+    // Ordenar citas: Confirmadas y pendientes (activas) primero, y las más recientes por fecha/hora al inicio
+    allAppointments.sort((a, b) => {
+      const aActive = a.status === 'pending' || a.status === 'confirmed';
+      const bActive = b.status === 'pending' || b.status === 'confirmed';
+      if (aActive && !bActive) return -1;
+      if (!aActive && bActive) return 1;
+
+      // Ordenar por fecha descendente (citas más nuevas o próximas primero)
+      if (a.date !== b.date) {
+        return (b.date || '').localeCompare(a.date || '');
+      }
+      return (b.time || '').localeCompare(a.time || '');
+    });
 
     // Sincronizar en segundo plano
     if (!this.clientSyncingInFlight) {

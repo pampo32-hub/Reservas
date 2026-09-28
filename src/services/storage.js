@@ -1,5 +1,5 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES } from '../data/initialData.js?v=3.43.0';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES } from '../data/initialData.js?v=3.44.0';
 
 
 const STORAGE_KEYS = {
@@ -1198,12 +1198,21 @@ class StorageService {
     const all = this.appointmentsCache || this.getAppointments() || [];
     const cleanPhone = (phone || '').trim();
     const cleanEmail = (email || '').trim().toLowerCase();
-    if (!cleanPhone && !cleanEmail) return [];
+    const cleanPhoneDigits = cleanPhone.replace(/[^0-9]/g, '').slice(-8);
+
+    if (!cleanPhoneDigits && !cleanPhone && !cleanEmail) return [];
     const seen = new Set();
     return all.filter(a => {
       if (!a || !a.id || seen.has(a.id)) return false;
-      const matchPhone = cleanPhone && a.clientPhone && a.clientPhone.trim() === cleanPhone;
-      const matchEmail = cleanEmail && a.clientEmail && a.clientEmail.trim().toLowerCase() === cleanEmail;
+
+      const aptPhone = ((a.clientPhone || a.client_phone) || '').trim();
+      const aptPhoneDigits = aptPhone.replace(/[^0-9]/g, '').slice(-8);
+      const matchPhone = (cleanPhoneDigits && aptPhoneDigits && cleanPhoneDigits.length === 8 && cleanPhoneDigits === aptPhoneDigits) ||
+                         (cleanPhone && aptPhone && cleanPhone === aptPhone);
+
+      const aptEmail = ((a.clientEmail || a.client_email) || '').trim().toLowerCase();
+      const matchEmail = Boolean(cleanEmail && aptEmail && cleanEmail === aptEmail);
+
       if (matchPhone || matchEmail) {
         seen.add(a.id);
         return true;
@@ -1226,14 +1235,13 @@ class StorageService {
             const currentAppointments = this.getAppointments() || [];
             const freshMap = new Map(fresh.map(f => [f.id, f]));
             const updated = currentAppointments.map(a => freshMap.has(a.id) ? { ...a, ...freshMap.get(a.id) } : a);
-            fresh.forEach(f => {
-              if (!updated.some(u => u.id === f.id)) {
-                updated.push(f);
-              }
-            });
+            // Las citas frescas que no estaban en local se agregan AL INICIO (para que las más nuevas aparezcan primero)
+            const newFresh = fresh.filter(f => !updated.some(u => u.id === f.id));
+            const combined = [...newFresh, ...updated];
+
             // Deduplicar appointments por id para garantizar integridad en localStorage
             const uniqueMap = new Map();
-            updated.forEach(u => {
+            combined.forEach(u => {
               if (u && u.id) uniqueMap.set(u.id, u);
             });
             const dedupedUpdated = Array.from(uniqueMap.values());
@@ -2445,7 +2453,7 @@ class StorageService {
   async initServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js?v=3.43.0', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3.44.0', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
         return registration;
       } catch (err) {

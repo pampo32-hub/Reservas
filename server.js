@@ -805,10 +805,23 @@ app.post('/api/auth/client/login', async (req, res) => {
     }
 
     // 4. Comprobar si es Cliente
-    const result = await pool.query(
-      'SELECT * FROM reservas_clients WHERE LOWER(email) = LOWER($1) OR phone = $1',
-      [cleanIdent]
-    );
+    const identDigits = cleanIdent.replace(/[^0-9]/g, '').slice(-8);
+    let result;
+    if (identDigits.length === 8) {
+      result = await pool.query(
+        `SELECT * FROM reservas_clients 
+         WHERE LOWER(email) = LOWER($1) 
+            OR RIGHT(regexp_replace(phone, '[^0-9]', '', 'g'), 8) = $2 
+            OR phone = $1 
+         ORDER BY (password IS NOT NULL) DESC, created_at DESC`,
+        [cleanIdent, identDigits]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT * FROM reservas_clients WHERE LOWER(email) = LOWER($1) OR phone = $1 ORDER BY (password IS NOT NULL) DESC, created_at DESC`,
+        [cleanIdent]
+      );
+    }
 
     if (result.rows.length === 0) {
       const failInfo = recordFailedLoginAttempt(req, cleanIdent);
@@ -862,10 +875,23 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
     }
 
     // Buscar si ya existe por teléfono o correo
-    const existing = await pool.query(
-      'SELECT * FROM reservas_clients WHERE phone = $1 OR (email != \'\' AND LOWER(email) = LOWER($2)) ORDER BY (password IS NOT NULL) DESC, created_at ASC LIMIT 1',
-      [cleanPhone, cleanEmail]
-    );
+    const phoneDigits = cleanPhone.replace(/[^0-9]/g, '').slice(-8);
+    let existing;
+    if (phoneDigits.length === 8) {
+      existing = await pool.query(
+        `SELECT * FROM reservas_clients 
+         WHERE (email != '' AND LOWER(email) = LOWER($1)) 
+            OR RIGHT(regexp_replace(phone, '[^0-9]', '', 'g'), 8) = $2 
+            OR phone = $3 
+         ORDER BY (password IS NOT NULL) DESC, created_at DESC LIMIT 1`,
+        [cleanEmail, phoneDigits, cleanPhone]
+      );
+    } else {
+      existing = await pool.query(
+        'SELECT * FROM reservas_clients WHERE phone = $1 OR (email != \'\' AND LOWER(email) = LOWER($2)) ORDER BY (password IS NOT NULL) DESC, created_at DESC LIMIT 1',
+        [cleanPhone, cleanEmail]
+      );
+    }
 
     let clientUser;
     if (existing.rows.length > 0) {
@@ -2393,9 +2419,10 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
     const { email } = req.query;
 
     const cleanPhone = (phone && phone !== 'null' && phone !== 'undefined') ? phone.trim() : '';
+    const cleanPhoneDigits = cleanPhone.replace(/[^0-9]/g, '').slice(-8);
     const cleanEmail = (email && email !== 'null' && email !== 'undefined') ? email.trim().toLowerCase() : '';
 
-    if (!cleanPhone && !cleanEmail) {
+    if (!cleanPhoneDigits && !cleanPhone && !cleanEmail) {
       return res.json([]);
     }
 
@@ -2409,7 +2436,10 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
     const params = [];
     const conditions = [];
 
-    if (cleanPhone) {
+    if (cleanPhoneDigits && cleanPhoneDigits.length === 8) {
+      params.push(cleanPhoneDigits);
+      conditions.push(`(RIGHT(regexp_replace(a.client_phone, '[^0-9]', '', 'g'), 8) = $${params.length} OR a.client_phone = $${params.length})`);
+    } else if (cleanPhone) {
       params.push(cleanPhone);
       conditions.push(`a.client_phone = $${params.length}`);
     }
@@ -2419,7 +2449,7 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       conditions.push(`(a.client_email IS NOT NULL AND a.client_email != '' AND LOWER(a.client_email) = LOWER($${params.length}))`);
     }
 
-    query += `(${conditions.join(' OR ')}) ORDER BY a.date DESC, a.time ASC`;
+    query += `(${conditions.join(' OR ')}) ORDER BY a.created_at DESC, a.date DESC, a.time ASC`;
 
     const result = await pool.query(query, params);
 
