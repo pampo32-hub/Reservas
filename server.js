@@ -65,9 +65,10 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '15mb' }));
 
-// Evitar almacenamiento en caché para HTML y JS para que las actualizaciones se reflejen de inmediato
+// Evitar almacenamiento en caché para HTML, JS, CSS y SW para que las actualizaciones se reflejen de inmediato
 app.use((req, res, next) => {
-  if (req.url.endsWith('.html') || req.url.endsWith('.js') || req.url === '/' || req.url.startsWith('/src/')) {
+  const p = req.path || req.url;
+  if (p.endsWith('.html') || p.endsWith('.js') || p === '/' || p.startsWith('/src/') || p === '/sw.js' || p.endsWith('.css')) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
