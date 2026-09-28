@@ -1766,8 +1766,22 @@ class StorageService {
   }
 
   getPlanById(planId) {
+    if (planId && typeof planId === 'string' && planId.startsWith('pack_')) {
+      const pack = this.getWhatsAppPackById(planId);
+      if (pack) {
+        return {
+          id: pack.id,
+          name: pack.name,
+          priceUsd: pack.priceUsd,
+          priceCrc: pack.priceCrc,
+          bookingLimitLabel: `+${pack.messages} mensajes WhatsApp`,
+          isPack: true,
+          messages: pack.messages
+        };
+      }
+    }
     const plans = this.getAllPlans();
-    return plans.find(p => p.id === planId) || SUBSCRIPTION_PLANS[0];
+    return plans.find(p => p.id === planId) || null;
   }
 
   // ==========================================

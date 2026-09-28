@@ -5055,16 +5055,27 @@ app.post('/api/sinpe/verify', async (req, res) => {
       WHERE id = $3
     `, [businessId || null, planId || 'basic', tx.id]);
 
-    // Si hay un businessId asociado, activar el plan en la base de datos
+    // Si hay un businessId asociado, activar el plan o acreditar mensajes adicionales en la base de datos
     if (businessId) {
-      await pool.query(`
-        UPDATE reservas_businesses
-        SET plan = $1,
-            subscription_status = 'active',
-            payment_method = 'sinpe',
-            subscription_updated_at = NOW()
-        WHERE id = $2
-      `, [planId || 'basic', businessId]);
+      const isPack = String(planId || '').startsWith('pack_');
+      if (isPack) {
+        const packCredits = planId === 'pack_200' ? 200 : (planId === 'pack_500' ? 500 : (planId === 'pack_1000' ? 1000 : 200));
+        await pool.query(`
+          UPDATE reservas_businesses
+          SET extra_whatsapp_credits = COALESCE(extra_whatsapp_credits, 0) + $1
+          WHERE id = $2
+        `, [packCredits, businessId]);
+        console.log(`✅ [SINPE Verify] +${packCredits} créditos extra de WhatsApp acreditados al comercio [${businessId}]`);
+      } else {
+        await pool.query(`
+          UPDATE reservas_businesses
+          SET plan = $1,
+              subscription_status = 'active',
+              payment_method = 'sinpe',
+              subscription_updated_at = NOW()
+          WHERE id = $2
+        `, [planId || 'basic', businessId]);
+      }
     }
 
     console.log(`✅ [SINPE Verify] ¡Pago verificado con éxito y marcado como USADO! Tx ID: ${tx.id}, Ref: ${tx.reference_number}, Monto: ₡${tx.amount_crc}`);

@@ -15616,8 +15616,12 @@ class App {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
+    const bizUser = storage.getBusinessUser();
+    const currentBiz = business || (bizUser?.businessId ? storage.getBusinessById(bizUser.businessId) : null);
+    const targetBusinessId = currentBiz?.id || business?.id || (bizUser ? bizUser.businessId : null);
+
     const packs = storage.getWhatsAppPacks();
-    const currentCredits = business?.extraWhatsappCredits || business?.extra_whatsapp_credits || 0;
+    const currentCredits = currentBiz?.extraWhatsappCredits || currentBiz?.extra_whatsapp_credits || 0;
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -15649,21 +15653,21 @@ class App {
               </div>
             ` : ''}
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-stretch">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-stretch pt-2">
               ${packs.map(pack => `
-                <div class="relative bg-white rounded-2xl p-4 border-2 ${pack.popular ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between hover:border-emerald-400 transition-all">
+                <div class="relative bg-white rounded-2xl p-4 pt-7 sm:pt-8 border-2 ${pack.popular ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between hover:border-emerald-400 transition-all">
                   ${pack.badge ? `
-                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${pack.popular ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'}">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap z-10 pointer-events-none">
+                      <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs whitespace-nowrap inline-block ${pack.popular ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'}">
                         ${pack.badge}
                       </span>
                     </div>
                   ` : ''}
 
                   <div class="space-y-2 mt-1">
-                    <div class="flex items-center justify-between">
-                      <h4 class="font-extrabold text-slate-900 text-sm">${pack.name}</h4>
-                      <i class="fab fa-whatsapp text-emerald-600"></i>
+                    <div class="flex items-center justify-between gap-1">
+                      <h4 class="font-extrabold text-slate-900 text-sm leading-snug truncate">${pack.name}</h4>
+                      <i class="fab fa-whatsapp text-emerald-600 shrink-0"></i>
                     </div>
                     
                     <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-center">
@@ -15673,12 +15677,13 @@ class App {
 
                     <div class="text-center p-2 bg-emerald-50/60 rounded-lg border border-emerald-100">
                       <strong class="text-emerald-900 text-xs font-black">+${pack.messages} mensajes</strong>
-                      <p class="text-[10px] text-slate-500 mt-0.5">${pack.description}</p>
+                      <p class="text-[10px] text-slate-500 mt-0.5 leading-snug">${pack.description}</p>
                     </div>
                   </div>
 
                   <div class="pt-3 border-t border-slate-100 mt-3">
                     <button 
+                      type="button"
                       class="buy-pack-sinpe-btn w-full py-2.5 ${pack.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
                       data-pack-id="${pack.id}"
                       data-pack-price="${pack.priceCrc}"
@@ -15710,11 +15715,12 @@ class App {
     });
 
     modalContainer.querySelectorAll('.buy-pack-sinpe-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const packId = btn.getAttribute('data-pack-id');
         const packPrice = parseInt(btn.getAttribute('data-pack-price'), 10);
         const packName = btn.getAttribute('data-pack-name');
-        this.renderSinpePaymentModal({ businessId: business.id, planId: packId, amount: packPrice, planName });
+        this.renderSinpePaymentModal({ businessId: targetBusinessId, planId: packId, amount: packPrice, planName });
       });
     });
   }
@@ -15894,10 +15900,19 @@ class App {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const plan = storage.getPlanById(planId) || { id: planId, name: planName || 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' };
+    const isPack = Boolean(planId && String(planId).startsWith('pack_'));
+    const packObj = isPack ? storage.getWhatsAppPackById(planId) : null;
+    const plan = isPack ? {
+      id: packObj?.id || planId,
+      name: planName || packObj?.name || 'Recarga de WhatsApp',
+      priceUsd: packObj?.priceUsd || 6,
+      priceCrc: packObj?.priceCrc || (amount || 3000),
+      bookingLimitLabel: `+${packObj?.messages || 200} mensajes WhatsApp`,
+      isPack: true
+    } : (storage.getPlanById(planId) || { id: planId, name: planName || 'Plan Básico', priceUsd: 10, priceCrc: 5200, bookingLimitLabel: 'Hasta 150 reservas/mes' });
     
-    // Si es Plan Gratis, activar de inmediato sin solicitar pago
-    if (plan.id === 'free' || plan.priceUsd === 0 || planId === 'free') {
+    // Si es Plan Gratis (y NO es una bolsa de mensajes), activar de inmediato sin solicitar pago
+    if (!isPack && (plan.id === 'free' || plan.priceUsd === 0 || planId === 'free')) {
       if (businessId) {
         await storage.updateBusinessPlan(businessId, 'free');
       }
@@ -15939,7 +15954,7 @@ class App {
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider mb-2 border border-blue-400/30 animate-pulse">
               <i class="fas fa-shield-alt"></i> Verificación Automática en Tiempo Real
             </div>
-            <h3 class="text-xl font-black text-white">Pago y Activación con SINPE Móvil</h3>
+            <h3 class="text-xl font-black text-white">${isPack ? 'Recarga de WhatsApp con SINPE Móvil' : 'Pago y Activación con SINPE Móvil'}</h3>
             <p class="text-xs text-slate-300 mt-0.5">${activePlanName} ${amountUsd ? `(${amountUsd})` : ''} &bull; Monto requerido: <strong class="text-blue-300 font-bold text-sm">${formattedAmount} CRC</strong></p>
           </div>
 
@@ -15953,8 +15968,8 @@ class App {
                 <strong class="text-slate-900 font-black">${this.escapeHtml(bizName)}</strong>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-slate-500 font-medium">Plan seleccionado:</span>
-                <span class="px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-950 font-bold text-[11px]">${activePlanName}</span>
+                <span class="text-slate-500 font-medium">${isPack ? 'Paquete de WhatsApp:' : 'Plan seleccionado:'}</span>
+                <span class="px-2.5 py-0.5 rounded-lg ${isPack ? 'bg-emerald-100 text-emerald-950 border border-emerald-200' : 'bg-blue-100 text-blue-950'} font-bold text-[11px]">${activePlanName}</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-slate-500 font-medium">Monto exacto a transferir:</span>
