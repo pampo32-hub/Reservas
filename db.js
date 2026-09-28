@@ -80,6 +80,8 @@ export async function initDatabase(customPool = null) {
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS nylas_calendar_id VARCHAR(150) DEFAULT NULL;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS slug VARCHAR(255);
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS portfolio JSONB DEFAULT '[]';
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS extra_whatsapp_credits INT DEFAULT 0;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS notify_owner_whatsapp BOOLEAN DEFAULT FALSE;
       CREATE UNIQUE INDEX IF NOT EXISTS idx_reservas_businesses_slug ON reservas_businesses (slug);
     `);
 
@@ -126,6 +128,7 @@ export async function initDatabase(customPool = null) {
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS staff_id VARCHAR(50) DEFAULT NULL;
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS staff_name VARCHAR(255) DEFAULT NULL;
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS nylas_event_id VARCHAR(150) DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS whatsapp_reminder_sent_at TIMESTAMP DEFAULT NULL;
     `);
 
 

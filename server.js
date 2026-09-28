@@ -18,6 +18,7 @@ import {
 import { 
   sendBookingConfirmationWhatsApp, 
   sendNewBookingAlertToBusinessWhatsApp,
+  sendAppointmentReminderWhatsApp,
   sendPreRegistrationConfirmationWhatsApp,
   getActiveMetaCredentials, 
   sendViaMetaCloudApi, 
@@ -592,7 +593,7 @@ app.post('/api/auth/business/register', async (req, res) => {
 
     const planId = business.plan || 'free';
     const planPriceUsd = planId === 'free' ? 0 : (planId === 'unlimited' ? 35 : (planId === 'basic' ? 10 : 18));
-    const bookingLimit = planId === 'free' ? 25 : (planId === 'unlimited' ? null : (planId === 'basic' ? 150 : 300));
+    const bookingLimit = planId === 'free' ? 25 : (planId === 'unlimited' ? 600 : (planId === 'basic' ? 150 : 300));
     const subStatus = planId === 'free' ? 'active' : (business.subscriptionStatus || 'pending_payment');
     const payMethod = planId === 'free' ? 'free' : (business.paymentMethod || 'sinpe_movil');
     const socialLinks = business.socialLinks || business.social_links || {};
@@ -1381,7 +1382,9 @@ app.get('/api/businesses', async (req, res) => {
       isVerified: Boolean(b.is_verified),
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 600) ? parseInt(b.monthly_booking_limit, 10) : 600) : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      extraWhatsappCredits: parseInt(b.extra_whatsapp_credits || 0, 10),
+      notifyOwnerWhatsapp: Boolean(b.notify_owner_whatsapp),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       subscriptionStatus: b.subscription_status,
@@ -1439,7 +1442,9 @@ app.get('/api/developer/businesses', async (req, res) => {
       isVerified: Boolean(b.is_verified),
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 600) ? parseInt(b.monthly_booking_limit, 10) : 600) : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      extraWhatsappCredits: parseInt(b.extra_whatsapp_credits || 0, 10),
+      notifyOwnerWhatsapp: Boolean(b.notify_owner_whatsapp),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       subscriptionStatus: b.subscription_status,
@@ -1501,7 +1506,9 @@ app.get('/api/businesses/:id', async (req, res) => {
       isVerified: Boolean(b.is_verified),
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
-      monthlyBookingLimit: b.plan === 'unlimited' ? null : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      monthlyBookingLimit: b.plan === 'unlimited' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 600) ? parseInt(b.monthly_booking_limit, 10) : 600) : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
+      extraWhatsappCredits: parseInt(b.extra_whatsapp_credits || 0, 10),
+      notifyOwnerWhatsapp: Boolean(b.notify_owner_whatsapp),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
       services: srvRes.rows.map(s => ({
@@ -1530,7 +1537,7 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
     let limit = 25;
     if (plan === 'unlimited') {
       priceUsd = 35;
-      limit = null;
+      limit = 600;
     } else if (plan === 'pro') {
       priceUsd = 18;
       limit = 300;
@@ -1557,6 +1564,30 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar plan:', error);
     res.status(500).json({ error: 'Error al actualizar plan del negocio.' });
+  }
+});
+
+// Recargar créditos / mensajes adicionales de WhatsApp (Add-ons)
+app.put('/api/businesses/:id/whatsapp-credits', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { credits } = req.body;
+    const added = parseInt(credits, 10) || 0;
+    if (added <= 0) return res.status(400).json({ error: 'Créditos de recarga inválidos.' });
+
+    const r = await pool.query(`
+      UPDATE reservas_businesses 
+      SET extra_whatsapp_credits = COALESCE(extra_whatsapp_credits, 0) + $1 
+      WHERE id = $2 
+      RETURNING id, name, extra_whatsapp_credits
+    `, [added, id]);
+
+    if (r.rowCount === 0) return res.status(404).json({ error: 'Negocio no encontrado.' });
+    console.log(`🎁 [WhatsApp Pack] Negocio ${r.rows[0].name} (${id}) recargó ${added} créditos de WhatsApp. Saldo: ${r.rows[0].extra_whatsapp_credits}`);
+    res.json({ success: true, businessId: id, extraWhatsappCredits: r.rows[0].extra_whatsapp_credits });
+  } catch (error) {
+    console.error('Error al recargar créditos de WhatsApp:', error);
+    res.status(500).json({ error: 'Error al recargar créditos de WhatsApp.' });
   }
 });
 
@@ -1997,7 +2028,7 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
     const { plan } = req.body;
 
     const planPrices = { free: 0, basic: 10, pro: 18, unlimited: 35 };
-    const planLimits = { free: 25, basic: 150, pro: 300, unlimited: null };
+    const planLimits = { free: 25, basic: 150, pro: 300, unlimited: 600 };
 
     const planPriceUsd = planPrices[plan] !== undefined ? planPrices[plan] : 0;
     const monthlyBookingLimit = planLimits[plan] !== undefined ? planLimits[plan] : 25;
@@ -2014,7 +2045,7 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
       free: 'Plan Gratis (₡0)',
       basic: 'Plan Básico ($10)',
       pro: 'Plan Profesional ($18)',
-      unlimited: 'Plan Ilimitado ($35)'
+      unlimited: 'Plan Premium ($35)'
     };
 
     res.json({ 
@@ -2034,14 +2065,17 @@ app.patch('/api/developer/businesses/:id/plan', async (req, res) => {
 app.get('/api/businesses/:id/booking-usage', async (req, res) => {
   try {
     const { id } = req.params;
-    const bizRes = await pool.query('SELECT name, plan, plan_price_usd, monthly_booking_limit FROM reservas_businesses WHERE id = $1', [id]);
+    const bizRes = await pool.query('SELECT name, plan, plan_price_usd, monthly_booking_limit, extra_whatsapp_credits FROM reservas_businesses WHERE id = $1', [id]);
     if (bizRes.rows.length === 0) {
       return res.status(404).json({ error: 'Comercio no encontrado.' });
     }
 
     const biz = bizRes.rows[0];
     const plan = biz.plan || 'free';
-    const limit = plan === 'unlimited' ? null : (plan === 'free' ? 25 : (plan === 'basic' ? 150 : (plan === 'pro' ? ((biz.monthly_booking_limit && parseInt(biz.monthly_booking_limit, 10) > 300) ? parseInt(biz.monthly_booking_limit, 10) : 300) : (biz.monthly_booking_limit ? parseInt(biz.monthly_booking_limit, 10) : 25))));
+    const limit = plan === 'unlimited' ? ((biz.monthly_booking_limit && parseInt(biz.monthly_booking_limit, 10) > 600) ? parseInt(biz.monthly_booking_limit, 10) : 600) : (plan === 'free' ? 25 : (plan === 'basic' ? 150 : (plan === 'pro' ? ((biz.monthly_booking_limit && parseInt(biz.monthly_booking_limit, 10) > 300) ? parseInt(biz.monthly_booking_limit, 10) : 300) : (biz.monthly_booking_limit ? parseInt(biz.monthly_booking_limit, 10) : 25))));
+    const extraCredits = parseInt(biz.extra_whatsapp_credits || 0, 10);
+    const totalCapacity = limit + extraCredits;
+
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -2052,18 +2086,20 @@ app.get('/api/businesses/:id/booking-usage', async (req, res) => {
     `, [id, startOfMonth]);
 
     const used = parseInt(countRes.rows[0].total, 10) || 0;
-    const remaining = limit ? Math.max(0, limit - used) : null;
-    const usagePercent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    const remaining = Math.max(0, totalCapacity - used);
+    const usagePercent = totalCapacity > 0 ? Math.min(100, Math.round((used / totalCapacity) * 100)) : 0;
 
     res.json({
       plan: biz.plan || 'free',
       planPriceUsd: (biz.plan_price_usd !== null && biz.plan_price_usd !== undefined) ? parseFloat(biz.plan_price_usd) : (plan === 'free' ? 0 : (plan === 'unlimited' ? 35 : (plan === 'basic' ? 10 : 18))),
       monthlyBookingLimit: limit,
+      extraWhatsappCredits: extraCredits,
+      totalCapacity,
       usedThisMonth: used,
       remainingThisMonth: remaining,
       usagePercent,
-      isUnlimited: !limit,
-      isLimitReached: limit ? used >= limit : false
+      isUnlimited: false,
+      isLimitReached: used >= totalCapacity
     });
   } catch (error) {
     console.error('Error consultando uso mensual:', error);
@@ -2188,7 +2224,7 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
     const plan = bizRes.rows[0].plan || 'basic';
     if (plan === 'basic') {
       return res.status(403).json({ 
-        error: 'La gestión de múltiples especialistas y empleados requiere el Plan Profesional ($18) o Plan Ilimitado ($35).',
+        error: 'La gestión de múltiples especialistas y empleados requiere el Plan Profesional ($18) o Plan Premium ($35).',
         requiresUpgrade: true
       });
     }
@@ -2198,7 +2234,7 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
 
     if (plan === 'pro' && currentStaffCount >= 5) {
       return res.status(403).json({ 
-        error: 'Has alcanzado el límite de 5 especialistas del Plan Profesional. Actualiza al Plan Ilimitado para agregar más colaboradores sin restricciones.',
+        error: 'Has alcanzado el límite de 5 especialistas del Plan Profesional. Actualiza al Plan Premium para agregar más colaboradores sin restricciones.',
         requiresUpgrade: true
       });
     }
@@ -2707,20 +2743,28 @@ app.post('/api/appointments', async (req, res) => {
             }
 
             if (optIn && a.clientPhone) {
-              console.log(`📲 [WhatsApp Cliente] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
-              sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
-                .then(waRes => {
-                  console.log(`📲 [WhatsApp Cliente] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
-                })
-                .catch(waErr => {
-                  console.error('⚠️ Error no bloqueante al enviar WhatsApp a cliente:', waErr.message);
-                });
+              const plan = business?.plan || 'free';
+              const isPaid = ['basic', 'pro', 'unlimited'].includes(plan);
+              const extraCredits = parseInt(business?.extra_whatsapp_credits || 0, 10);
+
+              if (isPaid || extraCredits > 0) {
+                console.log(`📲 [WhatsApp Cliente] Enviando confirmación de cita #${createdAppointment.id} al teléfono ${a.clientPhone}...`);
+                sendBookingConfirmationWhatsApp(createdAppointment, business, pool)
+                  .then(waRes => {
+                    console.log(`📲 [WhatsApp Cliente] Resultado cita #${createdAppointment.id}:`, waRes?.success ? `Entregado (${waRes.provider})` : `No entregado (${waRes?.reason || waRes?.error})`);
+                  })
+                  .catch(waErr => {
+                    console.error('⚠️ Error no bloqueante al enviar WhatsApp a cliente:', waErr.message);
+                  });
+              } else {
+                console.log(`ℹ️ [WhatsApp Cliente] Cita #${createdAppointment.id}: Negocio en Plan Gratis sin créditos extra de WhatsApp (confirmación enviada por correo).`);
+              }
             }
           }
 
-          // 2. Alertar SIEMPRE al COMERCIO / DUEÑO (WhatsApp y Web Push)
+          // 2. Alertar al COMERCIO / DUEÑO (WhatsApp si lo tiene activado, y Web Push / Correo siempre)
           const bizPhone = business?.phone || business?.whatsapp;
-          if (bizPhone) {
+          if (bizPhone && business?.notify_owner_whatsapp) {
             console.log(`📲 [WhatsApp Comercio] Enviando alerta de cita #${createdAppointment.id} al teléfono del negocio ${bizPhone}...`);
             sendNewBookingAlertToBusinessWhatsApp(createdAppointment, business, pool)
               .then(waBizRes => {
@@ -2729,6 +2773,8 @@ app.post('/api/appointments', async (req, res) => {
               .catch(waBizErr => {
                 console.error('⚠️ Error no bloqueante al enviar WhatsApp al comercio:', waBizErr.message);
               });
+          } else {
+            console.log(`ℹ️ [WhatsApp Comercio] Alerta al comercio enviada vía Push/Correo (Ahorro 33% Meta activo).`);
           }
 
           // 3. Enviar Notificación Push Móvil a los dispositivos suscritos del comercio
@@ -2905,6 +2951,47 @@ app.post('/api/test-whatsapp', async (req, res) => {
   } catch (error) {
     console.error('Error en /api/test-whatsapp:', error);
     res.status(500).json({ error: error.message || 'Error enviando WhatsApp de prueba.' });
+  }
+});
+
+// Endpoint para probar el envío de recordatorio automático por WhatsApp
+app.post('/api/test-reminder-whatsapp', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Debes proporcionar un número de teléfono.' });
+    }
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    const testAppointment = {
+      id: `apt-${Date.now().toString().slice(-6)}`,
+      clientName: 'Cliente VIP',
+      clientPhone: phone.trim(),
+      clientEmail: 'cliente@demo.cr',
+      serviceName: 'Corte de Cabello & Barba Premium',
+      serviceDuration: 45,
+      servicePrice: 12000,
+      date: tomorrowStr,
+      time: '10:30 AM',
+      notes: 'Recordatorio programado',
+      whatsappOptIn: true
+    };
+
+    const testBusiness = {
+      name: 'Salón & Spa Elegance',
+      address: 'Centro Comercial Escazú, Local 4',
+      city: 'San José',
+      phone: '+506 8877 6655'
+    };
+
+    const result = await sendAppointmentReminderWhatsApp(testAppointment, testBusiness, pool);
+    res.json({ success: true, message: 'Prueba de recordatorio de WhatsApp procesada', result });
+  } catch (error) {
+    console.error('Error en /api/test-reminder-whatsapp:', error);
+    res.status(500).json({ error: error.message || 'Error enviando recordatorio de prueba.' });
   }
 });
 
@@ -3899,6 +3986,108 @@ async function processPendingReviewEmails() {
   }
 }
 
+/**
+ * Procesa y envía recordatorios automáticos de WhatsApp 24h antes de la cita
+ * Se ejecuta en horario de cortesía (8:00 AM a 8:30 PM en hora de Costa Rica)
+ */
+async function processPendingWhatsAppReminders() {
+  try {
+    // 1. Obtener fecha y hora actual en Costa Rica (UTC-6)
+    const crDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Costa_Rica' }));
+    const currentHour = crDate.getHours();
+
+    // Solo enviar entre 8:00 AM y 8:30 PM para no perturbar a los clientes
+    if (currentHour < 8 || currentHour >= 21) {
+      return;
+    }
+
+    // Calcular fecha de mañana en Costa Rica (YYYY-MM-DD)
+    const tomorrow = new Date(crDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    // 2. Buscar citas para mañana con recordatorio pendiente
+    const result = await pool.query(`
+      SELECT a.*, 
+             b.name as business_name, 
+             b.phone as business_phone, 
+             b.whatsapp as business_whatsapp, 
+             b.address as business_address, 
+             b.city as business_city, 
+             b.plan as business_plan,
+             COALESCE(b.extra_whatsapp_credits, 0) as business_extra_credits
+      FROM reservas_appointments a
+      JOIN reservas_businesses b ON a.business_id = b.id
+      WHERE a.status IN ('confirmed', 'confirmed_sinpe', 'pending')
+        AND a.whatsapp_opt_in IS NOT FALSE
+        AND a.client_phone IS NOT NULL 
+        AND TRIM(a.client_phone) != ''
+        AND a.whatsapp_reminder_sent_at IS NULL
+        AND a.date = $1
+      ORDER BY a.time ASC
+      LIMIT 25
+    `, [tomorrowStr]);
+
+    if (!result.rows || result.rows.length === 0) {
+      return;
+    }
+
+    console.log(`⏰ [Worker Recordatorios] Se encontraron ${result.rows.length} citas para mañana (${tomorrowStr}) con recordatorio pendiente.`);
+
+    for (const apt of result.rows) {
+      const plan = apt.business_plan || 'free';
+      const hasPlan = ['basic', 'pro', 'unlimited'].includes(plan);
+      const extraCredits = parseInt(apt.business_extra_credits || 0, 10);
+
+      // Si es plan gratis sin créditos extra de WhatsApp, marcar como procesado para no reintentar en bucle
+      if (!hasPlan && extraCredits <= 0) {
+        await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
+        continue;
+      }
+
+      const appointmentObj = {
+        id: apt.id,
+        businessId: apt.business_id,
+        businessName: apt.business_name,
+        serviceName: apt.service_name,
+        servicePrice: apt.service_price,
+        serviceDuration: apt.service_duration,
+        date: apt.date,
+        time: apt.time,
+        clientName: apt.client_name,
+        clientEmail: apt.client_email,
+        clientPhone: apt.client_phone,
+        whatsappOptIn: apt.whatsapp_opt_in
+      };
+
+      const businessObj = {
+        id: apt.business_id,
+        name: apt.business_name,
+        phone: apt.business_phone,
+        whatsapp: apt.business_whatsapp,
+        address: apt.business_address,
+        city: apt.business_city,
+        plan: apt.business_plan
+      };
+
+      try {
+        const sendRes = await sendAppointmentReminderWhatsApp(appointmentObj, businessObj, pool);
+        if (sendRes && sendRes.success) {
+          await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
+          console.log(`✅ [Worker Recordatorios] Recordatorio entregado para cita #${apt.id} (${apt.client_name}) al tel: ${apt.client_phone} [${sendRes.provider}]`);
+        } else {
+          console.warn(`⚠️ [Worker Recordatorios] No se pudo entregar recordatorio cita #${apt.id}:`, sendRes?.reason || sendRes?.error);
+        }
+      } catch (sendErr) {
+        console.error(`❌ [Worker Recordatorios] Error enviando recordatorio cita #${apt.id}:`, sendErr.message);
+      }
+    }
+  } catch (err) {
+    console.error('⚠️ Error en worker de recordatorios de WhatsApp:', err.message);
+  }
+}
+
+
 // 1. Obtener información para calificar una cita específica
 app.get('/api/appointments/:id/review-info', async (req, res) => {
   try {
@@ -4237,7 +4426,7 @@ app.post('/api/paypal/verify-subscription', async (req, res) => {
     const planConfigMap = {
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
-      'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
+      'unlimited': { price: 35.00, limit: 600, name: 'Plan Premium' }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -4285,7 +4474,7 @@ app.post('/api/paypal/create-order', async (req, res) => {
     const planConfigMap = {
       'basic': { price: '10.00', name: 'Plan Básico', limit: 150 },
       'pro': { price: '18.00', name: 'Plan Profesional', limit: 300 },
-      'unlimited': { price: '35.00', name: 'Plan Ilimitado', limit: 999999 }
+      'unlimited': { price: '35.00', name: 'Plan Premium', limit: 600 }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -4363,7 +4552,7 @@ app.post('/api/paypal/capture-order', async (req, res) => {
     const planConfigMap = {
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
-      'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
+      'unlimited': { price: 35.00, limit: 600, name: 'Plan Premium' }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -4463,7 +4652,7 @@ app.post('/api/developer/activate-business-plan', async (req, res) => {
       'free': { price: 0, limit: 25, name: 'Plan Gratis' },
       'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
       'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
-      'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
+      'unlimited': { price: 35.00, limit: 600, name: 'Plan Premium' }
     };
 
     const targetPlan = planConfigMap[planId] || planConfigMap['pro'];
@@ -4645,7 +4834,7 @@ app.post('/api/developer/paypal-sync-plans', async (req, res) => {
     const plansToCreate = [
       { idKey: 'paypal_plan_basic_id', name: 'Plan Básico Reservas CR', price: '10.00', desc: 'Hasta 150 reservas mensuales' },
       { idKey: 'paypal_plan_pro_id', name: 'Plan Profesional Reservas CR', price: '18.00', desc: 'Hasta 300 reservas mensuales y WhatsApp' },
-      { idKey: 'paypal_plan_unlimited_id', name: 'Plan Ilimitado Reservas CR', price: '35.00', desc: 'Reservas ilimitadas y soporte prioritario' }
+      { idKey: 'paypal_plan_unlimited_id', name: 'Plan Premium Reservas CR', price: '35.00', desc: 'Hasta 600 reservas mensuales y especialistas ilimitados' }
     ];
 
     const createdPlans = {};
@@ -5456,6 +5645,11 @@ async function startServer() {
     setInterval(processPendingReviewEmails, 5 * 60 * 1000);
     // Ejecutar chequeo inicial 10 segundos después del arranque
     setTimeout(processPendingReviewEmails, 10000);
+
+    // Iniciar worker de recordatorios automáticos por WhatsApp cada 10 minutos
+    setInterval(processPendingWhatsAppReminders, 10 * 60 * 1000);
+    // Ejecutar chequeo inicial 20 segundos después del arranque
+    setTimeout(processPendingWhatsAppReminders, 20000);
 
     // Iniciar worker de lectura automática de SINPE Móvil (cada 15 segundos)
     try {

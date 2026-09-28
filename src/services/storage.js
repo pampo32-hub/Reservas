@@ -1,5 +1,5 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, COSTA_RICA_PROVINCES } from '../data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES } from '../data/initialData.js';
 
 
 const STORAGE_KEYS = {
@@ -336,7 +336,7 @@ class StorageService {
         'free': { price: 0, limit: 25, name: 'Plan Gratis' },
         'basic': { price: 10.00, limit: 150, name: 'Plan Básico' },
         'pro': { price: 18.00, limit: 300, name: 'Plan Profesional' },
-        'unlimited': { price: 35.00, limit: 999999, name: 'Plan Ilimitado' }
+        'unlimited': { price: 35.00, limit: 600, name: 'Plan Premium' }
       };
       const p = planConfigMap[planId] || planConfigMap['pro'];
       businesses[idx].plan = planId;
@@ -738,7 +738,7 @@ class StorageService {
         return { ...baseObj, plan: 'basic', monthlyBookingLimit: 150, planPriceUsd: 10.00 };
       }
       if (plan === 'unlimited') {
-        return { ...baseObj, plan: 'unlimited', monthlyBookingLimit: null, planPriceUsd: 35.00 };
+        return { ...baseObj, plan: 'unlimited', monthlyBookingLimit: (b.monthlyBookingLimit && b.monthlyBookingLimit > 600) ? b.monthlyBookingLimit : 600, planPriceUsd: 35.00 };
       }
       return baseObj;
     });
@@ -1098,10 +1098,10 @@ class StorageService {
     const biz = this.getBusinessById(businessId);
     const plan = biz ? (biz.plan || 'free') : 'free';
     if (plan === 'free' || plan === 'basic') {
-      throw new Error('La gestión de múltiples especialistas requiere el Plan Profesional ($18) o Plan Ilimitado ($35).');
+      throw new Error('La gestión de múltiples especialistas requiere el Plan Profesional ($18) o Plan Premium ($35).');
     }
     if (plan === 'pro' && staff.length >= 5) {
-      throw new Error('Has alcanzado el límite de 5 especialistas del Plan Profesional. Actualiza al Plan Ilimitado para agregar más colaboradores.');
+      throw new Error('Has alcanzado el límite de 5 especialistas del Plan Profesional. Actualiza al Plan Premium para agregar más colaboradores.');
     }
     const newMember = {
       id: `stf-${Date.now()}`,
@@ -1770,6 +1770,49 @@ class StorageService {
     return plans.find(p => p.id === planId) || SUBSCRIPTION_PLANS[0];
   }
 
+  // ==========================================
+  // PAQUETES DE RECARGA DE WHATSAPP (ADD-ONS)
+  // ==========================================
+  getWhatsAppPacks() {
+    return WHATSAPP_PACKS;
+  }
+
+  getWhatsAppPackById(packId) {
+    return WHATSAPP_PACKS.find(p => p.id === packId) || WHATSAPP_PACKS[0];
+  }
+
+  async addExtraWhatsAppCredits(businessId, credits) {
+    const amount = parseInt(credits, 10) || 0;
+    if (amount <= 0) return null;
+
+    if (this.isOnlineApi) {
+      try {
+        const res = await fetch(`${this.apiBase}/businesses/${businessId}/whatsapp-credits`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credits: amount })
+        });
+        if (res.ok) {
+          const updated = await res.json();
+          await this.loadFromApi();
+          return updated;
+        }
+      } catch (e) {
+        console.error('Error recargando créditos de WhatsApp en API:', e);
+      }
+    }
+
+    const businesses = this.getBusinesses();
+    const idx = businesses.findIndex(b => b.id === businessId);
+    if (idx >= 0) {
+      businesses[idx].extraWhatsappCredits = (businesses[idx].extraWhatsappCredits || 0) + amount;
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+      return businesses[idx];
+    }
+    return null;
+  }
+
   async updateBusinessPlan(businessId, planId) {
     const plan = this.getPlanById(planId);
     if (!plan) throw new Error('Plan inválido seleccionado.');
@@ -1847,24 +1890,29 @@ class StorageService {
     // Fallback local
     const biz = this.getBusinessById(businessId);
     const plan = this.getPlanById(biz ? (biz.plan || 'free') : 'free');
-    const limit = plan ? plan.bookingLimit : 25;
+    const limit = (biz && biz.monthlyBookingLimit) ? biz.monthlyBookingLimit : (plan ? plan.bookingLimit : 25);
+    const extraCredits = (biz && (biz.extraWhatsappCredits || biz.extra_whatsapp_credits)) ? (biz.extraWhatsappCredits || biz.extra_whatsapp_credits) : 0;
     
     const now = new Date();
     const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const all = this.getAppointmentsByBusiness(businessId);
     const used = all.filter(a => (a.date || '').startsWith(curMonth) && a.status !== 'cancelled').length;
-    const remaining = limit ? Math.max(0, limit - used) : null;
-    const percent = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    const totalCapacity = limit ? (limit + extraCredits) : null;
+    const remaining = totalCapacity ? Math.max(0, totalCapacity - used) : null;
+    const percent = totalCapacity ? Math.min(100, Math.round((used / totalCapacity) * 100)) : 0;
 
     return {
       plan: plan ? plan.id : 'free',
+      planName: plan ? plan.name : 'Plan Básico',
       planPriceUsd: plan ? plan.priceUsd : 0,
       monthlyBookingLimit: limit,
+      extraCredits: extraCredits,
+      totalCapacity: totalCapacity,
       usedThisMonth: used,
       remainingThisMonth: remaining,
       usagePercent: percent,
-      isUnlimited: !limit,
-      isLimitReached: limit ? used >= limit : false
+      isUnlimited: false,
+      isLimitReached: totalCapacity ? used >= totalCapacity : false
     };
   }
 

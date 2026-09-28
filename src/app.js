@@ -1889,7 +1889,7 @@ class App {
       });
     }
 
-    // Ordenamiento por Plan de Suscripción (Posición Preferencial para Plan Ilimitado y Pro)
+    // Ordenamiento por Plan de Suscripción (Posición Preferencial para Plan Premium y Pro)
     return list.sort((a, b) => {
       const planScore = { unlimited: 3, pro: 2, basic: 1 };
       const scoreA = planScore[a.plan] || 1;
@@ -3342,13 +3342,13 @@ class App {
               </button>
             </div>
 
-            <!-- PLAN 4: ILIMITADO -->
+            <!-- PLAN 4: PREMIUM -->
             <div class="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 flex flex-col justify-between space-y-5 hover:border-indigo-500/40 transition-all">
               <div class="space-y-3">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20 inline-block">Sin Límites</span>
+                  <span class="text-[11px] font-black text-indigo-400 uppercase tracking-wider bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20 inline-block">Empresarial</span>
                 </div>
-                <h3 class="text-xl font-black text-white">Plan Ilimitado</h3>
+                <h3 class="text-xl font-black text-white">Plan Premium</h3>
                 
                 <div class="flex items-baseline gap-2 flex-wrap">
                   <span class="text-sm font-bold text-slate-500 line-through decoration-rose-500 decoration-2" title="Precio regular">$45</span>
@@ -3356,19 +3356,20 @@ class App {
                   <span class="text-xs text-slate-400 font-bold">/ mes (~₡18,200)</span>
                   <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-black uppercase tracking-tight">Lanzamiento</span>
                 </div>
-                <p class="text-xs text-slate-400">Para franquicias y negocios con gran volumen de citas.</p>
+                <p class="text-xs text-slate-400">Para clínicas, spas, barberías y negocios de alto flujo con equipos grandes.</p>
 
                 <ul class="space-y-2 text-xs text-slate-300 pt-2">
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Reservas 100% ilimitadas</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Especialistas ilimitados</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Posición preferencial en directorio</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Soporte prioritario VIP</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Hasta 600 reservas / mes</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Especialistas y personal ilimitados</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> WhatsApp y correo automático para clientes</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Posición preferencial en el directorio</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Bolsas de recarga de WhatsApp disponibles</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Todo lo del Plan Profesional</li>
                 </ul>
               </div>
 
               <button id="landing-plan-unlimited-btn" class="w-full py-3 rounded-xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white font-black text-xs transition-all border border-indigo-500/30 cursor-pointer">
-                Elegir Plan Ilimitado
+                Elegir Plan Premium
               </button>
             </div>
 
@@ -6391,21 +6392,22 @@ class App {
     }
 
     let monthlyLimit = planConfig.bookingLimit;
-    if (isPro) {
+    if (isUnlimited) {
+      monthlyLimit = (currentBiz.monthlyBookingLimit && currentBiz.monthlyBookingLimit > 600) ? currentBiz.monthlyBookingLimit : 600;
+    } else if (isPro) {
       monthlyLimit = (currentBiz.monthlyBookingLimit && currentBiz.monthlyBookingLimit > 300) ? currentBiz.monthlyBookingLimit : 300;
     } else if (isBasic) {
       monthlyLimit = 150;
     } else if (isFree) {
       monthlyLimit = 25;
-    } else if (isUnlimited) {
-      monthlyLimit = null;
     } else if (currentBiz.monthlyBookingLimit !== undefined && currentBiz.monthlyBookingLimit !== null) {
       monthlyLimit = currentBiz.monthlyBookingLimit;
     }
 
-    const isUnlimitedLimit = monthlyLimit === null || monthlyLimit === undefined || monthlyLimit < 0;
+    const extraCredits = currentBiz.extraWhatsappCredits || currentBiz.extra_whatsapp_credits || 0;
+    const totalAllowed = (monthlyLimit || 600) + extraCredits;
     const usageCount = monthAppointments.length;
-    const percentUsed = isUnlimitedLimit ? 0 : Math.min(100, Math.round((usageCount / (monthlyLimit || 1)) * 100));
+    const percentUsed = Math.min(100, Math.round((usageCount / (totalAllowed || 1)) * 100));
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20 max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 w-full">
@@ -6474,55 +6476,50 @@ class App {
           </div>
         ` : ''}
 
-        <!-- Banner de Suscripción y Cuota Mensual -->
+        <!-- Banner de Suscripción y Cuota Mensual de WhatsApp -->
         <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 w-full">
           <div class="space-y-1.5 max-w-xl">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
-                <i class="fas ${currentPlanId === 'unlimited' ? 'fa-infinity' : currentPlanId === 'pro' ? 'fa-crown' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
+                <i class="fas ${currentPlanId === 'unlimited' ? 'fa-crown' : currentPlanId === 'pro' ? 'fa-star' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
                 ${planConfig.name}
               </span>
               <span class="text-xs ${currentPlanId === 'free' ? 'text-emerald-300' : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
                 ${planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`}
               </span>
             </div>
-            <h3 class="text-base sm:text-lg font-black text-white">Consumo de Reservas del Mes (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
+            <h3 class="text-base sm:text-lg font-black text-white">Consumo de Citas & WhatsApp (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
             <p class="text-xs text-slate-300 leading-relaxed">
-              ${isUnlimited 
-                ? `Tu comercio cuenta con el <strong>Plan Ilimitado</strong>. Puedes recibir todas las reservas que desees sin restricciones ni comisiones.`
-                : `Has recibido <strong>${usageCount}</strong> de <strong>${monthlyLimit}</strong> reservas permitidas este mes.`}
+              Has recibido <strong>${usageCount}</strong> de <strong>${totalAllowed}</strong> reservas disponibles este mes.
+              ${extraCredits > 0 ? `<span class="text-emerald-400 font-bold block mt-1"><i class="fab fa-whatsapp"></i> Incluye +${extraCredits} mensajes adicionales por paquetes de recarga activos.</span>` : ''}
             </p>
           </div>
 
           <div class="w-full md:w-80 bg-white/5 border border-white/10 p-4 rounded-2xl backdrop-blur-xs space-y-3 shrink-0">
-            ${!isUnlimited ? `
-              <div class="space-y-1.5">
-                <div class="flex justify-between text-xs font-bold">
-                  <span class="text-slate-300">Progreso mensual</span>
-                  <span class="${percentUsed > 90 ? 'text-rose-400' : percentUsed > 75 ? 'text-amber-400' : 'text-emerald-400'}">${usageCount} / ${monthlyLimit}</span>
-                </div>
-                <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
-                  <div class="h-full rounded-full transition-all duration-500 ${percentUsed > 90 ? 'bg-rose-500' : percentUsed > 75 ? 'bg-amber-400' : 'bg-emerald-500'}" style="width: ${percentUsed}%"></div>
-                </div>
-                <div class="flex justify-between text-[11px] text-slate-400 font-medium">
-                  <span>${percentUsed}% ocupado</span>
-                  <span>${monthlyLimit - usageCount > 0 ? `${monthlyLimit - usageCount} restantes` : 'Cupo alcanzado'}</span>
-                </div>
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-bold">
+                <span class="text-slate-300">Citas con WhatsApp</span>
+                <span class="${percentUsed > 90 ? 'text-rose-400' : percentUsed > 75 ? 'text-amber-400' : 'text-emerald-400'}">${usageCount} / ${totalAllowed}</span>
               </div>
-            ` : `
-              <div class="text-center py-1">
-                <div class="inline-flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                  <i class="fas fa-check-double"></i>
-                  <span>Sin límite de reservas</span>
-                </div>
-                <p class="text-[11px] text-slate-400 mt-0.5">${usageCount} reservas recibidas este mes</p>
+              <div class="w-full bg-slate-800 rounded-full h-3 overflow-hidden border border-slate-700">
+                <div class="h-full rounded-full transition-all duration-500 ${percentUsed > 90 ? 'bg-rose-500' : percentUsed > 75 ? 'bg-amber-400' : 'bg-emerald-500'}" style="width: ${percentUsed}%"></div>
               </div>
-            `}
+              <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+                <span>${percentUsed}% ocupado</span>
+                <span>${totalAllowed - usageCount > 0 ? `${totalAllowed - usageCount} disponibles` : 'Cupo alcanzado'}</span>
+              </div>
+            </div>
 
-            <button id="dash-change-plan-btn" class="w-full py-2.5 px-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center justify-center gap-1.5 cursor-pointer">
-              <i class="fas fa-arrow-up-right-from-square text-xs"></i>
-              <span>Cambiar o Mejorar Plan</span>
-            </button>
+            <div class="flex flex-col gap-2 pt-1">
+              <button id="dash-buy-whatsapp-pack-btn" class="w-full py-2.5 px-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95">
+                <i class="fab fa-whatsapp text-sm"></i>
+                <span>Recargar Bolsa de WhatsApp</span>
+              </button>
+              <button id="dash-change-plan-btn" class="w-full py-2 px-3.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all border border-white/20 flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95">
+                <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                <span>Cambiar o Mejorar Plan</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -6681,6 +6678,10 @@ class App {
 
     document.getElementById('dash-change-plan-btn')?.addEventListener('click', () => {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId });
+    });
+
+    document.getElementById('dash-buy-whatsapp-pack-btn')?.addEventListener('click', () => {
+      this.renderWhatsAppPacksModal(currentBiz);
     });
 
     document.getElementById('dash-view-sinpe-instructions-btn')?.addEventListener('click', () => {
@@ -8759,10 +8760,10 @@ class App {
             <div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
               <i class="fas fa-chart-line"></i>
             </div>
-            <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Ilimitado</span>
+            <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Premium</span>
             <h2 class="text-2xl font-black text-slate-900 mt-1">Reportes de Ingresos y Clientes Frecuentes</h2>
             <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
-              Tu plan actual (<strong>${isFree ? 'Plan Gratis (₡0)' : 'Plan Básico ($10/mes)'}</strong>) incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes frecuentes, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Ilimitado</strong>.
+              Tu plan actual (<strong>${isFree ? 'Plan Gratis (₡0)' : 'Plan Básico ($10/mes)'}</strong>) incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes frecuentes, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Premium</strong>.
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
@@ -8796,7 +8797,7 @@ class App {
                 <i class="fas fa-rocket"></i> Activar Plan Profesional ($18/mes)
               </button>
               <button id="dash-upgrade-reports-unlimited-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
-                <i class="fas fa-crown text-amber-300"></i> Plan Ilimitado ($35/mes)
+                <i class="fas fa-crown text-amber-300"></i> Plan Premium ($35/mes)
               </button>
             </div>
           </div>
@@ -8879,7 +8880,7 @@ class App {
           <div>
             <div class="flex items-center gap-2">
               <span class="px-2.5 py-0.5 rounded-full ${isUnlimited ? 'bg-purple-100 text-purple-800' : 'bg-amber-100 text-amber-900'} text-[11px] font-black uppercase tracking-wider">
-                <i class="fas ${isUnlimited ? 'fa-infinity' : 'fa-star'}"></i> ${isUnlimited ? 'Plan Ilimitado' : 'Plan Profesional'}
+                <i class="fas ${isUnlimited ? 'fa-crown' : 'fa-star'}"></i> ${isUnlimited ? 'Plan Premium' : 'Plan Profesional'}
               </span>
               <span class="text-xs text-slate-400 font-semibold">• Módulo de Analítica Oficial</span>
             </div>
@@ -10150,7 +10151,7 @@ class App {
                 <i class="fas fa-rocket"></i> Subir a Plan Profesional ($18/mes - Hasta 5 Especialistas)
               </button>
               <button id="dash-upgrade-team-unlimited-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
-                <i class="fas fa-crown text-amber-300"></i> Plan Ilimitado ($35/mes - Especialistas ∞)
+                <i class="fas fa-crown text-amber-300"></i> Plan Premium ($35/mes - Especialistas ∞)
               </button>
             </div>
           </div>
@@ -10170,7 +10171,7 @@ class App {
               <h2 class="text-lg font-bold text-slate-900">Equipo de Trabajo y Especialistas</h2>
               <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full ${isPro ? (isLimitReached ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-blue-100 text-blue-800') : 'bg-purple-100 text-purple-800'}">
  
-                ${staffList.length} / ${isPro ? '5' : '∞'} Especialistas (${isPro ? 'Plan Pro' : 'Plan Ilimitado'})
+                ${staffList.length} / ${isPro ? '5' : '∞'} Especialistas (${isPro ? 'Plan Pro' : 'Plan Premium'})
               </span>
             </div>
             <p class="text-xs text-slate-500 mt-1">Configura los integrantes de tu equipo, sus especialidades y sus turnos individuales.</p>
@@ -10195,12 +10196,12 @@ class App {
               </div>
               <div>
                 <strong class="font-extrabold block text-slate-900 text-sm">Has alcanzado el límite de 5 especialistas (Plan Pro)</strong>
-                <span class="text-slate-600">Para agregar a tu 6to colaborador y turnos sin restricciones, sube al Plan Ilimitado ($35/mes).</span>
+                <span class="text-slate-600">Para agregar a tu 6to colaborador y turnos sin restricciones, sube al Plan Premium ($35/mes).</span>
               </div>
             </div>
             <button id="banner-upgrade-unlimited-btn" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-black text-xs shadow-xs transition-all flex-shrink-0 cursor-pointer flex items-center justify-center gap-1.5 self-start sm:self-auto active:scale-95">
               <i class="fas fa-crown text-amber-300"></i>
-              <span>Subir a Plan Ilimitado</span>
+              <span>Subir a Plan Premium</span>
             </button>
           </div>
         ` : ''}
@@ -12328,7 +12329,7 @@ class App {
                                 </td>
                                 <td class="p-3">
                                   <span class="px-2.5 py-1 rounded-lg text-xs font-black ${pr.planInterest === 'unlimited' ? 'bg-purple-100 text-purple-800' : (pr.planInterest === 'pro' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-800')}">
-                                    ${pr.planInterest === 'unlimited' ? 'Plan ∞ ($35)' : (pr.planInterest === 'pro' ? 'Plan Pro ($18)' : 'Plan Básico ($10)')}
+                                    ${pr.planInterest === 'unlimited' ? 'Plan Premium ($35)' : (pr.planInterest === 'pro' ? 'Plan Pro ($18)' : 'Plan Básico ($10)')}
                                   </span>
                                 </td>
                                 <td class="p-3 text-[11px] text-slate-500">
@@ -12463,7 +12464,7 @@ class App {
                                 </td>
                                 <td class="p-3">
                                   <span class="px-2.5 py-1 rounded-lg text-xs font-black ${currentPlan === 'unlimited' ? 'bg-purple-100 text-purple-800' : (currentPlan === 'pro' ? 'bg-amber-100 text-amber-800' : (currentPlan === 'free' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'))}">
-                                    ${currentPlan === 'unlimited' ? 'Ilimitado ($35)' : (currentPlan === 'pro' ? 'Profesional ($18)' : (currentPlan === 'free' ? 'Gratis (₡0)' : 'Básico ($10)'))}
+                                    ${currentPlan === 'unlimited' ? 'Premium ($35)' : (currentPlan === 'pro' ? 'Profesional ($18)' : (currentPlan === 'free' ? 'Gratis (₡0)' : 'Básico ($10)'))}
                                   </span>
                                 </td>
                                 <td class="p-3">
@@ -12471,10 +12472,9 @@ class App {
                                     <option value="free" ${currentPlan === 'free' ? 'selected' : ''}>Plan Gratis (₡0/mes - 25 res. - 1 esp.)</option>
                                     <option value="basic" ${currentPlan === 'basic' ? 'selected' : ''}>Plan Básico ($10/mes - 150 res. - 1 esp.)</option>
                                     <option value="pro" ${currentPlan === 'pro' ? 'selected' : ''}>Plan Profesional ($18/mes - 300 res. - 5 esp.)</option>
-                                    <option value="unlimited" ${currentPlan === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($35/mes - ∞ res. - ∞ esp.)</option>
+                                    <option value="unlimited" ${currentPlan === 'unlimited' ? 'selected' : ''}>Plan Premium ($35/mes - 600 res. - ∞ esp.)</option>
                                   </select>
                                 </td>
-                                <td
                                 <td class="p-3 text-right">
                                   <button 
                                     class="dev-activate-sinpe-biz-btn px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black inline-flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
@@ -12682,7 +12682,7 @@ class App {
                                   <option value="free" ${b.plan === 'free' ? 'selected' : ''}>Gratis (₡0 • 25)</option>
                                   <option value="basic" ${b.plan === 'basic' ? 'selected' : ''}>Básico ($10 • 150)</option>
                                   <option value="pro" ${b.plan === 'pro' ? 'selected' : ''}>Pro ($18 • 300)</option>
-                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>Ilimitado ($35 • ∞)</option>
+                                  <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>Premium ($35 • 600)</option>
                                 </select>
                               </td>
                               <td class="p-3">
@@ -13148,13 +13148,13 @@ class App {
 
                     <div class="p-4 bg-white border border-purple-200 rounded-2xl shadow-xs space-y-2 bg-purple-50/20">
                       <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Plan Ilimitado</span>
+                        <span class="text-xs font-bold text-purple-900 uppercase tracking-wider">Plan Premium</span>
                         <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black">$35 USD / mes</span>
                       </div>
                       <span class="text-xs font-mono font-bold text-slate-800 block truncate" title="${paypalConfig.plans?.unlimited || ''}">
                         ID: ${paypalConfig.plans?.unlimited || 'Sin ID'}
                       </span>
-                      <span class="text-[11px] text-slate-500 block">Reservas ilimitadas</span>
+                      <span class="text-[11px] text-slate-500 block">Hasta 600 reservas / mes</span>
                     </div>
                   </div>
 
@@ -13195,7 +13195,7 @@ class App {
                             <input type="text" id="dev-paypal-plan-pro" value="${this.escapeHtml(paypalConfig.plans?.pro || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
                           </div>
                           <div>
-                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan ∞ ($35)</label>
+                            <label class="block font-bold text-slate-700 mb-1 text-[10px]">ID Plan Premium ($35)</label>
                             <input type="text" id="dev-paypal-plan-unlimited" value="${this.escapeHtml(paypalConfig.plans?.unlimited || '')}" class="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono text-[10px]">
                           </div>
                         </div>
@@ -13227,7 +13227,7 @@ class App {
                         <!-- Consola de Resultados -->
                         <div id="dev-paypal-sync-console" class="p-3.5 bg-slate-950 rounded-xl text-slate-200 font-mono text-[11px] min-h-[110px] max-h-[180px] overflow-y-auto space-y-1">
                           <span class="text-slate-400 block text-[10px]">// Consola de Diagnóstico PayPal:</span>
-                          <span id="dev-paypal-console-text" class="text-slate-400">Listo para operar. Planes activos: Básico ($10), Pro ($18), Ilimitado ($35).</span>
+                          <span id="dev-paypal-console-text" class="text-slate-400">Listo para operar. Planes activos: Básico ($10), Pro ($18), Premium ($35).</span>
                         </div>
                       </div>
 
@@ -13724,7 +13724,7 @@ class App {
               <span class="text-slate-300"><i class="fas fa-box text-blue-400 mr-1"></i> Producto ID: ${res.productId}</span><br>
               <span class="text-slate-300"><i class="fas fa-gem text-blue-400 mr-1"></i> Plan Básico: ${res.plans.paypal_plan_basic_id}</span><br>
               <span class="text-amber-300"><i class="fas fa-star text-amber-400 mr-1"></i> Plan Pro: ${res.plans.paypal_plan_pro_id}</span><br>
-              <span class="text-purple-300"><i class="fas fa-crown text-purple-400 mr-1"></i> Plan Ilimitado: ${res.plans.paypal_plan_unlimited_id}</span>
+              <span class="text-purple-300"><i class="fas fa-crown text-purple-400 mr-1"></i> Plan Premium: ${res.plans.paypal_plan_unlimited_id}</span>
             `;
           }
           this.showToast('¡Planes sincronizados con PayPal!', 'success');
@@ -14000,7 +14000,7 @@ class App {
             free: 'Plan Gratis (₡0 • 25 reservas)',
             basic: 'Plan Básico ($10 • 150 reservas)',
             pro: 'Plan Profesional ($18 • 300 reservas)',
-            unlimited: 'Plan Ilimitado ($35 • Reservas Ilimitadas)'
+            unlimited: 'Plan Premium ($35 • 600 reservas)'
           };
 
           try {
@@ -14653,19 +14653,19 @@ class App {
                       </div>
                     </label>
 
-                    <!-- Plan Ilimitado -->
+                    <!-- Plan Premium -->
                     <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'unlimited' ? 'bg-indigo-950 border-purple-400 ring-2 ring-purple-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
                       <input type="radio" name="new-biz-plan" value="unlimited" ${selectedPlanId === 'unlimited' ? 'checked' : ''} class="sr-only">
                       <div>
                         <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-purple-300">Ilimitado</span>
-                          <span class="text-[9px] font-bold text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded">∞</span>
+                          <span class="font-black text-xs text-purple-300">Premium</span>
+                          <span class="text-[9px] font-bold text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded">600 res.</span>
                         </div>
                         <div class="text-sm sm:text-base font-black text-purple-300">$35 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
                         <p class="text-[9px] text-slate-400 mt-0.5">~₡18,200 CRC</p>
                       </div>
                       <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1"><i class="fas fa-infinity text-purple-400 text-[8px]"></i> <span>Sin límites</span></div>
+                        <div class="flex items-center gap-1"><i class="fas fa-check text-purple-400 text-[8px]"></i> <span>Hasta 600 res.</span></div>
                         <div class="flex items-center gap-1"><i class="fas fa-users text-purple-400 text-[8px]"></i> <span>Esp. ilimitados</span></div>
                       </div>
                     </label>
@@ -15610,6 +15610,116 @@ class App {
   }
 
   // ==========================================
+  // MODAL DE PAQUETES DE RECARGA DE WHATSAPP (ADD-ONS)
+  // ==========================================
+  renderWhatsAppPacksModal(business) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const packs = storage.getWhatsAppPacks();
+    const currentCredits = business?.extraWhatsappCredits || business?.extra_whatsapp_credits || 0;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 my-auto flex flex-col max-h-[94vh]">
+          
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 px-5 py-4 text-white flex items-center justify-between shrink-0 border-b border-emerald-900/40">
+            <div>
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-1 border border-emerald-400/30 shadow-xs">
+                <i class="fab fa-whatsapp text-emerald-400"></i> Bolsas de Mensajes Adicionales
+              </div>
+              <h3 class="text-base sm:text-xl font-black text-white">Recarga tu Bolsa de WhatsApp</h3>
+              <p class="text-xs text-slate-300">Mensajes adicionales para confirmaciones y recordatorios automáticos de tus clientes.</p>
+            </div>
+            <button id="close-whatsapp-packs-modal-btn" class="modal-close-btn w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="p-4 sm:p-6 overflow-y-auto space-y-4 bg-slate-50 flex-1">
+            ${currentCredits > 0 ? `
+              <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between text-emerald-900 text-xs shadow-xs">
+                <div class="flex items-center gap-2">
+                  <i class="fab fa-whatsapp text-emerald-600 text-lg"></i>
+                  <span>Saldo actual de mensajes adicionales:</span>
+                </div>
+                <strong class="text-sm font-black text-emerald-700">+${currentCredits} mensajes</strong>
+              </div>
+            ` : ''}
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-stretch">
+              ${packs.map(pack => `
+                <div class="relative bg-white rounded-2xl p-4 border-2 ${pack.popular ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between hover:border-emerald-400 transition-all">
+                  ${pack.badge ? `
+                    <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <span class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs ${pack.popular ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'}">
+                        ${pack.badge}
+                      </span>
+                    </div>
+                  ` : ''}
+
+                  <div class="space-y-2 mt-1">
+                    <div class="flex items-center justify-between">
+                      <h4 class="font-extrabold text-slate-900 text-sm">${pack.name}</h4>
+                      <i class="fab fa-whatsapp text-emerald-600"></i>
+                    </div>
+                    
+                    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                      <div class="text-xl sm:text-2xl font-black text-slate-900">${this.formatColones(pack.priceCrc)}</div>
+                      <div class="text-[10px] text-slate-400 font-bold uppercase">$${pack.priceUsd} USD • Pago único</div>
+                    </div>
+
+                    <div class="text-center p-2 bg-emerald-50/60 rounded-lg border border-emerald-100">
+                      <strong class="text-emerald-900 text-xs font-black">+${pack.messages} mensajes</strong>
+                      <p class="text-[10px] text-slate-500 mt-0.5">${pack.description}</p>
+                    </div>
+                  </div>
+
+                  <div class="pt-3 border-t border-slate-100 mt-3">
+                    <button 
+                      class="buy-pack-sinpe-btn w-full py-2.5 ${pack.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
+                      data-pack-id="${pack.id}"
+                      data-pack-price="${pack.priceCrc}"
+                      data-pack-name="${pack.name}"
+                    >
+                      <i class="fas fa-shield-alt text-[10px]"></i>
+                      <span>Recargar con SINPE</span>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- Información Garantía -->
+            <div class="p-3.5 bg-white border border-slate-200 rounded-2xl text-[11px] text-slate-600 space-y-1">
+              <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                <i class="fas fa-info-circle text-blue-600"></i>
+                <span>¿Cómo funcionan los paquetes adicionales?</span>
+              </div>
+              <p>Los mensajes adquiridos se suman de inmediato a tu capacidad del mes. No caducan al final de mes si no los consumes y se utilizan automáticamente cuando tu cupo base se agote.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-whatsapp-packs-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    modalContainer.querySelectorAll('.buy-pack-sinpe-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const packId = btn.getAttribute('data-pack-id');
+        const packPrice = parseInt(btn.getAttribute('data-pack-price'), 10);
+        const packName = btn.getAttribute('data-pack-name');
+        this.renderSinpePaymentModal({ businessId: business.id, planId: packId, amount: packPrice, planName });
+      });
+    });
+  }
+
+  // ==========================================
   // MODAL DE PLANES DE SUSCRIPCIÓN ($10, $18, $35) CON PRECIOS DE PRELANZAMIENTO
   // ==========================================
   renderPlansModal({ businessId = null, currentPlanId = 'basic' } = {}) {
@@ -16033,13 +16143,19 @@ class App {
           // --- ESTADO: ÉXITO / VERIFICADO ---
           this.playNotificationChime();
           const tx = data.transaction;
+          const isPack = String(plan.id || planId).startsWith('pack_');
+          const packCredits = plan.id === 'pack_200' ? 200 : (plan.id === 'pack_500' ? 500 : (plan.id === 'pack_1000' ? 1000 : 200));
 
-          // Actualizar plan en almacenamiento local
+          // Actualizar plan o bolsa de WhatsApp en almacenamiento local y remoto
           if (activeBizId) {
             try {
-              await storage.updateBusinessPlan(activeBizId, plan.id);
+              if (isPack) {
+                await storage.addExtraWhatsAppCredits(activeBizId, packCredits);
+              } else {
+                await storage.updateBusinessPlan(activeBizId, plan.id);
+              }
             } catch (upErr) {
-              console.warn('Sync plan warning:', upErr);
+              console.warn('Sync plan/pack warning:', upErr);
             }
           }
 
@@ -16052,7 +16168,9 @@ class App {
               <div class="space-y-1 flex-1">
                 <strong class="text-sm font-black text-emerald-900 block">¡Pago de ${formattedAmount} Verificado con Éxito!</strong>
                 <p class="text-xs text-emerald-800 leading-relaxed">
-                  Se ha conciliado correctamente la transferencia de SINPE Móvil y se ha activado tu <strong>${activePlanName}</strong>.
+                  ${isPack 
+                    ? `Se ha conciliado correctamente la transferencia de SINPE Móvil y se han añadido <strong>+${packCredits} mensajes adicionales de WhatsApp</strong> a tu cuenta.` 
+                    : `Se ha conciliado correctamente la transferencia de SINPE Móvil y se ha activado tu <strong>${activePlanName}</strong>.`}
                 </p>
                 <div class="bg-white/90 p-3 rounded-xl border border-emerald-200 text-[11px] text-slate-800 space-y-1 font-mono mt-2">
                   <div><strong>Comprobante:</strong> #${tx.reference}</div>
@@ -16512,7 +16630,7 @@ class App {
                   <option value="free" ${biz.plan === 'free' ? 'selected' : ''}>Gratis (₡0/mes - 25 res. - 1 esp.)</option>
                   <option value="basic" ${biz.plan === 'basic' ? 'selected' : ''}>Básico ($10/mes - 150 res. - 1 esp.)</option>
                   <option value="pro" ${biz.plan === 'pro' ? 'selected' : ''}>Profesional ($18/mes - 300 res. - 5 esp.)</option>
-                  <option value="unlimited" ${biz.plan === 'unlimited' ? 'selected' : ''}>Ilimitado ($35/mes - ∞ res. - ∞ esp.)</option>
+                  <option value="unlimited" ${biz.plan === 'unlimited' ? 'selected' : ''}>Premium ($35/mes - 600 res. - ∞ esp.)</option>
                 </select>
               </div>
 
@@ -16760,7 +16878,7 @@ class App {
                   <option value="free" ${pr.planInterest === 'free' ? 'selected' : ''}>Plan Gratis (₡0)</option>
                   <option value="basic" ${pr.planInterest === 'basic' ? 'selected' : ''}>Plan Básico ($10)</option>
                   <option value="pro" ${pr.planInterest === 'pro' || !pr.planInterest ? 'selected' : ''}>Plan Pro ($18)</option>
-                  <option value="unlimited" ${pr.planInterest === 'unlimited' ? 'selected' : ''}>Plan Ilimitado ($35)</option>
+                  <option value="unlimited" ${pr.planInterest === 'unlimited' ? 'selected' : ''}>Plan Premium ($35)</option>
                 </select>
               </div>
               <div>
@@ -17333,8 +17451,8 @@ class App {
           </h3>
           <p class="text-xs text-slate-600 mt-2 leading-relaxed">
             ${isBasicOrFree 
-              ? 'Tu plan actual está configurado para <strong>1 solo operador (Dueño)</strong>. Para agregar colaboradores con horarios independientes, actualiza al <strong>Plan Profesional</strong> (hasta 5) o <strong>Plan Ilimitado</strong>.'
-              : 'Has alcanzado el límite de <strong>5 colaboradores</strong> incluidos en tu <strong>Plan Profesional ($18/mes)</strong>. Para registrar a tu 6to integrante y colaboradores ilimitados, actualiza al <strong>Plan Ilimitado ($35/mes)</strong>.'}
+              ? 'Tu plan actual está configurado para <strong>1 solo operador (Dueño)</strong>. Para agregar colaboradores con horarios independientes, actualiza al <strong>Plan Profesional</strong> (hasta 5) o <strong>Plan Premium</strong>.'
+              : 'Has alcanzado el límite de <strong>5 colaboradores</strong> incluidos en tu <strong>Plan Profesional ($18/mes)</strong>. Para registrar a tu 6to integrante y colaboradores ilimitados, actualiza al <strong>Plan Premium ($35/mes)</strong>.'}
           </p>
 
           <div class="my-5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
@@ -17344,7 +17462,7 @@ class App {
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
               <i class="fas fa-check-circle text-blue-600"></i>
-              <span><strong>Reservas mensuales sin límite</strong> (sin topes)</span>
+              <span><strong>Hasta 600 reservas mensuales</strong> (ampliables con recargas)</span>
             </div>
             <div class="flex items-center gap-2 text-slate-700 font-semibold">
               <i class="fas fa-check-circle text-blue-600"></i>
@@ -17359,7 +17477,7 @@ class App {
           <div class="space-y-2">
             <button id="upgrade-from-staff-limit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl font-black text-xs sm:text-sm shadow-md shadow-blue-950/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
               <i class="fas fa-crown text-blue-300"></i>
-              <span>${isBasicOrFree ? 'Subir a Plan Profesional ($18/mes)' : 'Subir a Plan Ilimitado ($35/mes)'}</span>
+              <span>${isBasicOrFree ? 'Subir a Plan Profesional ($18/mes)' : 'Subir a Plan Premium ($35/mes)'}</span>
             </button>
             <button id="close-staff-limit-btn" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold text-xs transition-colors cursor-pointer">
               Continuar con ${isBasicOrFree ? '1 Operador' : '5 Especialistas'}
@@ -17819,7 +17937,7 @@ class App {
       },
       {
         q: '7. ¿Cuáles son los planes de suscripción para comercios y cómo se pagan?',
-        a: 'Disponemos de 3 planes adaptados a cada etapa: Básico ($10 / ~₡5.300 mes), Profesional ($18 / ~₡9.500 mes) e Ilimitado ($35 / ~₡18.500 mes). Los pagos se realizan cómodamente mediante SINPE Móvil al 7143-3852 (Juan Jose Jiménez) o pasarelas digitales seguras, sin contratos de permanencia ni cláusulas forzosas.'
+        a: 'Disponemos de 3 planes adaptados a cada etapa: Básico ($10 / ~₡5.200 mes), Profesional ($18 / ~₡9.400 mes) y Premium ($35 / ~₡18.200 mes). Los pagos se realizan cómodamente mediante SINPE Móvil al 7143-3852 (Juan Jose Jiménez) o pasarelas digitales seguras, sin contratos de permanencia ni cláusulas forzosas.'
       },
       {
         q: '8. ¿Puedo gestionar especialistas y bloquear horarios o días libres?',
@@ -18064,7 +18182,7 @@ class App {
                       <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                         <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-crown text-amber-600 mr-1"></i> Suscripciones SaaS de Comercios a Reservas CR:</span>
                         <p class="text-xs text-slate-600">
-                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita</strong>. Posterior a dicho periodo, podrán contratar planes mensuales oficiales (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Ilimitado ₡18.200/mes) pagaderos mediante <strong>SINPE Móvil con verificación automática</strong> o pasarelas habilitadas. No aplican contratos de permanencia forzosa y la suscripción puede cancelarse en cualquier momento sin penalizaciones.
+                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita</strong>. Posterior a dicho periodo, podrán contratar planes mensuales oficiales (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Premium ₡18.200/mes) pagaderos mediante <strong>SINPE Móvil con verificación automática</strong> o pasarelas habilitadas. No aplican contratos de permanencia forzosa y la suscripción puede cancelarse en cualquier momento sin penalizaciones.
                         </p>
                       </div>
                     </div>

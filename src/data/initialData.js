@@ -39,8 +39,9 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       'Hasta 150 reservas mensuales',
       '1 especialista / operador (dueño único)',
+      'Confirmación y recordatorio automático por WhatsApp para tus clientes',
+      'Alerta instantánea en tu panel y correo electrónico',
       'Catálogo con todos tus servicios y precios',
-      'Confirmación automática por correo',
       'Enlace directo a tu perfil para Instagram, TikTok y WhatsApp',
       'Agenda digital y gestión de citas en tiempo real'
     ],
@@ -64,7 +65,8 @@ export const SUBSCRIPTION_PLANS = [
       'Hasta 300 reservas mensuales',
       'Hasta 5 empleados / especialistas con horarios propios',
       'Todo lo incluido en el Plan Básico',
-      'Confirmación automática por WhatsApp y correo',
+      'Confirmación y recordatorio automático por WhatsApp para tus clientes',
+      'Alerta instantánea en tu panel y correo electrónico',
       'Reportes de ingresos y estadísticas de clientes frecuentes',
       'Horarios avanzados (bloqueo de descansos, almuerzo y feriados)',
       'Insignia oficial de Negocio Verificado en el directorio'
@@ -74,26 +76,61 @@ export const SUBSCRIPTION_PLANS = [
   },
   {
     id: 'unlimited',
-    name: 'Plan Ilimitado',
-    badge: 'Sin Límites',
+    name: 'Plan Premium',
+    badge: 'Empresarial',
     priceUsd: 35,
     originalPriceUsd: 45,
     priceCrc: 18200,
     interval: 'mensual',
-    bookingLimit: null,
-    bookingLimitLabel: 'Reservas Ilimitadas',
+    bookingLimit: 600,
+    bookingLimitLabel: 'Hasta 600 reservas / mes',
     staffLimit: null,
     staffLimitLabel: 'Especialistas ilimitados',
-    tagline: 'Para negocios con alto flujo de clientes y equipos grandes sin restricciones.',
+    tagline: 'Para negocios con alto flujo, clínicas, spas y salones con equipos grandes.',
     features: [
-      'Reservas 100% Ilimitadas al mes (sin topes)',
+      'Hasta 600 reservas mensuales con WhatsApp y correo',
       'Especialistas y colaboradores ilimitados',
       'Todo lo incluido en el Plan Profesional',
+      'Confirmación y recordatorio automático por WhatsApp para tus clientes',
+      'Alerta instantánea en tu panel y correo electrónico',
       'Posición preferencial en el buscador del directorio',
       'Aparición destacada en comercios recomendados de la portada',
-      'Historial completo y base de datos de clientes'
+      'Opción de recargar paquetes adicionales de WhatsApp si creces más'
     ],
     popular: false,
+    color: 'purple'
+  }
+];
+
+export const WHATSAPP_PACKS = [
+  {
+    id: 'pack_200',
+    name: 'Pack Básico 200',
+    messages: 200,
+    priceCrc: 3000,
+    priceUsd: 6,
+    badge: 'Recarga Rápida',
+    description: '200 mensajes adicionales de WhatsApp para confirmaciones y recordatorios.',
+    color: 'blue'
+  },
+  {
+    id: 'pack_500',
+    name: 'Pack Pro 500',
+    messages: 500,
+    priceCrc: 6500,
+    priceUsd: 13,
+    badge: 'Más Popular',
+    description: '500 mensajes adicionales de WhatsApp. Ideal para salones y barberías en crecimiento.',
+    color: 'amber'
+  },
+  {
+    id: 'pack_1000',
+    name: 'Pack Empresa 1000',
+    messages: 1000,
+    priceCrc: 11000,
+    priceUsd: 21,
+    badge: 'Mayor Ahorro',
+    description: '1.000 mensajes de WhatsApp con la tarifa más económica por mensaje.',
     color: 'purple'
   }
 ];

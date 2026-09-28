@@ -637,4 +637,96 @@ export async function sendNewBookingAlertToBusinessWhatsApp(appointment, busines
   return { success: false, reason: 'no_credentials' };
 }
 
+/**
+ * Construye el texto del recordatorio de cita (24h antes) para el cliente
+ */
+export function buildBookingReminderText(appointment, business) {
+  const clientName = String(appointment.clientName || 'Cliente').trim();
+  const businessName = String(business?.name || appointment.businessName || 'el comercio').trim();
+  const serviceName = String(appointment.serviceName || 'tu cita').trim();
+  const dateStr = formatDateDMY(appointment.date);
+  const timeStr = formatTime12h(appointment.time);
+  const addressStr = business?.address ? `\n📍 *Lugar:* ${business.address}${business?.city ? `, ${business.city}` : ''}` : '';
+  const appointmentCode = String((appointment.id || 'APT-000').toUpperCase()).trim();
+
+  return `⏰ *¡Recordatorio de tu Cita Mañana!* 🇨🇷
+
+Hola *${clientName}*, te recordamos que tienes una cita programada en *${businessName}*:
+
+✨ *Servicio:* ${serviceName}
+📅 *Fecha:* ${dateStr}
+⏰ *Hora:* ${timeStr}${addressStr}
+🔖 *Código:* #${appointmentCode}
+
+_Te recomendamos llegar 5 minutos antes. Si necesitas reprogramar o cancelar, responde a este mensaje con antelación._
+
+¡Te esperamos! 🙌
+_Reservas CR • Sistema Oficial_`;
+}
+
+/**
+ * Envío de recordatorio de cita por WhatsApp al cliente (Meta Cloud API / Twilio)
+ */
+export async function sendAppointmentReminderWhatsApp(appointment, business, pool = null) {
+  if (!appointment || !appointment.clientPhone) {
+    return { success: false, reason: 'no_phone' };
+  }
+
+  if (appointment.whatsappOptIn === false) {
+    return { success: false, reason: 'opt_out' };
+  }
+
+  const messageBody = buildBookingReminderText(appointment, business);
+  const metaRecipient = formatMetaPhone(appointment.clientPhone);
+
+  if (!metaRecipient) {
+    return { success: false, reason: 'invalid_phone' };
+  }
+
+  const metaCreds = await getActiveMetaCredentials(pool);
+
+  // 1. INTENTO CON META WHATSAPP CLOUD API
+  if (metaCreds.isConfigured) {
+    // 1A. Intentar primero con plantilla 'recordatorio_cita'
+    try {
+      console.log(`⏰ [Meta API] Enviando recordatorio con plantilla 'recordatorio_cita' a +${metaRecipient}...`);
+      const templateResult = await sendMetaTemplateMessage(metaRecipient, appointment, business, metaCreds, 'recordatorio_cita');
+      console.log(`✅ [Meta API] Plantilla de recordatorio entregada con éxito! ID: ${templateResult.messageId}`);
+      return { success: true, provider: 'meta_template', messageId: templateResult.messageId };
+    } catch (templateErr) {
+      console.warn('ℹ️ Plantilla recordatorio_cita no disponible en Meta, intentando texto directo / fallback:', templateErr.message);
+    }
+
+    // 1B. Fallback con texto directo si la ventana de 24h está activa
+    try {
+      console.log(`⏰ [Meta API] Enviando recordatorio texto directo a +${metaRecipient}...`);
+      const result = await sendViaMetaCloudApi(metaRecipient, messageBody, metaCreds);
+      console.log(`✅ [Meta API] Recordatorio texto entregado con ID: ${result.messageId}`);
+      return { success: true, provider: 'meta', messageId: result.messageId };
+    } catch (metaErr) {
+      console.error('❌ Error enviando recordatorio con Meta Cloud API:', metaErr.message);
+    }
+  }
+
+  // 2. FALLBACK CON TWILIO
+  if (twilioClient) {
+    const toTwilio = formatWhatsAppNumber(appointment.clientPhone);
+    try {
+      console.log(`⏰ [Twilio] Enviando recordatorio a: ${toTwilio}...`);
+      const message = await twilioClient.messages.create({
+        from: twilioFrom,
+        to: toTwilio,
+        body: messageBody
+      });
+      console.log(`✅ [Twilio] Recordatorio enviado con SID: ${message.sid}`);
+      return { success: true, provider: 'twilio', sid: message.sid, status: message.status };
+    } catch (twilioErr) {
+      console.error('❌ Error enviando recordatorio con Twilio:', twilioErr.message);
+      return { success: false, error: twilioErr.message };
+    }
+  }
+
+  return { success: false, reason: 'no_credentials' };
+}
+
 
