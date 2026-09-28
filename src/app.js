@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.42.0';
+import storage from './services/storage.js?v=3.43.0';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -9,6 +9,7 @@ const SHOW_PREREGISTER_BANNER = true;
 const SHOW_15_DAYS_FREE_BUTTON = true; // Botón "15 Días Gratis" visible en la página principal.
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 const SHOW_SOCIAL_AUTH_BUTTONS = false; // Ocultar inicios de sesión y registros con Google, Hotmail y Apple (fácilmente reactivable)
+const HIDE_SINPE_PHONE_AND_NAME = true; // Ocultar temporalmente el número de teléfono y nombre del titular de SINPE Móvil durante el lanzamiento
 
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
@@ -3649,7 +3650,7 @@ class App {
             <div class="text-xs text-slate-300 space-y-1">
               <span class="font-extrabold text-cyan-300 block text-sm">¿Cómo funciona esta prueba?</span>
               <p>1. Elige cualquiera de los 2 planes de prueba abajo (<strong>₡5</strong> o <strong>₡10</strong> colones).</p>
-              <p>2. Se abrirá la ventana con el número oficial de SINPE Móvil (<strong>7143-3852</strong> a nombre de Juan Jose Jiménez).</p>
+              <p>2. Se abrirá la ventana oficial de SINPE Móvil para realizar la prueba.</p>
               <p>3. Realizas la transferencia desde tu app bancaria y envías la confirmación para activar.</p>
             </div>
           </div>
@@ -3786,6 +3787,7 @@ class App {
               <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase">En Vivo</span>
             </div>
 
+            ${!HIDE_SINPE_PHONE_AND_NAME ? `
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
                 <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Teléfono SINPE Móvil</span>
@@ -3807,12 +3809,18 @@ class App {
                 <span class="font-black text-xs text-cyan-400 block mt-1">Prueba ₡5 o Prueba ₡10</span>
               </div>
             </div>
+            ` : `
+            <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-center space-y-1">
+              <span class="text-xs font-bold text-emerald-400"><i class="fas fa-shield-alt mr-1"></i> Verificación Automática de SINPE Móvil</span>
+              <p class="text-xs text-slate-400">Datos bancarios oficiales asignados internamente para pruebas de activación.</p>
+            </div>
+            `}
 
             <!-- Pasos rápidos -->
             <div class="bg-slate-950/50 rounded-2xl p-4 border border-slate-800/80 space-y-2 text-xs text-slate-400">
               <span class="font-bold text-slate-300 block text-xs">Instrucciones de Verificación:</span>
               <p>• Abre la app de tu banco (BAC Credomatic, Banco Nacional, Banco de Costa Rica, Promerica, Scotiabank, Wink, etc.).</p>
-              <p>• Realiza la transferencia de <strong>₡5</strong> o <strong>₡10</strong> al número <strong>7143-3852</strong>.</p>
+              <p>• Realiza la transferencia de <strong>₡5</strong> o <strong>₡10</strong> mediante SINPE Móvil.</p>
               <p>• Toca el botón <strong>"Probar SINPE con ₡5"</strong> o <strong>"Probar SINPE con ₡10"</strong> arriba para registrar el comprobante o enviar el WhatsApp de confirmación directa.</p>
             </div>
           </div>
@@ -3858,14 +3866,17 @@ class App {
 
     // 2. Copiar Teléfono SINPE
     document.getElementById('test-copy-sinpe-phone-btn')?.addEventListener('click', () => {
+      if (HIDE_SINPE_PHONE_AND_NAME) return;
+      const phoneRaw = '71433852';
+      const phoneFmt = '7143-3852';
       if (navigator.clipboard) {
-        navigator.clipboard.writeText('71433852').then(() => {
-          this.showToast('Número SINPE 7143-3852 copiado al portapapeles', 'success');
+        navigator.clipboard.writeText(phoneRaw).then(() => {
+          this.showToast(`Número SINPE ${phoneFmt} copiado al portapapeles`, 'success');
         }).catch(() => {
-          this.showToast('Número SINPE: 7143-3852', 'info');
+          this.showToast(`Número SINPE: ${phoneFmt}`, 'info');
         });
       } else {
-        this.showToast('Número SINPE: 7143-3852', 'info');
+        this.showToast(`Número SINPE: ${phoneFmt}`, 'info');
       }
     });
 
@@ -6463,7 +6474,7 @@ class App {
                   <span class="text-xs font-bold text-amber-900">${planConfig.name}</span>
                 </div>
                 <p class="text-xs text-amber-900 mt-1 leading-relaxed">
-                  Tu comercio está pendiente de verificación SINPE. Transfiere <strong>~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))} CRC</strong> al <strong>7143-3852</strong> (Juan Jose Jiménez) y envía el comprobante por WhatsApp.
+                  Tu comercio está pendiente de verificación SINPE. Transfiere <strong>~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))} CRC</strong> ${!HIDE_SINPE_PHONE_AND_NAME ? 'al <strong>7143-3852</strong> (Juan Jose Jiménez)' : 'al SINPE Móvil oficial'} y envía el comprobante por WhatsApp.
                 </p>
               </div>
             </div>
@@ -12405,10 +12416,10 @@ class App {
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <h3 class="text-base font-bold text-slate-800">Comercios Pendientes de Activación por SINPE Móvil</h3>
-                      <p class="text-xs text-slate-500">Verifica el comprobante recibido al WhatsApp 7143-3852 y activa el plan del comercio con 1 clic.</p>
+                      <p class="text-xs text-slate-500">Verifica el comprobante recibido al ${!HIDE_SINPE_PHONE_AND_NAME ? 'WhatsApp 7143-3852' : 'WhatsApp oficial'} y activa el plan del comercio con 1 clic.</p>
                     </div>
                     <span class="px-3.5 py-1.5 bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-xl text-xs font-black flex items-center gap-1.5 self-start shadow-xs">
-                      <i class="fas fa-university"></i> SINPE: 7143-3852 (Juan Jose Jiménez)
+                      <i class="fas fa-university"></i> ${!HIDE_SINPE_PHONE_AND_NAME ? 'SINPE: 7143-3852 (Juan Jose Jiménez)' : 'SINPE Móvil Oficial'}
                     </span>
                   </div>
 
@@ -15946,9 +15957,9 @@ class App {
     const formattedAmount = `₡${Number(exactAmountCrc).toLocaleString('es-CR')}`;
     const amountUsd = plan.priceUsd ? `$${plan.priceUsd} USD` : '';
 
-    const sinpePhoneFormatted = '7143-3852';
-    const sinpePhoneRaw = '71433852';
-    const sinpeTitular = 'Juan Jose Jiménez';
+    const sinpePhoneFormatted = HIDE_SINPE_PHONE_AND_NAME ? '' : '7143-3852';
+    const sinpePhoneRaw = HIDE_SINPE_PHONE_AND_NAME ? '' : '71433852';
+    const sinpeTitular = HIDE_SINPE_PHONE_AND_NAME ? '' : 'Juan Jose Jiménez';
 
     const isTestPlan = planId === 'test_5' || planId === 'test_10' || exactAmountCrc <= 100;
     const isDev = Boolean(storage.getDeveloperUser());
@@ -15989,6 +16000,7 @@ class App {
             </div>
 
             <!-- 2. Datos para realizar el SINPE -->
+            ${!HIDE_SINPE_PHONE_AND_NAME ? `
             <div class="p-4 rounded-2xl bg-slate-950 text-white space-y-3 border border-slate-800 shadow-md">
               <div class="flex items-center justify-between text-slate-400 text-[10px] font-bold uppercase tracking-wider">
                 <span><i class="fas fa-mobile-alt mr-1 text-blue-400"></i> Datos del SINPE Móvil Oficial</span>
@@ -16012,6 +16024,7 @@ class App {
                 </div>
               </div>
             </div>
+            ` : ''}
 
             <!-- 3. Formulario de Validación en Vivo -->
             <form id="sinpe-verify-form" class="space-y-3">
@@ -16100,10 +16113,11 @@ class App {
 
     // 2. Copiar Teléfono
     document.getElementById('modal-copy-sinpe-phone')?.addEventListener('click', () => {
+      if (!sinpePhoneRaw) return;
       navigator.clipboard.writeText(sinpePhoneRaw).then(() => {
-        this.showToast('Número SINPE 7143-3852 copiado', 'success');
+        this.showToast(`Número SINPE ${sinpePhoneFormatted} copiado`, 'success');
       }).catch(() => {
-        this.showToast('Número: 7143-3852', 'info');
+        this.showToast(`Número: ${sinpePhoneFormatted}`, 'info');
       });
     });
 
@@ -17978,7 +17992,7 @@ class App {
       },
       {
         q: '7. ¿Cuáles son los planes de suscripción para comercios y cómo se pagan?',
-        a: 'Disponemos de 3 planes adaptados a cada etapa: Básico ($10 / ~₡5.200 mes), Profesional ($18 / ~₡9.400 mes) y Premium ($35 / ~₡18.200 mes). Los pagos se realizan cómodamente mediante SINPE Móvil al 7143-3852 (Juan Jose Jiménez) o pasarelas digitales seguras, sin contratos de permanencia ni cláusulas forzosas.'
+        a: `Disponemos de 3 planes adaptados a cada etapa: Básico ($10 / ~₡5.200 mes), Profesional ($18 / ~₡9.400 mes) y Premium ($35 / ~₡18.200 mes). Los pagos se realizan cómodamente mediante SINPE Móvil ${!HIDE_SINPE_PHONE_AND_NAME ? 'al 7143-3852 (Juan Jose Jiménez)' : 'oficial'} o pasarelas digitales seguras, sin contratos de permanencia ni cláusulas forzosas.`
       },
       {
         q: '8. ¿Puedo gestionar especialistas y bloquear horarios o días libres?',
