@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js';
+import storage from './services/storage.js?v=3.41.0';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -15655,16 +15655,16 @@ class App {
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-stretch pt-2">
               ${packs.map(pack => `
-                <div class="relative bg-white rounded-2xl p-4 pt-7 sm:pt-8 border-2 ${pack.popular ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between hover:border-emerald-400 transition-all">
+                <div class="relative bg-white rounded-2xl p-4 pt-8 sm:pt-9 border-2 ${pack.popular ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between hover:border-emerald-400 transition-all">
                   ${pack.badge ? `
-                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap z-10 pointer-events-none">
-                      <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider shadow-xs whitespace-nowrap inline-block ${pack.popular ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'}">
+                    <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap z-20 pointer-events-none">
+                      <span class="px-3.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm whitespace-nowrap inline-block ring-2 ring-white ${pack.popular ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'}">
                         ${pack.badge}
                       </span>
                     </div>
                   ` : ''}
 
-                  <div class="space-y-2 mt-1">
+                  <div class="space-y-2 mt-2">
                     <div class="flex items-center justify-between gap-1">
                       <h4 class="font-extrabold text-slate-900 text-sm leading-snug truncate">${pack.name}</h4>
                       <i class="fab fa-whatsapp text-emerald-600 shrink-0"></i>
@@ -15689,8 +15689,8 @@ class App {
                       data-pack-price="${pack.priceCrc}"
                       data-pack-name="${pack.name}"
                     >
-                      <i class="fas fa-shield-alt text-[10px]"></i>
-                      <span>Recargar con SINPE</span>
+                      <i class="fas fa-shield-alt text-[10px] pointer-events-none"></i>
+                      <span class="pointer-events-none">Recargar con SINPE</span>
                     </button>
                   </div>
                 </div>
@@ -15717,9 +15717,11 @@ class App {
     modalContainer.querySelectorAll('.buy-pack-sinpe-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const packId = btn.getAttribute('data-pack-id');
         const packPrice = parseInt(btn.getAttribute('data-pack-price'), 10);
         const packName = btn.getAttribute('data-pack-name');
+        console.log('🔘 [WhatsApp Packs] Botón de recarga clickeado:', { packId, packPrice, packName, targetBusinessId });
         this.renderSinpePaymentModal({ businessId: targetBusinessId, planId: packId, amount: packPrice, planName });
       });
     });
@@ -17806,6 +17808,21 @@ class App {
         return;
       }
 
+      // Botón Recarga WhatsApp con SINPE Móvil (Delegación Global Infalible)
+      const buyPackBtn = e.target.closest('.buy-pack-sinpe-btn');
+      if (buyPackBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const packId = buyPackBtn.getAttribute('data-pack-id');
+        const packPrice = parseInt(buyPackBtn.getAttribute('data-pack-price'), 10);
+        const packName = buyPackBtn.getAttribute('data-pack-name');
+        const bizUser = storage.getBusinessUser();
+        const activeBizId = (this.currentBusiness && this.currentBusiness.id) || (bizUser ? bizUser.businessId : null);
+        console.log('🔘 [Delegación Global] Botón recarga WhatsApp accionado:', { packId, packPrice, packName, activeBizId });
+        this.renderSinpePaymentModal({ businessId: activeBizId, planId: packId, amount: packPrice, planName });
+        return;
+      }
+
       // Pre-Registro (15 Días Gratis) Modal
       const preregTarget = e.target.closest('.open-prereg-modal, #nav-prereg-btn, #mobile-top-prereg-btn, #banner-prereg-btn, #hero-prereg-btn');
       if (preregTarget) {
@@ -18635,6 +18652,7 @@ function startApp() {
   const app = new App();
   app.init();
   window.__reservasCRApp = app;
+  window.app = app;
 }
 
 if (document.readyState === 'loading') {

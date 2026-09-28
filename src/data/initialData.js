@@ -120,6 +120,7 @@ export const WHATSAPP_PACKS = [
     priceCrc: 6500,
     priceUsd: 13,
     badge: 'Más Popular',
+    popular: true,
     description: '500 mensajes adicionales de WhatsApp. Ideal para salones y barberías en crecimiento.',
     color: 'amber'
   },
