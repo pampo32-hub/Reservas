@@ -1,5 +1,5 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES } from '../data/initialData.js?v=3.41.0';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES } from '../data/initialData.js?v=3.42.0';
 
 
 const STORAGE_KEYS = {
@@ -2445,7 +2445,7 @@ class StorageService {
   async initServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js?v=3.41.0', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3.42.0', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
         return registration;
       } catch (err) {

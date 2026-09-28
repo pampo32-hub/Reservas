@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.41.0';
+import storage from './services/storage.js?v=3.42.0';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -15687,7 +15687,8 @@ class App {
                       class="buy-pack-sinpe-btn w-full py-2.5 ${pack.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-600/20' : 'bg-slate-900 hover:bg-slate-800 text-white'} font-black rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer app-touch-btn active:scale-95"
                       data-pack-id="${pack.id}"
                       data-pack-price="${pack.priceCrc}"
-                      data-pack-name="${pack.name}"
+                      data-pack-name="${this.escapeHtml(pack.name)}"
+                      onclick="window.openWhatsAppPacksPayment && window.openWhatsAppPacksPayment('${pack.id}', ${pack.priceCrc}, '${this.escapeHtml(pack.name)}')"
                     >
                       <i class="fas fa-shield-alt text-[10px] pointer-events-none"></i>
                       <span class="pointer-events-none">Recargar con SINPE</span>
@@ -15714,14 +15715,22 @@ class App {
       modalContainer.innerHTML = '';
     });
 
+    // Helper global en window para disparo instantáneo e infalible
+    window.openWhatsAppPacksPayment = (packId, packPrice, packName) => {
+      const planName = packName || 'Recarga de WhatsApp';
+      const amount = parseInt(packPrice, 10) || 3000;
+      console.log('🔘 [WhatsApp Packs Helper] Invocando SINPE:', { packId, amount, planName, targetBusinessId });
+      this.renderSinpePaymentModal({ businessId: targetBusinessId, planId: packId, amount, planName });
+    };
+
     modalContainer.querySelectorAll('.buy-pack-sinpe-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         const packId = btn.getAttribute('data-pack-id');
-        const packPrice = parseInt(btn.getAttribute('data-pack-price'), 10);
-        const packName = btn.getAttribute('data-pack-name');
-        console.log('🔘 [WhatsApp Packs] Botón de recarga clickeado:', { packId, packPrice, packName, targetBusinessId });
+        const packPrice = parseInt(btn.getAttribute('data-pack-price'), 10) || 3000;
+        const planName = btn.getAttribute('data-pack-name') || 'Recarga de WhatsApp';
+        console.log('🔘 [WhatsApp Packs Scoped] Botón de recarga clickeado:', { packId, packPrice, planName, targetBusinessId });
         this.renderSinpePaymentModal({ businessId: targetBusinessId, planId: packId, amount: packPrice, planName });
       });
     });
@@ -17814,11 +17823,11 @@ class App {
         e.preventDefault();
         e.stopPropagation();
         const packId = buyPackBtn.getAttribute('data-pack-id');
-        const packPrice = parseInt(buyPackBtn.getAttribute('data-pack-price'), 10);
-        const packName = buyPackBtn.getAttribute('data-pack-name');
+        const packPrice = parseInt(buyPackBtn.getAttribute('data-pack-price'), 10) || 3000;
+        const planName = buyPackBtn.getAttribute('data-pack-name') || 'Recarga de WhatsApp';
         const bizUser = storage.getBusinessUser();
         const activeBizId = (this.currentBusiness && this.currentBusiness.id) || (bizUser ? bizUser.businessId : null);
-        console.log('🔘 [Delegación Global] Botón recarga WhatsApp accionado:', { packId, packPrice, packName, activeBizId });
+        console.log('🔘 [Delegación Global] Botón recarga WhatsApp accionado:', { packId, packPrice, planName, activeBizId });
         this.renderSinpePaymentModal({ businessId: activeBizId, planId: packId, amount: packPrice, planName });
         return;
       }
