@@ -9,7 +9,8 @@ const SHOW_PREREGISTER_BANNER = true;
 const SHOW_15_DAYS_FREE_BUTTON = true; // Botón "15 Días Gratis" visible en la página principal.
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
 const SHOW_GOOGLE_AUTH = true; // Activar inicio de sesión y registro oficial con Google OAuth 2.0
-const SHOW_OTHER_SOCIAL_AUTH = false; // Hotmail/Outlook y Apple temporalmente desactivados hasta configurar sus credenciales
+const SHOW_MICROSOFT_AUTH = true; // Activar inicio de sesión y registro oficial con Microsoft OAuth 2.0 (Outlook, Hotmail, Live, M365)
+const SHOW_OTHER_SOCIAL_AUTH = false; // Apple temporalmente desactivado hasta configurar sus credenciales
 const HIDE_SINPE_PHONE_AND_NAME = true; // Ocultar temporalmente el número de teléfono y nombre del titular de SINPE Móvil durante el lanzamiento
 
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
@@ -685,9 +686,10 @@ class App {
         const client = storage.getClientUser();
         const biz = storage.getBusinessUser();
         const user = client || biz;
+        const providerName = urlParams.get('oauth_provider') === 'microsoft' ? 'Microsoft' : 'Google';
         const needsPhone = urlParams.get('needs_phone') === '1' || (client && (!client.phone || client.phone.trim() === ''));
         setTimeout(() => {
-          this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Has iniciado sesión con Google correctamente.`, 'success', 5000);
+          this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Has iniciado sesión con ${providerName} correctamente.`, 'success', 5000);
           if (client && needsPhone) {
             this.renderCompletePhoneModal(client);
           }
@@ -699,7 +701,7 @@ class App {
       } else if (urlParams.get('oauth_error')) {
         const errMsg = urlParams.get('oauth_error');
         setTimeout(() => {
-          this.showToast(`Error al iniciar sesión con Google: ${errMsg}`, 'error', 6000);
+          this.showToast(`Error al iniciar sesión: ${errMsg}`, 'error', 6000);
         }, 500);
         const cleanUrl = window.location.pathname + (window.location.hash || '');
         if (window.history && window.history.replaceState) {
@@ -709,10 +711,11 @@ class App {
 
       // Escuchar evento postMessage si se abrió en ventana popup
       window.addEventListener('message', (event) => {
-        if (event.data && (event.data.type === 'GOOGLE_OAUTH_SUCCESS' || event.data.type === 'NYLAS_OAUTH_SUCCESS')) {
+        if (event.data && (event.data.type === 'GOOGLE_OAUTH_SUCCESS' || event.data.type === 'MICROSOFT_OAUTH_SUCCESS' || event.data.type === 'NYLAS_OAUTH_SUCCESS')) {
           const user = event.data.user;
           const role = event.data.role;
           const token = event.data.token;
+          const providerName = event.data.provider || (event.data.type === 'MICROSOFT_OAUTH_SUCCESS' ? 'Microsoft' : 'Google');
           const needsPhone = Boolean(event.data.needsPhone || (role === 'client' && (!user?.phone || user.phone.trim() === '')));
           if (token) {
             storage.setAuthToken(token);
@@ -733,7 +736,7 @@ class App {
           this.renderHeader();
           this.renderMobileBottomNav();
           this.renderCurrentView();
-          this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
+          this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Sesión iniciada con ${providerName}.`, 'success', 5000);
           if (role === 'client' && needsPhone) {
             setTimeout(() => {
               this.renderCompletePhoneModal(user);
@@ -14762,20 +14765,23 @@ class App {
                   <span>Continuar con Google</span>
                 </a>
 
-                ${SHOW_OTHER_SOCIAL_AUTH ? `
-                <!-- Botones Microsoft y Apple -->
-                <div class="grid grid-cols-2 gap-2">
-                  <a href="/api/auth/nylas/microsoft?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Hotmail o Outlook">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
-                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                    </svg>
-                    <span>Hotmail / Outlook</span>
-                  </a>
+                ${SHOW_MICROSOFT_AUTH ? `
+                <!-- Botón Microsoft (Outlook / Hotmail) -->
+                <a href="/api/auth/microsoft?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-sky-500 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Iniciar sesión con Hotmail o Outlook">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                  </svg>
+                  <span>Continuar con Microsoft (Outlook / Hotmail)</span>
+                </a>
+                ` : ''}
 
-                  <a href="/api/auth/nylas/apple?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID">
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
+                <!-- Botón Apple (Próximamente) -->
+                <div class="mt-2">
+                  <a href="/api/auth/apple?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID">
                     <i class="fab fa-apple text-slate-900 text-sm"></i>
                     <span>Apple (iCloud)</span>
                   </a>
@@ -14830,20 +14836,23 @@ class App {
                   <span>Continuar con Google (Gmail)</span>
                 </a>
 
-                ${SHOW_OTHER_SOCIAL_AUTH ? `
-                <!-- Botones Microsoft y Apple -->
-                <div class="grid grid-cols-2 gap-2">
-                  <a href="/api/auth/nylas/microsoft?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Hotmail o Outlook del negocio">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
-                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                    </svg>
-                    <span>Hotmail / Outlook</span>
-                  </a>
+                ${SHOW_MICROSOFT_AUTH ? `
+                <!-- Botón Microsoft (Outlook / Hotmail) -->
+                <a href="/api/auth/microsoft?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Iniciar sesión con Hotmail o Outlook del negocio">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                  </svg>
+                  <span>Continuar con Microsoft (Outlook / Hotmail)</span>
+                </a>
+                ` : ''}
 
-                  <a href="/api/auth/nylas/apple?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID del negocio">
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
+                <!-- Botón Apple (Próximamente) -->
+                <div class="mt-2">
+                  <a href="/api/auth/apple?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID del negocio">
                     <i class="fab fa-apple text-slate-900 text-sm"></i>
                     <span>Apple (iCloud)</span>
                   </a>
@@ -14898,20 +14907,23 @@ class App {
                   <span>Registrarse con Google</span>
                 </a>
 
-                ${SHOW_OTHER_SOCIAL_AUTH ? `
-                <!-- Botones Microsoft y Apple -->
-                <div class="grid grid-cols-2 gap-2">
-                  <a href="/api/auth/nylas/microsoft?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrarse con Hotmail o Outlook">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
-                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                    </svg>
-                    <span>Hotmail / Outlook</span>
-                  </a>
+                ${SHOW_MICROSOFT_AUTH ? `
+                <!-- Botón Microsoft (Outlook / Hotmail) -->
+                <a href="/api/auth/microsoft?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-sky-500 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Registrarse con Hotmail o Outlook">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                  </svg>
+                  <span>Registrarse con Microsoft (Outlook / Hotmail)</span>
+                </a>
+                ` : ''}
 
-                  <a href="/api/auth/nylas/apple?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrarse con Apple ID">
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
+                <!-- Botón Apple (Próximamente) -->
+                <div class="mt-2">
+                  <a href="/api/auth/apple?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrarse con Apple ID">
                     <i class="fab fa-apple text-slate-900 text-sm"></i>
                     <span>Apple (iCloud)</span>
                   </a>
@@ -15013,20 +15025,23 @@ class App {
                   <span>Registrar mi Negocio con Google (Gmail)</span>
                 </a>
 
-                ${SHOW_OTHER_SOCIAL_AUTH ? `
-                <!-- Botones Microsoft y Apple -->
-                <div class="grid grid-cols-2 gap-2">
-                  <a href="/api/auth/nylas/microsoft?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrar mi negocio con Hotmail u Outlook">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
-                      <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                      <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                      <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                    </svg>
-                    <span>Hotmail / Outlook</span>
-                  </a>
+                ${SHOW_MICROSOFT_AUTH ? `
+                <!-- Botón Microsoft (Outlook / Hotmail) -->
+                <a href="/api/auth/microsoft?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Registrar mi negocio con Hotmail u Outlook">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
+                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                  </svg>
+                  <span>Registrar mi Negocio con Microsoft</span>
+                </a>
+                ` : ''}
 
-                  <a href="/api/auth/nylas/apple?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrar mi negocio con Apple ID">
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
+                <!-- Botón Apple (Próximamente) -->
+                <div class="mt-2">
+                  <a href="/api/auth/apple?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrar mi negocio con Apple ID">
                     <i class="fab fa-apple text-slate-900 text-sm"></i>
                     <span>Apple (iCloud)</span>
                   </a>

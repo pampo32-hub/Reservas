@@ -6002,16 +6002,409 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
 });
 
 
-// 1.2 Iniciar sesión / Registrarse con Microsoft / Outlook / Hotmail (para Clientes y Comercios)
-app.get(['/api/auth/nylas/microsoft', '/api/auth/microsoft', '/api/auth/nylas/outlook', '/api/auth/outlook', '/api/auth/nylas/hotmail'], (req, res) => {
+// ==========================================
+// 1.2 MICROSOFT OAUTH 2.0 DIRECTO (OUTLOOK, HOTMAIL, LIVE, MICROSOFT 365)
+// ==========================================
+
+// Iniciar sesión / Registrarse con Microsoft OAuth 2.0 oficial
+app.get(['/api/auth/microsoft', '/api/auth/nylas/microsoft', '/api/auth/outlook', '/api/auth/nylas/outlook', '/api/auth/hotmail', '/api/auth/nylas/hotmail'], (req, res) => {
   try {
     const role = req.query.role || 'client';
     const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
-    const authUrl = getNylasLoginUrl({ role, provider: 'microsoft', returnTo });
-    res.redirect(authUrl);
+
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    if (!clientId) {
+      return res.status(500).send('Microsoft Client ID no está configurado en las variables de entorno (.env).');
+    }
+
+    const redirectUri = process.env.MICROSOFT_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/microsoft/callback`;
+    const stateObj = { role, returnTo, ts: Date.now() };
+    const state = Buffer.from(JSON.stringify(stateObj)).toString('base64url');
+
+    const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('response_mode', 'query');
+    authUrl.searchParams.set('scope', 'openid profile email User.Read');
+    authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('prompt', 'select_account');
+    authUrl.searchParams.set('mkt', 'es-es');
+
+    res.redirect(authUrl.toString());
   } catch (err) {
     console.error('Error generando URL de login con Microsoft:', err);
     res.status(500).send(`Error al iniciar sesión con Microsoft: ${err.message}`);
+  }
+});
+
+// Callback oficial de Microsoft OAuth 2.0
+app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/auth/nylas/microsoft/callback'], async (req, res) => {
+  const { code, state, error, error_description } = req.query;
+
+  if (error) {
+    console.error('❌ Error recibido en Microsoft OAuth callback:', error, error_description);
+    return res.redirect(`/directorio?oauth_error=${encodeURIComponent(error_description || error)}`);
+  }
+
+  if (!code) {
+    return res.redirect('/directorio?oauth_error=no_authorization_code');
+  }
+
+  let role = 'client';
+  let returnTo = '/mis-reservas';
+
+  if (state) {
+    try {
+      const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
+      role = decoded.role || 'client';
+      returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+    } catch (e) {
+      console.warn('No se pudo decodificar state de Microsoft OAuth:', e.message);
+    }
+  }
+
+  try {
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
+    const redirectUri = process.env.MICROSOFT_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/microsoft/callback`;
+
+    // 1. Intercambiar código de autorización por tokens con Microsoft
+    const tokenRes = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      })
+    });
+
+    const tokenData = await tokenRes.json();
+    if (!tokenRes.ok || tokenData.error) {
+      const errorMsg = tokenData.error_description || tokenData.error || 'Error al canjear el código con Microsoft';
+      console.error('❌ Error intercambiando código con Microsoft:', errorMsg);
+      return res.redirect(`/directorio?oauth_error=${encodeURIComponent(errorMsg)}`);
+    }
+
+    // 2. Obtener perfil del usuario desde Microsoft Graph API
+    const profileRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    const profile = await profileRes.json();
+
+    // Las cuentas personales de Microsoft (Hotmail, Outlook.com, Live) suelen devolver mail=null y el email en userPrincipalName
+    const rawEmail = profile.mail || profile.userPrincipalName;
+    if (!rawEmail) {
+      throw new Error('Microsoft no devolvió la dirección de correo electrónico del usuario.');
+    }
+
+    const cleanEmail = String(rawEmail).trim().toLowerCase();
+    const fullName = (profile.displayName || `${profile.givenName || ''} ${profile.surname || ''}`).trim() || cleanEmail.split('@')[0];
+    const phoneFromMs = profile.mobilePhone || (Array.isArray(profile.businessPhones) && profile.businessPhones[0]) || '';
+
+    // Intentar obtener foto de perfil de Microsoft Graph (opcional)
+    let avatarUrl = null;
+    try {
+      const photoRes = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+        signal: AbortSignal.timeout(2000)
+      });
+      if (photoRes.ok) {
+        const buffer = await photoRes.arrayBuffer();
+        const contentType = photoRes.headers.get('content-type') || 'image/jpeg';
+        avatarUrl = `data:${contentType};base64,${Buffer.from(buffer).toString('base64')}`;
+      }
+    } catch (photoErr) {
+      // Sin foto configurada, continuar
+    }
+
+    let sessionUser = null;
+    let finalRole = role;
+
+    // 3. Procesar según rol solicitado
+    if (role === 'business') {
+      // Buscar si ya existe como usuario de negocio
+      const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
+      if (bizUserRes.rows.length > 0) {
+        const row = bizUserRes.rows[0];
+        sessionUser = {
+          id: row.id,
+          businessId: row.business_id,
+          name: row.name,
+          email: row.email,
+          role: 'business'
+        };
+        await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url) WHERE id = $3', ['microsoft', avatarUrl, row.id]).catch(() => {});
+      } else {
+        // Verificar si existe negocio con este email
+        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE LOWER(email) = $1', [cleanEmail]);
+        if (bizRes.rows.length > 0) {
+          const biz = bizRes.rows[0];
+          const newUserId = `buser-${Date.now()}`;
+          await pool.query(
+            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url)
+             VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', 'microsoft', $5)`,
+            [newUserId, biz.id, biz.name || fullName, cleanEmail, avatarUrl]
+          );
+          sessionUser = {
+            id: newUserId,
+            businessId: biz.id,
+            name: biz.name || fullName,
+            email: cleanEmail,
+            role: 'business'
+          };
+        } else {
+          // Crear nuevo negocio y usuario automáticamente
+          const newBizId = `biz-${Date.now()}`;
+          const newUserId = `buser-${Date.now()}`;
+          const defaultSchedule = {
+            days: [1, 2, 3, 4, 5, 6],
+            openTime: '08:00',
+            closeTime: '18:00',
+            breakStart: '12:00',
+            breakEnd: '13:00',
+            slotDuration: 30
+          };
+          const defaultFeatures = ['Sinpe Móvil', 'Atención Personalizada'];
+
+          await pool.query(`
+            INSERT INTO reservas_businesses (
+              id, name, category, category_label, rating, reviews_count,
+              price_range, address, city, phone, email, description,
+              image, cover_image, schedule, features, is_demo,
+              plan, plan_price_usd, monthly_booking_limit,
+              auto_confirm_appointments, subscription_status, payment_method,
+              nylas_provider
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+          `, [
+            newBizId, `Negocio de ${fullName}`, 'belleza', 'Salud y Belleza',
+            5.0, 0, '₡₡',
+            'San José, Costa Rica', 'San José', phoneFromMs || '', cleanEmail,
+            'Servicios profesionales y atención personalizada.',
+            avatarUrl || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
+            JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
+            'free', 0, 25,
+            true, 'active', 'free',
+            'microsoft'
+          ]);
+
+          const srvId = `srv-${Date.now()}`;
+          await pool.query(`
+            INSERT INTO reservas_services (id, business_id, name, duration, price, description)
+            VALUES ($1, $2, 'Servicio General', 30, 10000, 'Servicio profesional')
+          `, [srvId, newBizId]);
+
+          await pool.query(
+            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url)
+             VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', 'microsoft', $5)`,
+            [newUserId, newBizId, fullName, cleanEmail, avatarUrl]
+          );
+
+          sessionUser = {
+            id: newUserId,
+            businessId: newBizId,
+            name: fullName,
+            email: cleanEmail,
+            role: 'business'
+          };
+          returnTo = '/panel-negocio?tab=profile';
+          console.log(`✅ [Microsoft OAuth] Nuevo comercio registrado y autenticado: ${cleanEmail}`);
+        }
+      }
+    } else {
+      // Cliente final
+      const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
+      if (clientRes.rows.length > 0) {
+        const row = clientRes.rows[0];
+        const clientPhone = row.phone || phoneFromMs || '';
+        sessionUser = {
+          id: row.id,
+          name: row.name,
+          phone: clientPhone,
+          email: row.email,
+          avatarUrl: row.avatar_url || avatarUrl,
+          whatsappOptIn: row.whatsapp_opt_in !== false,
+          role: 'client',
+          needsPhone: !clientPhone || clientPhone.trim() === ''
+        };
+        await pool.query(
+          'UPDATE reservas_clients SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url), phone = COALESCE(NULLIF(phone, \'\'), $3) WHERE id = $4',
+          ['microsoft', avatarUrl, phoneFromMs || null, row.id]
+        ).catch(() => {});
+      } else {
+        // Verificar si es dueño de negocio ingresando por el acceso general
+        const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
+        if (bizUserRes.rows.length > 0) {
+          const row = bizUserRes.rows[0];
+          sessionUser = {
+            id: row.id,
+            businessId: row.business_id,
+            name: row.name,
+            email: row.email,
+            role: 'business'
+          };
+          finalRole = 'business';
+          returnTo = '/panel-negocio';
+        } else {
+          // Registrar nuevo cliente con datos de Microsoft
+          const newClientId = `cli-${Date.now()}`;
+          const clientPhone = phoneFromMs || '';
+          await pool.query(
+            `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, avatar_url)
+             VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', true, 'microsoft', $5)`,
+            [newClientId, fullName, clientPhone, cleanEmail, avatarUrl]
+          );
+          sessionUser = {
+            id: newClientId,
+            name: fullName,
+            phone: clientPhone,
+            email: cleanEmail,
+            avatarUrl: avatarUrl,
+            whatsappOptIn: true,
+            role: 'client',
+            needsPhone: !clientPhone || clientPhone.trim() === ''
+          };
+          console.log(`✅ [Microsoft OAuth] Nuevo cliente registrado con Microsoft: ${cleanEmail}`);
+        }
+      }
+    }
+
+    // 4. Generar token JWT seguro de sesión
+    const authToken = generateToken({
+      id: sessionUser.id,
+      name: sessionUser.name,
+      email: sessionUser.email,
+      role: finalRole,
+      ...(finalRole === 'business' ? { businessId: sessionUser.businessId } : { phone: sessionUser.phone || '' })
+    });
+
+    let redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/mis-reservas');
+    const separator = redirectTarget.includes('?') ? '&' : (redirectTarget.includes('#') ? '?' : '?');
+    redirectTarget = `${redirectTarget}${separator}oauth_login=success${sessionUser.needsPhone ? '&needs_phone=1' : ''}&oauth_provider=microsoft`;
+
+    function escapeHtml(s) {
+      return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Iniciando sesión con Microsoft...</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #0f172a;
+            color: #ffffff;
+          }
+          .card {
+            background: #1e293b;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+            max-width: 400px;
+            width: 90%;
+          }
+          .avatar-wrap {
+            position: relative;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #00a4ef;
+          }
+          .avatar-svg {
+            width: 56px;
+            height: 56px;
+          }
+          .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(0,164,239,0.2);
+            border-top-color: #00a4ef;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          h2 { margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 800; color: #f8fafc; }
+          p { margin: 0; color: #94a3b8; font-size: 0.875rem; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="avatar-wrap">
+            ${avatarUrl ? `
+              <img src="${escapeHtml(avatarUrl)}" alt="Avatar" class="avatar">
+            ` : `
+              <svg class="avatar-svg" viewBox="0 0 21 21">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+              </svg>
+            `}
+          </div>
+          <div class="spinner"></div>
+          <h2>¡Bienvenido, ${escapeHtml(sessionUser.name)}!</h2>
+          <p>Iniciando sesión con tu cuenta de Microsoft (${escapeHtml(cleanEmail)})...</p>
+        </div>
+        <script>
+          try {
+            const role = ${JSON.stringify(finalRole)};
+            const token = ${JSON.stringify(authToken)};
+            const sessionData = ${JSON.stringify(sessionUser)};
+
+            if (token) {
+              localStorage.setItem('reservas_auth_token_v1', token);
+            }
+            if (role === 'business') {
+              localStorage.setItem('directorio_biz_user_session', JSON.stringify(sessionData));
+              if (sessionData.businessId) {
+                localStorage.setItem('directorio_active_biz_id', sessionData.businessId);
+              }
+            } else {
+              localStorage.setItem('directorio_client_user_session', JSON.stringify(sessionData));
+            }
+
+            if (window.opener && !window.opener.closed) {
+              window.opener.postMessage({ type: 'MICROSOFT_OAUTH_SUCCESS', provider: 'Microsoft', role: role, token: token, user: sessionData, needsPhone: Boolean(sessionData && sessionData.needsPhone) }, '*');
+              setTimeout(() => { window.close(); }, 300);
+            } else {
+              window.location.href = ${JSON.stringify(redirectTarget)};
+            }
+          } catch(e) {
+            console.error('Error al guardar sesión:', e);
+            window.location.href = '/directorio';
+          }
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error('❌ Error en Microsoft OAuth callback:', err);
+    res.redirect(`/directorio?oauth_error=${encodeURIComponent(err.message)}`);
   }
 });
 
