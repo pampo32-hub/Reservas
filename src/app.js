@@ -6143,21 +6143,7 @@ class App {
   // VISTA 4: MIS RESERVAS (HISTORIAL DE CLIENTE)
   // ==========================================
   async renderClientBookingsView(container) {
-    let clientUser = storage.getClientUser();
-    if (!clientUser) {
-      // Intentar auto-recuperar sesión si se completó una reserva reciente
-      const localApts = storage.getAppointments() || [];
-      const recent = localApts.find(a => a && (a.clientPhone || a.clientEmail) && a.clientName);
-      if (recent) {
-        clientUser = {
-          name: recent.clientName,
-          phone: recent.clientPhone || '',
-          email: recent.clientEmail || ''
-        };
-        storage.setClientUser(clientUser);
-      }
-    }
-
+    const clientUser = storage.getClientUser();
     if (!clientUser) {
       this.renderAuthModal({ mode: 'login', role: 'client' });
       this.navigateTo('directory');
