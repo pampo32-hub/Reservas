@@ -38,15 +38,6 @@ import {
 } from './pushService.js';
 import { parseSinpeEmail } from './src/services/sinpeParser.js';
 import { startSinpeImapWorker } from './sinpeImapService.js';
-import { 
-  getNylasAuthUrl, 
-  getNylasLoginUrl,
-  getNylasOAuthUrl,
-  exchangeNylasCode, 
-  createNylasAppointmentEvent, 
-  deleteNylasAppointmentEvent, 
-  revokeNylasGrant 
-} from './nylasService.js';
 
 dotenv.config();
 
@@ -3181,21 +3172,6 @@ app.post('/api/appointments', async (req, res) => {
           }).catch(pushErr => {
             console.error('⚠️ Error no bloqueante al enviar Push a comercio:', pushErr.message);
           });
-
-          // 4. Sincronizar automáticamente con Google Calendar / Outlook vía Nylas (si está confirmada)
-          if (isAutoConfirm && business && business.nylas_grant_id) {
-            console.log(`📅 [Nylas Sync] Sincronizando cita #${createdAppointment.id} con Google Calendar (${business.nylas_email})...`);
-            createNylasAppointmentEvent(business.nylas_grant_id, createdAppointment, business)
-              .then(nylasEventId => {
-                if (nylasEventId) {
-                  pool.query('UPDATE reservas_appointments SET nylas_event_id = $1 WHERE id = $2', [nylasEventId, newId])
-                    .catch(dbErr => console.error('Error guardando nylas_event_id:', dbErr.message));
-                }
-              })
-              .catch(nylasErr => {
-                console.error('⚠️ Error no bloqueante al sincronizar con Nylas Calendar:', nylasErr.message);
-              });
-          }
         })
         .catch(err => {
           console.error('⚠️ Error al consultar datos del negocio para notificaciones:', err.message);
@@ -3658,16 +3634,6 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
       }
 
       notificationsSent = true;
-    }
-
-    // 2. Si se canceló la cita ('cancelled') y tenía evento en Nylas Calendar, eliminarlo
-    if (status === 'cancelled' && prevApt && prevApt.nylas_event_id) {
-      const bizRes = await pool.query('SELECT nylas_grant_id FROM reservas_businesses WHERE id = $1', [prevApt.business_id]);
-      const grantId = bizRes.rows[0]?.nylas_grant_id;
-      if (grantId) {
-        deleteNylasAppointmentEvent(grantId, prevApt.nylas_event_id)
-          .catch(err => console.error('⚠️ Error no bloqueante al eliminar evento de Nylas al cancelar cita:', err.message));
-      }
     }
 
     // 2. Si se marcó como completada ('completed') y aún no se ha enviado el correo de valoración, enviarlo de inmediato
@@ -5744,34 +5710,15 @@ app.post('/api/push/test', async (req, res) => {
 });
 
 // ==========================================
-// ENDPOINTS DE INTEGRACIÓN NYLAS (GOOGLE CALENDAR & OUTLOOK)
-// ==========================================
-
-// 1. Iniciar autenticación OAuth de Nylas (Redirección a Google / Microsoft)
-// 1. Iniciar autenticación OAuth de Nylas (Redirección a Google / Microsoft para sincronización de calendario)
-app.get('/api/nylas/auth', (req, res) => {
-  try {
-    const { businessId, provider = 'google' } = req.query;
-    if (!businessId) {
-      return res.status(400).json({ error: 'businessId es requerido para conectar el calendario.' });
-    }
-
-    const authUrl = getNylasAuthUrl(businessId, provider);
-    res.redirect(authUrl);
-  } catch (err) {
-    console.error('Error generando URL de Nylas:', err);
-    res.status(500).send(`Error al iniciar autenticación con Nylas: ${err.message}`);
-  }
-});
-
-// ==========================================
 // 1.1 GOOGLE OAUTH 2.0 DIRECTO (LOGIN Y REGISTRO OFICIAL CON GOOGLE)
 // ==========================================
 
-// Iniciar sesión / Registrarse con Google OAuth 2.0 oficial
-app.get(['/api/auth/google', '/api/auth/nylas/google'], (req, res) => {
+// Iniciar sesión / Registrarse / Conectar calendario con Google OAuth 2.0 oficial directo
+app.get('/api/auth/google', (req, res) => {
   try {
     const role = req.query.role || 'client';
+    const action = req.query.action || 'login';
+    const businessId = req.query.businessId || null;
     const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -5780,7 +5727,7 @@ app.get(['/api/auth/google', '/api/auth/nylas/google'], (req, res) => {
     }
 
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
-    const stateObj = { role, returnTo, ts: Date.now() };
+    const stateObj = { role, action, businessId, returnTo, ts: Date.now() };
     const state = Buffer.from(JSON.stringify(stateObj)).toString('base64url');
 
     const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -5801,7 +5748,7 @@ app.get(['/api/auth/google', '/api/auth/nylas/google'], (req, res) => {
 });
 
 // Callback oficial de Google OAuth 2.0
-app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async (req, res) => {
+app.get('/api/auth/google/callback', async (req, res) => {
   const { code, state, error, error_description } = req.query;
 
   if (error) {
@@ -5814,12 +5761,16 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
   }
 
   let role = 'client';
+  let action = 'login';
+  let businessId = null;
   let returnTo = '/mis-reservas';
 
   if (state) {
     try {
       const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
       role = decoded.role || 'client';
+      action = decoded.action || 'login';
+      businessId = decoded.businessId || null;
       returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
     } catch (e) {
       console.warn('No se pudo decodificar state de Google OAuth:', e.message);
@@ -5864,6 +5815,18 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
     const cleanEmail = String(profile.email).trim().toLowerCase();
     const fullName = (profile.name || `${profile.given_name || ''} ${profile.family_name || ''}`).trim() || cleanEmail.split('@')[0];
     const avatarUrl = profile.picture || null;
+
+    // CASO CONECTAR CALENDARIO / CUENTA DIRECTA DE NEGOCIO
+    if ((action === 'connect_calendar' || action === 'connect') && businessId) {
+      await pool.query(
+        `UPDATE reservas_businesses 
+         SET nylas_grant_id = $1, nylas_email = $2, nylas_provider = $3, nylas_connected_at = NOW() 
+         WHERE id = $4`,
+        [`google-direct-${Date.now()}`, cleanEmail, 'google', businessId]
+      );
+      console.log(`✅ [Google Direct] Cuenta conectada para el negocio ${businessId} (${cleanEmail})`);
+      return res.redirect(`/panel-negocio?calendar_connected=true&tab=integrations&email=${encodeURIComponent(cleanEmail)}&provider=google`);
+    }
 
     let sessionUser = null;
     let finalRole = role;
@@ -6143,10 +6106,12 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
 // 1.2 MICROSOFT OAUTH 2.0 DIRECTO (OUTLOOK, HOTMAIL, LIVE, MICROSOFT 365)
 // ==========================================
 
-// Iniciar sesión / Registrarse con Microsoft OAuth 2.0 oficial
-app.get(['/api/auth/microsoft', '/api/auth/nylas/microsoft', '/api/auth/outlook', '/api/auth/nylas/outlook', '/api/auth/hotmail', '/api/auth/nylas/hotmail'], (req, res) => {
+// Iniciar sesión / Registrarse / Conectar calendario con Microsoft OAuth 2.0 oficial directo
+app.get(['/api/auth/microsoft', '/api/auth/outlook', '/api/auth/hotmail'], (req, res) => {
   try {
     const role = req.query.role || 'client';
+    const action = req.query.action || 'login';
+    const businessId = req.query.businessId || null;
     const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
 
     const clientId = process.env.MICROSOFT_CLIENT_ID;
@@ -6155,7 +6120,7 @@ app.get(['/api/auth/microsoft', '/api/auth/nylas/microsoft', '/api/auth/outlook'
     }
 
     const redirectUri = process.env.MICROSOFT_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/microsoft/callback`;
-    const stateObj = { role, returnTo, ts: Date.now() };
+    const stateObj = { role, action, businessId, returnTo, ts: Date.now() };
     const state = Buffer.from(JSON.stringify(stateObj)).toString('base64url');
 
     const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
@@ -6176,7 +6141,7 @@ app.get(['/api/auth/microsoft', '/api/auth/nylas/microsoft', '/api/auth/outlook'
 });
 
 // Callback oficial de Microsoft OAuth 2.0
-app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/auth/nylas/microsoft/callback'], async (req, res) => {
+app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (req, res) => {
   const { code, state, error, error_description } = req.query;
 
   if (error) {
@@ -6189,12 +6154,16 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/aut
   }
 
   let role = 'client';
+  let action = 'login';
+  let businessId = null;
   let returnTo = '/mis-reservas';
 
   if (state) {
     try {
       const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
       role = decoded.role || 'client';
+      action = decoded.action || 'login';
+      businessId = decoded.businessId || null;
       returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
     } catch (e) {
       console.warn('No se pudo decodificar state de Microsoft OAuth:', e.message);
@@ -6239,6 +6208,18 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/aut
     }
 
     const cleanEmail = String(rawEmail).trim().toLowerCase();
+
+    // CASO CONECTAR CALENDARIO / CUENTA DIRECTA DE NEGOCIO
+    if ((action === 'connect_calendar' || action === 'connect') && businessId) {
+      await pool.query(
+        `UPDATE reservas_businesses 
+         SET nylas_grant_id = $1, nylas_email = $2, nylas_provider = $3, nylas_connected_at = NOW() 
+         WHERE id = $4`,
+        [`microsoft-direct-${Date.now()}`, cleanEmail, 'microsoft', businessId]
+      );
+      console.log(`✅ [Microsoft Direct] Cuenta conectada para el negocio ${businessId} (${cleanEmail})`);
+      return res.redirect(`/panel-negocio?calendar_connected=true&tab=integrations&email=${encodeURIComponent(cleanEmail)}&provider=microsoft`);
+    }
     const fullName = (profile.displayName || `${profile.givenName || ''} ${profile.surname || ''}`).trim() || cleanEmail.split('@')[0];
     const phoneFromMs = profile.mobilePhone || (Array.isArray(profile.businessPhones) && profile.businessPhones[0]) || '';
 
@@ -6548,302 +6529,24 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/aut
   }
 });
 
-// 1.3 Iniciar sesión / Registrarse con Apple / iCloud (para Clientes y Comercios)
-app.get(['/api/auth/nylas/apple', '/api/auth/apple', '/api/auth/nylas/icloud', '/api/auth/icloud'], (req, res) => {
-  try {
-    const role = req.query.role || 'client';
-    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
-    const authUrl = getNylasLoginUrl({ role, provider: 'icloud', returnTo });
-    res.redirect(authUrl);
-  } catch (err) {
-    console.error('Error generando URL de login con Apple:', err);
-    res.status(500).send(`Error al iniciar sesión con Apple: ${err.message}`);
-  }
+// ==========================================
+// 1.3 SINCRONIZACIÓN Y CONEXIÓN DIRECTA DE CALENDARIOS (GOOGLE & MICROSOFT)
+// ==========================================
+
+// Iniciar autenticación directa para sincronización de calendario de un comercio
+app.get(['/api/calendar/auth', '/api/nylas/auth'], (req, res) => {
+  const { businessId, provider = 'google' } = req.query;
+  const isGoogle = (provider || '').toLowerCase().includes('google');
+  const target = isGoogle ? '/api/auth/google' : '/api/auth/microsoft';
+  return res.redirect(`${target}?role=business&businessId=${encodeURIComponent(businessId || '')}&action=connect_calendar&returnTo=${encodeURIComponent('/panel-negocio?tab=integrations')}`);
 });
 
-// 2. Callback de OAuth de Nylas (Login de usuario con Gmail/Hotmail/Apple o Sincronización de calendario)
-app.get('/api/nylas/callback', async (req, res) => {
-  const { code, state, error, error_description } = req.query;
-
-  if (error) {
-    console.error('Error recibido en Nylas callback:', error, error_description);
-    return res.redirect(`/directorio?oauth_error=${encodeURIComponent(error_description || error)}`);
-  }
-
-  if (!code) {
-    return res.status(400).send('Código de autorización de Nylas no recibido.');
-  }
-
-  let action = 'connect_calendar';
-  let role = 'client';
-  let businessId = null;
-  let provider = 'google';
-  let returnTo = '/mis-reservas';
-
-  try {
-    if (state) {
-      const parsedState = typeof state === 'string' && state.startsWith('{') ? JSON.parse(state) : { businessId: state };
-      action = parsedState.action || (parsedState.businessId ? 'connect_calendar' : 'login');
-      role = parsedState.role || 'client';
-      businessId = parsedState.businessId;
-      provider = parsedState.provider || provider;
-      returnTo = parsedState.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
-    }
-  } catch (e) {
-    businessId = state;
-  }
-
-  try {
-    const tokenData = await exchangeNylasCode(code);
-    const { grantId, email } = tokenData;
-    const authProvider = tokenData.provider || provider || 'google';
-
-    // CASO A: Sincronización de calendario para comercio
-    if (action === 'connect_calendar' && businessId) {
-      await pool.query(
-        `UPDATE reservas_businesses 
-         SET nylas_grant_id = $1, nylas_email = $2, nylas_provider = $3, nylas_connected_at = NOW() 
-         WHERE id = $4`,
-        [grantId, email, provider, businessId]
-      );
-      console.log(`✅ [Nylas] Calendario conectado para el negocio ${businessId} (${email}) con Grant ID ${grantId}`);
-      return res.redirect(`/panel-negocio?nylas_connected=true&tab=integrations&email=${encodeURIComponent(email)}`);
-    }
-
-    // CASO B: Inicio de sesión / Registro de usuario con Gmail OAuth
-    const cleanEmail = (email || '').trim().toLowerCase();
-    let sessionUser = null;
-    let finalRole = role;
-
-    // Formatear nombre legible desde el correo
-    const emailPrefix = cleanEmail.split('@')[0] || 'Usuario';
-    const fallbackName = emailPrefix
-      .replace(/[._-]+/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase());
-
-    const providerLabel = authProvider === 'microsoft' ? 'Microsoft (Outlook/Hotmail)' : (authProvider === 'icloud' || authProvider === 'apple' ? 'Apple (iCloud)' : 'Google');
-
-    if (role === 'business') {
-      // Buscar usuario en reservas_business_users
-      const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
-      if (bizUserRes.rows.length > 0) {
-        const row = bizUserRes.rows[0];
-        sessionUser = {
-          id: row.id,
-          businessId: row.business_id,
-          name: row.name,
-          email: row.email,
-          role: 'business'
-        };
-        await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', [authProvider, grantId, row.id]).catch(() => {});
-      } else {
-        // Buscar si existe un negocio registrado con este email
-        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE LOWER(email) = $1', [cleanEmail]);
-        if (bizRes.rows.length > 0) {
-          const biz = bizRes.rows[0];
-          const newUserId = `buser-${Date.now()}`;
-          await pool.query(
-            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, nylas_grant_id)
-             VALUES ($1, $2, $3, $4, 'OAUTH_PROVIDER', $5, $6)`,
-            [newUserId, biz.id, biz.name || fallbackName, cleanEmail, authProvider, grantId]
-          );
-          sessionUser = {
-            id: newUserId,
-            businessId: biz.id,
-            name: biz.name || fallbackName,
-            email: cleanEmail,
-            role: 'business'
-          };
-        } else {
-          // Crear un nuevo negocio y usuario de negocio automáticamente
-          const newBizId = `biz-${Date.now()}`;
-          const newUserId = `buser-${Date.now()}`;
-          const defaultSchedule = {
-            days: [1, 2, 3, 4, 5, 6],
-            openTime: '08:00',
-            closeTime: '18:00',
-            breakStart: '12:00',
-            breakEnd: '13:00',
-            slotDuration: 30
-          };
-          const defaultFeatures = ['Sinpe Móvil', 'Atención Personalizada'];
-
-          await pool.query(`
-            INSERT INTO reservas_businesses (
-              id, name, category, category_label, rating, reviews_count,
-              price_range, address, city, phone, email, description,
-              image, cover_image, schedule, features, is_demo,
-              plan, plan_price_usd, monthly_booking_limit,
-              auto_confirm_appointments, subscription_status, payment_method,
-              nylas_grant_id, nylas_email, nylas_provider, nylas_connected_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, NOW())
-          `, [
-            newBizId, `Negocio de ${fallbackName}`, 'belleza', 'Salud y Belleza',
-            5.0, 0, '₡₡',
-            'San José, Costa Rica', 'San José', '', cleanEmail,
-            'Servicios profesionales y atención personalizada.',
-            'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80',
-            JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
-            'free', 0, 25,
-            true, 'active', 'free',
-            grantId, cleanEmail, authProvider
-          ]);
-
-          // Crear servicio inicial
-          const srvId = `srv-${Date.now()}`;
-          await pool.query(`
-            INSERT INTO reservas_services (id, business_id, name, duration, price, description)
-            VALUES ($1, $2, 'Servicio General', 30, 10000, 'Servicio profesional')
-          `, [srvId, newBizId]);
-
-          // Crear usuario del negocio
-          await pool.query(
-            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, nylas_grant_id)
-             VALUES ($1, $2, $3, $4, 'OAUTH_PROVIDER', $5, $6)`,
-            [newUserId, newBizId, fallbackName, cleanEmail, authProvider, grantId]
-          );
-
-          sessionUser = {
-            id: newUserId,
-            businessId: newBizId,
-            name: fallbackName,
-            email: cleanEmail,
-            role: 'business'
-          };
-          finalRole = 'business';
-          returnTo = '/panel-negocio?tab=config';
-          console.log(`✅ [${providerLabel}] Nuevo comercio creado y autenticado: ${cleanEmail}`);
-        }
-      }
-    }
-
-    if (finalRole === 'client') {
-      // Buscar cliente en reservas_clients
-      const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
-      if (clientRes.rows.length > 0) {
-        const row = clientRes.rows[0];
-        sessionUser = {
-          id: row.id,
-          name: row.name,
-          phone: row.phone || '',
-          email: row.email,
-          whatsappOptIn: row.whatsapp_opt_in !== false,
-          role: 'client',
-          needsPhone: !row.phone || row.phone.trim() === ''
-        };
-        await pool.query('UPDATE reservas_clients SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', [authProvider, grantId, row.id]).catch(() => {});
-      } else {
-        // Registrar nuevo cliente automáticamente con su cuenta
-        const newClientId = `cli-${Date.now()}`;
-        await pool.query(
-          `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, nylas_grant_id)
-           VALUES ($1, $2, $3, $4, 'OAUTH_PROVIDER', true, $5, $6)`,
-          [newClientId, fallbackName, '', cleanEmail, authProvider, grantId]
-        );
-        sessionUser = {
-          id: newClientId,
-          name: fallbackName,
-          phone: '',
-          email: cleanEmail,
-          whatsappOptIn: true,
-          role: 'client',
-          needsPhone: true
-        };
-        console.log(`✅ [Nylas OAuth] Nuevo cliente registrado con ${providerLabel}: ${cleanEmail}`);
-      }
-    }
-
-    let redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/mis-reservas');
-    const separator = redirectTarget.includes('?') ? '&' : (redirectTarget.includes('#') ? '?' : '?');
-    redirectTarget = `${redirectTarget}${separator}oauth_login=success${sessionUser?.needsPhone ? '&needs_phone=1' : ''}`;
-    res.send(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Iniciando sesión con ${providerLabel}...</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background: #0f172a;
-            color: #ffffff;
-          }
-          .card {
-            background: #1e293b;
-            padding: 2.5rem;
-            border-radius: 1.5rem;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
-            max-width: 380px;
-            width: 90%;
-          }
-          .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid rgba(59,130,246,0.2);
-            border-top-color: #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-          }
-          @keyframes spin { to { transform: rotate(360deg); } }
-          h2 { margin: 0 0 0.5rem; font-size: 1.25rem; font-weight: 800; color: #f8fafc; }
-          p { margin: 0; color: #94a3b8; font-size: 0.875rem; }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <div class="spinner"></div>
-          <h2>¡Bienvenido, ${sessionUser ? sessionUser.name : 'Usuario'}!</h2>
-          <p>Iniciando sesión con Google (${cleanEmail})...</p>
-        </div>
-        <script>
-          try {
-            const role = '${finalRole}';
-            const sessionData = ${JSON.stringify(sessionUser)};
-            if (role === 'business') {
-              localStorage.setItem('directorio_biz_user_session', JSON.stringify(sessionData));
-            } else {
-              localStorage.setItem('directorio_client_user_session', JSON.stringify(sessionData));
-            }
-            if (window.opener && !window.opener.closed) {
-              window.opener.postMessage({ type: 'NYLAS_OAUTH_SUCCESS', role: role, user: sessionData, needsPhone: Boolean(sessionData && sessionData.needsPhone) }, '*');
-              window.close();
-            } else {
-              window.location.href = ${JSON.stringify(redirectTarget)};
-            }
-          } catch(e) {
-            window.location.href = '/directorio';
-          }
-        </script>
-      </body>
-      </html>
-    `);
-  } catch (err) {
-    console.error('❌ Error intercambiando código de Nylas:', err);
-    res.redirect(`/directorio?oauth_error=${encodeURIComponent(err.message)}`);
-  }
-});
-
-// 3. Desconectar calendario de Nylas
-app.post('/api/nylas/disconnect', async (req, res) => {
+// Desconectar calendario del comercio
+app.post(['/api/calendar/disconnect', '/api/nylas/disconnect'], async (req, res) => {
   try {
     const { businessId } = req.body;
     if (!businessId) {
       return res.status(400).json({ error: 'businessId es requerido.' });
-    }
-
-    const bizRes = await pool.query('SELECT nylas_grant_id FROM reservas_businesses WHERE id = $1', [businessId]);
-    if (bizRes.rows.length > 0 && bizRes.rows[0].nylas_grant_id) {
-      await revokeNylasGrant(bizRes.rows[0].nylas_grant_id).catch(() => {});
     }
 
     await pool.query(
@@ -6853,15 +6556,16 @@ app.post('/api/nylas/disconnect', async (req, res) => {
       [businessId]
     );
 
+    console.log(`🔌 [Calendar Direct] Calendario desconectado para el negocio ${businessId}`);
     res.json({ success: true, message: 'Calendario desconectado exitosamente.' });
   } catch (err) {
-    console.error('Error desconectando Nylas:', err);
+    console.error('Error desconectando calendario:', err);
     res.status(500).json({ error: err.message || 'Error al desconectar calendario' });
   }
 });
 
-// 4. Consultar estado de conexión de Nylas para un comercio
-app.get('/api/nylas/status/:businessId', async (req, res) => {
+// Consultar estado de conexión de calendario para un comercio
+app.get(['/api/calendar/status/:businessId', '/api/nylas/status/:businessId'], async (req, res) => {
   try {
     const { businessId } = req.params;
     const bizRes = await pool.query(

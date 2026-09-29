@@ -2595,7 +2595,7 @@ class StorageService {
   async initServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js?v=3.46.14', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3.46.15', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
         return registration;
       } catch (err) {
@@ -2812,11 +2812,11 @@ class StorageService {
   }
 
   // ==========================================
-  // INTEGRACIÓN NYLAS (GOOGLE CALENDAR / OUTLOOK)
+  // INTEGRACIÓN CALENDARIOS (GOOGLE CALENDAR / OUTLOOK DIRECTO)
   // ==========================================
-  async getNylasStatus(businessId) {
+  async getCalendarStatus(businessId) {
     try {
-      const res = await this.fetchWithAuth(`${this.apiBase}/nylas/status/${encodeURIComponent(businessId)}`);
+      const res = await this.fetchWithAuth(`${this.apiBase}/calendar/status/${encodeURIComponent(businessId)}`);
       if (!res.ok) return { connected: false };
       return await res.json();
     } catch (e) {
@@ -2824,8 +2824,12 @@ class StorageService {
     }
   }
 
-  async disconnectNylas(businessId) {
-    const res = await this.fetchWithAuth(`${this.apiBase}/nylas/disconnect`, {
+  async getNylasStatus(businessId) {
+    return this.getCalendarStatus(businessId);
+  }
+
+  async disconnectCalendar(businessId) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/calendar/disconnect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ businessId })
@@ -2833,6 +2837,10 @@ class StorageService {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al desconectar calendario');
     return data;
+  }
+
+  async disconnectNylas(businessId) {
+    return this.disconnectCalendar(businessId);
   }
 }
 

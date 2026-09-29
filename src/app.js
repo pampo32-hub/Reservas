@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.46.14';
+import storage from './services/storage.js?v=3.46.15';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -661,22 +661,22 @@ class App {
       }
     }
 
-    // Manejo de redirección y alertas de sincronización de Nylas Calendar (?nylas_connected=true / ?nylas_error=...)
-    // Manejo de redirección y alertas de sincronización de Nylas Calendar y OAuth Login
+    // Manejo de redirección y alertas de sincronización de Calendarios y OAuth Login
     try {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('nylas_connected') === 'true') {
+      if (urlParams.get('calendar_connected') === 'true' || urlParams.get('nylas_connected') === 'true') {
+        const prov = urlParams.get('provider') === 'microsoft' ? 'Microsoft Outlook' : 'Google Calendar';
         setTimeout(() => {
-          this.showToast('¡Calendario conectado con éxito! Las citas se sincronizarán con Google Calendar / Outlook.', 'success', 6000);
+          this.showToast(`¡Cuenta conectada con éxito! Sincronizado con ${prov}.`, 'success', 6000);
         }, 500);
         const cleanUrl = window.location.pathname + (window.location.hash || '');
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, cleanUrl);
         }
-      } else if (urlParams.get('nylas_error')) {
-        const errMsg = urlParams.get('nylas_error');
+      } else if (urlParams.get('calendar_error') || urlParams.get('nylas_error')) {
+        const errMsg = urlParams.get('calendar_error') || urlParams.get('nylas_error');
         setTimeout(() => {
-          this.showToast(`No se pudo conectar el calendario: ${errMsg}`, 'error', 6000);
+          this.showToast(`No se pudo conectar la cuenta: ${errMsg}`, 'error', 6000);
         }, 500);
         const cleanUrl = window.location.pathname + (window.location.hash || '');
         if (window.history && window.history.replaceState) {
@@ -10896,13 +10896,13 @@ class App {
     `;
   }
 
-  // --- SUB-CONTENIDO: SINCRONIZACIÓN DE CALENDARIOS (GOOGLE / OUTLOOK NYLAS) ---
+  // --- SUB-CONTENIDO: SINCRONIZACIÓN DE CALENDARIOS (GOOGLE & OUTLOOK DIRECTO) ---
   renderIntegrationsTabContent(currentBiz) {
     const isConnected = !!(currentBiz.nylasGrantId || currentBiz.nylas_grant_id);
-    const nylasEmail = currentBiz.nylasEmail || currentBiz.nylas_email || '';
-    const nylasProvider = (currentBiz.nylasProvider || currentBiz.nylas_provider || 'google').toLowerCase();
+    const calendarEmail = currentBiz.nylasEmail || currentBiz.nylas_email || '';
+    const calendarProvider = (currentBiz.nylasProvider || currentBiz.nylas_provider || 'google').toLowerCase();
     const connectedAt = currentBiz.nylasConnectedAt || currentBiz.nylas_connected_at;
-    const isGoogle = nylasProvider.includes('google') || nylasProvider.includes('gmail');
+    const isGoogle = calendarProvider.includes('google') || calendarProvider.includes('gmail');
 
     return `
       <div class="space-y-6 animate-fade-in max-w-4xl mx-auto">
@@ -10919,7 +10919,7 @@ class App {
             </div>
             <h2 class="text-2xl font-black text-white">Google Calendar & Microsoft Outlook</h2>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Conecta tu calendario personal o corporativo para que cada vez que un cliente reserve en ReservasCR, la cita se agregue instantáneamente a tu agenda con todos los detalles del cliente y alertas automáticas en tu celular.
+              Conecta tu calendario personal o corporativo para que cada vez que un cliente reserve en ReservasCR, la cita se agregue a tu agenda con todos los detalles del cliente y alertas automáticas en tu celular.
             </p>
           </div>
           <div class="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-3xl text-indigo-300 shrink-0 shadow-inner">
@@ -10942,15 +10942,15 @@ class App {
                       <i class="fas fa-signal text-[9px]"></i> En Vivo
                     </span>
                   </div>
-                  <h3 class="text-base font-extrabold text-slate-900">${this.escapeHtml(nylasEmail)}</h3>
+                  <h3 class="text-base font-extrabold text-slate-900">${this.escapeHtml(calendarEmail)}</h3>
                   <p class="text-xs text-slate-500 mt-0.5">
-                    Proveedor: <strong class="capitalize">${isGoogle ? 'Google Calendar' : 'Microsoft Outlook'}</strong>
+                    Proveedor: <strong class="capitalize">${isGoogle ? 'Google Calendar Oficial' : 'Microsoft Outlook Oficial'}</strong>
                     ${connectedAt ? ` • Conectado el ${new Date(connectedAt).toLocaleDateString('es-CR')}` : ''}
                   </p>
                 </div>
               </div>
 
-              <button id="btn-disconnect-nylas" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0">
+              <button id="btn-disconnect-calendar" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0">
                 <i class="fas fa-unlink text-rose-500"></i> Desconectar Calendario
               </button>
             </div>
@@ -10961,7 +10961,7 @@ class App {
                   <i class="fas fa-bolt"></i>
                 </div>
                 <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Sincronización Instantánea</h4>
-                <p class="text-xs text-slate-500">Las reservas se crean de inmediato en tu calendario oficial sin esperas.</p>
+                <p class="text-xs text-slate-500">Las reservas se asocian de inmediato con tu cuenta oficial sin intermediarios.</p>
               </div>
 
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
@@ -10969,7 +10969,7 @@ class App {
                   <i class="fas fa-bell"></i>
                 </div>
                 <h4 class="font-bold text-slate-900 text-xs sm:text-sm">Recordatorios Nativos</h4>
-                <p class="text-xs text-slate-500">Recibe recordatorios y alertas nativas en tu teléfono móvil o reloj inteligente.</p>
+                <p class="text-xs text-slate-500">Recibe notificaciones oficiales en tu teléfono móvil o reloj inteligente.</p>
               </div>
 
               <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
@@ -10987,18 +10987,18 @@ class App {
             <div>
               <h3 class="text-lg font-bold text-slate-900">Selecciona tu proveedor de calendario</h3>
               <p class="text-xs text-slate-500 mt-1">
-                Haz clic en el botón de tu servicio preferido para autorizar la sincronización segura en 1 solo paso:
+                Haz clic en el botón de tu servicio preferido para autorizar la conexión oficial directa con Google o Microsoft:
               </p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Botón Google Calendar -->
-              <a href="/api/nylas/auth?businessId=${encodeURIComponent(currentBiz.id)}&provider=google" class="group p-5 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center gap-4 cursor-pointer shadow-xs hover:shadow-md">
+              <a href="/api/auth/google?role=business&businessId=${encodeURIComponent(currentBiz.id)}&action=connect_calendar&returnTo=${encodeURIComponent('/panel-negocio?tab=integrations')}" class="group p-5 rounded-2xl border-2 border-slate-200 hover:border-blue-500 bg-white hover:bg-blue-50/30 transition-all flex items-center gap-4 cursor-pointer shadow-xs hover:shadow-md">
                 <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200 group-hover:border-blue-300 flex items-center justify-center text-2xl shadow-xs shrink-0">
                   <i class="fab fa-google text-red-500"></i>
                 </div>
                 <div class="flex-1">
-                  <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block">Recomendado</span>
+                  <span class="text-xs font-bold text-blue-600 uppercase tracking-wider block">Conexión Oficial</span>
                   <h4 class="text-base font-extrabold text-slate-900 group-hover:text-blue-700">Google Calendar</h4>
                   <span class="text-xs text-slate-500">Cuentas @gmail.com o Google Workspace</span>
                 </div>
@@ -11006,12 +11006,12 @@ class App {
               </a>
 
               <!-- Botón Microsoft Outlook -->
-              <a href="/api/nylas/auth?businessId=${encodeURIComponent(currentBiz.id)}&provider=microsoft" class="group p-5 rounded-2xl border-2 border-slate-200 hover:border-indigo-500 bg-white hover:bg-indigo-50/30 transition-all flex items-center gap-4 cursor-pointer shadow-xs hover:shadow-md">
+              <a href="/api/auth/microsoft?role=business&businessId=${encodeURIComponent(currentBiz.id)}&action=connect_calendar&returnTo=${encodeURIComponent('/panel-negocio?tab=integrations')}" class="group p-5 rounded-2xl border-2 border-slate-200 hover:border-indigo-500 bg-white hover:bg-indigo-50/30 transition-all flex items-center gap-4 cursor-pointer shadow-xs hover:shadow-md">
                 <div class="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-2xl text-white shadow-xs shrink-0">
                   <i class="fab fa-microsoft"></i>
                 </div>
                 <div class="flex-1">
-                  <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Microsoft 365</span>
+                  <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider block">Microsoft 365 Oficial</span>
                   <h4 class="text-base font-extrabold text-slate-900 group-hover:text-indigo-700">Outlook / Hotmail</h4>
                   <span class="text-xs text-slate-500">Cuentas @outlook.com, @hotmail o corporativas</span>
                 </div>
@@ -11019,26 +11019,15 @@ class App {
               </a>
             </div>
 
-            <!-- Ayuda para autorizar la sincronización -->
-            <div class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-xs space-y-1.5 shadow-2xs">
-              <div class="flex items-center gap-2 font-black text-amber-900">
-                <i class="fas fa-info-circle text-amber-600 text-sm"></i>
-                <span>¿Cómo autorizar la sincronización con tu cuenta?</span>
-              </div>
-              <ul class="text-[11.5px] text-amber-900/90 space-y-1 list-disc pl-5 leading-relaxed">
-                <li><strong>En Google:</strong> Si Google muestra la advertencia <em>"Google hasn't verified this app"</em>, haz clic abajo a la izquierda en <strong>"Advanced"</strong> (Configuración avanzada) y luego en <strong>"Go to Reservas CR (unsafe)"</strong> para permitir que las citas se anoten en tu calendario.</li>
-                <li><strong>En Outlook:</strong> Si aparece la notificación <em>"Nylas Hosted Authentication (Sandbox)"</em>, pulsa el botón azul <strong>"I understand, continue &gt;"</strong> para completar el enlace.</li>
-              </ul>
-            </div>
-
             <!-- Beneficios y Seguridad -->
             <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
               <h4 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2">
-                <i class="fas fa-shield-alt text-emerald-600"></i> Integración Segura y Privada (Nylas API v3)
+                <i class="fas fa-shield-alt text-emerald-600"></i> Conexión Directa y Segura Oficial (Google Cloud & Microsoft Azure)
               </h4>
               <ul class="text-xs text-slate-600 space-y-1.5 list-disc pl-5">
+                <li>Conexión oficial directa punto a punto sin intermediarios ni plataformas externas.</li>
                 <li>Tus credenciales y contraseñas nunca son almacenadas ni vistas por nuestro sistema (autenticación oficial OAuth 2.0).</li>
-                <li>Solo se utiliza el permiso necesario para crear y actualizar los turnos agendados por tus clientes.</li>
+                <li>Tus datos se transmiten con encriptación TLS/SSL de extremo a extremo.</li>
                 <li>Puedes desconectar tu cuenta en cualquier momento con un solo clic.</li>
               </ul>
             </div>
@@ -12940,16 +12929,17 @@ class App {
       }, 300);
     });
 
-    // Desconectar Calendario Nylas (Google Calendar / Outlook)
-    document.getElementById('btn-disconnect-nylas')?.addEventListener('click', async () => {
-      if (confirm('¿Estás seguro de que deseas desconectar la sincronización de Google Calendar / Outlook? Las nuevas citas ya no se crearán automáticamente en tu calendario.')) {
-        const btn = document.getElementById('btn-disconnect-nylas');
+    // Desconectar Calendario Directo (Google Calendar / Outlook)
+    const btnDisconnectCal = document.getElementById('btn-disconnect-calendar') || document.getElementById('btn-disconnect-nylas');
+    btnDisconnectCal?.addEventListener('click', async () => {
+      if (confirm('¿Estás seguro de que deseas desconectar la sincronización de Google Calendar / Outlook?')) {
+        const btn = btnDisconnectCal;
         if (btn) {
           btn.disabled = true;
           btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Desconectando...';
         }
         try {
-          await storage.disconnectNylas(currentBiz.id);
+          await storage.disconnectCalendar(currentBiz.id);
           delete currentBiz.nylasGrantId;
           delete currentBiz.nylas_grant_id;
           delete currentBiz.nylasEmail;
