@@ -17102,7 +17102,6 @@ class App {
       script.id = 'paypal-sdk-script';
       script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&locale=es_CR&components=buttons&enable-funding=card`;
       script.async = true;
-      script.crossOrigin = 'anonymous';
 
       script.onload = () => resolve(window.paypal);
       script.onerror = () => {

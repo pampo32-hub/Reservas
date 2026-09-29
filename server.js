@@ -66,10 +66,12 @@ export function slugify(text) {
 }
 const PORT = process.env.PORT || 3000;
 
-// 1. Cabeceras de seguridad HTTP con Helmet
+// 1. Cabeceras de seguridad HTTP con Helmet (Permitir popups de PayPal y OAuth sin bloquear window.opener)
 app.use(helmet({
   contentSecurityPolicy: false, // Permitir CDNs externos (Tailwind CDN, Google Fonts, FontAwesome, PayPal SDK)
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 // 2. Compresión Gzip/Brotli de alto rendimiento (> 1KB, excluyendo SSE)
