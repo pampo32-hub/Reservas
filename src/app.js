@@ -17350,23 +17350,27 @@ class App {
 
               <div id="forgot-reset-error" class="hidden p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in"></div>
 
-              <form id="forgot-reset-form" class="space-y-4 text-xs sm:text-sm">
+              <form id="forgot-reset-form" class="space-y-4 text-xs sm:text-sm" autocomplete="off">
+                <!-- Desactivador de autofill automático del navegador -->
+                <input type="text" name="fake_username_autofill" style="display:none;" tabindex="-1" autocomplete="username">
+                <input type="password" name="fake_password_autofill" style="display:none;" tabindex="-1" autocomplete="current-password">
+
                 <!-- Código de 6 dígitos -->
                 <div>
                   <label class="block font-bold text-slate-700 mb-1 text-center">Código de Verificación (6 dígitos) *</label>
-                  <input type="text" id="forgot-reset-code" required maxlength="6" placeholder="• • • • • •" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-center text-xl font-black tracking-widest text-slate-900 focus:border-blue-600 focus:outline-none focus:bg-white transition-all">
+                  <input type="text" id="forgot-reset-code" name="verification_code" value="" required maxlength="6" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" data-lpignore="true" data-1p-ignore="true" placeholder="• • • • • •" class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-xl font-mono text-center text-xl font-black tracking-widest text-slate-900 focus:border-blue-600 focus:outline-none focus:bg-white transition-all">
                 </div>
 
                 <!-- Nueva Contraseña -->
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">Nueva Contraseña (mínimo 6 caracteres) *</label>
-                  <input type="password" id="forgot-new-pass" required minlength="6" placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <input type="password" id="forgot-new-pass" name="new_password" value="" required minlength="6" autocomplete="new-password" placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <!-- Confirmar Nueva Contraseña -->
                 <div>
                   <label class="block font-bold text-slate-700 mb-1">Confirmar Nueva Contraseña *</label>
-                  <input type="password" id="forgot-new-pass-conf" required minlength="6" placeholder="Repite tu nueva contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <input type="password" id="forgot-new-pass-conf" name="confirm_new_password" value="" required minlength="6" autocomplete="new-password" placeholder="Repite tu nueva contraseña" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <!-- Validación inline -->
@@ -17438,10 +17442,44 @@ class App {
         }
       });
     } else {
-      // Validación en vivo de contraseñas en paso 2
+      // Limpieza estricta del campo de código y contraseñas contra autofill del navegador
+      const codeInput = document.getElementById('forgot-reset-code');
       const pass1 = document.getElementById('forgot-new-pass');
       const pass2 = document.getElementById('forgot-new-pass-conf');
       const inlineBox = document.getElementById('forgot-inline-pass-error');
+
+      let userTypedCode = false;
+      let userTypedPass = false;
+
+      codeInput?.addEventListener('focus', () => { userTypedCode = true; });
+      codeInput?.addEventListener('keydown', () => { userTypedCode = true; });
+      pass1?.addEventListener('focus', () => { userTypedPass = true; });
+      pass1?.addEventListener('keydown', () => { userTypedPass = true; });
+
+      const purgeAutofill = () => {
+        if (codeInput && !userTypedCode) {
+          codeInput.value = '';
+        }
+        if (pass1 && !userTypedPass) {
+          pass1.value = '';
+        }
+        if (pass2 && !userTypedPass) {
+          pass2.value = '';
+        }
+      };
+
+      purgeAutofill();
+      setTimeout(purgeAutofill, 50);
+      setTimeout(purgeAutofill, 150);
+      setTimeout(purgeAutofill, 350);
+
+      // Evento input para forzar que solo se puedan escribir dígitos numéricos y borrar cualquier autofill de letras
+      codeInput?.addEventListener('input', () => {
+        userTypedCode = true;
+        if (/[^0-9]/.test(codeInput.value)) {
+          codeInput.value = codeInput.value.replace(/[^0-9]/g, '').slice(0, 6);
+        }
+      });
 
       const checkMatch = () => {
         if (!pass1 || !pass2 || !inlineBox) return true;
