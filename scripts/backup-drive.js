@@ -31,7 +31,7 @@ function sanitizeName(name) {
   return name.replace(/[\\/:*?"<>|]/g, '').trim();
 }
 
-// Generar libro de Excel con múltiples pestañas profesionales
+// Generar libro de Excel con múltiples pestañas profesionales para un comercio individual
 function generateBusinessExcel(business, services, appointments, staff, reviews, blockedSlots) {
   const wb = XLSX.utils.book_new();
 
@@ -119,6 +119,45 @@ function generateBusinessExcel(business, services, appointments, staff, reviews,
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
 
+// Generar libro de Excel maestro para la BASE DE DATOS COMPLETA
+function generateFullDatabaseExcel(tables) {
+  const wb = XLSX.utils.book_new();
+
+  // 1. Comercios
+  const wsBiz = XLSX.utils.json_to_sheet(tables.businesses || []);
+  XLSX.utils.book_append_sheet(wb, wsBiz, 'Comercios');
+
+  // 2. Citas Globales
+  const wsApt = XLSX.utils.json_to_sheet(tables.appointments || []);
+  XLSX.utils.book_append_sheet(wb, wsApt, 'Todas las Citas');
+
+  // 3. Servicios
+  const wsServ = XLSX.utils.json_to_sheet(tables.services || []);
+  XLSX.utils.book_append_sheet(wb, wsServ, 'Servicios');
+
+  // 4. Clientes Registrados
+  const wsClients = XLSX.utils.json_to_sheet(tables.clients || []);
+  XLSX.utils.book_append_sheet(wb, wsClients, 'Clientes');
+
+  // 5. Usuarios de Negocio
+  const wsBizUsers = XLSX.utils.json_to_sheet(tables.businessUsers || []);
+  XLSX.utils.book_append_sheet(wb, wsBizUsers, 'Usuarios Negocio');
+
+  // 6. Especialistas
+  const wsStaff = XLSX.utils.json_to_sheet(tables.staff || []);
+  XLSX.utils.book_append_sheet(wb, wsStaff, 'Especialistas');
+
+  // 7. Reseñas Verificadas
+  const wsReviews = XLSX.utils.json_to_sheet(tables.reviews || []);
+  XLSX.utils.book_append_sheet(wb, wsReviews, 'Reseñas');
+
+  // 8. Transacciones SINPE
+  const wsSinpe = XLSX.utils.json_to_sheet(tables.sinpe || []);
+  XLSX.utils.book_append_sheet(wb, wsSinpe, 'SINPE Móvil');
+
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+}
+
 // Ejecutar respaldo completo
 export async function runBackupToDrive() {
   console.log('🚀 Iniciando proceso de respaldo automático diario...');
@@ -141,10 +180,9 @@ export async function runBackupToDrive() {
 
   console.log(`📅 Fecha de respaldo: ${dayFolder} de ${weekFolder} (${dateStr})`);
 
-  const client = await pool.connect();
   try {
-    // 1. Obtener todos los comercios
-    const { rows: businesses } = await client.query(`
+    // 1. Obtener todos los comercios usando pool.query (seguro para pooling concurrente)
+    const { rows: businesses } = await pool.query(`
       SELECT * FROM reservas_businesses ORDER BY name ASC
     `);
 
@@ -160,14 +198,14 @@ export async function runBackupToDrive() {
       const bName = sanitizeName(b.name);
       console.log(`\n📦 Respaldando: "${b.name}" (${b.id})...`);
 
-      // Consultar todas las tablas hijas asociadas
+      // Consultar tablas hijas asociadas
       const [servicesRes, aptRes, staffRes, reviewsRes, blockedRes, usersRes] = await Promise.all([
-        client.query('SELECT * FROM reservas_services WHERE business_id = $1 ORDER BY name ASC', [b.id]),
-        client.query('SELECT * FROM reservas_appointments WHERE business_id = $1 ORDER BY date DESC, time DESC', [b.id]),
-        client.query('SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY name ASC', [b.id]),
-        client.query('SELECT * FROM reservas_reviews WHERE business_id = $1 ORDER BY created_at DESC', [b.id]),
-        client.query('SELECT * FROM reservas_blocked_slots WHERE business_id = $1 ORDER BY date DESC, time DESC', [b.id]),
-        client.query('SELECT id, name, email, created_at FROM reservas_business_users WHERE business_id = $1', [b.id])
+        pool.query('SELECT * FROM reservas_services WHERE business_id = $1 ORDER BY name ASC', [b.id]),
+        pool.query('SELECT * FROM reservas_appointments WHERE business_id = $1 ORDER BY date DESC, time DESC', [b.id]),
+        pool.query('SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY name ASC', [b.id]),
+        pool.query('SELECT * FROM reservas_reviews WHERE business_id = $1 ORDER BY created_at DESC', [b.id]),
+        pool.query('SELECT * FROM reservas_blocked_slots WHERE business_id = $1 ORDER BY date DESC, time DESC', [b.id]),
+        pool.query('SELECT id, name, email, created_at FROM reservas_business_users WHERE business_id = $1', [b.id])
       ]);
 
       const services = servicesRes.rows;
@@ -198,7 +236,7 @@ export async function runBackupToDrive() {
       const excelBuffer = generateBusinessExcel(b, services, appointments, staff, reviews, blockedSlots);
       const excelBase64 = excelBuffer.toString('base64');
 
-      // 3. Guardar copia local en el VPS
+      // 3. Guardar copia local por seguridad
       try {
         const localDir = path.join(localBaseDir, bName, weekFolder, dayFolder);
         fs.mkdirSync(localDir, { recursive: true });
@@ -208,10 +246,13 @@ export async function runBackupToDrive() {
         console.warn(`  ⚠️ No se pudo guardar copia local en disco: ${localErr.message}`);
       }
 
-      // 4. Enviar a Google Drive
+      // 4. Enviar a Google Drive (enviando rootFolder: 'DB Backups')
       try {
         const payload = {
           token: BACKUP_SECRET_TOKEN,
+          rootFolder: 'DB Backups',
+          mainFolder: 'DB Backups',
+          folderName: 'DB Backups',
           businessName: bName,
           weekFolder: weekFolder,
           dayFolder: dayFolder,
@@ -248,11 +289,93 @@ export async function runBackupToDrive() {
       }
     }
 
-    console.log(`\n🎉 Respaldo completado: ${successCount} exitosos, ${errorCount} errores.`);
+    // ==========================================
+    // 5. RESPALDO MAESTRO GLOBAL DE LA BASE DE DATOS
+    // ==========================================
+    console.log(`\n🗄️ Generando respaldo maestro de la Base de Datos completa...`);
+    try {
+      const [
+        allBiz, allServ, allApt, allStaff, allReviews,
+        allBlocked, allBizUsers, allClients, allSinpe
+      ] = await Promise.all([
+        pool.query('SELECT * FROM reservas_businesses ORDER BY id ASC'),
+        pool.query('SELECT * FROM reservas_services ORDER BY business_id, id ASC'),
+        pool.query('SELECT * FROM reservas_appointments ORDER BY date DESC, time DESC'),
+        pool.query('SELECT * FROM reservas_staff ORDER BY business_id, id ASC'),
+        pool.query('SELECT * FROM reservas_reviews ORDER BY created_at DESC'),
+        pool.query('SELECT * FROM reservas_blocked_slots ORDER BY date DESC'),
+        pool.query('SELECT id, business_id, name, email FROM reservas_business_users ORDER BY id ASC'),
+        pool.query('SELECT id, name, phone, email, created_at FROM reservas_clients ORDER BY created_at DESC'),
+        pool.query('SELECT * FROM reservas_sinpe_transactions ORDER BY received_at DESC')
+      ]);
+
+      const fullDbData = {
+        metadata: {
+          export_date: crTime.toISOString(),
+          version: '1.0-full-db',
+          total_businesses: allBiz.rows.length,
+          total_appointments: allApt.rows.length,
+          total_clients: allClients.rows.length
+        },
+        businesses: allBiz.rows,
+        services: allServ.rows,
+        appointments: allApt.rows,
+        staff: allStaff.rows,
+        reviews: allReviews.rows,
+        blocked_slots: allBlocked.rows,
+        businessUsers: allBizUsers.rows,
+        clients: allClients.rows,
+        sinpe: allSinpe.rows
+      };
+
+      const fullExcelBuffer = generateFullDatabaseExcel(fullDbData);
+      const fullExcelBase64 = fullExcelBuffer.toString('base64');
+
+      // Guardar copia local del dump maestro
+      const masterLocalDir = path.join(localBaseDir, '_BASE_DE_DATOS_COMPLETA', weekFolder, dayFolder);
+      fs.mkdirSync(masterLocalDir, { recursive: true });
+      fs.writeFileSync(path.join(masterLocalDir, `full_db_${dateStr}.json`), JSON.stringify(fullDbData, null, 2));
+      fs.writeFileSync(path.join(masterLocalDir, `reporte_general_${dateStr}.xlsx`), fullExcelBuffer);
+
+      // Subir el dump maestro a Google Drive
+      const masterPayload = {
+        token: BACKUP_SECRET_TOKEN,
+        rootFolder: 'DB Backups',
+        mainFolder: 'DB Backups',
+        folderName: 'DB Backups',
+        businessName: '_BASE_DE_DATOS_COMPLETA',
+        weekFolder: weekFolder,
+        dayFolder: dayFolder,
+        date: dateStr,
+        jsonData: fullDbData,
+        excelBase64: fullExcelBase64
+      };
+
+      const resMaster = await fetch(GOOGLE_DRIVE_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(masterPayload),
+        redirect: 'follow'
+      });
+
+      const resMasterText = await resMaster.text();
+      let resMasterJson;
+      try { resMasterJson = JSON.parse(resMasterText); } catch (_) { resMasterJson = { raw: resMasterText }; }
+
+      if (resMasterJson.status === 'success') {
+        console.log(`  ✅ Respaldo MAESTRO completo subido a Google Drive exitosamente.`);
+        successCount++;
+      } else {
+        console.warn(`  ⚠️ Alerta en respaldo maestro:`, resMasterJson);
+      }
+    } catch (masterErr) {
+      console.error('❌ Error generando respaldo maestro completo:', masterErr.message);
+    }
+
+    console.log(`\n🎉 Respaldo completado: ${successCount} paquetes exitosos, ${errorCount} errores.`);
   } catch (err) {
     console.error('❌ Error fatal en el proceso de respaldo:', err);
   } finally {
-    client.release();
     // Cerrar el pool al terminar si se corre como script independiente
     await pool.end();
   }
