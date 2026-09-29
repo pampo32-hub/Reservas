@@ -6430,10 +6430,28 @@ class App {
     });
   }
 
-  // --- MODAL DE COMPLETAR NÚMERO DE TELÉFONO / WHATSAPP TRAS REGISTRO CON GOOGLE ---
+  // --- MODAL DE COMPLETAR NÚMERO DE TELÉFONO / WHATSAPP TRAS REGISTRO CON GOOGLE O MICROSOFT ---
   renderCompletePhoneModal(clientUser) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer || !clientUser) return;
+
+    const emailLower = (clientUser.email || '').toLowerCase();
+    const isMicrosoft = clientUser.oauthProvider === 'microsoft' || 
+                        clientUser.oauth_provider === 'microsoft' || 
+                        clientUser.provider === 'microsoft' || 
+                        emailLower.endsWith('@hotmail.com') || 
+                        emailLower.endsWith('@outlook.com') || 
+                        emailLower.endsWith('@live.com') || 
+                        emailLower.endsWith('@msn.com') ||
+                        emailLower.includes('outlook') || 
+                        emailLower.includes('hotmail');
+    const isGoogle = clientUser.oauthProvider === 'google' || 
+                     clientUser.oauth_provider === 'google' || 
+                     clientUser.provider === 'google' || 
+                     emailLower.endsWith('@gmail.com');
+
+    const providerLabel = isMicrosoft ? 'Microsoft' : (isGoogle ? 'Google' : '');
+    const accountIntro = providerLabel ? `Tu cuenta de ${providerLabel}` : 'Tu cuenta';
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -6461,7 +6479,7 @@ class App {
               </div>
               <div class="text-xs leading-relaxed">
                 <strong class="text-emerald-900 block font-bold">¡Bienvenido(a), ${this.escapeHtml(clientUser.name || 'Cliente')}!</strong>
-                Tu cuenta de Google (${this.escapeHtml(clientUser.email || '')}) se vinculó correctamente. Solo necesitamos tu número para enviarte las <strong>confirmaciones y recordatorios de tus citas</strong>.
+                ${accountIntro} (${this.escapeHtml(clientUser.email || '')}) se vinculó correctamente. Solo necesitamos tu número para enviarte las <strong>confirmaciones y recordatorios de tus citas</strong>.
               </div>
             </div>
 

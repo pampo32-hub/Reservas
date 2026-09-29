@@ -5838,6 +5838,7 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
           avatarUrl: row.avatar_url || avatarUrl,
           whatsappOptIn: row.whatsapp_opt_in !== false,
           role: 'client',
+          oauthProvider: 'google',
           needsPhone: !row.phone || row.phone.trim() === ''
         };
         await pool.query(
@@ -5854,7 +5855,8 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
             businessId: row.business_id,
             name: row.name,
             email: row.email,
-            role: 'business'
+            role: 'business',
+            oauthProvider: 'google'
           };
           finalRole = 'business';
           returnTo = '/panel-negocio';
@@ -5874,6 +5876,7 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
             avatarUrl: avatarUrl,
             whatsappOptIn: true,
             role: 'client',
+            oauthProvider: 'google',
             needsPhone: true
           };
           console.log(`✅ [Google OAuth] Nuevo cliente registrado con Google: ${cleanEmail}`);
@@ -6229,6 +6232,7 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/aut
           avatarUrl: row.avatar_url || avatarUrl,
           whatsappOptIn: row.whatsapp_opt_in !== false,
           role: 'client',
+          oauthProvider: 'microsoft',
           needsPhone: !clientPhone || clientPhone.trim() === ''
         };
         await pool.query(
@@ -6245,7 +6249,8 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/aut
             businessId: row.business_id,
             name: row.name,
             email: row.email,
-            role: 'business'
+            role: 'business',
+            oauthProvider: 'microsoft'
           };
           finalRole = 'business';
           returnTo = '/panel-negocio';
@@ -6266,6 +6271,7 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback', '/api/aut
             avatarUrl: avatarUrl,
             whatsappOptIn: true,
             role: 'client',
+            oauthProvider: 'microsoft',
             needsPhone: !clientPhone || clientPhone.trim() === ''
           };
           console.log(`✅ [Microsoft OAuth] Nuevo cliente registrado con Microsoft: ${cleanEmail}`);
