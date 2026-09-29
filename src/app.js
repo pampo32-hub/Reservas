@@ -829,11 +829,20 @@ class App {
       'panel-negocio', 'dashboard', 'owner',
       'developer', 'developer-dashboard', 'admin',
       'login', 'acceso', 'entrar', 'soy-negocio',
+      'privacidad', 'privacy', 'politica-de-privacidad', 'terminos', 'terms', 'terminos-y-condiciones',
       'calificar', 'review', 'valorar', 'api', 'sw.js', 'manifest.json', 'robots.txt', 'sitemap.xml'
     ];
 
     // 0. Revisar si la ruta viene directo en el pathname (URLs limpias sin #)
     if (pathname && pathname !== '/' && pathname !== '') {
+      if (/^\/?(privacidad|privacy|politica-de-privacidad)$/i.test(pathname)) {
+        setTimeout(() => this.renderLegalModal('privacy'), 150);
+        return { view: 'directory', params: {} };
+      }
+      if (/^\/?(terminos|terms|terminos-y-condiciones)$/i.test(pathname)) {
+        setTimeout(() => this.renderLegalModal('terms'), 150);
+        return { view: 'directory', params: {} };
+      }
       if (/^\/?(directorio|explorar|catalogo|buscar|comercios|negocios-locales)$/i.test(pathname)) {
         return { view: 'directory', params: {} };
       }
