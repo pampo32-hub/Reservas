@@ -1223,6 +1223,75 @@ class StorageService {
     return all.filter(a => a.businessId === businessId);
   }
 
+  // --- MINI CRM: NOTAS Y PREFERENCIAS INTERNAS DE CLIENTES ---
+  getClientNotesCacheKey(businessId) {
+    return `reservas_crm_client_notes_${businessId}`;
+  }
+
+  getBusinessClientNotes(businessId) {
+    if (!businessId) return {};
+    const key = this.getClientNotesCacheKey(businessId);
+    let cached = {};
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) cached = JSON.parse(raw);
+    } catch (e) {}
+
+    // Sincronizar en segundo plano si está online
+    if (this.isOnlineApi) {
+      this.fetchWithAuth(`${this.apiBase}/businesses/${encodeURIComponent(businessId)}/client-notes`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.success && data.notes) {
+            localStorage.setItem(key, JSON.stringify(data.notes));
+          }
+        })
+        .catch(() => {});
+    }
+
+    return cached || {};
+  }
+
+  async saveBusinessClientNote(businessId, clientPhone, noteData = {}) {
+    if (!businessId || !clientPhone) return false;
+    const cleanPhone = clientPhone.trim();
+    const key = this.getClientNotesCacheKey(businessId);
+    
+    // Guardar en local primero para respuesta instantánea
+    let cached = {};
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) cached = JSON.parse(raw);
+    } catch (e) {}
+
+    cached[cleanPhone] = {
+      ...(cached[cleanPhone] || {}),
+      clientName: noteData.clientName || cached[cleanPhone]?.clientName || '',
+      notes: noteData.notes !== undefined ? noteData.notes : (cached[cleanPhone]?.notes || ''),
+      tags: noteData.tags || cached[cleanPhone]?.tags || [],
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem(key, JSON.stringify(cached));
+    } catch (e) {}
+
+    // Persistir en backend
+    if (this.isOnlineApi) {
+      try {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${encodeURIComponent(businessId)}/client-notes/${encodeURIComponent(cleanPhone)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(noteData)
+        });
+        return res.ok;
+      } catch (err) {
+        console.warn('Error guardando nota de cliente en backend:', err);
+      }
+    }
+    return true;
+  }
+
   getClientAppointments(phone, email = '') {
     const all = this.appointmentsCache || this.getAppointments() || [];
     const cleanPhone = (phone || '').trim();

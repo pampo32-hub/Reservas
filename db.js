@@ -342,6 +342,21 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_push_sub_biz ON reservas_push_subscriptions (business_id);
     `);
 
+    // 14. Crear tabla de notas y preferencias internas de clientes por comercio (Mini CRM)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_business_client_notes (
+        id VARCHAR(64) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        client_phone VARCHAR(50) NOT NULL,
+        client_name VARCHAR(255) DEFAULT '',
+        notes TEXT DEFAULT '',
+        tags TEXT DEFAULT '',
+        updated_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT uq_biz_client_phone UNIQUE (business_id, client_phone)
+      );
+      CREATE INDEX IF NOT EXISTS idx_biz_client_notes ON reservas_business_client_notes (business_id, client_phone);
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';

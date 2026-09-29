@@ -2762,6 +2762,65 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
   }
 });
 
+// ==========================================
+// ENDPOINTS MINI CRM & NOTAS DE CLIENTES
+// ==========================================
+
+// Obtener todas las notas y etiquetas internas de clientes de un negocio (CRM)
+app.get('/api/businesses/:id/client-notes', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'SELECT client_phone, client_name, notes, tags, updated_at FROM reservas_business_client_notes WHERE business_id = $1',
+      [id]
+    );
+    const notesMap = {};
+    result.rows.forEach(r => {
+      notesMap[r.client_phone] = {
+        clientName: r.client_name || '',
+        notes: r.notes || '',
+        tags: r.tags ? r.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        updatedAt: r.updated_at
+      };
+    });
+    res.json({ success: true, notes: notesMap });
+  } catch (err) {
+    console.error('Error obteniendo notas de clientes:', err);
+    res.status(500).json({ error: 'Error al obtener notas de clientes' });
+  }
+});
+
+// Guardar o actualizar nota interna y etiquetas de un cliente en un negocio (CRM)
+app.put('/api/businesses/:id/client-notes/:phone', async (req, res) => {
+  try {
+    const { id, phone } = req.params;
+    const { notes, tags, clientName } = req.body || {};
+    const cleanPhone = (phone || '').trim();
+    if (!cleanPhone) {
+      return res.status(400).json({ error: 'Número de teléfono requerido' });
+    }
+
+    const noteId = `cn_${id}_${cleanPhone.replace(/[^0-9]/g, '') || Math.random().toString(36).slice(2, 9)}`;
+    const tagsStr = Array.isArray(tags) ? tags.join(',') : (tags || '');
+
+    await pool.query(`
+      INSERT INTO reservas_business_client_notes (id, business_id, client_phone, client_name, notes, tags, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
+      ON CONFLICT (business_id, client_phone)
+      DO UPDATE SET
+        notes = EXCLUDED.notes,
+        tags = EXCLUDED.tags,
+        client_name = COALESCE(NULLIF(EXCLUDED.client_name, ''), reservas_business_client_notes.client_name),
+        updated_at = NOW()
+    `, [noteId, id, cleanPhone, clientName || '', notes || '', tagsStr]);
+
+    res.json({ success: true, message: 'Nota interna de cliente guardada correctamente.' });
+  } catch (err) {
+    console.error('Error guardando nota de cliente:', err);
+    res.status(500).json({ error: 'Error al guardar nota de cliente' });
+  }
+});
+
 // Crear nueva reserva (con protección estricta anti-colisión, soporte transaccional y notificaciones)
 app.post('/api/appointments', async (req, res) => {
   const client = await pool.connect();

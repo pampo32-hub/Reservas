@@ -6812,6 +6812,8 @@ class App {
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
+    const businessClients = this.computeBusinessClients(appointments, currentBiz.id);
+    const hasRiskClients = businessClients.some(c => c.retentionStatus === 'risk');
     // Métricas del Plan de Suscripción ($0, $10, $18, $35)
     const currentMonth = new Date().toISOString().slice(0, 7);
     const monthAppointments = appointments.filter(a => {
@@ -7007,10 +7009,10 @@ class App {
           <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
             <div class="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
               <span class="text-[10px] sm:text-xs font-semibold uppercase">Total Reservas</span>
-              <i class="fas fa-users text-indigo-600 text-sm"></i>
+              <i class="fas fa-calendar-check text-indigo-600 text-sm"></i>
             </div>
             <span class="text-xl sm:text-2xl font-black text-slate-900">${appointments.length}</span>
-            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">histórico total</span>
+            <span class="text-[10px] sm:text-[11px] text-slate-400 block mt-0.5">${businessClients.length} clientes únicos</span>
           </div>
 
           <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs">
@@ -7049,7 +7051,14 @@ class App {
                 <span>Agenda (${appointments.length})</span>
               </button>
 
-              <!-- 2. Bloqueos -->
+              <!-- 2. Clientes CRM (Fidelización) -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'clients' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="clients">
+                <i class="fas fa-user-friends text-xs ${this.activeDashboardTab === 'clients' ? 'text-white' : 'text-emerald-600'}"></i>
+                <span>Clientes CRM (${businessClients.length})</span>
+                ${hasRiskClients ? `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-2xs animate-pulse" title="Hay clientes en riesgo de abandono"></span>` : ''}
+              </button>
+
+              <!-- 3. Bloqueos -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="blocked-slots">
                 <i class="fas fa-calendar-times text-xs ${this.activeDashboardTab === 'blocked-slots' ? 'text-white' : 'text-rose-500'}"></i>
                 <span>Bloqueos</span>
@@ -7186,7 +7195,7 @@ class App {
       });
     });
 
-    this.setupDashboardTabEvents(currentBiz);
+    this.setupDashboardTabEvents(currentBiz, appointments);
     this.updatePushNotificationBanner(currentBiz);
   }
 
@@ -7377,6 +7386,10 @@ class App {
 
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
+    if (this.activeDashboardTab === 'clients') {
+      return this.renderClientsTabContent(currentBiz, appointments);
+    }
+
     if (this.activeDashboardTab === 'manual') {
       return this.renderManualTabContent(currentBiz);
     }
@@ -9210,6 +9223,1219 @@ class App {
       modalContainer.innerHTML = '';
       this.renderCurrentView();
     });
+  }
+
+  // --- MINI CRM & FICHA DE FIDELIZACIÓN DE CLIENTES ---
+  computeBusinessClients(appointments, businessId) {
+    if (!appointments || appointments.length === 0) return [];
+    const notesMap = storage.getBusinessClientNotes(businessId) || {};
+    const clientMap = new Map();
+    const todayStr = this.getTodayDateString();
+
+    appointments.forEach(apt => {
+      const rawPhone = (apt.clientPhone || '').replace(/\D/g, '');
+      const cleanPhone = rawPhone.length >= 8 ? rawPhone.slice(-8) : rawPhone;
+      const key = cleanPhone || (apt.clientEmail ? apt.clientEmail.toLowerCase().trim() : '') || (apt.clientName ? apt.clientName.toLowerCase().trim() : 'cliente_anonimo');
+
+      if (!clientMap.has(key)) {
+        clientMap.set(key, {
+          key,
+          rawPhone: cleanPhone,
+          clientPhone: apt.clientPhone || (cleanPhone ? `${cleanPhone.slice(0, 4)}-${cleanPhone.slice(4)}` : ''),
+          clientName: (apt.clientName && apt.clientName.trim()) || 'Cliente',
+          clientEmail: (apt.clientEmail && apt.clientEmail.trim()) || '',
+          appointments: [],
+          servicesCount: {},
+          staffCount: {},
+          firstVisitDate: null,
+          lastVisitDate: null,
+          nextAppointment: null,
+          totalAppointments: 0,
+          completedAppointments: 0,
+          confirmedAppointments: 0,
+          cancelledAppointments: 0,
+          pendingAppointments: 0,
+          totalSpent: 0
+        });
+      }
+
+      const client = clientMap.get(key);
+      client.appointments.push(apt);
+
+      if (apt.clientName && apt.clientName.trim() && apt.clientName.trim().toLowerCase() !== 'cliente') {
+        client.clientName = apt.clientName.trim();
+      }
+      if (apt.clientEmail && apt.clientEmail.trim()) {
+        client.clientEmail = apt.clientEmail.trim();
+      }
+      if (apt.clientPhone && apt.clientPhone.trim()) {
+        client.clientPhone = apt.clientPhone.trim();
+      }
+
+      if (apt.serviceName) {
+        client.servicesCount[apt.serviceName] = (client.servicesCount[apt.serviceName] || 0) + 1;
+      }
+      if (apt.staffName) {
+        client.staffCount[apt.staffName] = (client.staffCount[apt.staffName] || 0) + 1;
+      }
+
+      client.totalAppointments++;
+      const priceNum = Number(apt.servicePrice) || 0;
+      if (apt.status === 'completed') {
+        client.completedAppointments++;
+        client.totalSpent += priceNum;
+      } else if (apt.status === 'confirmed') {
+        client.confirmedAppointments++;
+        client.totalSpent += priceNum;
+      } else if (apt.status === 'cancelled') {
+        client.cancelledAppointments++;
+      } else if (apt.status === 'pending') {
+        client.pendingAppointments++;
+      }
+    });
+
+    const clients = Array.from(clientMap.values()).map(client => {
+      // Orden cronológico inverso (más recientes primero)
+      client.appointments.sort((a, b) => {
+        const d = (b.date || '').localeCompare(a.date || '');
+        if (d !== 0) return d;
+        return (b.time || '').localeCompare(a.time || '');
+      });
+
+      const nonCancelled = client.appointments.filter(a => a.status !== 'cancelled');
+
+      // Primera visita histórica
+      if (nonCancelled.length > 0) {
+        client.firstVisitDate = nonCancelled[nonCancelled.length - 1].date;
+      }
+
+      // Citas pasadas y próximas
+      const pastVisits = nonCancelled.filter(a => (a.date < todayStr) || (a.date === todayStr && a.status === 'completed'));
+      const upcomingVisits = nonCancelled.filter(a => a.date >= todayStr && a.status !== 'completed');
+
+      if (pastVisits.length > 0) {
+        client.lastVisitDate = pastVisits[0].date;
+      } else if (nonCancelled.length > 0) {
+        client.lastVisitDate = pastVisits[0].date;
+      }
+
+      if (upcomingVisits.length > 0) {
+        const sortedUpcoming = [...upcomingVisits].sort((a, b) => {
+          const d = (a.date || '').localeCompare(b.date || '');
+          if (d !== 0) return d;
+          return (a.time || '').localeCompare(b.time || '');
+        });
+        client.nextAppointment = sortedUpcoming[0];
+      }
+
+      // Días transcurridos desde la última visita
+      let daysSinceLastVisit = null;
+      if (client.lastVisitDate) {
+        const lastD = new Date(client.lastVisitDate + 'T12:00:00');
+        const nowD = new Date(todayStr + 'T12:00:00');
+        const diffMs = nowD - lastD;
+        daysSinceLastVisit = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+      }
+      client.daysSinceLastVisit = daysSinceLastVisit;
+
+      // Estado de Retención
+      if (client.nextAppointment) {
+        client.retentionStatus = 'upcoming';
+      } else if (daysSinceLastVisit !== null && daysSinceLastVisit > 45) {
+        client.retentionStatus = 'risk';
+      } else if (daysSinceLastVisit !== null && daysSinceLastVisit > 21) {
+        client.retentionStatus = 'inactive';
+      } else {
+        client.retentionStatus = 'active';
+      }
+
+      // Nivel de Fidelidad (Segmentación)
+      const validCount = client.completedAppointments + client.confirmedAppointments;
+      if (validCount >= 5 || client.totalSpent >= 50000) {
+        client.tier = 'vip';
+        client.tierLabel = '👑 VIP Platino';
+      } else if (validCount >= 2 || client.totalSpent >= 15000) {
+        client.tier = 'frequent';
+        client.tierLabel = '💎 Recurrente';
+      } else {
+        client.tier = 'new';
+        client.tierLabel = '🌱 Nuevo';
+      }
+
+      // Servicio más solicitado
+      let favService = null;
+      let maxServ = 0;
+      Object.entries(client.servicesCount).forEach(([sName, cnt]) => {
+        if (cnt > maxServ) {
+          maxServ = cnt;
+          favService = sName;
+        }
+      });
+      client.favoriteService = favService || 'Sin preferencia';
+
+      // Especialista preferido
+      let favStaff = null;
+      let maxStf = 0;
+      Object.entries(client.staffCount).forEach(([stName, cnt]) => {
+        if (cnt > maxStf) {
+          maxStf = cnt;
+          favStaff = stName;
+        }
+      });
+      client.favoriteStaff = favStaff || 'General';
+
+      // Ticket Promedio
+      client.avgTicket = validCount > 0 ? Math.round(client.totalSpent / validCount) : 0;
+
+      // Integrar notas y etiquetas guardadas
+      const noteEntry = (client.rawPhone && notesMap[client.rawPhone]) || (notesMap[client.key]) || null;
+      client.internalNotes = noteEntry?.notes || '';
+      client.internalTags = Array.isArray(noteEntry?.tags) ? noteEntry.tags : [];
+      if (noteEntry?.clientName && noteEntry.clientName.trim()) {
+        client.customName = noteEntry.clientName.trim();
+      }
+
+      return client;
+    });
+
+    return clients;
+  }
+
+  filterAndSortClients(allClients, filter = 'all', query = '', sort = 'spent-desc') {
+    let list = [...allClients];
+
+    if (query && query.trim() !== '') {
+      const q = query.toLowerCase().trim();
+      list = list.filter(c => {
+        const name = (c.customName || c.clientName || '').toLowerCase();
+        const phone = (c.clientPhone || '') + (c.rawPhone || '');
+        const email = (c.clientEmail || '').toLowerCase();
+        const notes = (c.internalNotes || '').toLowerCase();
+        const tags = (c.internalTags || []).join(' ').toLowerCase();
+        const fav = (c.favoriteService || '').toLowerCase();
+        return name.includes(q) || phone.includes(q) || email.includes(q) || notes.includes(q) || tags.includes(q) || fav.includes(q);
+      });
+    }
+
+    if (filter === 'vip') {
+      list = list.filter(c => c.tier === 'vip');
+    } else if (filter === 'frequent') {
+      list = list.filter(c => c.tier === 'frequent');
+    } else if (filter === 'new') {
+      list = list.filter(c => c.tier === 'new');
+    } else if (filter === 'risk') {
+      list = list.filter(c => c.retentionStatus === 'risk');
+    } else if (filter === 'upcoming') {
+      list = list.filter(c => c.nextAppointment !== null);
+    }
+
+    list.sort((a, b) => {
+      if (sort === 'spent-desc') return (b.totalSpent || 0) - (a.totalSpent || 0);
+      if (sort === 'visits-desc') return (b.totalAppointments || 0) - (a.totalAppointments || 0);
+      if (sort === 'last-visit-desc') return (b.lastVisitDate || '').localeCompare(a.lastVisitDate || '');
+      if (sort === 'risk-first') {
+        const rank = (c) => c.retentionStatus === 'risk' ? 3 : (c.retentionStatus === 'inactive' ? 2 : 1);
+        const diff = rank(b) - rank(a);
+        if (diff !== 0) return diff;
+        return (b.daysSinceLastVisit || 0) - (a.daysSinceLastVisit || 0);
+      }
+      if (sort === 'name-asc') {
+        const nameA = a.customName || a.clientName || '';
+        const nameB = b.customName || b.clientName || '';
+        return nameA.localeCompare(nameB);
+      }
+      return (b.totalSpent || 0) - (a.totalSpent || 0);
+    });
+
+    return list;
+  }
+
+  renderClientsTabContent(currentBiz, appointments) {
+    const clients = this.computeBusinessClients(appointments, currentBiz.id);
+    const vipCount = clients.filter(c => c.tier === 'vip').length;
+    const frequentCount = clients.filter(c => c.tier === 'frequent').length;
+    const newCount = clients.filter(c => c.tier === 'new').length;
+    const riskCount = clients.filter(c => c.retentionStatus === 'risk').length;
+    const upcomingCount = clients.filter(c => c.nextAppointment !== null).length;
+    const totalRevenue = clients.reduce((acc, c) => acc + (c.totalSpent || 0), 0);
+
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-7 shadow-xs space-y-6">
+        <!-- Encabezado con Título y Acciones -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
+                <i class="fas fa-heart text-emerald-600 mr-1"></i> Mini CRM
+              </span>
+              <span class="text-xs text-slate-400 font-bold">Fidelización & Retención</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 mt-1">Directorio de Clientes</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Conoce a tus clientes más fieles, detecta quiénes están en riesgo de abandono y contáctalos por WhatsApp en 1 clic.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <button id="crm-export-excel-btn" class="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300/80 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-xs cursor-pointer">
+              <i class="fas fa-file-excel text-emerald-600 text-sm"></i>
+              <span>Exportar Excel (.xlsx)</span>
+            </button>
+            <button id="crm-quick-new-client-btn" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-md shadow-blue-500/20 cursor-pointer">
+              <i class="fas fa-calendar-plus"></i>
+              <span>Agendar Cita</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tarjetas de Métricas Clave (KPIs) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div class="bg-slate-50 border border-slate-200/80 p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+            <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+              <span class="font-bold uppercase tracking-wider text-[10px]">Total Clientes</span>
+              <i class="fas fa-users text-blue-600"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-slate-900">${clients.length}</div>
+            <span class="text-[10px] text-slate-400 font-medium">únicos registrados</span>
+          </div>
+
+          <div class="bg-amber-50/70 border border-amber-200 p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+            <div class="flex items-center justify-between text-amber-800 text-xs mb-1">
+              <span class="font-bold uppercase tracking-wider text-[10px]">Clientes VIP</span>
+              <i class="fas fa-crown text-amber-500"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-amber-950">${vipCount}</div>
+            <span class="text-[10px] text-amber-700 font-medium">5+ citas o ₡50k+</span>
+          </div>
+
+          <div class="bg-indigo-50/70 border border-indigo-200 p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+            <div class="flex items-center justify-between text-indigo-800 text-xs mb-1">
+              <span class="font-bold uppercase tracking-wider text-[10px]">Recurrentes</span>
+              <i class="fas fa-gem text-indigo-500"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black text-indigo-950">${frequentCount}</div>
+            <span class="text-[10px] text-indigo-700 font-medium">2 a 4 citas previas</span>
+          </div>
+
+          <div class="${riskCount > 0 ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/20' : 'bg-slate-50 border-slate-200'} p-3.5 sm:p-4 rounded-2xl shadow-2xs">
+            <div class="flex items-center justify-between text-xs mb-1 ${riskCount > 0 ? 'text-rose-800' : 'text-slate-500'}">
+              <span class="font-bold uppercase tracking-wider text-[10px]">En Riesgo</span>
+              <i class="fas fa-exclamation-triangle ${riskCount > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-400'}"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black ${riskCount > 0 ? 'text-rose-950' : 'text-slate-900'}">${riskCount}</div>
+            <span class="text-[10px] ${riskCount > 0 ? 'text-rose-700 font-bold' : 'text-slate-400'}">sin visita > 45 días</span>
+          </div>
+
+          <div class="bg-emerald-50/70 border border-emerald-200 p-3.5 sm:p-4 rounded-2xl shadow-2xs col-span-2 sm:col-span-1">
+            <div class="flex items-center justify-between text-emerald-800 text-xs mb-1">
+              <span class="font-bold uppercase tracking-wider text-[10px]">Inversión Clientes</span>
+              <i class="fas fa-coins text-emerald-600"></i>
+            </div>
+            <div class="text-lg sm:text-xl font-black text-emerald-950 truncate">${this.formatColones(totalRevenue)}</div>
+            <span class="text-[10px] text-emerald-700 font-medium">${upcomingCount} con cita agendada</span>
+          </div>
+        </div>
+
+        <!-- Barra de Búsqueda, Filtros y Orden -->
+        <div class="space-y-3 pt-2">
+          <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <!-- Buscador -->
+            <div class="relative flex-1">
+              <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+              <input 
+                type="text" 
+                id="crm-search-input" 
+                placeholder="Buscar por nombre, teléfono, correo, servicio o notas..." 
+                value="${this.escapeHtml(this.crmSearchQuery || '')}"
+                class="w-full pl-9 pr-8 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              >
+              ${this.crmSearchQuery ? `
+                <button id="crm-clear-search-btn" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer">
+                  <i class="fas fa-times-circle"></i>
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- Selector de Orden -->
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-xs text-slate-500 font-bold whitespace-nowrap">
+                <i class="fas fa-sort-amount-down text-blue-600 mr-1"></i> Ordenar:
+              </span>
+              <select id="crm-sort-select" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                <option value="spent-desc" ${(this.crmSort || 'spent-desc') === 'spent-desc' ? 'selected' : ''}>Mayor Inversión Total (₡)</option>
+                <option value="visits-desc" ${this.crmSort === 'visits-desc' ? 'selected' : ''}>Más Visitas / Citas</option>
+                <option value="last-visit-desc" ${this.crmSort === 'last-visit-desc' ? 'selected' : ''}>Última Visita Reciente</option>
+                <option value="risk-first" ${this.crmSort === 'risk-first' ? 'selected' : ''}>Prioridad: En Riesgo Primero</option>
+                <option value="name-asc" ${this.crmSort === 'name-asc' ? 'selected' : ''}>Nombre (A - Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Filtros Rápidos (Pills) -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1.5 scroll-smooth no-scrollbar">
+            <button class="crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${(this.crmFilter || 'all') === 'all' ? 'bg-slate-900 text-white shadow-xs font-black' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}" data-crm-filter="all">
+              Todos (${clients.length})
+            </button>
+            <button class="crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${this.crmFilter === 'vip' ? 'bg-amber-500 text-slate-950 shadow-xs font-black' : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'}" data-crm-filter="vip">
+              👑 VIPs (${vipCount})
+            </button>
+            <button class="crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${this.crmFilter === 'frequent' ? 'bg-indigo-600 text-white shadow-xs font-black' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200'}" data-crm-filter="frequent">
+              💎 Recurrentes (${frequentCount})
+            </button>
+            <button class="crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${this.crmFilter === 'new' ? 'bg-emerald-600 text-white shadow-xs font-black' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200'}" data-crm-filter="new">
+              🌱 Nuevos (${newCount})
+            </button>
+            <button class="crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${this.crmFilter === 'risk' ? 'bg-rose-600 text-white shadow-xs font-black' : 'bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200'}" data-crm-filter="risk">
+              ⚠️ En Riesgo (${riskCount})
+            </button>
+            <button class="crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${this.crmFilter === 'upcoming' ? 'bg-blue-600 text-white shadow-xs font-black' : 'bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200'}" data-crm-filter="upcoming">
+              📅 Con Cita (${upcomingCount})
+            </button>
+          </div>
+        </div>
+
+        <!-- Indicador de resultados filtrados -->
+        <div class="flex items-center justify-between text-xs text-slate-400 px-1 pt-1">
+          <span id="crm-filtered-count">Mostrando ${clients.length} clientes</span>
+          <span class="text-[11px] text-slate-400 italic">💡 Presiona "Expediente" para notas privadas o "WhatsApp" para mensajes con 1 clic.</span>
+        </div>
+
+        <!-- Grilla de Tarjetas de Clientes -->
+        <div id="crm-clients-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pt-1">
+          ${this.renderCrmClientsGridHtml(this.filterAndSortClients(clients, this.crmFilter || 'all', this.crmSearchQuery || '', this.crmSort || 'spent-desc'), currentBiz)}
+        </div>
+      </div>
+    `;
+  }
+
+  renderCrmClientsGridHtml(clients, currentBiz) {
+    if (!clients || clients.length === 0) {
+      return `
+        <div class="col-span-full py-16 px-4 text-center rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200">
+          <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-2xl mx-auto mb-3">
+            <i class="fas fa-user-slash"></i>
+          </div>
+          <h4 class="text-base font-black text-slate-800">No se encontraron clientes</h4>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Prueba cambiando los filtros o borrando el término de búsqueda para ver tu directorio completo.
+          </p>
+        </div>
+      `;
+    }
+
+    return clients.map(client => {
+      const displayName = client.customName || client.clientName || 'Cliente';
+      const initials = displayName.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'C';
+
+      let avatarGradient = 'from-slate-700 to-slate-900 text-white';
+      let tierBadge = '<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">🌱 Nuevo</span>';
+      if (client.tier === 'vip') {
+        avatarGradient = 'from-amber-400 via-amber-500 to-yellow-600 text-slate-950 font-black shadow-amber-500/20';
+        tierBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black"><i class="fas fa-crown text-amber-600 mr-1"></i> VIP</span>';
+      } else if (client.tier === 'frequent') {
+        avatarGradient = 'from-indigo-500 to-purple-600 text-white';
+        tierBadge = '<span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 text-[10px] font-bold"><i class="fas fa-gem text-indigo-600 mr-1"></i> Recurrente</span>';
+      }
+
+      let retentionBadge = '';
+      if (client.nextAppointment) {
+        retentionBadge = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold" title="Cita programada">
+            <i class="fas fa-calendar-check text-emerald-600"></i> ${this.formatDateDMY(client.nextAppointment.date)} ${this.formatTime12h(client.nextAppointment.time)}
+          </span>
+        `;
+      } else if (client.retentionStatus === 'risk') {
+        retentionBadge = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-300 text-[10px] font-black animate-pulse" title="Cliente sin visitas recientes">
+            <i class="fas fa-exclamation-triangle text-rose-600"></i> Hace ${client.daysSinceLastVisit} días
+          </span>
+        `;
+      } else if (client.retentionStatus === 'inactive') {
+        retentionBadge = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+            <i class="fas fa-clock text-amber-600"></i> Hace ${client.daysSinceLastVisit} días
+          </span>
+        `;
+      } else {
+        retentionBadge = `
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold">
+            <i class="fas fa-check-circle text-emerald-600"></i> Al día ${client.daysSinceLastVisit !== null ? `(${client.daysSinceLastVisit}d)` : ''}
+          </span>
+        `;
+      }
+
+      const attendedCount = client.completedAppointments + client.confirmedAppointments;
+
+      return `
+        <div class="bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative group">
+          <!-- Cabecera de la Tarjeta -->
+          <div>
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br ${avatarGradient} flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
+                  ${initials}
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <h3 class="font-black text-sm sm:text-base text-slate-900 group-hover:text-blue-600 transition-colors">
+                      ${this.escapeHtml(displayName)}
+                    </h3>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                    ${client.clientPhone ? `
+                      <span class="font-mono text-slate-600 font-bold">${this.escapeHtml(client.clientPhone)}</span>
+                    ` : '<span class="text-slate-400 italic">Sin teléfono</span>'}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Badges de Nivel y Estado -->
+              <div class="flex flex-col items-end gap-1.5 shrink-0">
+                ${tierBadge}
+                ${retentionBadge}
+              </div>
+            </div>
+
+            <!-- Métricas Financieras y de Citas -->
+            <div class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-center">
+              <div class="bg-slate-50/80 rounded-xl p-2 border border-slate-100">
+                <span class="block text-[10px] text-slate-400 uppercase font-bold">Inversión</span>
+                <span class="text-xs sm:text-sm font-black text-slate-900 truncate block">${this.formatColones(client.totalSpent)}</span>
+              </div>
+              <div class="bg-slate-50/80 rounded-xl p-2 border border-slate-100">
+                <span class="block text-[10px] text-slate-400 uppercase font-bold">Citas</span>
+                <span class="text-xs sm:text-sm font-black text-slate-900 block">${attendedCount} <span class="text-[10px] text-slate-400 font-normal">/ ${client.totalAppointments}</span></span>
+              </div>
+              <div class="bg-slate-50/80 rounded-xl p-2 border border-slate-100">
+                <span class="block text-[10px] text-slate-400 uppercase font-bold">Promedio</span>
+                <span class="text-xs sm:text-sm font-black text-slate-900 truncate block">${this.formatColones(client.avgTicket)}</span>
+              </div>
+            </div>
+
+            <!-- Preferencias (Servicio y Especialista) -->
+            <div class="mt-3 space-y-1 text-xs">
+              <div class="flex items-center justify-between text-slate-600">
+                <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                  <i class="fas fa-tag text-[9px] text-amber-500"></i> Servicio preferido:
+                </span>
+                <span class="font-bold text-slate-800 truncate max-w-[170px]" title="${this.escapeHtml(client.favoriteService)}">
+                  ${this.escapeHtml(client.favoriteService)}
+                </span>
+              </div>
+              <div class="flex items-center justify-between text-slate-600">
+                <span class="text-[11px] text-slate-400 flex items-center gap-1">
+                  <i class="fas fa-user-tag text-[9px] text-indigo-500"></i> Atendido por:
+                </span>
+                <span class="font-medium text-slate-700 truncate max-w-[170px]" title="${this.escapeHtml(client.favoriteStaff)}">
+                  ${this.escapeHtml(client.favoriteStaff)}
+                </span>
+              </div>
+            </div>
+
+            <!-- Notas Internas Privadas (Si existen) -->
+            ${client.internalNotes ? `
+              <div class="mt-3 p-2.5 rounded-xl bg-amber-50/70 border border-amber-200/80 text-amber-950 text-xs">
+                <div class="flex items-start gap-1.5">
+                  <i class="fas fa-sticky-note text-amber-600 text-xs shrink-0 mt-0.5"></i>
+                  <p class="italic text-[11px] line-clamp-2 leading-relaxed">"${this.escapeHtml(client.internalNotes)}"</p>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Etiquetas Internas (Si existen) -->
+            ${(client.internalTags && client.internalTags.length > 0) ? `
+              <div class="flex items-center gap-1.5 flex-wrap mt-2.5">
+                ${client.internalTags.map(tag => `
+                  <span class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-[10px] font-bold border border-slate-200">
+                    #${this.escapeHtml(tag)}
+                  </span>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Botones de Acción Rápida -->
+          <div class="pt-3 border-t border-slate-100 flex items-center gap-2">
+            <button 
+              type="button" 
+              class="crm-card-wa-btn flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              data-client-key="${client.key}"
+              title="Contactar con plantilla por WhatsApp"
+            >
+              <i class="fab fa-whatsapp text-sm"></i>
+              <span>WhatsApp</span>
+            </button>
+
+            <button 
+              type="button" 
+              class="crm-card-profile-btn flex-1 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              data-client-key="${client.key}"
+              title="Ver expediente completo, citas y notas privadas"
+            >
+              <i class="fas fa-id-card text-xs"></i>
+              <span>Expediente</span>
+            </button>
+
+            <button 
+              type="button" 
+              class="crm-card-book-btn p-2 bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              data-client-key="${client.key}"
+              title="Agendar nueva cita para este cliente"
+            >
+              <i class="fas fa-calendar-plus text-xs"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  setupClientsTabEvents(currentBiz, appointments) {
+    const allClients = this.computeBusinessClients(appointments, currentBiz.id);
+
+    const updateGrid = () => {
+      const filtered = this.filterAndSortClients(allClients, this.crmFilter || 'all', this.crmSearchQuery || '', this.crmSort || 'spent-desc');
+      const container = document.getElementById('crm-clients-grid');
+      if (container) {
+        container.innerHTML = this.renderCrmClientsGridHtml(filtered, currentBiz);
+        this.bindCrmCardEvents(currentBiz, allClients, appointments);
+      }
+      const countEl = document.getElementById('crm-filtered-count');
+      if (countEl) {
+        countEl.textContent = `Mostrando ${filtered.length} de ${allClients.length} clientes`;
+      }
+    };
+
+    // Búsqueda en vivo
+    const searchInput = document.getElementById('crm-search-input');
+    searchInput?.addEventListener('input', (e) => {
+      this.crmSearchQuery = e.target.value;
+      updateGrid();
+    });
+
+    document.getElementById('crm-clear-search-btn')?.addEventListener('click', () => {
+      this.crmSearchQuery = '';
+      if (searchInput) searchInput.value = '';
+      updateGrid();
+    });
+
+    // Selector de Orden
+    document.getElementById('crm-sort-select')?.addEventListener('change', (e) => {
+      this.crmSort = e.target.value;
+      updateGrid();
+    });
+
+    // Botones de Filtro
+    document.querySelectorAll('.crm-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filterVal = btn.getAttribute('data-crm-filter');
+        this.crmFilter = filterVal;
+
+        document.querySelectorAll('.crm-filter-btn').forEach(b => {
+          b.className = 'crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700';
+        });
+        btn.className = 'crm-filter-btn px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer bg-slate-900 text-white shadow-xs';
+
+        updateGrid();
+      });
+    });
+
+    // Exportar a Excel
+    document.getElementById('crm-export-excel-btn')?.addEventListener('click', () => {
+      this.exportClientsToExcel(currentBiz, appointments);
+    });
+
+    // Agendar Cita Rápida
+    document.getElementById('crm-quick-new-client-btn')?.addEventListener('click', () => {
+      this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
+    });
+
+    // Enlazar eventos de tarjetas
+    this.bindCrmCardEvents(currentBiz, allClients, appointments);
+  }
+
+  bindCrmCardEvents(currentBiz, allClients, appointments) {
+    document.querySelectorAll('.crm-card-wa-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-client-key');
+        const client = allClients.find(c => c.key === key);
+        if (client) this.renderWhatsAppClientModal(client, currentBiz);
+      });
+    });
+
+    document.querySelectorAll('.crm-card-profile-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-client-key');
+        const client = allClients.find(c => c.key === key);
+        if (client) this.renderClientCrmModal(client, currentBiz, appointments);
+      });
+    });
+
+    document.querySelectorAll('.crm-card-book-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
+      });
+    });
+  }
+
+  renderClientCrmModal(client, currentBiz, appointments) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const displayName = client.customName || client.clientName || 'Cliente';
+    const attendedCount = client.completedAppointments + client.confirmedAppointments;
+
+    let tagList = Array.isArray(client.internalTags) ? [...client.internalTags] : [];
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto animate-scale-up">
+          <!-- Cabecera del Modal -->
+          <div class="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between gap-4 shrink-0">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-lg font-black text-amber-400 shrink-0">
+                ${displayName.slice(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h3 class="text-lg sm:text-xl font-black text-white">${this.escapeHtml(displayName)}</h3>
+                  <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-amber-300 border border-white/20 text-[10px] font-bold">
+                    ${client.tierLabel || 'Cliente'}
+                  </span>
+                </div>
+                <div class="text-xs text-slate-300 mt-0.5 flex items-center gap-3">
+                  ${client.clientPhone ? `<span><i class="fas fa-phone-alt text-[10px] text-blue-400 mr-1"></i> ${this.escapeHtml(client.clientPhone)}</span>` : ''}
+                  ${client.clientEmail ? `<span><i class="fas fa-envelope text-[10px] text-indigo-400 mr-1"></i> ${this.escapeHtml(client.clientEmail)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <button id="close-crm-modal-btn" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-base transition-colors cursor-pointer shrink-0">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Cuerpo Desplazable del Modal -->
+          <div class="p-5 sm:p-6 overflow-y-auto space-y-6">
+            <!-- Aviso si está en riesgo -->
+            ${client.retentionStatus === 'risk' ? `
+              <div class="p-4 rounded-2xl bg-rose-50 border border-rose-300/80 text-rose-950 flex items-center justify-between gap-3 text-xs">
+                <div class="flex items-center gap-2.5">
+                  <i class="fas fa-exclamation-triangle text-rose-600 text-base shrink-0 animate-pulse"></i>
+                  <div>
+                    <strong>Cliente en Riesgo de Abandono:</strong>
+                    <span> No visita tu comercio desde hace <strong>${client.daysSinceLastVisit} días</strong>. Envíale un mensaje de reactivación por WhatsApp.</span>
+                  </div>
+                </div>
+                <button id="crm-modal-wa-reactivate-btn" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg shrink-0 cursor-pointer">
+                  Reactivar
+                </button>
+              </div>
+            ` : ''}
+
+            <!-- Resumen Financiero y de Citas -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Total Invertido</span>
+                <span class="text-base font-black text-slate-900 truncate block mt-0.5">${this.formatColones(client.totalSpent)}</span>
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Citas Atendidas</span>
+                <span class="text-base font-black text-slate-900 block mt-0.5">${attendedCount} <span class="text-xs font-normal text-slate-400">de ${client.totalAppointments}</span></span>
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Primera Visita</span>
+                <span class="text-xs font-bold text-slate-700 block mt-1">${client.firstVisitDate ? this.formatDateDMY(client.firstVisitDate) : 'N/A'}</span>
+              </div>
+              <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+                <span class="block text-[10px] uppercase font-bold text-slate-400">Última Visita</span>
+                <span class="text-xs font-bold text-slate-700 block mt-1">${client.lastVisitDate ? this.formatDateDMY(client.lastVisitDate) : 'N/A'}</span>
+              </div>
+            </div>
+
+            <!-- Sección de Notas y Preferencias Privadas -->
+            <div class="bg-amber-50/50 border border-amber-200/80 p-4 sm:p-5 rounded-3xl space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-black shadow-xs">
+                    <i class="fas fa-user-lock"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-black text-slate-900">Notas Privadas & Preferencias del Cliente</h4>
+                    <span class="text-[10px] text-amber-800 font-medium">🔒 100% privado: tu cliente nunca verá esta información.</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nombre personalizado / Apodo interno -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Nombre preferido o apodo interno:</label>
+                <input 
+                  type="text" 
+                  id="crm-modal-custom-name" 
+                  value="${this.escapeHtml(client.customName || client.clientName || '')}" 
+                  placeholder="Ej: Don Carlos (Papá de María)" 
+                  class="w-full px-3 py-2 bg-white border border-amber-300/80 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+              </div>
+
+              <!-- Textarea de Notas -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Observaciones, gustos, fórmulas o alergias:</label>
+                <textarea 
+                  id="crm-modal-notes-text" 
+                  rows="3" 
+                  placeholder="Ej: Prefiere corte con máquina #2 a los lados. Alérgica a tintes con amoníaco. Le gusta café con leche..." 
+                  class="w-full p-3 bg-white border border-amber-300/80 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none leading-relaxed"
+                >${this.escapeHtml(client.internalNotes || '')}</textarea>
+              </div>
+
+              <!-- Etiquetas / Tags -->
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1.5">Etiquetas descriptivas:</label>
+                
+                <div id="crm-modal-tags-container" class="flex items-center gap-1.5 flex-wrap mb-2">
+                  ${tagList.map(tag => `
+                    <span class="crm-modal-tag-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-200/80 text-amber-950 text-xs font-bold border border-amber-300">
+                      <span>#${this.escapeHtml(tag)}</span>
+                      <button type="button" class="crm-remove-tag-btn text-amber-800 hover:text-amber-950 font-black ml-0.5 cursor-pointer" data-tag="${this.escapeHtml(tag)}">&times;</button>
+                    </span>
+                  `).join('')}
+                </div>
+
+                <!-- Input para agregar nueva etiqueta y sugerencias rápidas -->
+                <div class="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    id="crm-modal-new-tag-input" 
+                    placeholder="Nueva etiqueta (Ej: Puntual, Alergias...)" 
+                    class="flex-1 px-3 py-1.5 bg-white border border-amber-300/80 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                  <button type="button" id="crm-modal-add-tag-btn" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs cursor-pointer shadow-xs">
+                    <i class="fas fa-plus mr-1"></i> Añadir
+                  </button>
+                </div>
+
+                <!-- Sugerencias rápidas -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-2">
+                  <span class="text-[10px] text-slate-500 font-bold">Sugerencias:</span>
+                  ${['Puntual', 'Exigente', 'Familiar', 'Trato Especial', 'Alergias'].map(sug => `
+                    <button type="button" class="crm-quick-tag-sug px-2 py-0.5 bg-white hover:bg-amber-100 text-slate-600 text-[10px] font-bold rounded-md border border-slate-200 cursor-pointer" data-tag="${sug}">
+                      + ${sug}
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+
+              <!-- Botón Guardar Notas -->
+              <div class="pt-2 text-right">
+                <button type="button" id="crm-modal-save-notes-btn" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 ml-auto shadow-md shadow-emerald-600/20 cursor-pointer">
+                  <i class="fas fa-save"></i>
+                  <span>Guardar Notas y Etiquetas</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Historial Completo de Citas -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <i class="fas fa-history text-blue-600"></i>
+                  <span>Historial de Citas (${client.appointments.length})</span>
+                </h4>
+                <span class="text-xs text-slate-400">Orden cronológico</span>
+              </div>
+
+              <div class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                ${client.appointments.map(apt => `
+                  <div class="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div class="space-y-0.5">
+                      <div class="font-bold text-slate-800">${this.formatDateDMY(apt.date)} · <span class="font-mono text-blue-600">${this.formatTime12h(apt.time)}</span></div>
+                      <div class="text-slate-600 text-[11px]">${this.escapeHtml(apt.serviceName)} ${apt.staffName ? `· <span class="text-indigo-600">${this.escapeHtml(apt.staffName)}</span>` : ''}</div>
+                      ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${this.escapeHtml(apt.notes)}"</div>` : ''}
+                    </div>
+
+                    <div class="text-right shrink-0">
+                      <div class="font-black text-slate-900">${this.formatColones(apt.servicePrice)}</div>
+                      <span class="badge-status badge-status-${apt.status} mt-1 inline-block">
+                        ${apt.status === 'confirmed' ? 'Confirmada' : apt.status === 'completed' ? 'Completada' : apt.status === 'pending' ? 'Pendiente' : 'Cancelada'}
+                      </span>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Pie del Modal con Acciones -->
+          <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <button id="crm-modal-wa-btn" class="flex-1 sm:flex-initial px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer">
+                <i class="fab fa-whatsapp text-sm"></i>
+                <span>Enviar WhatsApp</span>
+              </button>
+              <button id="crm-modal-book-btn" class="flex-1 sm:flex-initial px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer">
+                <i class="fas fa-calendar-plus text-xs"></i>
+                <span>Agendar Turno</span>
+              </button>
+            </div>
+
+            <button id="crm-modal-close-btn" class="w-full sm:w-auto px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('close-crm-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('crm-modal-close-btn')?.addEventListener('click', closeModal);
+
+    document.getElementById('crm-modal-wa-btn')?.addEventListener('click', () => {
+      closeModal();
+      this.renderWhatsAppClientModal(client, currentBiz);
+    });
+
+    document.getElementById('crm-modal-wa-reactivate-btn')?.addEventListener('click', () => {
+      closeModal();
+      this.renderWhatsAppClientModal(client, currentBiz, 'reactivate');
+    });
+
+    document.getElementById('crm-modal-book-btn')?.addEventListener('click', () => {
+      closeModal();
+      this.openBookingModal(currentBiz.id, currentBiz.services && currentBiz.services[0]?.id);
+    });
+
+    const renderTagsInModal = () => {
+      const cont = document.getElementById('crm-modal-tags-container');
+      if (!cont) return;
+      cont.innerHTML = tagList.map(t => `
+        <span class="crm-modal-tag-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-200/80 text-amber-950 text-xs font-bold border border-amber-300">
+          <span>#${this.escapeHtml(t)}</span>
+          <button type="button" class="crm-remove-tag-btn text-amber-800 hover:text-amber-950 font-black ml-0.5 cursor-pointer" data-tag="${this.escapeHtml(t)}">&times;</button>
+        </span>
+      `).join('');
+
+      cont.querySelectorAll('.crm-remove-tag-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          const t = b.getAttribute('data-tag');
+          tagList = tagList.filter(x => x !== t);
+          renderTagsInModal();
+        });
+      });
+    };
+
+    renderTagsInModal();
+
+    const addTag = (raw) => {
+      const clean = (raw || '').trim().replace(/^#/, '');
+      if (clean && !tagList.includes(clean)) {
+        tagList.push(clean);
+        renderTagsInModal();
+      }
+    };
+
+    document.getElementById('crm-modal-add-tag-btn')?.addEventListener('click', () => {
+      const inp = document.getElementById('crm-modal-new-tag-input');
+      if (inp) {
+        addTag(inp.value);
+        inp.value = '';
+        inp.focus();
+      }
+    });
+
+    document.getElementById('crm-modal-new-tag-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addTag(e.target.value);
+        e.target.value = '';
+      }
+    });
+
+    document.querySelectorAll('.crm-quick-tag-sug').forEach(btn => {
+      btn.addEventListener('click', () => {
+        addTag(btn.getAttribute('data-tag'));
+      });
+    });
+
+    document.getElementById('crm-modal-save-notes-btn')?.addEventListener('click', async () => {
+      const saveBtn = document.getElementById('crm-modal-save-notes-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+      }
+
+      const customName = document.getElementById('crm-modal-custom-name')?.value.trim() || client.clientName;
+      const notes = document.getElementById('crm-modal-notes-text')?.value || '';
+
+      const phoneToSave = client.rawPhone || client.clientPhone;
+      await storage.saveBusinessClientNote(currentBiz.id, phoneToSave, {
+        clientName: customName,
+        notes,
+        tags: tagList
+      });
+
+      client.customName = customName;
+      client.internalNotes = notes;
+      client.internalTags = tagList;
+
+      this.showToast('¡Notas y preferencias del cliente guardadas con éxito!', 'success');
+
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-check mr-1"></i> ¡Guardado!';
+        setTimeout(() => {
+          if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Notas y Etiquetas';
+        }, 2000);
+      }
+
+      const allClients = this.computeBusinessClients(appointments, currentBiz.id);
+      const filtered = this.filterAndSortClients(allClients, this.crmFilter || 'all', this.crmSearchQuery || '', this.crmSort || 'spent-desc');
+      const container = document.getElementById('crm-clients-grid');
+      if (container) {
+        container.innerHTML = this.renderCrmClientsGridHtml(filtered, currentBiz);
+        this.bindCrmCardEvents(currentBiz, allClients, appointments);
+      }
+    });
+  }
+
+  renderWhatsAppClientModal(client, currentBiz, initialTemplate = 'thanks') {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const displayName = client.customName || client.clientName || 'estimado(a) cliente';
+    const cleanDigits = (client.rawPhone || client.clientPhone || '').replace(/\D/g, '');
+    const fullWaPhone = cleanDigits.length === 8 ? `506${cleanDigits}` : cleanDigits;
+
+    const bizSlug = currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id);
+    const origin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : 'https://reservascr.com';
+    const bizLink = `${origin}/#/${bizSlug}`;
+
+    const templates = {
+      thanks: `¡Hola ${displayName}! 👋 Te saludamos con mucho cariño de parte de *${currentBiz.name}*. Queremos darte las gracias por tu preferencia y por confiar en nosotros. ¡Esperamos verte muy pronto de nuevo! Si deseas agendar tu próximo turno, puedes hacerlo aquí: ${bizLink}`,
+      reactivate: `¡Hola ${displayName}! ¿Cómo estás? Te saludamos de *${currentBiz.name}*. Notamos que hace unos días que no te vemos por acá y te extrañamos mucho. ¿Te gustaría agendar un espacio para esta semana? Puedes ver nuestros horarios disponibles aquí: ${bizLink}`,
+      reminder: client.nextAppointment 
+        ? `¡Hola ${displayName}! Te recordamos con mucho gusto tu cita programada en *${currentBiz.name}* para el *${this.formatDateDMY(client.nextAppointment.date)}* a las *${this.formatTime12h(client.nextAppointment.time)}* (${client.nextAppointment.serviceName}). Si tienes alguna consulta, con gusto te atendemos por acá. ¡Te esperamos!`
+        : `¡Hola ${displayName}! Te saludamos de *${currentBiz.name}*. Esperamos que estés muy bien. Estamos a tu completa disposición para tus próximas reservas. ¡Que tengas un excelente día!`,
+      custom: `¡Hola ${displayName}! Te saludamos de *${currentBiz.name}*...`
+    };
+
+    let selectedTemplate = (initialTemplate === 'reactivate' || (client.retentionStatus === 'risk' && initialTemplate !== 'reminder')) 
+      ? 'reactivate' 
+      : (client.nextAppointment && initialTemplate === 'reminder' ? 'reminder' : 'thanks');
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto animate-scale-up">
+          <!-- Cabecera -->
+          <div class="p-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl shrink-0">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <div>
+                <h3 class="font-black text-base sm:text-lg">Contactar por WhatsApp</h3>
+                <span class="text-xs text-emerald-100 font-medium">Para: <strong>${this.escapeHtml(displayName)}</strong> (${this.escapeHtml(client.clientPhone || 'Sin número')})</span>
+              </div>
+            </div>
+
+            <button id="close-crm-wa-modal-btn" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition-colors cursor-pointer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Cuerpo -->
+          <div class="p-5 sm:p-6 space-y-4">
+            <!-- Selector de Plantilla -->
+            <div>
+              <label class="block text-xs font-black text-slate-800 uppercase tracking-wider mb-2">Selecciona una Plantilla Rápida:</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button type="button" class="crm-wa-tpl-btn p-2.5 rounded-xl border text-left transition-all text-xs cursor-pointer ${selectedTemplate === 'thanks' ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-950 ring-2 ring-emerald-400/30' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}" data-tpl="thanks">
+                  <div class="font-black text-slate-900 flex items-center gap-1.5"><i class="fas fa-heart text-rose-500"></i> Agradecimiento</div>
+                  <span class="text-[10px] text-slate-500 line-clamp-1">Gracias por preferirnos</span>
+                </button>
+
+                <button type="button" class="crm-wa-tpl-btn p-2.5 rounded-xl border text-left transition-all text-xs cursor-pointer ${selectedTemplate === 'reactivate' ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-950 ring-2 ring-emerald-400/30' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}" data-tpl="reactivate">
+                  <div class="font-black text-slate-900 flex items-center gap-1.5"><i class="fas fa-undo-alt text-amber-500"></i> Te Extrañamos</div>
+                  <span class="text-[10px] text-slate-500 line-clamp-1">Reactivar cliente</span>
+                </button>
+
+                <button type="button" class="crm-wa-tpl-btn p-2.5 rounded-xl border text-left transition-all text-xs cursor-pointer ${selectedTemplate === 'reminder' ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-950 ring-2 ring-emerald-400/30' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}" data-tpl="reminder">
+                  <div class="font-black text-slate-900 flex items-center gap-1.5"><i class="fas fa-bell text-blue-500"></i> Recordatorio</div>
+                  <span class="text-[10px] text-slate-500 line-clamp-1">Aviso de turno</span>
+                </button>
+
+                <button type="button" class="crm-wa-tpl-btn p-2.5 rounded-xl border text-left transition-all text-xs cursor-pointer ${selectedTemplate === 'custom' ? 'bg-emerald-50 border-emerald-500 font-bold text-emerald-950 ring-2 ring-emerald-400/30' : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'}" data-tpl="custom">
+                  <div class="font-black text-slate-900 flex items-center gap-1.5"><i class="fas fa-pen text-indigo-500"></i> Mensaje Libre</div>
+                  <span class="text-[10px] text-slate-500 line-clamp-1">Escribir desde cero</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Editor de Texto de WhatsApp -->
+            <div>
+              <div class="flex items-center justify-between text-xs mb-1">
+                <label class="font-black text-slate-800">Mensaje a Enviar:</label>
+                <span class="text-[11px] text-slate-400 italic">Puedes editar el texto antes de enviar</span>
+              </div>
+              <textarea 
+                id="crm-wa-textarea" 
+                rows="5" 
+                class="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none leading-relaxed shadow-inner"
+              >${this.escapeHtml(templates[selectedTemplate])}</textarea>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-500 flex items-center gap-2">
+              <i class="fab fa-whatsapp text-emerald-600 text-base shrink-0"></i>
+              <span>Al presionar <strong>"Abrir WhatsApp"</strong>, se abrirá WhatsApp Web o la App oficial con el mensaje precargado en el chat de tu cliente.</span>
+            </div>
+          </div>
+
+          <!-- Pie del Modal -->
+          <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+            <button id="close-crm-wa-modal-btn2" class="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer">
+              Cancelar
+            </button>
+
+            <button id="crm-wa-open-chat-btn" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black rounded-xl text-xs sm:text-sm flex items-center gap-2 transition-all shadow-md shadow-emerald-600/20 cursor-pointer">
+              <i class="fab fa-whatsapp text-base"></i>
+              <span>Abrir WhatsApp (${cleanDigits ? '506-' + cleanDigits.slice(-8) : 'Chat'})</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('close-crm-wa-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('close-crm-wa-modal-btn2')?.addEventListener('click', closeModal);
+
+    const textarea = document.getElementById('crm-wa-textarea');
+
+    document.querySelectorAll('.crm-wa-tpl-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tplKey = btn.getAttribute('data-tpl');
+        selectedTemplate = tplKey;
+
+        document.querySelectorAll('.crm-wa-tpl-btn').forEach(b => {
+          b.className = 'crm-wa-tpl-btn p-2.5 rounded-xl border text-left transition-all text-xs cursor-pointer bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100';
+        });
+        btn.className = 'crm-wa-tpl-btn p-2.5 rounded-xl border text-left transition-all text-xs cursor-pointer bg-emerald-50 border-emerald-500 font-bold text-emerald-950 ring-2 ring-emerald-400/30';
+
+        if (textarea && templates[tplKey]) {
+          textarea.value = templates[tplKey];
+        }
+      });
+    });
+
+    document.getElementById('crm-wa-open-chat-btn')?.addEventListener('click', () => {
+      if (!fullWaPhone) {
+        this.showToast('El cliente no tiene un número telefónico registrado.', 'error');
+        return;
+      }
+      const message = textarea?.value || '';
+      const waUrl = `https://wa.me/${fullWaPhone}?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+      closeModal();
+      this.showToast('Abriendo conversación de WhatsApp...', 'success');
+    });
+  }
+
+  async ensureXlsxLoaded() {
+    if (typeof window !== 'undefined' && typeof window.XLSX !== 'undefined') return true;
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.head.appendChild(script);
+    });
+  }
+
+  async exportClientsToExcel(currentBiz, appointments) {
+    const clients = this.computeBusinessClients(appointments, currentBiz.id);
+    if (!clients || clients.length === 0) {
+      this.showToast('No hay clientes registrados para exportar.', 'info');
+      return;
+    }
+
+    this.showToast('Generando archivo Excel del Directorio de Clientes...', 'info');
+    await this.ensureXlsxLoaded();
+
+    if (typeof window.XLSX === 'undefined') {
+      this.showToast('No se pudo cargar la librería Excel. Verifica tu conexión.', 'error');
+      return;
+    }
+
+    const retentionLabels = {
+      'upcoming': 'Con Cita Próxima',
+      'active': 'Activo / Al día',
+      'inactive': 'Inactivo (21-45 días)',
+      'risk': 'En Riesgo (>45 días)'
+    };
+
+    const excelRows = clients.map((c, i) => ({
+      '#': i + 1,
+      'Nombre del Cliente': c.customName || c.clientName || 'Cliente',
+      'Teléfono': c.clientPhone || '',
+      'WhatsApp Directo': c.rawPhone ? `https://wa.me/506${c.rawPhone}` : '',
+      'Correo Electrónico': c.clientEmail || 'Sin correo',
+      'Nivel de Fidelidad': c.tier === 'vip' ? 'VIP Platino' : (c.tier === 'frequent' ? 'Recurrente' : 'Nuevo'),
+      'Estado de Retención': retentionLabels[c.retentionStatus] || c.retentionStatus,
+      'Días sin Visita': c.daysSinceLastVisit !== null ? c.daysSinceLastVisit : 'N/A',
+      'Total Citas Históricas': c.totalAppointments,
+      'Citas Atendidas': c.completedAppointments + c.confirmedAppointments,
+      'Citas Canceladas': c.cancelledAppointments,
+      'Inversión Total (CRC ₡)': Number(c.totalSpent) || 0,
+      'Ticket Promedio (CRC ₡)': Number(c.avgTicket) || 0,
+      'Primera Visita': c.firstVisitDate || 'N/A',
+      'Última Visita': c.lastVisitDate || 'N/A',
+      'Próxima Cita': c.nextAppointment ? `${c.nextAppointment.date} ${c.nextAppointment.time}` : 'Ninguna',
+      'Servicio Más Solicitado': c.favoriteService || 'N/A',
+      'Especialista Preferido': c.favoriteStaff || 'N/A',
+      'Etiquetas Internas': (c.internalTags || []).join(', '),
+      'Notas Privadas del Comercio': c.internalNotes || ''
+    }));
+
+    try {
+      const wb = window.XLSX.utils.book_new();
+      const ws = window.XLSX.utils.json_to_sheet(excelRows);
+
+      ws['!cols'] = [
+        { wch: 5 },   // #
+        { wch: 25 },  // Nombre
+        { wch: 15 },  // Teléfono
+        { wch: 30 },  // WhatsApp Directo
+        { wch: 25 },  // Correo
+        { wch: 16 },  // Nivel
+        { wch: 20 },  // Retención
+        { wch: 16 },  // Días sin visita
+        { wch: 18 },  // Total citas
+        { wch: 16 },  // Atendidas
+        { wch: 16 },  // Canceladas
+        { wch: 22 },  // Inversión Total
+        { wch: 22 },  // Ticket Promedio
+        { wch: 14 },  // Primera Visita
+        { wch: 14 },  // Última Visita
+        { wch: 20 },  // Próxima Cita
+        { wch: 25 },  // Servicio Favorito
+        { wch: 22 },  // Especialista Favorito
+        { wch: 25 },  // Etiquetas
+        { wch: 40 }   // Notas
+      ];
+
+      window.XLSX.utils.book_append_sheet(wb, ws, 'Directorio Clientes CRM');
+
+      const safeName = (currentBiz.name || 'comercio').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '_');
+      const fileName = `Clientes_CRM_${safeName}_${this.getTodayDateString()}.xlsx`;
+
+      window.XLSX.writeFile(wb, fileName);
+      this.showToast('¡Directorio de clientes exportado exitosamente a Excel (.xlsx)!', 'success');
+    } catch (err) {
+      console.error('Error exportando Excel de Clientes:', err);
+      this.showToast('Error al exportar a Excel: ' + err.message, 'error');
+    }
   }
 
   // --- SUB-CONTENIDO: REPORTES DE INGRESOS Y ESTADÍSTICAS DE CLIENTES FRECUENTES ---
@@ -11527,7 +12753,12 @@ class App {
   }
 
   // --- LISTENERS ESPECÍFICOS DEL DASHBOARD ---
-  setupDashboardTabEvents(currentBiz) {
+  setupDashboardTabEvents(currentBiz, appointments = null) {
+    const apts = appointments || storage.getAppointmentsByBusiness(currentBiz.id) || [];
+    if (this.activeDashboardTab === 'clients') {
+      this.setupClientsTabEvents(currentBiz, apts);
+    }
+
     // Apertura directa garantizada de Manuales para Comercios (PDF y Guía Web)
     document.getElementById('btn-open-manual-pdf')?.addEventListener('click', (e) => {
       e.preventDefault();
