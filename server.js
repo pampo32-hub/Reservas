@@ -178,6 +178,11 @@ ALLOWED_ROOT_STATIC_FILES.forEach(file => {
   app.get(`/${file}`, (req, res) => {
     const filePath = path.join(__dirname, file);
     if (fs.existsSync(filePath)) {
+      if (file === 'sw.js') {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
       res.sendFile(filePath);
     } else {
       res.status(404).end();

@@ -2595,7 +2595,7 @@ class StorageService {
   async initServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js?v=3.44.0', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3.46.12', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
         return registration;
       } catch (err) {
