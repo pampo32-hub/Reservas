@@ -2974,18 +2974,23 @@ app.post('/api/appointments', async (req, res) => {
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
+    // Si el cliente reserva para el mismo día, no se enviará recordatorio previo
+    const crToday = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+    const reminderSentAt = (a.date === crToday) ? new Date() : null;
+
     // 6. Inserción de la nueva cita garantizada sin colisión
     await client.query(`
       INSERT INTO reservas_appointments (
         id, business_id, service_id, service_name, service_price,
         service_duration, date, time, client_name, client_phone,
-        client_email, notes, status, whatsapp_opt_in, staff_id, staff_name
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        client_email, notes, status, whatsapp_opt_in, staff_id, staff_name,
+        whatsapp_reminder_sent_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
     `, [
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
       reqDuration, a.date, a.time, a.clientName, a.clientPhone,
       a.clientEmail || '', a.notes || '', initialStatus, optIn,
-      assignedStaffId, assignedStaffName
+      assignedStaffId, assignedStaffName, reminderSentAt
     ]);
 
     // Registrar o actualizar automáticamente el cliente (evitar duplicados por teléfono o email)
@@ -4295,26 +4300,39 @@ async function processPendingReviewEmails() {
 }
 
 /**
- * Procesa y envía recordatorios automáticos de WhatsApp 24h antes de la cita
- * Se ejecuta en horario de cortesía (8:00 AM a 8:30 PM en hora de Costa Rica)
+ * Procesa y envía recordatorios automáticos de WhatsApp el mismo día 4 horas antes de la cita
+ * - No envía recordatorio si el cliente reservó el mismo día
+ * - Se ejecuta en horario de cortesía (8:00 AM a 8:30 PM en hora de Costa Rica)
  */
 async function processPendingWhatsAppReminders() {
   try {
     // 1. Obtener fecha y hora actual en Costa Rica (UTC-6)
     const crDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Costa_Rica' }));
     const currentHour = crDate.getHours();
+    const currentMinute = crDate.getMinutes();
+    const nowMinutes = currentHour * 60 + currentMinute;
 
     // Solo enviar entre 8:00 AM y 8:30 PM para no perturbar a los clientes
     if (currentHour < 8 || currentHour >= 21) {
       return;
     }
 
-    // Calcular fecha de mañana en Costa Rica (YYYY-MM-DD)
-    const tomorrow = new Date(crDate);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    // Fecha actual en Costa Rica (YYYY-MM-DD)
+    const year = crDate.getFullYear();
+    const month = String(crDate.getMonth() + 1).padStart(2, '0');
+    const day = String(crDate.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
 
-    // 2. Buscar citas para mañana con recordatorio pendiente
+    // Descartar citas creadas el mismo día para que no reciban recordatorio
+    await pool.query(`
+      UPDATE reservas_appointments
+      SET whatsapp_reminder_sent_at = NOW()
+      WHERE date = $1
+        AND (created_at AT TIME ZONE 'America/Costa_Rica')::date >= date::date
+        AND whatsapp_reminder_sent_at IS NULL
+    `, [todayStr]);
+
+    // 2. Buscar citas para HOY con recordatorio pendiente, reservadas con anticipación
     const result = await pool.query(`
       SELECT a.*, 
              b.name as business_name, 
@@ -4332,17 +4350,38 @@ async function processPendingWhatsAppReminders() {
         AND TRIM(a.client_phone) != ''
         AND a.whatsapp_reminder_sent_at IS NULL
         AND a.date = $1
+        AND (a.created_at AT TIME ZONE 'America/Costa_Rica')::date < a.date::date
       ORDER BY a.time ASC
       LIMIT 25
-    `, [tomorrowStr]);
+    `, [todayStr]);
 
     if (!result.rows || result.rows.length === 0) {
       return;
     }
 
-    console.log(`⏰ [Worker Recordatorios] Se encontraron ${result.rows.length} citas para mañana (${tomorrowStr}) con recordatorio pendiente.`);
-
     for (const apt of result.rows) {
+      // Validar y parsear la hora de la cita (HH:mm)
+      const timeParts = (apt.time || '').split(':');
+      if (timeParts.length < 2) {
+        continue;
+      }
+      const aptHour = parseInt(timeParts[0], 10);
+      const aptMinute = parseInt(timeParts[1], 10);
+      const aptMinutes = aptHour * 60 + aptMinute;
+      const minutesUntilApt = aptMinutes - nowMinutes;
+
+      // Si la cita ya pasó, marcar como procesada para no enviar fuera de tiempo
+      if (minutesUntilApt < 0) {
+        await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
+        continue;
+      }
+
+      // Regla de 4 horas: Solo enviar si faltan 4 horas (240 minutos) o menos
+      if (minutesUntilApt > 240) {
+        // Aún falta más de 4 horas para este turno, esperar al próximo ciclo
+        continue;
+      }
+
       const plan = apt.business_plan || 'free';
       const hasPlan = ['basic', 'pro', 'unlimited'].includes(plan);
       const extraCredits = parseInt(apt.business_extra_credits || 0, 10);
@@ -4382,7 +4421,7 @@ async function processPendingWhatsAppReminders() {
         const sendRes = await sendAppointmentReminderWhatsApp(appointmentObj, businessObj, pool);
         if (sendRes && sendRes.success) {
           await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
-          console.log(`✅ [Worker Recordatorios] Recordatorio entregado para cita #${apt.id} (${apt.client_name}) al tel: ${apt.client_phone} [${sendRes.provider}]`);
+          console.log(`✅ [Worker Recordatorios] Recordatorio (4h antes) entregado para cita #${apt.id} (${apt.client_name}) al tel: ${apt.client_phone} [${sendRes.provider}]`);
         } else {
           console.warn(`⚠️ [Worker Recordatorios] No se pudo entregar recordatorio cita #${apt.id}:`, sendRes?.reason || sendRes?.error);
         }
@@ -6804,8 +6843,8 @@ async function startServer() {
     // Ejecutar chequeo inicial 10 segundos después del arranque
     setTimeout(processPendingReviewEmails, 10000);
 
-    // Iniciar worker de recordatorios automáticos por WhatsApp cada 10 minutos
-    setInterval(processPendingWhatsAppReminders, 10 * 60 * 1000);
+    // Iniciar worker de recordatorios automáticos por WhatsApp cada 5 minutos
+    setInterval(processPendingWhatsAppReminders, 5 * 60 * 1000);
     // Ejecutar chequeo inicial 20 segundos después del arranque
     setTimeout(processPendingWhatsAppReminders, 20000);
 
