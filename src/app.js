@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.46.12';
+import storage from './services/storage.js?v=3.46.13';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -848,7 +848,7 @@ class App {
       'pruebas', 'planes-prueba', 'test-planes', 'planes-test', 'demo-planes',
       'unete', 'para-negocios', 'para-comercios', 'negocios', 'empresas', 'hazte-socio', 'registro-negocio', 'planes', 'precios',
       'mis-reservas', 'cliente', 'panel-usuario', 'panel-cliente', 'usuario', 'mi-cuenta', 'perfil', 'mis-citas',
-      'panel-negocio', 'dashboard', 'owner',
+      'panel-negocio', 'panel-negocios', 'panel', 'dashboard', 'owner', 'mi-negocio', 'mi-panel',
       'developer', 'developer-dashboard', 'admin',
       'login', 'acceso', 'entrar', 'soy-negocio',
       'privacidad', 'privacy', 'politica-de-privacidad', 'terminos', 'terms', 'terminos-y-condiciones',
@@ -896,7 +896,7 @@ class App {
       if (/^\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)$/i.test(pathname)) {
         return { view: 'my-client-bookings', params: {} };
       }
-      if (/^\/?(panel-negocio|dashboard|owner)$/i.test(pathname)) {
+      if (/^\/?(panel-negocio|panel-negocios|panel|dashboard|owner|mi-negocio|mi-panel)$/i.test(pathname)) {
         let tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
         if (tab === 'config' || tab === 'perfil') tab = 'profile';
         return { view: 'owner-dashboard', params: { tab } };
@@ -1020,7 +1020,7 @@ class App {
     }
 
     // 7. Panel negocio en hash
-    if (/^#\/?(panel-negocio|dashboard|owner)/i.test(cleanHash)) {
+    if (/^#\/?(panel-negocio|panel-negocios|panel|dashboard|owner|mi-negocio|mi-panel)/i.test(cleanHash)) {
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
       let tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
@@ -6809,14 +6809,27 @@ class App {
   }
 
   async renderOwnerDashboardView(container) {
-    const bizUser = storage.getBusinessUser();
+    const devUser = storage.getDeveloperUser();
+    let bizUser = storage.getBusinessUser();
+    if (!bizUser && devUser) {
+      // Si el SuperAdmin Developer entra a ver el panel de negocio, permitirle inspeccionar
+      const activeBizId = storage.getActiveBusinessId() || (storage.getBusinesses() || [])[0]?.id;
+      bizUser = {
+        id: devUser.id,
+        email: devUser.email,
+        name: `${devUser.name || 'Developer'} (SuperAdmin)`,
+        businessId: activeBizId,
+        role: 'developer'
+      };
+    }
+
     if (!bizUser) {
       this.renderBusinessAuthModal();
       this.navigateTo('directory');
       return;
     }
 
-    let currentBiz = storage.getBusinessById(bizUser.businessId);
+    let currentBiz = bizUser.businessId ? storage.getBusinessById(bizUser.businessId) : null;
     if (!currentBiz) {
       container.innerHTML = `
         <div class="max-w-4xl mx-auto px-4 py-24 text-center animate-fade-in">
@@ -6827,18 +6840,29 @@ class App {
           <p class="text-xs text-slate-500">Sincronizando información de tu comercio y agenda.</p>
         </div>
       `;
-      if (storage.getBusinessByIdAsync) {
+      if (storage.getBusinessByIdAsync && bizUser.businessId) {
         currentBiz = await storage.getBusinessByIdAsync(bizUser.businessId);
       }
     }
     if (!currentBiz) {
       currentBiz = (storage.getBusinesses() || [])[0];
     }
+    if (!currentBiz && storage.getBusinessesAsync) {
+      const all = await storage.getBusinessesAsync();
+      currentBiz = (all || [])[0];
+    }
     if (!currentBiz) {
       this.showToast('No se encontró el comercio asociado a tu cuenta.', 'warning');
       this.navigateTo('directory');
       return;
     }
+
+    if (currentBiz && bizUser.businessId !== currentBiz.id && !devUser) {
+      bizUser.businessId = currentBiz.id;
+      storage.setBusinessUser(bizUser);
+    }
+
+    try {
 
     // Asegurar que la conexión de tiempo real SSE esté siempre activa
     try {
@@ -7250,7 +7274,38 @@ class App {
 
     this.setupDashboardTabEvents(currentBiz, appointments);
     this.updatePushNotificationBanner(currentBiz);
+  } catch (err) {
+    console.error('Error renderizando panel de negocio:', err);
+    container.innerHTML = `
+      <div class="max-w-xl mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-200 shadow-xl text-center space-y-4 animate-fade-in">
+        <div class="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="text-lg font-black text-slate-800">Hubo un problema al cargar el panel</h3>
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Ocurrió un error inesperado al preparar la información de tu comercio.
+        </p>
+        <div class="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-600 font-mono text-left overflow-x-auto">
+          ${this.escapeHtml(err?.message || 'Error desconocido')}
+        </div>
+        <div class="flex items-center justify-center gap-2 pt-2">
+          <button id="retry-owner-dash-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
+            <i class="fas fa-redo-alt mr-1"></i> Reintentar
+          </button>
+          <button id="back-to-dir-owner-btn" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+            Ir al Directorio
+          </button>
+        </div>
+      </div>
+    `;
+    document.getElementById('retry-owner-dash-btn')?.addEventListener('click', () => {
+      this.renderOwnerDashboardView(container);
+    });
+    document.getElementById('back-to-dir-owner-btn')?.addEventListener('click', () => {
+      this.navigateTo('directory');
+    });
   }
+}
 
   // --- GESTIÓN DE NOTIFICACIONES PUSH MÓVILES (WEB PUSH) ---
   async updatePushNotificationBanner(currentBiz) {
@@ -7439,9 +7494,10 @@ class App {
 
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
-    if (this.activeDashboardTab === 'clients') {
-      return this.renderClientsTabContent(currentBiz, appointments);
-    }
+    try {
+      if (this.activeDashboardTab === 'clients') {
+        return this.renderClientsTabContent(currentBiz, appointments);
+      }
 
     if (this.activeDashboardTab === 'manual') {
       return this.renderManualTabContent(currentBiz);
@@ -8630,6 +8686,19 @@ class App {
         </div>
       `;
     }
+    return '';
+    } catch (tabErr) {
+      console.error('Error renderizando pestaña del panel:', tabErr);
+      return `
+        <div class="p-8 text-center bg-white rounded-3xl border border-slate-200 shadow-xs space-y-3">
+          <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+            <i class="fas fa-exclamation-circle"></i>
+          </div>
+          <h4 class="text-sm font-bold text-slate-800">Error al cargar esta sección</h4>
+          <p class="text-xs text-slate-500">${this.escapeHtml(tabErr?.message || 'Error inesperado')}</p>
+        </div>
+      `;
+    }
   }
 
   // --- VISTA CALENDARIO DE AGENDA DE COMERCIO ---
@@ -9280,178 +9349,200 @@ class App {
 
   // --- MINI CRM & FICHA DE FIDELIZACIÓN DE CLIENTES ---
   computeBusinessClients(appointments, businessId) {
-    if (!appointments || appointments.length === 0) return [];
-    const notesMap = storage.getBusinessClientNotes(businessId) || {};
-    const clientMap = new Map();
-    const todayStr = this.getTodayDateString();
-
-    appointments.forEach(apt => {
-      const rawPhone = (apt.clientPhone || '').replace(/\D/g, '');
-      const cleanPhone = rawPhone.length >= 8 ? rawPhone.slice(-8) : rawPhone;
-      const key = cleanPhone || (apt.clientEmail ? apt.clientEmail.toLowerCase().trim() : '') || (apt.clientName ? apt.clientName.toLowerCase().trim() : 'cliente_anonimo');
-
-      if (!clientMap.has(key)) {
-        clientMap.set(key, {
-          key,
-          rawPhone: cleanPhone,
-          clientPhone: apt.clientPhone || (cleanPhone ? `${cleanPhone.slice(0, 4)}-${cleanPhone.slice(4)}` : ''),
-          clientName: (apt.clientName && apt.clientName.trim()) || 'Cliente',
-          clientEmail: (apt.clientEmail && apt.clientEmail.trim()) || '',
-          appointments: [],
-          servicesCount: {},
-          staffCount: {},
-          firstVisitDate: null,
-          lastVisitDate: null,
-          nextAppointment: null,
-          totalAppointments: 0,
-          completedAppointments: 0,
-          confirmedAppointments: 0,
-          cancelledAppointments: 0,
-          pendingAppointments: 0,
-          totalSpent: 0
-        });
+    if (!appointments || !Array.isArray(appointments) || appointments.length === 0) return [];
+    try {
+      let notesMap = {};
+      try {
+        if (storage.getBusinessClientNotes) {
+          notesMap = storage.getBusinessClientNotes(businessId) || {};
+        }
+      } catch (e) {
+        console.warn('Error al cargar notas de clientes:', e);
       }
+      const clientMap = new Map();
+      const todayStr = this.getTodayDateString();
 
-      const client = clientMap.get(key);
-      client.appointments.push(apt);
+      appointments.forEach(apt => {
+        if (!apt) return;
+        const rawPhone = (apt.clientPhone || '').replace(/\D/g, '');
+        const cleanPhone = rawPhone.length >= 8 ? rawPhone.slice(-8) : rawPhone;
+        const key = cleanPhone || (apt.clientEmail ? apt.clientEmail.toLowerCase().trim() : '') || (apt.clientName ? apt.clientName.toLowerCase().trim() : 'cliente_anonimo');
 
-      if (apt.clientName && apt.clientName.trim() && apt.clientName.trim().toLowerCase() !== 'cliente') {
-        client.clientName = apt.clientName.trim();
-      }
-      if (apt.clientEmail && apt.clientEmail.trim()) {
-        client.clientEmail = apt.clientEmail.trim();
-      }
-      if (apt.clientPhone && apt.clientPhone.trim()) {
-        client.clientPhone = apt.clientPhone.trim();
-      }
+        if (!clientMap.has(key)) {
+          clientMap.set(key, {
+            key,
+            rawPhone: cleanPhone,
+            clientPhone: apt.clientPhone || (cleanPhone ? `${cleanPhone.slice(0, 4)}-${cleanPhone.slice(4)}` : ''),
+            clientName: (apt.clientName && apt.clientName.trim()) || 'Cliente',
+            clientEmail: (apt.clientEmail && apt.clientEmail.trim()) || '',
+            appointments: [],
+            servicesCount: {},
+            staffCount: {},
+            firstVisitDate: null,
+            lastVisitDate: null,
+            nextAppointment: null,
+            totalAppointments: 0,
+            completedAppointments: 0,
+            confirmedAppointments: 0,
+            cancelledAppointments: 0,
+            pendingAppointments: 0,
+            totalSpent: 0
+          });
+        }
 
-      if (apt.serviceName) {
-        client.servicesCount[apt.serviceName] = (client.servicesCount[apt.serviceName] || 0) + 1;
-      }
-      if (apt.staffName) {
-        client.staffCount[apt.staffName] = (client.staffCount[apt.staffName] || 0) + 1;
-      }
+        const client = clientMap.get(key);
+        client.appointments.push(apt);
 
-      client.totalAppointments++;
-      const priceNum = Number(apt.servicePrice) || 0;
-      if (apt.status === 'completed') {
-        client.completedAppointments++;
-        client.totalSpent += priceNum;
-      } else if (apt.status === 'confirmed') {
-        client.confirmedAppointments++;
-        client.totalSpent += priceNum;
-      } else if (apt.status === 'cancelled') {
-        client.cancelledAppointments++;
-      } else if (apt.status === 'pending') {
-        client.pendingAppointments++;
-      }
-    });
+        if (apt.clientName && apt.clientName.trim() && apt.clientName.trim().toLowerCase() !== 'cliente') {
+          client.clientName = apt.clientName.trim();
+        }
+        if (apt.clientEmail && apt.clientEmail.trim()) {
+          client.clientEmail = apt.clientEmail.trim();
+        }
+        if (apt.clientPhone && apt.clientPhone.trim()) {
+          client.clientPhone = apt.clientPhone.trim();
+        }
 
-    const clients = Array.from(clientMap.values()).map(client => {
-      // Orden cronológico inverso (más recientes primero)
-      client.appointments.sort((a, b) => {
-        const d = (b.date || '').localeCompare(a.date || '');
-        if (d !== 0) return d;
-        return (b.time || '').localeCompare(a.time || '');
+        if (apt.serviceName) {
+          client.servicesCount[apt.serviceName] = (client.servicesCount[apt.serviceName] || 0) + 1;
+        }
+        if (apt.staffName) {
+          client.staffCount[apt.staffName] = (client.staffCount[apt.staffName] || 0) + 1;
+        }
+
+        client.totalAppointments++;
+        const priceNum = Number(apt.servicePrice) || 0;
+        if (apt.status === 'completed') {
+          client.completedAppointments++;
+          client.totalSpent += priceNum;
+        } else if (apt.status === 'confirmed') {
+          client.confirmedAppointments++;
+          client.totalSpent += priceNum;
+        } else if (apt.status === 'cancelled') {
+          client.cancelledAppointments++;
+        } else if (apt.status === 'pending') {
+          client.pendingAppointments++;
+        }
       });
 
-      const nonCancelled = client.appointments.filter(a => a.status !== 'cancelled');
-
-      // Primera visita histórica
-      if (nonCancelled.length > 0) {
-        client.firstVisitDate = nonCancelled[nonCancelled.length - 1].date;
-      }
-
-      // Citas pasadas y próximas
-      const pastVisits = nonCancelled.filter(a => (a.date < todayStr) || (a.date === todayStr && a.status === 'completed'));
-      const upcomingVisits = nonCancelled.filter(a => a.date >= todayStr && a.status !== 'completed');
-
-      if (pastVisits.length > 0) {
-        client.lastVisitDate = pastVisits[0].date;
-      } else if (nonCancelled.length > 0) {
-        client.lastVisitDate = pastVisits[0].date;
-      }
-
-      if (upcomingVisits.length > 0) {
-        const sortedUpcoming = [...upcomingVisits].sort((a, b) => {
-          const d = (a.date || '').localeCompare(b.date || '');
+      const clients = Array.from(clientMap.values()).map(client => {
+        // Orden cronológico inverso (más recientes primero)
+        client.appointments.sort((a, b) => {
+          const d = (b.date || '').localeCompare(a.date || '');
           if (d !== 0) return d;
-          return (a.time || '').localeCompare(b.time || '');
+          return (b.time || '').localeCompare(a.time || '');
         });
-        client.nextAppointment = sortedUpcoming[0];
-      }
 
-      // Días transcurridos desde la última visita
-      let daysSinceLastVisit = null;
-      if (client.lastVisitDate) {
-        const lastD = new Date(client.lastVisitDate + 'T12:00:00');
-        const nowD = new Date(todayStr + 'T12:00:00');
-        const diffMs = nowD - lastD;
-        daysSinceLastVisit = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-      }
-      client.daysSinceLastVisit = daysSinceLastVisit;
+        const validDateApts = client.appointments.filter(a => a && a.date && typeof a.date === 'string');
+        const nonCancelled = validDateApts.filter(a => a.status !== 'cancelled');
 
-      // Estado de Retención
-      if (client.nextAppointment) {
-        client.retentionStatus = 'upcoming';
-      } else if (daysSinceLastVisit !== null && daysSinceLastVisit > 45) {
-        client.retentionStatus = 'risk';
-      } else if (daysSinceLastVisit !== null && daysSinceLastVisit > 21) {
-        client.retentionStatus = 'inactive';
-      } else {
-        client.retentionStatus = 'active';
-      }
-
-      // Nivel de Fidelidad (Segmentación)
-      const validCount = client.completedAppointments + client.confirmedAppointments;
-      if (validCount >= 5 || client.totalSpent >= 50000) {
-        client.tier = 'vip';
-        client.tierLabel = '👑 VIP Platino';
-      } else if (validCount >= 2 || client.totalSpent >= 15000) {
-        client.tier = 'frequent';
-        client.tierLabel = '💎 Recurrente';
-      } else {
-        client.tier = 'new';
-        client.tierLabel = '🌱 Nuevo';
-      }
-
-      // Servicio más solicitado
-      let favService = null;
-      let maxServ = 0;
-      Object.entries(client.servicesCount).forEach(([sName, cnt]) => {
-        if (cnt > maxServ) {
-          maxServ = cnt;
-          favService = sName;
+        // Primera visita histórica
+        if (nonCancelled.length > 0) {
+          client.firstVisitDate = nonCancelled[nonCancelled.length - 1].date;
+        } else {
+          client.firstVisitDate = null;
         }
-      });
-      client.favoriteService = favService || 'Sin preferencia';
 
-      // Especialista preferido
-      let favStaff = null;
-      let maxStf = 0;
-      Object.entries(client.staffCount).forEach(([stName, cnt]) => {
-        if (cnt > maxStf) {
-          maxStf = cnt;
-          favStaff = stName;
+        // Citas pasadas y próximas
+        const pastVisits = nonCancelled.filter(a => (a.date < todayStr) || (a.date === todayStr && a.status === 'completed'));
+        const upcomingVisits = nonCancelled.filter(a => a.date >= todayStr && a.status !== 'completed');
+
+        if (pastVisits.length > 0) {
+          client.lastVisitDate = pastVisits[0].date;
+        } else {
+          client.lastVisitDate = null;
         }
+
+        if (upcomingVisits.length > 0) {
+          const sortedUpcoming = [...upcomingVisits].sort((a, b) => {
+            const d = (a.date || '').localeCompare(b.date || '');
+            if (d !== 0) return d;
+            return (a.time || '').localeCompare(b.time || '');
+          });
+          client.nextAppointment = sortedUpcoming[0];
+        } else {
+          client.nextAppointment = null;
+        }
+
+        // Días transcurridos desde la última visita
+        let daysSinceLastVisit = null;
+        if (client.lastVisitDate) {
+          try {
+            const lastD = new Date(client.lastVisitDate + 'T12:00:00');
+            const nowD = new Date(todayStr + 'T12:00:00');
+            const diffMs = nowD - lastD;
+            if (!isNaN(diffMs)) {
+              daysSinceLastVisit = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+            }
+          } catch (e) {}
+        }
+        client.daysSinceLastVisit = daysSinceLastVisit;
+
+        // Estado de Retención
+        if (client.nextAppointment) {
+          client.retentionStatus = 'upcoming';
+        } else if (daysSinceLastVisit !== null && daysSinceLastVisit > 45) {
+          client.retentionStatus = 'risk';
+        } else if (daysSinceLastVisit !== null && daysSinceLastVisit > 21) {
+          client.retentionStatus = 'inactive';
+        } else {
+          client.retentionStatus = 'active';
+        }
+
+        // Nivel de Fidelidad (Segmentación)
+        const validCount = client.completedAppointments + client.confirmedAppointments;
+        if (validCount >= 5 || client.totalSpent >= 50000) {
+          client.tier = 'vip';
+          client.tierLabel = '👑 VIP Platino';
+        } else if (validCount >= 2 || client.totalSpent >= 15000) {
+          client.tier = 'frequent';
+          client.tierLabel = '💎 Recurrente';
+        } else {
+          client.tier = 'new';
+          client.tierLabel = '🌱 Nuevo';
+        }
+
+        // Servicio más solicitado
+        let favService = null;
+        let maxServ = 0;
+        Object.entries(client.servicesCount).forEach(([sName, cnt]) => {
+          if (cnt > maxServ) {
+            maxServ = cnt;
+            favService = sName;
+          }
+        });
+        client.favoriteService = favService || 'Sin preferencia';
+
+        // Especialista preferido
+        let favStaff = null;
+        let maxStf = 0;
+        Object.entries(client.staffCount).forEach(([stName, cnt]) => {
+          if (cnt > maxStf) {
+            maxStf = cnt;
+            favStaff = stName;
+          }
+        });
+        client.favoriteStaff = favStaff || 'General';
+
+        // Ticket Promedio
+        client.avgTicket = validCount > 0 ? Math.round(client.totalSpent / validCount) : 0;
+
+        // Integrar notas y etiquetas guardadas
+        const noteEntry = (client.rawPhone && notesMap[client.rawPhone]) || (notesMap[client.key]) || null;
+        client.internalNotes = noteEntry?.notes || '';
+        client.internalTags = Array.isArray(noteEntry?.tags) ? noteEntry.tags : [];
+        if (noteEntry?.clientName && noteEntry.clientName.trim()) {
+          client.customName = noteEntry.clientName.trim();
+        }
+
+        return client;
       });
-      client.favoriteStaff = favStaff || 'General';
 
-      // Ticket Promedio
-      client.avgTicket = validCount > 0 ? Math.round(client.totalSpent / validCount) : 0;
-
-      // Integrar notas y etiquetas guardadas
-      const noteEntry = (client.rawPhone && notesMap[client.rawPhone]) || (notesMap[client.key]) || null;
-      client.internalNotes = noteEntry?.notes || '';
-      client.internalTags = Array.isArray(noteEntry?.tags) ? noteEntry.tags : [];
-      if (noteEntry?.clientName && noteEntry.clientName.trim()) {
-        client.customName = noteEntry.clientName.trim();
-      }
-
-      return client;
-    });
-
-    return clients;
+      return clients;
+    } catch (err) {
+      console.error('Error calculando clientes del negocio:', err);
+      return [];
+    }
   }
 
   filterAndSortClients(allClients, filter = 'all', query = '', sort = 'spent-desc') {
@@ -10262,7 +10353,7 @@ class App {
     const fullWaPhone = cleanDigits.length === 8 ? `506${cleanDigits}` : cleanDigits;
 
     const bizSlug = currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id);
-    const origin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : 'https://reservascr.com';
+    const origin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : 'https://reservascr.app';
     const bizLink = `${origin}/#/${bizSlug}`;
 
     const templates = {
@@ -13658,7 +13749,7 @@ class App {
     document.querySelectorAll('.btn-go-to-portfolio-tab').forEach(btn => {
       btn.addEventListener('click', () => {
         this.activeDashboardTab = 'portfolio';
-        this.renderOwnerDashboardView(container);
+        this.renderCurrentView();
       });
     });
 
