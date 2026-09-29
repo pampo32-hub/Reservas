@@ -6236,7 +6236,7 @@ class App {
             <button id="go-explore-top-btn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 cursor-pointer">
               <i class="fas fa-plus mr-1"></i> Nueva Reserva
             </button>
-            <button id="client-logout-view-btn" type="button" class="action-logout-client px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs">
+            <button id="client-logout-view-btn" type="button" class="action-logout-client px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs">
               <i class="fas fa-sign-out-alt mr-1"></i> Salir
             </button>
           </div>
@@ -6253,7 +6253,7 @@ class App {
                 <p class="text-xs text-slate-600 mt-0.5">Agrega tu teléfono para que los comercios puedan enviarte los recordatorios y confirmaciones de tus citas.</p>
               </div>
             </div>
-            <button id="banner-add-phone-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-600/20 transition-all shrink-0 cursor-pointer flex items-center justify-center gap-1.5">
+            <button id="banner-add-phone-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-600/20 transition-colors shrink-0 cursor-pointer flex items-center justify-center gap-1.5">
               <i class="fas fa-plus-circle"></i>
               <span>Completar Teléfono</span>
             </button>

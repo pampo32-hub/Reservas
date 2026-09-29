@@ -66,23 +66,44 @@ html, body {
 /* ==========================================================================
    ANTI-FLICKER & STABLE HOVER ENGINE
    Prevents pointer bouncing between parent and nested children (icons, text)
+   and eliminates GPU compositing layer oscillation loops on button hover
    ========================================================================== */
 button, a, [role="button"], input[type="button"], input[type="submit"] {
   -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
-/* Ensure child elements inside buttons/links do not capture pointer events,
+/* Ensure ALL descendant elements inside buttons/links do not capture pointer events,
    preventing mouseenter/mouseleave bubbling jitter */
-button > *, a > *, [role="button"] > * {
-  pointer-events: none;
+button *, a *, [role="button"] * {
+  pointer-events: none !important;
 }
 
-/* Restrict button transitions to safe non-layout visual properties,
-   preventing GPU subpixel hit-test oscillation loops */
+/* Restrict button transitions strictly to paint-only visual properties,
+   preventing GPU subpixel hit-test oscillation loops and composite layer bouncing */
 button, a, [role="button"], .btn, input[type="button"], input[type="submit"] {
-  transition-property: color, background-color, border-color, box-shadow, opacity !important;
+  transition-property: color, background-color, border-color !important;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
   transition-duration: 150ms !important;
+}
+
+/* Specific stabilization for client bookings buttons and action elements */
+.client-filter-btn,
+.client-download-ics-btn,
+.client-reschedule-btn,
+.client-cancel-btn,
+.client-rate-btn,
+#client-edit-profile-btn,
+#go-explore-top-btn,
+#client-logout-view-btn,
+#banner-add-phone-btn,
+#go-explore-btn {
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  will-change: background-color, color !important;
 }
 
 h1, h2, h3, h4, .font-headline, .font-display {
@@ -90,14 +111,10 @@ h1, h2, h3, h4, .font-headline, .font-display {
   letter-spacing: -0.03em;
 }
 
-/* Luminous Atmospheric Energy Canvas */
 /* Luminous Midnight Atmospheric Energy Canvas */
 .bg-luminous-gradient, body {
-  background-color: #F8F9FF;
   background-color: #F8FAFC;
   background-image: 
-    radial-gradient(circle at 85% 12%, rgba(0, 209, 102, 0.12) 0%, transparent 42%),
-    radial-gradient(circle at 12% 88%, rgba(0, 98, 158, 0.10) 0%, transparent 48%);
     radial-gradient(circle at 85% 12%, rgba(37, 99, 235, 0.08) 0%, transparent 45%),
     radial-gradient(circle at 12% 88%, rgba(15, 23, 42, 0.06) 0%, transparent 50%);
   background-attachment: fixed;
