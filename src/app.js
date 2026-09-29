@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.46.13';
+import storage from './services/storage.js?v=3.46.14';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -11017,6 +11017,18 @@ class App {
                 </div>
                 <i class="fas fa-arrow-right text-slate-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-1"></i>
               </a>
+            </div>
+
+            <!-- Ayuda para autorizar la sincronización -->
+            <div class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-950 text-xs space-y-1.5 shadow-2xs">
+              <div class="flex items-center gap-2 font-black text-amber-900">
+                <i class="fas fa-info-circle text-amber-600 text-sm"></i>
+                <span>¿Cómo autorizar la sincronización con tu cuenta?</span>
+              </div>
+              <ul class="text-[11.5px] text-amber-900/90 space-y-1 list-disc pl-5 leading-relaxed">
+                <li><strong>En Google:</strong> Si Google muestra la advertencia <em>"Google hasn't verified this app"</em>, haz clic abajo a la izquierda en <strong>"Advanced"</strong> (Configuración avanzada) y luego en <strong>"Go to Reservas CR (unsafe)"</strong> para permitir que las citas se anoten en tu calendario.</li>
+                <li><strong>En Outlook:</strong> Si aparece la notificación <em>"Nylas Hosted Authentication (Sandbox)"</em>, pulsa el botón azul <strong>"I understand, continue &gt;"</strong> para completar el enlace.</li>
+              </ul>
             </div>
 
             <!-- Beneficios y Seguridad -->
