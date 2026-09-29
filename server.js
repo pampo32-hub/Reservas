@@ -1184,6 +1184,7 @@ app.put('/api/client/profile/:id', async (req, res) => {
     const { id } = req.params;
     const { name, phone, email, password, whatsappOptIn } = req.body;
 
+    const cleanEmail = email ? email.trim().toLowerCase() : null;
     let updateQuery = `
       UPDATE reservas_clients SET
         name = COALESCE($1, name),
@@ -1194,17 +1195,17 @@ app.put('/api/client/profile/:id', async (req, res) => {
     const params = [
       name ? name.trim() : null,
       phone ? phone.trim() : null,
-      email ? email.trim().toLowerCase() : null,
+      cleanEmail,
       whatsappOptIn !== undefined ? Boolean(whatsappOptIn) : null
     ];
 
     if (password && password.trim()) {
       const hashedPassword = await hashPassword(password.trim());
-      updateQuery += `, password = $5 WHERE id = $6 RETURNING *`;
-      params.push(hashedPassword, id);
+      updateQuery += `, password = $5 WHERE (id = $6 OR (email != '' AND LOWER(email) = LOWER($7))) RETURNING *`;
+      params.push(hashedPassword, id, cleanEmail || id);
     } else {
-      updateQuery += ` WHERE id = $5 RETURNING *`;
-      params.push(id);
+      updateQuery += ` WHERE (id = $5 OR (email != '' AND LOWER(email) = LOWER($6))) RETURNING *`;
+      params.push(id, cleanEmail || id);
     }
 
     const result = await pool.query(updateQuery, params);
@@ -5820,7 +5821,7 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
             email: cleanEmail,
             role: 'business'
           };
-          returnTo = '/panel-negocio?tab=config';
+          returnTo = '/panel-negocio?tab=profile';
           console.log(`✅ [Google OAuth] Nuevo comercio registrado y autenticado: ${cleanEmail}`);
         }
       }
@@ -5836,7 +5837,8 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
           email: row.email,
           avatarUrl: row.avatar_url || avatarUrl,
           whatsappOptIn: row.whatsapp_opt_in !== false,
-          role: 'client'
+          role: 'client',
+          needsPhone: !row.phone || row.phone.trim() === ''
         };
         await pool.query(
           'UPDATE reservas_clients SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url) WHERE id = $3',
@@ -5871,7 +5873,8 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
             email: cleanEmail,
             avatarUrl: avatarUrl,
             whatsappOptIn: true,
-            role: 'client'
+            role: 'client',
+            needsPhone: true
           };
           console.log(`✅ [Google OAuth] Nuevo cliente registrado con Google: ${cleanEmail}`);
         }
@@ -5889,7 +5892,7 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
 
     let redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/mis-reservas');
     const separator = redirectTarget.includes('?') ? '&' : (redirectTarget.includes('#') ? '?' : '?');
-    redirectTarget = `${redirectTarget}${separator}oauth_login=success`;
+    redirectTarget = `${redirectTarget}${separator}oauth_login=success${sessionUser.needsPhone ? '&needs_phone=1' : ''}`;
 
     function escapeHtml(s) {
       return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -5979,7 +5982,7 @@ app.get(['/api/auth/google/callback', '/api/auth/nylas/google/callback'], async 
             }
 
             if (window.opener && !window.opener.closed) {
-              window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', role: role, token: token, user: sessionData }, '*');
+              window.opener.postMessage({ type: 'GOOGLE_OAUTH_SUCCESS', role: role, token: token, user: sessionData, needsPhone: Boolean(sessionData && sessionData.needsPhone) }, '*');
               setTimeout(() => { window.close(); }, 300);
             } else {
               window.location.href = ${JSON.stringify(redirectTarget)};
@@ -6193,7 +6196,8 @@ app.get('/api/nylas/callback', async (req, res) => {
           phone: row.phone || '',
           email: row.email,
           whatsappOptIn: row.whatsapp_opt_in !== false,
-          role: 'client'
+          role: 'client',
+          needsPhone: !row.phone || row.phone.trim() === ''
         };
         await pool.query('UPDATE reservas_clients SET oauth_provider = $1, nylas_grant_id = $2 WHERE id = $3', [authProvider, grantId, row.id]).catch(() => {});
       } else {
@@ -6210,13 +6214,16 @@ app.get('/api/nylas/callback', async (req, res) => {
           phone: '',
           email: cleanEmail,
           whatsappOptIn: true,
-          role: 'client'
+          role: 'client',
+          needsPhone: true
         };
         console.log(`✅ [Nylas OAuth] Nuevo cliente registrado con ${providerLabel}: ${cleanEmail}`);
       }
     }
 
-    const redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/mis-reservas');
+    let redirectTarget = returnTo || (finalRole === 'business' ? '/panel-negocio' : '/mis-reservas');
+    const separator = redirectTarget.includes('?') ? '&' : (redirectTarget.includes('#') ? '?' : '?');
+    redirectTarget = `${redirectTarget}${separator}oauth_login=success${sessionUser?.needsPhone ? '&needs_phone=1' : ''}`;
     res.send(`
       <!DOCTYPE html>
       <html lang="es">
@@ -6275,10 +6282,10 @@ app.get('/api/nylas/callback', async (req, res) => {
               localStorage.setItem('directorio_client_user_session', JSON.stringify(sessionData));
             }
             if (window.opener && !window.opener.closed) {
-              window.opener.postMessage({ type: 'NYLAS_OAUTH_SUCCESS', role: role, user: sessionData }, '*');
+              window.opener.postMessage({ type: 'NYLAS_OAUTH_SUCCESS', role: role, user: sessionData, needsPhone: Boolean(sessionData && sessionData.needsPhone) }, '*');
               window.close();
             } else {
-              window.location.href = '${redirectTarget}';
+              window.location.href = ${JSON.stringify(redirectTarget)};
             }
           } catch(e) {
             window.location.href = '/directorio';

@@ -685,9 +685,13 @@ class App {
         const client = storage.getClientUser();
         const biz = storage.getBusinessUser();
         const user = client || biz;
+        const needsPhone = urlParams.get('needs_phone') === '1' || (client && (!client.phone || client.phone.trim() === ''));
         setTimeout(() => {
           this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Has iniciado sesión con Google correctamente.`, 'success', 5000);
-        }, 500);
+          if (client && needsPhone) {
+            this.renderCompletePhoneModal(client);
+          }
+        }, 600);
         const cleanUrl = window.location.pathname + (window.location.hash || '');
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, cleanUrl);
@@ -709,6 +713,7 @@ class App {
           const user = event.data.user;
           const role = event.data.role;
           const token = event.data.token;
+          const needsPhone = Boolean(event.data.needsPhone || (role === 'client' && (!user?.phone || user.phone.trim() === '')));
           if (token) {
             storage.setAuthToken(token);
           }
@@ -724,11 +729,16 @@ class App {
             this.navigateTo('my-client-bookings');
           }
           const modalContainer = document.getElementById('modal-container');
-          if (modalContainer) modalContainer.innerHTML = '';
+          if (modalContainer && !needsPhone) modalContainer.innerHTML = '';
           this.renderHeader();
           this.renderMobileBottomNav();
           this.renderCurrentView();
           this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
+          if (role === 'client' && needsPhone) {
+            setTimeout(() => {
+              this.renderCompletePhoneModal(user);
+            }, 500);
+          }
         }
       });
     } catch (e) {
@@ -875,7 +885,8 @@ class App {
         return { view: 'my-client-bookings', params: {} };
       }
       if (/^\/?(panel-negocio|dashboard|owner)$/i.test(pathname)) {
-        const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+        let tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+        if (tab === 'config' || tab === 'perfil') tab = 'profile';
         return { view: 'owner-dashboard', params: { tab } };
       }
       if (/^\/?(developer|developer-dashboard|admin)$/i.test(pathname)) {
@@ -1000,7 +1011,8 @@ class App {
     if (/^#\/?(panel-negocio|dashboard|owner)/i.test(cleanHash)) {
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
-      const tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+      let tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+      if (tab === 'config' || tab === 'perfil') tab = 'profile';
       return { view: 'owner-dashboard', params: { tab } };
     }
 
@@ -5211,23 +5223,31 @@ class App {
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                <input 
-                  type="tel" 
-                  id="client-phone" 
-                  value="${clientUser ? clientUser.phone : ''}"
-                  placeholder="Teléfono / WhatsApp (+506) *" 
-                  required 
-                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-                <input 
-                  type="email" 
-                  id="client-email" 
-                  value="${clientUser ? clientUser.email || '' : ''}"
-                  placeholder="Correo Electrónico *" 
-                  required 
-                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-
+                <div>
+                  <input 
+                    type="tel" 
+                    id="client-phone" 
+                    value="${clientUser ? (clientUser.phone || '') : ''}"
+                    placeholder="Teléfono / WhatsApp (+506) *" 
+                    required 
+                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none ${clientUser && (!clientUser.phone || clientUser.phone.trim() === '') ? 'border-amber-400 bg-amber-50/40 ring-2 ring-amber-400/20' : ''}"
+                  />
+                  ${clientUser && (!clientUser.phone || clientUser.phone.trim() === '') ? `
+                    <span class="text-[10px] text-amber-700 font-bold block mt-1">
+                      <i class="fab fa-whatsapp text-emerald-600"></i> Se guardará en tu cuenta para confirmaciones.
+                    </span>
+                  ` : ''}
+                </div>
+                <div>
+                  <input 
+                    type="email" 
+                    id="client-email" 
+                    value="${clientUser ? clientUser.email || '' : ''}"
+                    placeholder="Correo Electrónico *" 
+                    required 
+                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
               <div>
@@ -5498,6 +5518,11 @@ class App {
 
       // Guardar o actualizar sesión de cliente
       await storage.loginOrRegisterClient(clientName, clientPhone, clientEmail, whatsappOptIn);
+      const activeClient = storage.getClientUser();
+      if (activeClient) {
+        activeClient.phone = clientPhone;
+        storage.setClientUser(activeClient);
+      }
       this.renderHeader();
 
 
@@ -6201,6 +6226,24 @@ class App {
           </div>
         </div>
 
+        ${(!clientUser.phone || clientUser.phone.trim() === '') ? `
+          <div class="mb-6 p-4 sm:p-5 bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 border-2 border-emerald-300/80 rounded-3xl shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
+            <div class="flex items-center gap-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shrink-0 shadow-xs">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <div>
+                <h4 class="font-extrabold text-slate-900 text-sm">Falta tu número de WhatsApp</h4>
+                <p class="text-xs text-slate-600 mt-0.5">Agrega tu teléfono para que los comercios puedan enviarte los recordatorios y confirmaciones de tus citas.</p>
+              </div>
+            </div>
+            <button id="banner-add-phone-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-600/20 transition-all shrink-0 cursor-pointer flex items-center justify-center gap-1.5">
+              <i class="fas fa-plus-circle"></i>
+              <span>Completar Teléfono</span>
+            </button>
+          </div>
+        ` : ''}
+
         <!-- Filtros de Estado -->
         <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
           <button class="client-filter-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${filter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}" data-filter="all">
@@ -6377,6 +6420,189 @@ class App {
 
     document.getElementById('client-edit-profile-btn')?.addEventListener('click', () => {
       this.renderClientProfileModal(clientUser);
+    });
+
+    document.getElementById('banner-add-phone-btn')?.addEventListener('click', () => {
+      this.renderCompletePhoneModal(clientUser);
+    });
+  }
+
+  // --- MODAL DE COMPLETAR NÚMERO DE TELÉFONO / WHATSAPP TRAS REGISTRO CON GOOGLE ---
+  renderCompletePhoneModal(clientUser) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer || !clientUser) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200/90 my-8">
+          <!-- Header con gradiente llamativo de WhatsApp / Reservas -->
+          <div class="p-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-blue-600 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xs text-white flex items-center justify-center text-xl font-bold shadow-md shrink-0">
+                <i class="fab fa-whatsapp text-2xl text-emerald-100"></i>
+              </div>
+              <div>
+                <span class="text-[10px] uppercase font-black tracking-widest text-emerald-200 block">Paso final de cuenta</span>
+                <h3 class="text-lg font-black text-white leading-tight">Completa tu WhatsApp</h3>
+              </div>
+            </div>
+            <button id="close-phone-modal-btn" class="modal-close-btn w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 text-white flex items-center justify-center transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
+              <i class="fas fa-times text-sm pointer-events-none"></i>
+            </button>
+          </div>
+
+          <form id="complete-phone-form" class="p-6 space-y-4">
+            <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex items-start gap-3 text-emerald-950">
+              <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shrink-0 mt-0.5 shadow-2xs">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <div class="text-xs leading-relaxed">
+                <strong class="text-emerald-900 block font-bold">¡Bienvenido(a), ${this.escapeHtml(clientUser.name || 'Cliente')}!</strong>
+                Tu cuenta de Google (${this.escapeHtml(clientUser.email || '')}) se vinculó correctamente. Solo necesitamos tu número para enviarte las <strong>confirmaciones y recordatorios de tus citas</strong>.
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                Teléfono / WhatsApp *
+              </label>
+              <div class="relative flex items-center">
+                <div class="absolute left-3 flex items-center gap-1.5 text-xs font-bold text-slate-500 pointer-events-none border-r border-slate-300 pr-2">
+                  <span>🇨🇷</span>
+                  <span>+506</span>
+                </div>
+                <input 
+                  type="tel" 
+                  id="complete-phone-input" 
+                  value="${this.escapeHtml((clientUser.phone || '').replace(/^\+506\s*/, ''))}"
+                  placeholder="8888 8888" 
+                  maxlength="15"
+                  required
+                  autofocus
+                  class="w-full pl-20 pr-4 py-3 bg-slate-50 border-2 border-slate-200 focus:border-emerald-500 focus:bg-white rounded-xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-emerald-500/20 focus:outline-none transition-all"
+                >
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Ingresa tu número de 8 dígitos de Costa Rica.</p>
+            </div>
+
+            <!-- Consentimiento WhatsApp Opt-in -->
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
+              <label for="complete-phone-optin" class="flex items-center gap-2.5 cursor-pointer select-none">
+                <input type="checkbox" id="complete-phone-optin" checked class="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 border-slate-300">
+                <span class="text-xs font-bold text-slate-700">Recibir confirmaciones por WhatsApp</span>
+              </label>
+              <i class="fab fa-whatsapp text-emerald-600 text-lg"></i>
+            </div>
+
+            <div id="complete-phone-error" class="hidden p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl"></div>
+
+            <div class="pt-2 flex flex-col gap-2">
+              <button 
+                type="submit" 
+                id="save-complete-phone-btn" 
+                class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fas fa-check-circle"></i>
+                <span>Guardar Teléfono y Continuar</span>
+              </button>
+              <button 
+                type="button" 
+                id="skip-complete-phone-btn" 
+                class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all text-center cursor-pointer"
+              >
+                Lo completaré más tarde
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const closeBtn = document.getElementById('close-phone-modal-btn');
+    const skipBtn = document.getElementById('skip-complete-phone-btn');
+    const dismissHandler = () => {
+      try { sessionStorage.setItem('dismissed_phone_prompt', 'true'); } catch(_) {}
+      modalContainer.innerHTML = '';
+    };
+
+    closeBtn?.addEventListener('click', dismissHandler);
+    skipBtn?.addEventListener('click', dismissHandler);
+
+    const input = document.getElementById('complete-phone-input');
+    setTimeout(() => { input?.focus(); }, 150);
+
+    // Autoformato 8 dígitos costarricenses: 8888-8888
+    input?.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/[^0-9]/g, '');
+      if (val.length > 8) val = val.slice(0, 8);
+      if (val.length > 4) {
+        e.target.value = val.slice(0, 4) + '-' + val.slice(4);
+      } else {
+        e.target.value = val;
+      }
+    });
+
+    const form = document.getElementById('complete-phone-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rawPhone = input?.value?.trim() || '';
+      const phoneDigits = rawPhone.replace(/[^0-9]/g, '');
+      const errBox = document.getElementById('complete-phone-error');
+      const saveBtn = document.getElementById('save-complete-phone-btn');
+
+      if (!phoneDigits || phoneDigits.length < 8) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.textContent = 'Por favor ingresa un número de teléfono válido (mínimo 8 dígitos).';
+        }
+        input?.focus();
+        return;
+      }
+
+      const formattedPhone = phoneDigits.length === 8 ? `+506 ${phoneDigits.slice(0, 4)}-${phoneDigits.slice(4)}` : rawPhone;
+      const whatsappOptIn = document.getElementById('complete-phone-optin')?.checked ?? true;
+
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando teléfono...';
+      }
+
+      try {
+        if (clientUser.id) {
+          await storage.updateClientProfile(clientUser.id, {
+            name: clientUser.name,
+            phone: formattedPhone,
+            email: clientUser.email,
+            whatsappOptIn
+          });
+        } else {
+          await storage.loginOrRegisterClient(clientUser.name, formattedPhone, clientUser.email, whatsappOptIn);
+        }
+
+        // Actualizar sesión en memoria y localStorage
+        const updatedClient = {
+          ...clientUser,
+          phone: formattedPhone,
+          whatsappOptIn
+        };
+        storage.setClientUser(updatedClient);
+
+        this.showToast('¡Número de teléfono / WhatsApp guardado con éxito! 🎉', 'success', 5000);
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.renderMobileBottomNav();
+        this.renderCurrentView();
+      } catch (err) {
+        console.error('Error guardando teléfono:', err);
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.textContent = err.message || 'No se pudo guardar el teléfono. Intenta nuevamente.';
+        }
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> <span>Guardar Teléfono y Continuar</span>';
+        }
+      }
     });
   }
 
@@ -6650,6 +6876,32 @@ class App {
               <button id="dash-view-sinpe-instructions-btn" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
                 <i class="fab fa-whatsapp text-sm"></i>
                 <span>Ver Datos SINPE & WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Banner de Teléfono de Negocio Faltante (Google OAuth) -->
+        ${(!currentBiz.phone || currentBiz.phone.trim() === '') ? `
+          <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 p-4 sm:p-5 rounded-3xl mb-6 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-xs w-full">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center text-xl shrink-0 shadow-sm">
+                <i class="fab fa-whatsapp"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-black uppercase tracking-wider bg-amber-400 text-slate-950 px-2 py-0.5 rounded-md">Configuración Pendiente</span>
+                  <span class="text-xs font-bold text-amber-900">WhatsApp del Negocio</span>
+                </div>
+                <p class="text-xs text-amber-900 mt-1 leading-relaxed">
+                  Tu comercio no tiene configurado un número de WhatsApp. Agrégalo para que tus clientes puedan contactarte y ver tu información completa.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button id="dash-config-biz-phone-btn" class="w-full sm:w-auto px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-xl text-xs font-black shadow-md shadow-amber-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer">
+                <i class="fas fa-sliders-h"></i>
+                <span>Configurar Teléfono</span>
               </button>
             </div>
           </div>
@@ -11249,6 +11501,20 @@ class App {
     document.getElementById('btn-open-manual-web')?.addEventListener('click', (e) => {
       e.preventDefault();
       window.open('/manual-comercios', '_blank');
+    });
+
+    // Configurar teléfono del negocio si falta
+    document.getElementById('dash-config-biz-phone-btn')?.addEventListener('click', () => {
+      this.activeDashboardTab = 'profile';
+      const mainContent = document.getElementById('main-content');
+      if (mainContent) this.renderOwnerDashboardView(mainContent);
+      setTimeout(() => {
+        const phoneInput = document.getElementById('edit-biz-phone');
+        if (phoneInput) {
+          phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          phoneInput.focus();
+        }
+      }, 300);
     });
 
     // Desconectar Calendario Nylas (Google Calendar / Outlook)
