@@ -6345,6 +6345,17 @@ app.get('/api/nylas/status/:businessId', async (req, res) => {
   }
 });
 
+// ==========================================
+// PÁGINAS LEGALES INDEPENDIENTES (CUMPLIMIENTO GOOGLE OAUTH Y PRODHAB)
+// ==========================================
+app.get(['/privacidad', '/privacy', '/politica-de-privacidad'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'privacidad.html'));
+});
+
+app.get(['/terminos', '/terms', '/terminos-y-condiciones', '/terminos-de-servicio'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'terminos.html'));
+});
+
 // Middleware Catch-All para SPA (Cualquier ruta no capturada por API sirve index.html)
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {

@@ -18580,10 +18580,26 @@ class App {
                       <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
                         <i class="fas fa-check-circle mr-1"></i> Ley N° 8968 Costa Rica
                       </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold border border-indigo-400/40">
+                        <i class="fab fa-google mr-1"></i> Google OAuth Compliant
+                      </span>
                     </div>
                     <h3 class="font-black text-base sm:text-lg text-white">Política de Privacidad y Tratamiento de Datos Personales</h3>
                     <p class="text-xs text-slate-200 leading-relaxed">
                       En <strong>Reservas CR</strong> garantizamos la protección del derecho fundamental a la autodeterminación informativa de todos nuestros usuarios, clientes y comercios, cumpliendo con los más estrictos estándares de confidencialidad, seguridad y transparencia.
+                    </p>
+                  </div>
+
+                  <!-- Bloque Google OAuth 2.0 y Limited Use -->
+                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 space-y-2 text-xs">
+                    <div class="font-black text-blue-900 flex items-center gap-2">
+                      <i class="fab fa-google text-blue-600 text-sm"></i> Uso de Datos de Usuario de Google (OAuth 2.0):
+                    </div>
+                    <p class="text-blue-900 leading-relaxed">
+                      Al iniciar sesión con Google, únicamente solicitamos acceso a tu <strong>nombre, correo electrónico y foto de perfil</strong> con el único fin de autenticar tu sesión y gestionar tus reservas. <strong>Reservas CR nunca vende, alquila ni comparte tus datos de Google con terceros ni empresas publicitarias.</strong>
+                    </p>
+                    <p class="text-[11px] text-blue-800 leading-normal italic">
+                      "El uso y la transferencia que hace Reservas CR a cualquier otra aplicación de la información recibida de las APIs de Google se apegan rigurosamente a la <strong>Política de Datos de Usuario de los Servicios de API de Google (Google API Services User Data Policy)</strong>, incluidos los requisitos de Uso Limitado."
                     </p>
                   </div>
 
