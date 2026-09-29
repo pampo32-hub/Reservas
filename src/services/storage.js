@@ -777,9 +777,42 @@ class StorageService {
   }
 
   async getBusinessByIdAsync(idOrSlug) {
+    if (!idOrSlug) return null;
     let biz = this.getBusinessById(idOrSlug);
     if (biz) return biz;
-    await this.init();
+
+    // 1. Sincronizar catálogo general si aún no ha cargado
+    if (!this.businessesCache || this.businessesCache.length === 0) {
+      await this.init();
+      biz = this.getBusinessById(idOrSlug);
+      if (biz) return biz;
+    }
+
+    // 2. Consulta directa al endpoint /api/businesses/:id (soporta tanto ID como slug)
+    if (this.isOnlineApi || this.apiBase) {
+      try {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${encodeURIComponent(idOrSlug)}`);
+        if (res.ok) {
+          biz = await res.json();
+          if (biz && biz.id) {
+            if (!this.businessesCache) this.businessesCache = [];
+            const idx = this.businessesCache.findIndex(b => b.id === biz.id);
+            if (idx >= 0) {
+              this.businessesCache[idx] = biz;
+            } else {
+              this.businessesCache.push(biz);
+            }
+            try {
+              localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(this.businessesCache));
+            } catch (e) {}
+            return biz;
+          }
+        }
+      } catch (err) {
+        console.warn('Error en getBusinessByIdAsync consultando negocio individual:', err);
+      }
+    }
+
     return this.getBusinessById(idOrSlug);
   }
 

@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.46.9';
+import storage from './services/storage.js?v=3.46.12';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -878,9 +878,9 @@ class App {
       if (/^\/?(unete|para-negocios|para-comercios|negocios|empresas|hazte-socio|registro-negocio|planes|precios)$/i.test(pathname)) {
         return { view: 'business-landing', params: {} };
       }
-      const pathBizMatch = pathname.match(/^\/?negocio\/([^/?#]+)/i);
+      const pathBizMatch = pathname.match(/^\/?(negocio|comercio)\/([^/?#]+)/i);
       if (pathBizMatch) {
-        return { view: 'business-detail', params: { businessId: decodeURIComponent(pathBizMatch[1]) } };
+        return { view: 'business-detail', params: { businessId: decodeURIComponent(pathBizMatch[2]) } };
       }
       const pathReviewMatch = pathname.match(/^\/?(calificar|review|valorar)\/([^/?#]+)/i);
       if (pathReviewMatch) {
@@ -994,10 +994,10 @@ class App {
       }
     }
 
-    // 5. Negocio explícito en hash (#/negocio/serenity-spa o #negocio/biz-7)
-    const bizMatch = cleanHash.match(/^#\/?negocio\/([^/?#]+)/i);
+    // 5. Negocio explícito en hash (#/negocio/serenity-spa o #comercio/biz-7)
+    const bizMatch = cleanHash.match(/^#\/?(negocio|comercio)\/([^/?#]+)/i);
     if (bizMatch) {
-      return { view: 'business-detail', params: { businessId: decodeURIComponent(bizMatch[1]) } };
+      return { view: 'business-detail', params: { businessId: decodeURIComponent(bizMatch[2]) } };
     }
 
     // 5.1 Landing Exclusiva para Negocios en hash
@@ -2670,6 +2670,7 @@ class App {
           if (e.target.closest('.card-toggle-verify-btn, .card-toggle-block-btn, .card-edit-biz-btn, .card-delete-biz-btn')) {
             return;
           }
+          e.stopPropagation();
           const isBlocked = card.getAttribute('data-is-blocked') === 'true';
           if (isBlocked) {
             this.showToast('Este comercio se encuentra temporalmente suspendido.', 'warning');
@@ -4255,12 +4256,46 @@ class App {
   // ==========================================
   async renderBusinessDetailView(container) {
     const bizId = this.selectedBusinessId || this.currentRouteParams?.businessId || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_selected_biz_id') : null);
-    let biz = storage.getBusinessById(bizId);
-    if (!biz && storage.getBusinessByIdAsync) {
-      biz = await storage.getBusinessByIdAsync(bizId);
-    }
-    if (!biz) {
+    if (!bizId) {
       this.navigateTo('directory');
+      return;
+    }
+
+    let biz = storage.getBusinessById(bizId);
+    if (!biz) {
+      // Estado de carga elegante mientras se consulta a la base de datos
+      container.innerHTML = `
+        <div class="max-w-4xl mx-auto px-4 py-28 text-center animate-fade-in">
+          <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm animate-pulse">
+            <i class="fas fa-store"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 mb-1">Cargando perfil del comercio...</h3>
+          <p class="text-xs text-slate-500">Obteniendo servicios, horarios y disponibilidad en tiempo real.</p>
+        </div>
+      `;
+      if (storage.getBusinessByIdAsync) {
+        biz = await storage.getBusinessByIdAsync(bizId);
+      }
+    }
+
+    if (!biz) {
+      container.innerHTML = `
+        <div class="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 text-center shadow-lg animate-fade-in space-y-4">
+          <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto text-2xl">
+            <i class="fas fa-store-slash"></i>
+          </div>
+          <h2 class="text-xl font-bold text-slate-900">Comercio no disponible</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            No pudimos encontrar el comercio solicitado. Es posible que haya actualizado su enlace o se encuentre temporalmente inactivo.
+          </p>
+          <button id="not-found-back-dir-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all cursor-pointer">
+            Explorar Directorio de Comercios
+          </button>
+        </div>
+      `;
+      document.getElementById('not-found-back-dir-btn')?.addEventListener('click', () => {
+        this.navigateTo('directory');
+      });
       return;
     }
 
@@ -6781,8 +6816,26 @@ class App {
       return;
     }
 
-    const currentBiz = storage.getBusinessById(bizUser.businessId) || storage.getBusinesses()[0];
+    let currentBiz = storage.getBusinessById(bizUser.businessId);
     if (!currentBiz) {
+      container.innerHTML = `
+        <div class="max-w-4xl mx-auto px-4 py-24 text-center animate-fade-in">
+          <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm animate-pulse">
+            <i class="fas fa-store"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800 mb-1">Cargando tu panel de negocio...</h3>
+          <p class="text-xs text-slate-500">Sincronizando información de tu comercio y agenda.</p>
+        </div>
+      `;
+      if (storage.getBusinessByIdAsync) {
+        currentBiz = await storage.getBusinessByIdAsync(bizUser.businessId);
+      }
+    }
+    if (!currentBiz) {
+      currentBiz = (storage.getBusinesses() || [])[0];
+    }
+    if (!currentBiz) {
+      this.showToast('No se encontró el comercio asociado a tu cuenta.', 'warning');
       this.navigateTo('directory');
       return;
     }
@@ -6879,7 +6932,7 @@ class App {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-            <a href="/comercio/${currentBiz.slug || currentBiz.id}" target="_blank" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Ver cómo ven los clientes tu página pública">
+            <a href="/negocio/${currentBiz.slug || currentBiz.id}" target="_blank" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Ver cómo ven los clientes tu página pública">
               <i class="fas fa-external-link-alt text-xs text-blue-600"></i>
               <span>Ver Tienda</span>
             </a>

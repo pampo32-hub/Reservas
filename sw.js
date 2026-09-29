@@ -1,5 +1,5 @@
 // Service Worker para Reservas CR (PWA)
-const CACHE_NAME = 'reservascr-pwa-v47';
+const CACHE_NAME = 'reservascr-pwa-v48';
 
 
 const STATIC_ASSETS = [
@@ -13,8 +13,7 @@ const STATIC_ASSETS = [
   './src/assets/reservas_cr_clean_badge_1.png',
   './src/assets/reservas_cr_clean_badge_1.jpg',
   'https://cdn.tailwindcss.com',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-  'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
 
 // Instalación del Service Worker
@@ -63,8 +62,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Para archivos HTML y JS principales, estrategia Network-First para ver cambios y actualizaciones de inmediato
-  if (requestUrl.pathname.endsWith('.html') || requestUrl.pathname.endsWith('.js') || requestUrl.pathname === '/' || requestUrl.pathname.startsWith('/src/')) {
+  // Para navegaciones SPA y archivos HTML/JS, estrategia Network-First para ver cambios y actualizaciones de inmediato
+  if (event.request.mode === 'navigate' || requestUrl.pathname.endsWith('.html') || requestUrl.pathname.endsWith('.js') || requestUrl.pathname === '/' || requestUrl.pathname.startsWith('/src/')) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
@@ -76,7 +75,12 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => {
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html') || caches.match('/index.html');
+          }
+          return caches.match(event.request);
+        })
     );
     return;
   }
