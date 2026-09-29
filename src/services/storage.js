@@ -1938,7 +1938,12 @@ class StorageService {
     const now = new Date();
     const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const all = this.getAppointmentsByBusiness(businessId);
-    const used = all.filter(a => (a.date || '').startsWith(curMonth) && a.status !== 'cancelled').length;
+    const used = all.filter(a => {
+      if (a.status === 'cancelled') return false;
+      const createdMonth = (a.createdAt || a.created_at || '').slice(0, 7);
+      const aptMonth = (a.date || '').slice(0, 7);
+      return createdMonth === curMonth || (!createdMonth && aptMonth === curMonth);
+    }).length;
     const totalCapacity = limit ? (limit + extraCredits) : null;
     const remaining = totalCapacity ? Math.max(0, totalCapacity - used) : null;
     const percent = totalCapacity ? Math.min(100, Math.round((used / totalCapacity) * 100)) : 0;

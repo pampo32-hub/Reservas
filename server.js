@@ -1621,7 +1621,8 @@ app.get('/api/appointments', async (req, res) => {
       clientEmail: a.client_email,
       notes: a.notes,
       status: a.status,
-      whatsappOptIn: a.whatsapp_opt_in !== false
+      whatsappOptIn: a.whatsapp_opt_in !== false,
+      createdAt: a.created_at
     }));
     res.json(appointments);
   } catch (error) {

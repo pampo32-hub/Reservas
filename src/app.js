@@ -6814,7 +6814,12 @@ class App {
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
     // Métricas del Plan de Suscripción ($0, $10, $18, $35)
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const monthAppointments = appointments.filter(a => (a.date || '').startsWith(currentMonth));
+    const monthAppointments = appointments.filter(a => {
+      if (a.status === 'cancelled') return false;
+      const createdMonth = (a.createdAt || a.created_at || '').slice(0, 7);
+      const aptMonth = (a.date || '').slice(0, 7);
+      return createdMonth === currentMonth || (!createdMonth && aptMonth === currentMonth);
+    });
     const currentPlanId = currentBiz.plan || 'free';
     const planConfig = storage.getPlanById(currentPlanId) || { id: 'free', name: 'Plan Gratis', priceUsd: 0, bookingLimit: 25 };
     const isFree = currentPlanId === 'free';
