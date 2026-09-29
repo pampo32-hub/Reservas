@@ -781,6 +781,15 @@ class App {
     } catch (e) {
       console.warn('Realtime init notice:', e);
     }
+
+    // Pre-cargar SDK de PayPal silenciosamente cuando la CPU esté inactiva
+    try {
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(() => this.preloadPayPalSDK(), { timeout: 4000 });
+      } else {
+        setTimeout(() => this.preloadPayPalSDK(), 2500);
+      }
+    } catch (e) {}
   }
 
   // --- RUTAS Y NAVEGACIÓN LIMPIA (HTML5 HISTORY API) ---
@@ -1094,6 +1103,7 @@ class App {
     this.renderCurrentView();
     if (view === 'owner-dashboard') {
       this.initRealtimePush();
+      this.preloadPayPalSDK();
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -14700,6 +14710,9 @@ class App {
   // MODAL INTEGRADO DE AUTENTICACIÓN (LOGIN & REGISTRO)
   // ==========================================
   renderAuthModal({ mode = 'login', role = 'client', selectedPlanId = 'pro' } = {}) {
+    if (role === 'business') {
+      this.preloadPayPalSDK();
+    }
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
@@ -15383,8 +15396,12 @@ class App {
           const val = radio.value;
           label.classList.remove('bg-slate-800/80', 'border-slate-700');
           label.classList.add('bg-indigo-950', 'ring-2');
-          if (val === 'sinpe') label.classList.add('border-emerald-400', 'ring-emerald-400/30');
-          else label.classList.add('border-amber-400', 'ring-amber-400/30');
+          if (val === 'sinpe') {
+            label.classList.add('border-emerald-400', 'ring-emerald-400/30');
+          } else {
+            label.classList.add('border-amber-400', 'ring-amber-400/30');
+            this.preloadPayPalSDK();
+          }
         }
       });
     });
@@ -16242,6 +16259,7 @@ class App {
   // MODAL DE PLANES DE SUSCRIPCIÓN ($10, $18, $35) CON PRECIOS DE PRELANZAMIENTO
   // ==========================================
   renderPlansModal({ businessId = null, currentPlanId = 'basic' } = {}) {
+    this.preloadPayPalSDK();
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
@@ -16586,6 +16604,21 @@ class App {
               </div>
             ` : ''}
 
+            ${!isPack ? `
+              <!-- Alternativa Internacional: Pagar con Tarjeta o PayPal -->
+              <div class="pt-3 border-t border-slate-200 text-center space-y-2">
+                <span class="text-[11px] text-slate-500 block font-medium">¿Prefieres pagar con Tarjeta de Crédito/Débito o PayPal?</span>
+                <button 
+                  type="button" 
+                  id="sinpe-switch-to-paypal-btn" 
+                  class="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-950 border border-amber-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
+                >
+                  <i class="fab fa-paypal text-blue-600"></i>
+                  <span>Pagar con Tarjeta o PayPal (${amountUsd || '$' + plan.priceUsd})</span>
+                </button>
+              </div>
+            ` : ''}
+
           </div>
 
           <!-- Footer -->
@@ -16601,6 +16634,12 @@ class App {
     const closeModal = () => { modalContainer.innerHTML = ''; };
     document.getElementById('close-sinpe-modal-btn')?.addEventListener('click', closeModal);
     document.getElementById('close-sinpe-footer-btn')?.addEventListener('click', closeModal);
+
+    // Switch a Tarjeta / PayPal
+    document.getElementById('sinpe-switch-to-paypal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+      this.renderPayPalCheckoutModal({ businessId: activeBizId, planId });
+    });
 
     // 2. Copiar Teléfono
     document.getElementById('modal-copy-sinpe-phone')?.addEventListener('click', () => {
@@ -16854,13 +16893,26 @@ class App {
               </div>
             </div>
 
-            <div id="paypal-loading-spinner" class="py-8 flex flex-col items-center justify-center text-slate-500 gap-2">
-              <i class="fas fa-circle-notch fa-spin text-2xl text-blue-600"></i>
-              <span class="text-xs font-semibold">Cargando pasarela de pago seguro...</span>
+            <!-- Skeleton Loader Instantáneo (Visible mientras PayPal monta el iframe) -->
+            <div id="paypal-button-skeleton" class="space-y-2.5 py-1">
+              <div class="h-11 w-full rounded-xl bg-gradient-to-r from-amber-300 via-amber-200 to-amber-300 animate-pulse flex items-center justify-center shadow-xs">
+                <span class="text-xs font-black text-amber-950/70 flex items-center gap-2">
+                  <i class="fab fa-paypal text-blue-900 text-sm"></i> Conectando con PayPal seguro...
+                </span>
+              </div>
+              <div class="h-11 w-full rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 animate-pulse flex items-center justify-center shadow-xs">
+                <span class="text-xs font-bold text-slate-300/80 flex items-center gap-2">
+                  <i class="fas fa-credit-card text-xs text-slate-400"></i> Tarjeta de Débito o Crédito
+                </span>
+              </div>
+              <div class="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 pt-1">
+                <i class="fas fa-shield-alt text-emerald-600"></i>
+                <span>Cifrado SSL de 256 bits directo con PayPal</span>
+              </div>
             </div>
 
             <div id="paypal-button-wrapper" class="transition-all duration-300">
-              <div id="paypal-button-container" class="min-h-[120px]"></div>
+              <div id="paypal-button-container" class="min-h-[100px]"></div>
             </div>
 
             <div id="paypal-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
@@ -16871,7 +16923,7 @@ class App {
               <button 
                 type="button" 
                 id="paypal-switch-to-sinpe-btn" 
-                class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-98"
               >
                 <i class="fas fa-mobile-alt text-blue-600"></i>
                 <span>Pagar con SINPE Móvil (~${amountCrc} CRC)</span>
@@ -16903,14 +16955,14 @@ class App {
       // Cargar SDK dinámico en modo órdenes estándar (pago directo / sin vault recurrente)
       await this.loadPayPalSDK(config.clientId, config.currency || 'USD');
 
-      const spinner = document.getElementById('paypal-loading-spinner');
-      if (spinner) spinner.style.display = 'none';
-
       if (!window.paypal || !window.paypal.Buttons) {
         throw new Error('No se pudo inicializar los componentes de PayPal.');
       }
 
-      window.paypal.Buttons({
+      const btnWrapper = document.getElementById('paypal-button-container');
+      if (!btnWrapper) return;
+
+      const renderPromise = window.paypal.Buttons({
         style: {
           shape: 'rect',
           color: 'gold',
@@ -16991,11 +17043,16 @@ class App {
         }
       }).render('#paypal-button-container');
 
+      // Esperar a que el iframe de PayPal esté montado para retirar el skeleton
+      await renderPromise;
+      const skeleton = document.getElementById('paypal-button-skeleton');
+      if (skeleton) skeleton.style.display = 'none';
+
     } catch (err) {
       console.error('Error cargando PayPal:', err);
-      const spinner = document.getElementById('paypal-loading-spinner');
-      if (spinner) {
-        spinner.innerHTML = `
+      const skeleton = document.getElementById('paypal-button-skeleton');
+      if (skeleton) {
+        skeleton.innerHTML = `
           <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl text-center">
             <i class="fas fa-exclamation-triangle text-rose-600 text-lg mb-1 block"></i>
             <span>${err.message || 'No se pudo cargar la pasarela de PayPal.'}</span>
@@ -17005,24 +17062,58 @@ class App {
     }
   }
 
-  // Helper para cargar SDK de PayPal dinámicamente para órdenes directas
+  // Pre-carga proactiva del SDK de PayPal en segundo plano para apertura inmediata del modal
+  async preloadPayPalSDK() {
+    try {
+      if (window.paypal && window.paypal.Buttons) return window.paypal;
+      const config = await storage.getPayPalConfig();
+      if (!config || !config.clientId) return null;
+      return await this.loadPayPalSDK(config.clientId, config.currency || 'USD');
+    } catch (e) {
+      console.warn('Preload diferido de PayPal SDK:', e);
+      return null;
+    }
+  }
+
+  // Helper para cargar SDK de PayPal dinámicamente con singleton Promise y soporte concurrente
   loadPayPalSDK(clientId, currency = 'USD') {
-    return new Promise((resolve, reject) => {
+    if (window.paypal && window.paypal.Buttons) {
+      return Promise.resolve(window.paypal);
+    }
+    if (this._paypalSDKPromise) {
+      return this._paypalSDKPromise;
+    }
+
+    this._paypalSDKPromise = new Promise((resolve, reject) => {
       const existingScript = document.getElementById('paypal-sdk-script');
-      // If previous script was subscription/vault, replace it with clean direct order SDK
-      if (existingScript && window.paypal && !existingScript.src.includes('vault=true')) {
-        return resolve(window.paypal);
+      if (existingScript) {
+        if (window.paypal && window.paypal.Buttons) {
+          return resolve(window.paypal);
+        }
+        existingScript.addEventListener('load', () => resolve(window.paypal));
+        existingScript.addEventListener('error', () => {
+          this._paypalSDKPromise = null;
+          reject(new Error('Error al cargar el script de PayPal SDK.'));
+        });
+        return;
       }
-      if (existingScript) existingScript.remove();
-      if (window.paypal) delete window.paypal;
 
       const script = document.createElement('script');
       script.id = 'paypal-sdk-script';
-      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&locale=es_CR&components=buttons`;
+      script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${currency}&locale=es_CR&components=buttons&enable-funding=card`;
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+
       script.onload = () => resolve(window.paypal);
-      script.onerror = () => reject(new Error('Error al cargar el script de PayPal SDK.'));
+      script.onerror = () => {
+        this._paypalSDKPromise = null;
+        script.remove();
+        reject(new Error('Error al cargar el script de PayPal SDK.'));
+      };
       document.head.appendChild(script);
     });
+
+    return this._paypalSDKPromise;
   }
 
   // ==========================================

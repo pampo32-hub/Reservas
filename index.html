@@ -22,6 +22,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   
+  <!-- Preconnect & DNS-Prefetch for Fast PayPal Gateway Initialization -->
+  <link rel="preconnect" href="https://www.paypal.com" crossorigin>
+  <link rel="preconnect" href="https://www.paypalobjects.com" crossorigin>
+  <link rel="dns-prefetch" href="https://www.paypal.com">
+  <link rel="dns-prefetch" href="https://www.paypalobjects.com">
+  
   <!-- Google Material Symbols & FontAwesome Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -78,6 +84,6 @@
   <div id="toast-container" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm"></div>
 
   <!-- App Script (ES Module) -->
-  <script type="module" src="/src/app.js?v=3.46.4"></script>
+  <script type="module" src="/src/app.js?v=3.46.5"></script>
 </body>
 </html>

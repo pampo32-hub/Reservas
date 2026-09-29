@@ -26,6 +26,7 @@ class StorageService {
     const localSlots = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.BLOCKED_SLOTS) : null;
     this.blockedSlotsCache = localSlots ? JSON.parse(localSlots) : [];
     this.isOnlineApi = true;
+    this._paypalConfigCache = null;
     this.init();
   }
 
@@ -2276,17 +2277,21 @@ class StorageService {
 
   // --- INTEGRACIÓN PAYPAL ---
   async getPayPalConfig() {
+    if (this._paypalConfigCache) {
+      return this._paypalConfigCache;
+    }
     if (this.isOnlineApi) {
       try {
         const res = await this.fetchWithAuth(`${this.apiBase}/paypal/config`);
         if (res.ok) {
-          return await res.json();
+          this._paypalConfigCache = await res.json();
+          return this._paypalConfigCache;
         }
       } catch (e) {
         console.warn('Error consultando config de PayPal:', e);
       }
     }
-    return {
+    this._paypalConfigCache = {
       success: true,
       clientId: 'BAAsEQDC0BKe7tSW6HzeTRQaXGSaWDvD2WkilEkv31h9Ttq2K2phZ8RGMOp9SyNN-sM0wuAnBVMVPr7YHo',
       env: 'live',
@@ -2298,6 +2303,7 @@ class StorageService {
         unlimited: 'P-8VC868094T599031CNKU75QA'
       }
     };
+    return this._paypalConfigCache;
   }
 
   async verifyPayPalSubscription(subscriptionId, businessId, planId) {
@@ -2387,6 +2393,7 @@ class StorageService {
   }
 
   async savePayPalSettings(settings) {
+    this._paypalConfigCache = null;
     if (this.isOnlineApi) {
       const res = await this.fetchWithAuth(`${this.apiBase}/developer/paypal-settings`, {
         method: 'POST',
