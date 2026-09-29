@@ -2974,9 +2974,12 @@ app.post('/api/appointments', async (req, res) => {
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
-    // Si el cliente reserva para el mismo día, no se enviará recordatorio previo
-    const crToday = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
-    const reminderSentAt = (a.date === crToday) ? new Date() : null;
+    // Regla de recordatorios: Solo enviar a citas reservadas con al menos 24 horas de anticipación
+    const cleanTime = (a.time || '00:00').trim().slice(0, 5);
+    const aptDateTime = new Date(`${a.date}T${cleanTime.padStart(5, '0')}:00-06:00`);
+    const advanceHours = (aptDateTime.getTime() - Date.now()) / (1000 * 60 * 60);
+    // Si la reserva se hace con menos de 24 horas de antelación, se omite el recordatorio
+    const reminderSentAt = (advanceHours < 24) ? new Date() : null;
 
     // 6. Inserción de la nueva cita garantizada sin colisión
     await client.query(`
@@ -4300,9 +4303,11 @@ async function processPendingReviewEmails() {
 }
 
 /**
- * Procesa y envía recordatorios automáticos de WhatsApp el mismo día 4 horas antes de la cita
- * - No envía recordatorio si el cliente reservó el mismo día
- * - Se ejecuta en horario de cortesía (8:00 AM a 8:30 PM en hora de Costa Rica)
+ * Procesa y envía recordatorios automáticos de WhatsApp con regla de >= 24h de anticipación:
+ * 1. Omitir si la cita se reservó con menos de 24 horas de antelación (evita spam reciente).
+ * 2. Citas de la tarde (>= 12:00 MD): Se envían el mismo día 4 horas antes.
+ * 3. Citas de la mañana (< 12:00 MD): Se envían la noche anterior (a partir de las 7:00 PM).
+ * Horario de cortesía: 8:00 AM a 8:30 PM (Costa Rica UTC-6).
  */
 async function processPendingWhatsAppReminders() {
   try {
@@ -4317,22 +4322,16 @@ async function processPendingWhatsAppReminders() {
       return;
     }
 
-    // Fecha actual en Costa Rica (YYYY-MM-DD)
-    const year = crDate.getFullYear();
-    const month = String(crDate.getMonth() + 1).padStart(2, '0');
-    const day = String(crDate.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`;
+    // Fechas en formato YYYY-MM-DD
+    const todayStr = crDate.toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+    const tomorrowDate = new Date(crDate);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowStr = tomorrowDate.toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
 
-    // Descartar citas creadas el mismo día para que no reciban recordatorio
-    await pool.query(`
-      UPDATE reservas_appointments
-      SET whatsapp_reminder_sent_at = NOW()
-      WHERE date = $1
-        AND (created_at AT TIME ZONE 'America/Costa_Rica')::date >= date::date
-        AND whatsapp_reminder_sent_at IS NULL
-    `, [todayStr]);
+    // Si ya son las 7:00 PM (19:00) o más, consultamos citas de hoy y de mañana en la mañana
+    const datesToQuery = (currentHour >= 19) ? [todayStr, tomorrowStr] : [todayStr];
 
-    // 2. Buscar citas para HOY con recordatorio pendiente, reservadas con anticipación
+    // 2. Buscar citas pendientes de recordatorio para las fechas objetivo
     const result = await pool.query(`
       SELECT a.*, 
              b.name as business_name, 
@@ -4349,36 +4348,65 @@ async function processPendingWhatsAppReminders() {
         AND a.client_phone IS NOT NULL 
         AND TRIM(a.client_phone) != ''
         AND a.whatsapp_reminder_sent_at IS NULL
-        AND a.date = $1
-        AND (a.created_at AT TIME ZONE 'America/Costa_Rica')::date < a.date::date
-      ORDER BY a.time ASC
-      LIMIT 25
-    `, [todayStr]);
+        AND a.date = ANY($1)
+      ORDER BY a.date ASC, a.time ASC
+      LIMIT 30
+    `, [datesToQuery]);
 
     if (!result.rows || result.rows.length === 0) {
       return;
     }
 
     for (const apt of result.rows) {
-      // Validar y parsear la hora de la cita (HH:mm)
-      const timeParts = (apt.time || '').split(':');
+      const cleanTime = (apt.time || '').trim().slice(0, 5);
+      const timeParts = cleanTime.split(':');
       if (timeParts.length < 2) {
         continue;
       }
       const aptHour = parseInt(timeParts[0], 10);
       const aptMinute = parseInt(timeParts[1], 10);
-      const aptMinutes = aptHour * 60 + aptMinute;
-      const minutesUntilApt = aptMinutes - nowMinutes;
 
-      // Si la cita ya pasó, marcar como procesada para no enviar fuera de tiempo
-      if (minutesUntilApt < 0) {
+      // 1. REGLA DE ANTICIPACIÓN: Verificar que la cita fue reservada al menos 24 horas antes
+      const aptDateTime = new Date(`${apt.date}T${cleanTime.padStart(5, '0')}:00-06:00`);
+      const createdDateTime = new Date(apt.created_at || Date.now());
+      const advanceHours = (aptDateTime.getTime() - createdDateTime.getTime()) / (1000 * 60 * 60);
+
+      if (advanceHours < 24) {
+        // Reservada con menos de 24h de antelación -> omitir recordatorio para evitar spam
         await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
         continue;
       }
 
-      // Regla de 4 horas: Solo enviar si faltan 4 horas (240 minutos) o menos
-      if (minutesUntilApt > 240) {
-        // Aún falta más de 4 horas para este turno, esperar al próximo ciclo
+      // 2. MOMENTO DE DISPARO DEL RECORDATORIO:
+      let shouldSend = false;
+
+      if (apt.date === todayStr) {
+        const aptMinutes = aptHour * 60 + aptMinute;
+        const minutesUntilApt = aptMinutes - nowMinutes;
+
+        // Si la cita ya pasó, descartar para no enviar fuera de tiempo
+        if (minutesUntilApt < 0) {
+          await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
+          continue;
+        }
+
+        if (aptHour >= 12) {
+          // Citas de la tarde: enviar 4 horas antes (<= 240 min)
+          if (minutesUntilApt <= 240) {
+            shouldSend = true;
+          }
+        } else {
+          // Citas de la mañana de hoy (fallback matutino si no se envió la noche previa)
+          shouldSend = true;
+        }
+      } else if (apt.date === tomorrowStr) {
+        // Citas de mañana: únicamente las de la mañana (< 12:00 MD) se envían la noche anterior a partir de las 7:00 PM (19:00)
+        if (currentHour >= 19 && aptHour < 12) {
+          shouldSend = true;
+        }
+      }
+
+      if (!shouldSend) {
         continue;
       }
 
@@ -4421,7 +4449,7 @@ async function processPendingWhatsAppReminders() {
         const sendRes = await sendAppointmentReminderWhatsApp(appointmentObj, businessObj, pool);
         if (sendRes && sendRes.success) {
           await pool.query('UPDATE reservas_appointments SET whatsapp_reminder_sent_at = NOW() WHERE id = $1', [apt.id]);
-          console.log(`✅ [Worker Recordatorios] Recordatorio (4h antes) entregado para cita #${apt.id} (${apt.client_name}) al tel: ${apt.client_phone} [${sendRes.provider}]`);
+          console.log(`✅ [Worker Recordatorios] Recordatorio entregado para cita #${apt.id} (${apt.client_name}) al tel: ${apt.client_phone} [${sendRes.provider}]`);
         } else {
           console.warn(`⚠️ [Worker Recordatorios] No se pudo entregar recordatorio cita #${apt.id}:`, sendRes?.reason || sendRes?.error);
         }
