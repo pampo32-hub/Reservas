@@ -1,10 +1,14 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import * as XLSX from 'xlsx';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { pool, initDatabase } from './db.js';
 import { 
   sendBookingConfirmationEmail, 
@@ -62,26 +66,180 @@ export function slugify(text) {
 }
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// 1. Cabeceras de seguridad HTTP con Helmet
+app.use(helmet({
+  contentSecurityPolicy: false, // Permitir CDNs externos (Tailwind CDN, Google Fonts, FontAwesome, PayPal SDK)
+  crossOriginEmbedderPolicy: false
+}));
+
+// 2. Compresión Gzip/Brotli de alto rendimiento (> 1KB, excluyendo SSE)
+app.use(compression({
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression'] || req.headers.accept === 'text/event-stream' || req.path === '/api/realtime/stream') {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// 3. Política CORS robusta y segura
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // Server-to-server, Postman, Webhooks de PayPal/WhatsApp/SINPE, Apps móviles
+  if (process.env.NODE_ENV !== 'production') return true;
+  try {
+    const url = new URL(origin);
+    return (
+      url.hostname === 'reservascr.app' ||
+      url.hostname.endsWith('.reservascr.app') ||
+      url.hostname.endsWith('.onrender.com') ||
+      url.hostname === 'localhost' ||
+      url.hostname === '127.0.0.1'
+    );
+  } catch (e) {
+    return false;
+  }
+};
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado por política CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: '15mb' }));
 
-// Evitar almacenamiento en caché para HTML, JS, CSS y SW para que las actualizaciones se reflejen de inmediato
+// 4. Protección estricta contra divulgación de archivos del servidor
 app.use((req, res, next) => {
-  const p = req.path || req.url;
-  if (p.endsWith('.html') || p.endsWith('.js') || p === '/' || p.startsWith('/src/') || p === '/sw.js' || p.endsWith('.css')) {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
+  const p = (req.path || req.url || '').toLowerCase();
+  if (
+    p.includes('.env') ||
+    p.endsWith('server.js') ||
+    p.endsWith('db.js') ||
+    p.endsWith('package.json') ||
+    p.endsWith('package-lock.json') ||
+    p.endsWith('.sql') ||
+    p.endsWith('.py') ||
+    p.endsWith('.sh') ||
+    p.includes('/.git') ||
+    p.includes('/node_modules')
+  ) {
+    return res.status(403).send('Acceso Prohibido');
   }
   next();
 });
 
-app.use(express.static(__dirname));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/public', express.static(path.join(__dirname, 'public')));
+// 5. Configuración de encabezados de caché inteligentes
+app.use((req, res, next) => {
+  const p = (req.path || req.url || '').toLowerCase();
+  
+  // Archivos de código JavaScript y CSS: revalidación condicional con ETag (HTTP 304 ahorra ancho de banda)
+  if (p.startsWith('/src/') || p.endsWith('.js') || p.endsWith('.css')) {
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+  } 
+  // Archivos multimedia y recursos estáticos: caché extendida (24 horas)
+  else if (p.startsWith('/public/') || p.startsWith('/uploads/') || /\.(png|jpe?g|gif|svg|ico|webp|woff2?|ttf|eot)$/i.test(p)) {
+    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=43200');
+  }
+  // API endpoints: sin caché para garantizar datos frescos en tiempo real
+  else if (p.startsWith('/api/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  // Rutas HTML / SPA y Service Worker: no almacenar caché obsoleta pero permitir revalidación
+  else {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+  }
+  next();
+});
+
+// Servir exclusivamente directorios públicos autorizados (Cierre de fuga S-01)
+app.use('/public', express.static(path.join(__dirname, 'public'), { maxAge: '7d' }));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), { maxAge: '30d' }));
 app.use('/src', express.static(path.join(__dirname, 'src')));
 app.use(['/directorio/src', '*/src'], express.static(path.join(__dirname, 'src')));
-app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads'), { maxAge: '30d' }));
+
+// Archivos estáticos de raíz permitidos expresamente
+const ALLOWED_ROOT_STATIC_FILES = [
+  'favicon.ico', 'favicon.png', 'favicon.jpg', 'favicon.svg',
+  'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml',
+  'promo-ad-anim.html', 'manual_usuario_comercios.html'
+];
+ALLOWED_ROOT_STATIC_FILES.forEach(file => {
+  app.get(`/${file}`, (req, res) => {
+    const filePath = path.join(__dirname, file);
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).end();
+    }
+  });
+});
+
+// ==========================================
+// SEGURIDAD Y UTILIDADES DE AUTENTICACIÓN (BCRYPT & JWT)
+// ==========================================
+const JWT_SECRET = process.env.JWT_SECRET || 'reservas_cr_secure_jwt_secret_2026_super_key';
+
+export async function hashPassword(plainPassword) {
+  if (!plainPassword) return '';
+  return await bcrypt.hash(plainPassword, 10);
+}
+
+export async function verifyPassword(plainPassword, storedPassword) {
+  if (!plainPassword || !storedPassword) return false;
+  if (storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2y$')) {
+    return await bcrypt.compare(plainPassword, storedPassword);
+  }
+  return plainPassword === storedPassword;
+}
+
+export function generateToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
+}
+
+export function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Acceso no autorizado: Token de sesión requerido.' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Sesión expirada o token inválido.' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+export function requireRole(role) {
+  return (req, res, next) => {
+    if (!req.user || req.user.role !== role) {
+      return res.status(403).json({ error: `Acceso restringido: requiere privilegios de ${role}.` });
+    }
+    next();
+  };
+}
+
+export function authenticateBusinessOwnerOrDev(req, res, next) {
+  authenticateToken(req, res, () => {
+    const targetBusinessId = req.params.id || req.body?.businessId || req.query?.businessId;
+    if (req.user.role === 'developer' || (req.user.role === 'business' && req.user.businessId === targetBusinessId)) {
+      return next();
+    }
+    return res.status(403).json({ error: 'No tienes permisos para modificar este comercio.' });
+  });
+}
 
 // --- GESTIÓN DE ARCHIVOS FÍSICOS Y FOTOS EN EL DISCO DURO DEL SERVIDOR (VPS) ---
 const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
@@ -406,26 +564,10 @@ app.post('/api/auth/developer/login', async (req, res) => {
       return res.status(429).json({ error: rateCheck.message });
     }
 
-    // 1. Master Developer Check (Fail-safe)
-    const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanEmail);
-    const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
-    if (isMasterEmail && isMasterPass) {
-      recordSuccessfulLogin(req, cleanEmail);
-      return res.json({
-        success: true,
-        role: 'developer',
-        user: {
-          id: 'dev-master',
-          name: 'SuperAdmin Developer',
-          email: 'admin@reservas.cr',
-          role: 'developer'
-        }
-      });
-    }
-
+    // 1. Consulta segura a base de datos para Developer
     const devRes = await pool.query(
-      'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
-      [cleanEmail, cleanPass]
+      'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1)',
+      [cleanEmail]
     );
 
     if (devRes.rows.length === 0) {
@@ -434,10 +576,30 @@ app.post('/api/auth/developer/login', async (req, res) => {
     }
 
     const dev = devRes.rows[0];
+    const isValidDev = await verifyPassword(cleanPass, dev.password);
+    if (!isValidDev) {
+      const failInfo = recordFailedLoginAttempt(req, cleanEmail);
+      return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
+    }
+
+    // Si la contraseña aún estaba en texto plano, migrarla a bcrypt hash automáticamente
+    if (!dev.password.startsWith('$2a$') && !dev.password.startsWith('$2b$')) {
+      const newHash = await hashPassword(cleanPass);
+      await pool.query('UPDATE reservas_developer_users SET password = $1 WHERE id = $2', [newHash, dev.id]);
+    }
+
     recordSuccessfulLogin(req, cleanEmail);
+    const token = generateToken({
+      id: dev.id,
+      name: dev.name,
+      email: dev.email,
+      role: 'developer'
+    });
+
     res.json({
       success: true,
       role: 'developer',
+      token,
       user: {
         id: dev.id,
         name: dev.name,
@@ -469,92 +631,121 @@ app.post('/api/auth/business/login', async (req, res) => {
       return res.status(429).json({ error: rateCheck.message });
     }
 
-    // 1. Master Developer Check (Fail-safe)
-    const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanEmail);
-    const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
-    if (isMasterEmail && isMasterPass) {
-      recordSuccessfulLogin(req, cleanEmail);
-      return res.json({
-        success: true,
-        role: 'developer',
-        user: {
-          id: 'dev-master',
-          name: 'SuperAdmin Developer',
-          email: 'admin@reservas.cr',
-          role: 'developer'
-        }
-      });
-    }
-
-    // 2. Comprobar si existe en tabla de Developer
+    // 1. Comprobar si existe en tabla de Developer
     try {
       const devRes = await pool.query(
-        'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
-        [cleanEmail, cleanPass]
+        'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1)',
+        [cleanEmail]
       );
 
       if (devRes.rows.length > 0) {
         const dev = devRes.rows[0];
-        recordSuccessfulLogin(req, cleanEmail);
-        return res.json({
-          success: true,
-          role: 'developer',
-          user: {
+        const isValidDev = await verifyPassword(cleanPass, dev.password);
+        if (isValidDev) {
+          if (!dev.password.startsWith('$2a$') && !dev.password.startsWith('$2b$')) {
+            const newHash = await hashPassword(cleanPass);
+            await pool.query('UPDATE reservas_developer_users SET password = $1 WHERE id = $2', [newHash, dev.id]);
+          }
+          recordSuccessfulLogin(req, cleanEmail);
+          const token = generateToken({
             id: dev.id,
             name: dev.name,
             email: dev.email,
             role: 'developer'
-          }
-        });
+          });
+          return res.json({
+            success: true,
+            role: 'developer',
+            token,
+            user: {
+              id: dev.id,
+              name: dev.name,
+              email: dev.email,
+              role: 'developer'
+            }
+          });
+        }
       }
     } catch (e) {
       console.warn('Developer check in business login:', e.message);
     }
 
-    // 3. Comprobar si es Usuario de Negocio
+    // 2. Comprobar si es Usuario de Negocio
     const userRes = await pool.query(
-      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1) AND password = $2',
-      [cleanEmail, cleanPass]
+      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1)',
+      [cleanEmail]
     );
 
     if (userRes.rows.length > 0) {
       const user = userRes.rows[0];
-      const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
-      const business = bizRes.rows[0] || null;
+      const isValid = await verifyPassword(cleanPass, user.password);
+      if (isValid) {
+        if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
+          const newHash = await hashPassword(cleanPass);
+          await pool.query('UPDATE reservas_business_users SET password = $1 WHERE id = $2', [newHash, user.id]);
+        }
+        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
+        const business = bizRes.rows[0] || null;
 
-      recordSuccessfulLogin(req, cleanEmail);
-      return res.json({
-        success: true,
-        role: 'business',
-        user: {
+        recordSuccessfulLogin(req, cleanEmail);
+        const token = generateToken({
           id: user.id,
           name: user.name,
           email: user.email,
+          role: 'business',
           businessId: user.business_id
-        },
-        business
-      });
+        });
+
+        return res.json({
+          success: true,
+          role: 'business',
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            businessId: user.business_id
+          },
+          business
+        });
+      }
     }
 
-    // 4. Si ingresó credenciales de Cliente aquí por error, autenticarlo como cliente
+    // 3. Si ingresó credenciales de Cliente aquí por error, autenticarlo como cliente
     const clientRes = await pool.query(
-      'SELECT * FROM reservas_clients WHERE (LOWER(email) = LOWER($1) OR phone = $1) AND password = $2',
-      [cleanEmail, cleanPass]
+      'SELECT * FROM reservas_clients WHERE LOWER(email) = LOWER($1) OR phone = $1',
+      [cleanEmail]
     );
 
     if (clientRes.rows.length > 0) {
       const clientRow = clientRes.rows[0];
-      recordSuccessfulLogin(req, cleanEmail);
-      return res.json({
-        success: true,
-        role: 'client',
-        client: {
+      const isValidClient = await verifyPassword(cleanPass, clientRow.password);
+      if (isValidClient) {
+        if (clientRow.password && !clientRow.password.startsWith('$2a$') && !clientRow.password.startsWith('$2b$')) {
+          const newHash = await hashPassword(cleanPass);
+          await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [newHash, clientRow.id]);
+        }
+        recordSuccessfulLogin(req, cleanEmail);
+        const token = generateToken({
           id: clientRow.id,
           name: clientRow.name,
           phone: clientRow.phone,
-          email: clientRow.email || ''
-        }
-      });
+          email: clientRow.email,
+          role: 'client'
+        });
+
+        return res.json({
+          success: true,
+          role: 'client',
+          token,
+          client: {
+            id: clientRow.id,
+            name: clientRow.name,
+            phone: clientRow.phone,
+            email: clientRow.email || ''
+          }
+        });
+      }
     }
 
     const failInfo = recordFailedLoginAttempt(req, cleanEmail);
@@ -628,11 +819,12 @@ app.post('/api/auth/business/register', async (req, res) => {
       `, [alertId, newBizId, business.name, business.category, business.categoryLabel || business.category]);
     }
 
-    // Insertar usuario del negocio
+    // Insertar usuario del negocio con contraseña hasheada
+    const hashedPassword = await hashPassword(password.trim());
     await pool.query(`
       INSERT INTO reservas_business_users (id, business_id, name, email, password)
       VALUES ($1, $2, $3, $4, $5)
-    `, [newUserId, newBizId, ownerName || business.name, email.trim(), password.trim()]);
+    `, [newUserId, newBizId, ownerName || business.name, email.trim(), hashedPassword]);
 
     // Insertar primer servicio si existe
     if (business.services && Array.isArray(business.services)) {
@@ -653,9 +845,18 @@ app.post('/api/auth/business/register', async (req, res) => {
       console.error('⚠️ Error no bloqueante enviando correo de registro de negocio al admin:', err.message);
     });
 
+    const token = generateToken({
+      id: newUserId,
+      name: ownerName || business.name,
+      email: email.trim(),
+      role: 'business',
+      businessId: newBizId
+    });
+
     res.status(201).json({
       success: true,
       role: 'business',
+      token,
       user: {
         id: newUserId,
         name: ownerName || business.name,
@@ -693,10 +894,11 @@ app.post('/api/auth/client/register', async (req, res) => {
     }
 
     const newClientId = `cli-${Date.now()}`;
+    const hashedPassword = await hashPassword(password.trim());
     await pool.query(`
       INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in)
       VALUES ($1, $2, $3, $4, $5, $6)
-    `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), password.trim(), Boolean(whatsappOptIn)]);
+    `, [newClientId, name.trim(), phone.trim(), (email || '').trim(), hashedPassword, Boolean(whatsappOptIn)]);
 
     const clientUser = {
       id: newClientId,
@@ -711,7 +913,15 @@ app.post('/api/auth/client/register', async (req, res) => {
       console.error('⚠️ Error no bloqueante enviando correo de registro de cliente al admin:', err.message);
     });
 
-    res.json({ success: true, client: clientUser });
+    const token = generateToken({
+      id: newClientId,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: (email || '').trim(),
+      role: 'client'
+    });
+
+    res.json({ success: true, token, client: clientUser });
   } catch (error) {
     console.error('Error en registro de cliente:', error);
     res.status(500).json({ error: 'Error al registrar cliente.' });
@@ -737,74 +947,86 @@ app.post('/api/auth/client/login', async (req, res) => {
       return res.status(429).json({ error: rateCheck.message });
     }
 
-    // 1. Master Developer Check (Fail-safe)
-    const isMasterEmail = ['admin@reservas.cr', 'dev@reservas.cr', 'admin', 'developer', 'juan@reservas.cr'].includes(cleanIdent);
-    const isMasterPass = ['admin123', 'admin', 'developer', 'dev123'].includes(cleanPass);
-    if (isMasterEmail && isMasterPass) {
-      recordSuccessfulLogin(req, cleanIdent);
-      return res.json({
-        success: true,
-        role: 'developer',
-        user: {
-          id: 'dev-master',
-          name: 'SuperAdmin Developer',
-          email: 'admin@reservas.cr',
-          role: 'developer'
-        }
-      });
-    }
-
-    // 2. Comprobar si es Developer
+    // 1. Comprobar si es Developer
     try {
       const devRes = await pool.query(
-        'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1) AND password = $2',
-        [cleanIdent, cleanPass]
+        'SELECT * FROM reservas_developer_users WHERE LOWER(email) = LOWER($1)',
+        [cleanIdent]
       );
 
       if (devRes.rows.length > 0) {
         const dev = devRes.rows[0];
-        recordSuccessfulLogin(req, cleanIdent);
-        return res.json({
-          success: true,
-          role: 'developer',
-          user: {
+        const isValidDev = await verifyPassword(cleanPass, dev.password);
+        if (isValidDev) {
+          if (!dev.password.startsWith('$2a$') && !dev.password.startsWith('$2b$')) {
+            const newHash = await hashPassword(cleanPass);
+            await pool.query('UPDATE reservas_developer_users SET password = $1 WHERE id = $2', [newHash, dev.id]);
+          }
+          recordSuccessfulLogin(req, cleanIdent);
+          const token = generateToken({
             id: dev.id,
             name: dev.name,
             email: dev.email,
             role: 'developer'
-          }
-        });
+          });
+          return res.json({
+            success: true,
+            role: 'developer',
+            token,
+            user: {
+              id: dev.id,
+              name: dev.name,
+              email: dev.email,
+              role: 'developer'
+            }
+          });
+        }
       }
     } catch (e) {
       console.warn('Developer check in client login:', e.message);
     }
 
-    // 3. Comprobar si es Usuario de Negocio (por si el dueño se loguea desde la pestaña de cliente)
+    // 2. Comprobar si es Usuario de Negocio (por si el dueño se loguea desde la pestaña de cliente)
     const bizUserRes = await pool.query(
-      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1) AND password = $2',
-      [cleanIdent, cleanPass]
+      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1)',
+      [cleanIdent]
     );
 
     if (bizUserRes.rows.length > 0) {
       const user = bizUserRes.rows[0];
-      const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
-      const business = bizRes.rows[0] || null;
+      const isValidBiz = await verifyPassword(cleanPass, user.password);
+      if (isValidBiz) {
+        if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
+          const newHash = await hashPassword(cleanPass);
+          await pool.query('UPDATE reservas_business_users SET password = $1 WHERE id = $2', [newHash, user.id]);
+        }
+        const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE id = $1', [user.business_id]);
+        const business = bizRes.rows[0] || null;
 
-      recordSuccessfulLogin(req, cleanIdent);
-      return res.json({
-        success: true,
-        role: 'business',
-        user: {
+        recordSuccessfulLogin(req, cleanIdent);
+        const token = generateToken({
           id: user.id,
           name: user.name,
           email: user.email,
+          role: 'business',
           businessId: user.business_id
-        },
-        business
-      });
+        });
+        return res.json({
+          success: true,
+          role: 'business',
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            businessId: user.business_id
+          },
+          business
+        });
+      }
     }
 
-    // 4. Comprobar si es Cliente
+    // 3. Comprobar si es Cliente
     const identDigits = cleanIdent.replace(/[^0-9]/g, '').slice(-8);
     let result;
     if (identDigits.length === 8) {
@@ -829,21 +1051,37 @@ app.post('/api/auth/client/login', async (req, res) => {
     }
 
     const clientRow = result.rows[0];
-    if (clientRow.password && clientRow.password !== cleanPass) {
-      const failInfo = recordFailedLoginAttempt(req, cleanIdent);
-      return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
-    }
-
-    // Si no tenía contraseña guardada previamente, se le asigna esta
-    if (!clientRow.password) {
-      await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [cleanPass, clientRow.id]);
+    if (clientRow.password) {
+      const isValid = await verifyPassword(cleanPass, clientRow.password);
+      if (!isValid) {
+        const failInfo = recordFailedLoginAttempt(req, cleanIdent);
+        return res.status(failInfo.blocked ? 429 : 401).json({ error: failInfo.message });
+      }
+      // Si la contraseña estaba en texto plano, migrarla al vuelo
+      if (!clientRow.password.startsWith('$2a$') && !clientRow.password.startsWith('$2b$')) {
+        const newHash = await hashPassword(cleanPass);
+        await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [newHash, clientRow.id]);
+      }
+    } else {
+      // Si no tenía contraseña guardada previamente, se le asigna hasheada
+      const newHash = await hashPassword(cleanPass);
+      await pool.query('UPDATE reservas_clients SET password = $1 WHERE id = $2', [newHash, clientRow.id]);
     }
 
     recordSuccessfulLogin(req, cleanIdent);
 
+    const token = generateToken({
+      id: clientRow.id,
+      name: clientRow.name,
+      phone: clientRow.phone,
+      email: clientRow.email || '',
+      role: 'client'
+    });
+
     res.json({
       success: true,
       role: 'client',
+      token,
       client: {
         id: clientRow.id,
         name: clientRow.name,
@@ -925,7 +1163,15 @@ app.post('/api/auth/client/login-or-register', async (req, res) => {
       });
     }
 
-    res.json({ success: true, client: clientUser });
+    const token = generateToken({
+      id: clientUser.id,
+      name: clientUser.name,
+      phone: clientUser.phone,
+      email: clientUser.email || '',
+      role: 'client'
+    });
+
+    res.json({ success: true, token, client: clientUser });
   } catch (error) {
     console.error('Error en login/registro cliente:', error);
     res.status(500).json({ error: 'Error al procesar acceso de cliente.' });
@@ -953,8 +1199,9 @@ app.put('/api/client/profile/:id', async (req, res) => {
     ];
 
     if (password && password.trim()) {
+      const hashedPassword = await hashPassword(password.trim());
       updateQuery += `, password = $5 WHERE id = $6 RETURNING *`;
-      params.push(password.trim(), id);
+      params.push(hashedPassword, id);
     } else {
       updateQuery += ` WHERE id = $5 RETURNING *`;
       params.push(id);
@@ -1100,27 +1347,28 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
     const resetRecord = resetRes.rows[0];
 
-    // 2. Actualizar contraseña en la tabla correspondiente
+    // 2. Actualizar contraseña en la tabla correspondiente con hash seguro
+    const hashedPassword = await hashPassword(cleanPass);
     let updated = false;
 
     if (resetRecord.user_type === 'business') {
       const uRes = await pool.query(
         'UPDATE reservas_business_users SET password = $1 WHERE LOWER(email) = LOWER($2)',
-        [cleanPass, cleanEmail]
+        [hashedPassword, cleanEmail]
       );
       if (uRes.rowCount > 0) updated = true;
     } else {
       const uRes = await pool.query(
         'UPDATE reservas_clients SET password = $1 WHERE LOWER(email) = LOWER($2)',
-        [cleanPass, cleanEmail]
+        [hashedPassword, cleanEmail]
       );
       if (uRes.rowCount > 0) updated = true;
     }
 
     // Fallback: Si no se actualizó por tipo, intentar actualizar en ambas
     if (!updated) {
-      await pool.query('UPDATE reservas_business_users SET password = $1 WHERE LOWER(email) = LOWER($2)', [cleanPass, cleanEmail]);
-      await pool.query('UPDATE reservas_clients SET password = $1 WHERE LOWER(email) = LOWER($2)', [cleanPass, cleanEmail]);
+      await pool.query('UPDATE reservas_business_users SET password = $1 WHERE LOWER(email) = LOWER($2)', [hashedPassword, cleanEmail]);
+      await pool.query('UPDATE reservas_clients SET password = $1 WHERE LOWER(email) = LOWER($2)', [hashedPassword, cleanEmail]);
     }
 
     // 3. Marcar código como usado
@@ -1238,6 +1486,11 @@ app.get('/api/pre-registrations', async (req, res) => {
     res.status(500).json({ error: 'Error al consultar pre-registros' });
   }
 });
+
+// ==========================================
+// CONTROL DE ACCESO GLOBAL PARA DEVELOPER PANEL
+// ==========================================
+app.use('/api/developer', authenticateToken, requireRole('developer'));
 
 // Actualizar Pre-registro desde Developer Panel
 app.put('/api/developer/pre-registrations/:id', async (req, res) => {
@@ -1555,7 +1808,7 @@ app.get('/api/businesses/:id', async (req, res) => {
 });
 
 // Actualizar plan de suscripción de un negocio
-app.put('/api/businesses/:id/plan', async (req, res) => {
+app.put('/api/businesses/:id/plan', authenticateBusinessOwnerOrDev, async (req, res) => {
   try {
     const { id } = req.params;
     const { plan, planPriceUsd, monthlyBookingLimit } = req.body;
@@ -1595,7 +1848,7 @@ app.put('/api/businesses/:id/plan', async (req, res) => {
 });
 
 // Recargar créditos / mensajes adicionales de WhatsApp (Add-ons)
-app.put('/api/businesses/:id/whatsapp-credits', async (req, res) => {
+app.put('/api/businesses/:id/whatsapp-credits', authenticateBusinessOwnerOrDev, async (req, res) => {
   try {
     const { id } = req.params;
     const { credits } = req.body;
@@ -1619,7 +1872,7 @@ app.put('/api/businesses/:id/whatsapp-credits', async (req, res) => {
 });
 
 // Actualizar negocio completo (Modificar datos, incluyendo slug)
-app.put('/api/businesses/:id', async (req, res) => {
+app.put('/api/businesses/:id', authenticateBusinessOwnerOrDev, async (req, res) => {
   try {
     const { id } = req.params;
     const b = req.body;
@@ -2178,6 +2431,13 @@ app.put('/api/services/:id', async (req, res) => {
     const { id } = req.params;
     const s = req.body;
 
+    const cleanPrice = (s.price !== undefined && s.price !== null)
+      ? parseFloat(String(s.price).replace(/[^0-9.]/g, ''))
+      : null;
+    const cleanDuration = (s.duration !== undefined && s.duration !== null)
+      ? parseInt(String(s.duration).replace(/[^0-9]/g, ''), 10)
+      : null;
+
     await pool.query(`
       UPDATE reservas_services SET
         name = COALESCE($1, name),
@@ -2185,7 +2445,13 @@ app.put('/api/services/:id', async (req, res) => {
         price = COALESCE($3, price),
         description = COALESCE($4, description)
       WHERE id = $5
-    `, [s.name, parseInt(s.duration, 10), parseFloat(s.price), s.description, id]);
+    `, [
+      s.name !== undefined ? s.name : null,
+      (cleanDuration !== null && !isNaN(cleanDuration)) ? cleanDuration : null,
+      (cleanPrice !== null && !isNaN(cleanPrice)) ? cleanPrice : null,
+      s.description !== undefined ? s.description : null,
+      id
+    ]);
 
     res.json({ success: true, message: 'Servicio actualizado' });
   } catch (error) {
@@ -2375,7 +2641,9 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(`
-      SELECT a.*, r.id as review_id, r.rating as review_rating, r.comment as review_comment
+      SELECT a.*, r.id as review_id, r.rating as review_rating, r.comment as review_comment,
+             r.created_at as review_created_at,
+             (r.created_at IS NOT NULL AND (NOW() - r.created_at > INTERVAL '24 hours')) as review_is_expired
       FROM reservas_appointments a
       LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
       WHERE a.business_id = $1 
@@ -2402,6 +2670,8 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
       isReviewed: Boolean(a.review_id),
       reviewRating: a.review_rating ? parseInt(a.review_rating, 10) : null,
       reviewComment: a.review_comment || null,
+      reviewCreatedAt: a.review_created_at || null,
+      reviewIsExpired: Boolean(a.review_is_expired),
       createdAt: a.created_at
     }));
 
@@ -2427,7 +2697,9 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
     }
 
     let query = `
-      SELECT a.*, b.name as business_name, r.id as review_id, r.rating as review_rating, r.comment as review_comment
+      SELECT a.*, b.name as business_name, r.id as review_id, r.rating as review_rating, r.comment as review_comment,
+             r.created_at as review_created_at,
+             (r.created_at IS NOT NULL AND (NOW() - r.created_at > INTERVAL '24 hours')) as review_is_expired
       FROM reservas_appointments a 
       LEFT JOIN reservas_businesses b ON a.business_id = b.id 
       LEFT JOIN reservas_reviews r ON LOWER(r.appointment_id) = LOWER(a.id)
@@ -2474,6 +2746,8 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       isReviewed: Boolean(a.review_id),
       reviewRating: a.review_rating ? parseInt(a.review_rating, 10) : null,
       reviewComment: a.review_comment || null,
+      reviewCreatedAt: a.review_created_at || null,
+      reviewIsExpired: Boolean(a.review_is_expired),
       createdAt: a.created_at
     }));
 
@@ -4138,9 +4412,30 @@ app.get('/api/appointments/:id/review-info', async (req, res) => {
 
     const apt = aptRes.rows[0];
 
-    // Verificar si ya existe reseña para esta cita
-    const revRes = await pool.query('SELECT * FROM reservas_reviews WHERE LOWER(appointment_id) = LOWER($1)', [apt.id]);
+    // Verificar si ya existe reseña para esta cita y calcular antigüedad en horas
+    const revRes = await pool.query(`
+      SELECT *,
+             EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0 AS hours_elapsed,
+             (NOW() - created_at > INTERVAL '24 hours') AS is_expired
+      FROM reservas_reviews
+      WHERE LOWER(appointment_id) = LOWER($1)
+    `, [apt.id]);
     const existingReview = revRes.rows.length > 0 ? revRes.rows[0] : null;
+
+    let canEditReview = true;
+    let isExpired = false;
+    let hoursRemaining = 24;
+    let minutesRemaining = 0;
+
+    if (existingReview) {
+      const hoursElapsed = parseFloat(existingReview.hours_elapsed) || 0;
+      isExpired = Boolean(existingReview.is_expired) || hoursElapsed >= 24;
+      canEditReview = !isExpired;
+
+      const totalSecondsLeft = Math.max(0, (24 * 3600) - Math.floor(hoursElapsed * 3600));
+      hoursRemaining = Math.floor(totalSecondsLeft / 3600);
+      minutesRemaining = Math.floor((totalSecondsLeft % 3600) / 60);
+    }
 
     res.json({
       appointment: {
@@ -4159,11 +4454,16 @@ app.get('/api/appointments/:id/review-info', async (req, res) => {
         status: apt.status
       },
       alreadyReviewed: Boolean(existingReview),
+      canEditReview,
+      isExpired,
+      hoursRemaining,
+      minutesRemaining,
       review: existingReview ? {
         id: existingReview.id,
         rating: existingReview.rating,
         comment: existingReview.comment,
-        createdAt: existingReview.created_at
+        createdAt: existingReview.created_at,
+        updatedAt: existingReview.updated_at
       } : null
     });
   } catch (error) {
@@ -4172,7 +4472,7 @@ app.get('/api/appointments/:id/review-info', async (req, res) => {
   }
 });
 
-// 2. Registrar nueva reseña verificada
+// 2. Registrar o modificar reseña verificada (con ventana de 24 horas)
 app.post('/api/reviews', async (req, res) => {
   try {
     const { appointmentId, rating, comment } = req.body;
@@ -4196,26 +4496,46 @@ app.post('/api/reviews', async (req, res) => {
     const apt = aptRes.rows[0];
 
     // Verificar si ya fue calificada previamente
-    const existing = await pool.query('SELECT id FROM reservas_reviews WHERE LOWER(appointment_id) = LOWER($1)', [apt.id]);
+    const existing = await pool.query(`
+      SELECT id, created_at,
+             EXTRACT(EPOCH FROM (NOW() - created_at)) / 3600.0 AS hours_elapsed,
+             (NOW() - created_at > INTERVAL '24 hours') AS is_expired
+      FROM reservas_reviews
+      WHERE LOWER(appointment_id) = LOWER($1)
+    `, [apt.id]);
+
     let targetReviewId = `rev-${Date.now().toString().slice(-6)}`;
     let isUpdate = false;
 
     if (existing.rows.length > 0) {
-      targetReviewId = existing.rows[0].id;
+      const reviewRow = existing.rows[0];
+      const hoursElapsed = parseFloat(reviewRow.hours_elapsed) || 0;
+      const isExpired = Boolean(reviewRow.is_expired) || hoursElapsed >= 24;
+
+      if (isExpired) {
+        return res.status(403).json({
+          error: 'El plazo de 24 horas para modificar tu calificación ha expirado. Ya no es posible modificar esta reseña.',
+          isExpired: true,
+          canEditReview: false
+        });
+      }
+
+      targetReviewId = reviewRow.id;
       isUpdate = true;
+      // Modificamos calificación y comentario, registrando updated_at y preservando created_at original
       await pool.query(`
         UPDATE reservas_reviews SET
           rating = $1,
           comment = $2,
-          created_at = NOW()
+          updated_at = NOW()
         WHERE id = $3
       `, [ratingNum, (comment || '').trim(), targetReviewId]);
     } else {
       await pool.query(`
         INSERT INTO reservas_reviews (
           id, business_id, appointment_id, client_name, client_phone,
-          client_email, service_name, rating, comment, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          client_email, service_name, rating, comment, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
       `, [
         targetReviewId, apt.business_id, apt.id, apt.client_name,
         apt.client_phone, apt.client_email || '', apt.service_name || '',
@@ -4245,8 +4565,9 @@ app.post('/api/reviews', async (req, res) => {
 
     res.status(201).json({
       success: true,
+      isUpdate,
       message: isUpdate 
-        ? '¡Muchas gracias! Tu reseña ha sido actualizada exitosamente.' 
+        ? '¡Muchas gracias! Tu calificación ha sido modificada exitosamente.' 
         : '¡Muchas gracias! Tu reseña verificada ha sido publicada exitosamente.',
       review: {
         id: targetReviewId,

@@ -9,7 +9,8 @@ const STORAGE_KEYS = {
   BIZ_USER: 'directorio_biz_user_session',
   CLIENT_USER: 'directorio_client_user_session',
   DEV_USER: 'directorio_dev_user_session',
-  BLOCKED_SLOTS: 'directorio_blocked_slots_v1'
+  BLOCKED_SLOTS: 'directorio_blocked_slots_v1',
+  AUTH_TOKEN: 'reservas_auth_token_v1'
 };
 
 class StorageService {
@@ -26,6 +27,35 @@ class StorageService {
     this.blockedSlotsCache = localSlots ? JSON.parse(localSlots) : [];
     this.isOnlineApi = true;
     this.init();
+  }
+
+  getAuthToken() {
+    return (typeof localStorage !== 'undefined') ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
+  }
+
+  setAuthToken(token) {
+    if (typeof localStorage !== 'undefined') {
+      if (token) {
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      }
+    }
+  }
+
+  clearAuthToken() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
+  }
+
+  async fetchWithAuth(url, options = {}) {
+    const headers = options.headers ? { ...options.headers } : {};
+    const token = this.getAuthToken();
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return fetch(url, { ...options, headers });
   }
 
   async initAsync() {
@@ -52,7 +82,7 @@ class StorageService {
 
   async loadFromApi() {
     try {
-      const res = await fetch(`${this.apiBase}/businesses`);
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses`);
       if (!res.ok) throw new Error('API no disponible');
       this.businessesCache = await res.json();
       localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(this.businessesCache));
@@ -64,7 +94,7 @@ class StorageService {
     }
 
     try {
-      const resSlots = await fetch(`${this.apiBase}/blocked-slots`);
+      const resSlots = await this.fetchWithAuth(`${this.apiBase}/blocked-slots`);
       if (resSlots.ok) {
         this.blockedSlotsCache = await resSlots.json();
         localStorage.setItem(STORAGE_KEYS.BLOCKED_SLOTS, JSON.stringify(this.blockedSlotsCache));
@@ -93,26 +123,22 @@ class StorageService {
 
   logoutDeveloper() {
     localStorage.removeItem(STORAGE_KEYS.DEV_USER);
+    this.clearAuthToken();
   }
 
   async loginDeveloper(email, password) {
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    if ((cleanEmail === 'admin@reservas.cr' || cleanEmail === 'admin' || cleanEmail === 'dev@reservas.cr' || cleanEmail === 'developer') && (cleanPass === 'admin123' || cleanPass === 'admin')) {
-      const devUser = { id: 'dev-master', name: 'Master Developer', email: 'admin@reservas.cr', role: 'developer' };
-      this.setDeveloperUser(devUser);
-      return { success: true, role: 'developer', user: devUser };
-    }
-
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/developer/login`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/developer/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password: cleanPass })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al autenticar desarrollador.');
+      if (data.token) this.setAuthToken(data.token);
       this.setDeveloperUser(data.user);
       return data;
     }
@@ -124,7 +150,7 @@ class StorageService {
   async getDeveloperStats() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/stats`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/stats`);
         if (res.ok) return await res.json();
       } catch (e) {
         console.warn('Fallback local para stats developer');
@@ -143,7 +169,7 @@ class StorageService {
   async getDeveloperBusinesses() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses`);
         if (res.ok) return await res.json();
       } catch (e) {
         console.warn('Fallback local para negocios developer');
@@ -155,7 +181,7 @@ class StorageService {
   async getDeveloperClients() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/clients`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/clients`);
         if (res.ok) return await res.json();
       } catch (e) {
         console.warn('Fallback local para clientes developer');
@@ -172,7 +198,7 @@ class StorageService {
   async getDeveloperAppointments() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/appointments`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/appointments`);
         if (res.ok) return await res.json();
       } catch (e) {
         console.warn('Fallback local para citas developer');
@@ -184,7 +210,7 @@ class StorageService {
   async getDeveloperCategoryAlerts() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/category-alerts`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/category-alerts`);
         if (res.ok) return await res.json();
       } catch (e) {
         console.warn('Fallback local para alertas developer');
@@ -197,7 +223,7 @@ class StorageService {
   async dismissCategoryAlert(alertId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/category-alerts/${alertId}/dismiss`, { method: 'POST' });
         if (res.ok) return true;
       } catch (e) {}
     }
@@ -207,7 +233,7 @@ class StorageService {
   async toggleBusinessVisibility(businessId, isHidden) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/visibility`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}/visibility`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isHidden: Boolean(isHidden) })
@@ -232,7 +258,7 @@ class StorageService {
   async toggleBusinessBlock(businessId, isBlocked, reason = '') {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/block`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}/block`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isBlocked: Boolean(isBlocked), reason: String(reason || '') })
@@ -258,7 +284,7 @@ class StorageService {
   async toggleBusinessVerification(businessId, isVerified) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/verify`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}/verify`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isVerified: Boolean(isVerified) })
@@ -283,7 +309,7 @@ class StorageService {
   async deleteBusinessByDeveloper(businessId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
         if (res.ok) {
           await this.loadFromApi();
           return true;
@@ -314,7 +340,7 @@ class StorageService {
   async activateBusinessPlan(businessId, planId, daysValid = 30) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/activate-business-plan`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/activate-business-plan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ businessId, planId, daysValid })
@@ -373,6 +399,7 @@ class StorageService {
     const user = this.getBusinessUser();
     const bizId = user ? user.businessId : null;
     localStorage.removeItem(STORAGE_KEYS.BIZ_USER);
+    this.clearAuthToken();
     try {
       await this.unregisterPushForBusiness(bizId);
     } catch (e) {
@@ -384,28 +411,16 @@ class StorageService {
     const cleanEmail = (email || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Detección directa de Developer SuperAdmin (Instantánea)
-    if ((cleanEmail === 'admin@reservas.cr' || cleanEmail === 'dev@reservas.cr' || cleanEmail === 'admin' || cleanEmail === 'developer') && (cleanPass === 'admin123' || cleanPass === 'admin')) {
-      const devUser = { id: 'dev-master', name: 'Master Developer', email: 'admin@reservas.cr', role: 'developer' };
-      this.setDeveloperUser(devUser);
-      if (this.isOnlineApi) {
-        fetch(`${this.apiBase}/auth/developer/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanEmail, password: cleanPass })
-        }).catch(() => {});
-      }
-      return { success: true, role: 'developer', user: devUser };
-    }
-
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/business/login`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/business/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: cleanEmail, password: cleanPass })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+
+      if (data.token) this.setAuthToken(data.token);
 
       // Si es Developer
       if (data.role === 'developer') {
@@ -432,13 +447,14 @@ class StorageService {
 
   async registerBusinessWithUser(ownerName, email, password, businessData) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/business/register`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/business/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ownerName, email, password, business: businessData })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al registrar negocio.');
+      if (data.token) this.setAuthToken(data.token);
       this.setBusinessUser(data.user);
       await this.loadFromApi();
       return data;
@@ -470,12 +486,13 @@ class StorageService {
 
   logoutClient() {
     localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
+    this.clearAuthToken();
   }
 
   async updateClientProfile(clientId, data) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/client/profile/${clientId}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/client/profile/${clientId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
@@ -499,13 +516,14 @@ class StorageService {
 
   async registerClient(name, phone, email, password, whatsappOptIn = true) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/client/register`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/client/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, email, password, whatsappOptIn })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al registrar cliente.');
+      if (data.token) this.setAuthToken(data.token);
       this.setClientUser(data.client);
       return data.client;
     }
@@ -519,28 +537,16 @@ class StorageService {
     const cleanIdent = (identifier || '').trim().toLowerCase();
     const cleanPass = (password || '').trim();
 
-    // Detección directa de Developer SuperAdmin (Instantánea)
-    if ((cleanIdent === 'admin@reservas.cr' || cleanIdent === 'dev@reservas.cr' || cleanIdent === 'admin' || cleanIdent === 'developer') && (cleanPass === 'admin123' || cleanPass === 'admin')) {
-      const devUser = { id: 'dev-master', name: 'Master Developer', email: 'admin@reservas.cr', role: 'developer' };
-      this.setDeveloperUser(devUser);
-      if (this.isOnlineApi) {
-        fetch(`${this.apiBase}/auth/developer/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: cleanIdent, password: cleanPass })
-        }).catch(() => {});
-      }
-      return { success: true, role: 'developer', user: devUser };
-    }
-
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/client/login`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/client/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: cleanIdent, password: cleanPass })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+
+      if (data.token) this.setAuthToken(data.token);
 
       // Si es Developer
       if (data.role === 'developer') {
@@ -567,13 +573,14 @@ class StorageService {
   async loginOrRegisterClient(name, phone, email, whatsappOptIn = true) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/auth/client/login-or-register`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/auth/client/login-or-register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, phone, email, whatsappOptIn })
         });
         const data = await res.json();
         if (res.ok && data.client) {
+          if (data.token) this.setAuthToken(data.token);
           this.setClientUser(data.client);
           return data.client;
         }
@@ -592,7 +599,7 @@ class StorageService {
   // ==========================================
   async requestPasswordReset(email, role = 'any') {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/forgot-password`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, role })
@@ -611,7 +618,7 @@ class StorageService {
 
   async resetPasswordWithCode(email, code, newPassword) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/auth/reset-password`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code, newPassword })
@@ -633,7 +640,7 @@ class StorageService {
   async getCleanupStats() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/cleanup/stats`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/cleanup/stats`);
         if (res.ok) return await res.json();
       } catch (e) {
         console.error('Error obteniendo stats de limpieza:', e);
@@ -650,7 +657,7 @@ class StorageService {
 
   async executeDatabaseCleanup(options) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/developer/cleanup/execute`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/developer/cleanup/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(options)
@@ -788,14 +795,14 @@ class StorageService {
     // 2. Persistir en API remota (Neon PostgreSQL)
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessData.id}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(businessData)
         });
         
         if (!res.ok) {
-          await fetch(`${this.apiBase}/businesses`, {
+          await this.fetchWithAuth(`${this.apiBase}/businesses`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(businessData)
@@ -813,7 +820,7 @@ class StorageService {
   async deleteBusiness(businessId) {
     if (this.isOnlineApi) {
       try {
-        await fetch(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
+        await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}`, { method: 'DELETE' });
         await this.loadFromApi();
         return true;
       } catch (e) {
@@ -833,7 +840,7 @@ class StorageService {
   async toggleBusinessBlock(businessId, isBlocked, reason = '') {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/block`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}/block`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isBlocked, reason })
@@ -861,7 +868,7 @@ class StorageService {
   async toggleBusinessVisibility(businessId, isHidden) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/visibility`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}/visibility`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isHidden })
@@ -898,7 +905,7 @@ class StorageService {
   async updateBusinessAutoConfirm(businessId, autoConfirmAppointments) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/auto-confirm`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/auto-confirm`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ autoConfirmAppointments })
@@ -955,7 +962,7 @@ class StorageService {
   async addService(businessId, serviceData) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/services`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/services`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(serviceData)
@@ -998,43 +1005,55 @@ class StorageService {
   }
 
   async updateService(businessId, serviceId, serviceData) {
+    const numPrice = (serviceData.price !== undefined && serviceData.price !== null)
+      ? parseFloat(String(serviceData.price).replace(/[^0-9.]/g, ''))
+      : null;
+    const numDuration = (serviceData.duration !== undefined && serviceData.duration !== null)
+      ? parseInt(String(serviceData.duration).replace(/[^0-9]/g, ''), 10)
+      : null;
+
+    const cleanData = {
+      ...serviceData,
+      ...(numPrice !== null && !isNaN(numPrice) ? { price: numPrice } : {}),
+      ...(numDuration !== null && !isNaN(numDuration) ? { duration: numDuration } : {})
+    };
+
+    // 1. Actualizar de inmediato en memoria local y localStorage para feedback instantáneo
+    const businesses = this.getBusinesses();
+    const business = businesses.find(b => b.id === businessId);
+    if (business && business.services) {
+      const sIndex = business.services.findIndex(s => s.id === serviceId);
+      if (sIndex !== -1) {
+        business.services[sIndex] = {
+          ...business.services[sIndex],
+          ...cleanData
+        };
+        localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+        this.businessesCache = businesses;
+      }
+    }
+
+    // 2. Persistir en base de datos PostgreSQL Neon
     if (this.isOnlineApi) {
       try {
-        await fetch(`${this.apiBase}/services/${serviceId}`, {
+        await this.fetchWithAuth(`${this.apiBase}/services/${serviceId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(serviceData)
+          body: JSON.stringify(cleanData)
         });
         await this.loadFromApi();
-        return true;
       } catch (e) {
         console.error('Error actualizando servicio en API Neon:', e);
       }
     }
 
-    const businesses = this.getBusinesses();
-    const business = businesses.find(b => b.id === businessId);
-    if (!business || !business.services) return false;
-
-    const sIndex = business.services.findIndex(s => s.id === serviceId);
-    if (sIndex === -1) return false;
-
-    business.services[sIndex] = {
-      ...business.services[sIndex],
-      ...serviceData,
-      duration: parseInt(serviceData.duration, 10) || business.services[sIndex].duration,
-      price: parseFloat(serviceData.price) || business.services[sIndex].price
-    };
-
-    localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
-    this.businessesCache = businesses;
     return true;
   }
 
   async deleteService(businessId, serviceId) {
     if (this.isOnlineApi) {
       try {
-        await fetch(`${this.apiBase}/services/${serviceId}`, { method: 'DELETE' });
+        await this.fetchWithAuth(`${this.apiBase}/services/${serviceId}`, { method: 'DELETE' });
         await this.loadFromApi();
         return true;
       } catch (e) {
@@ -1058,7 +1077,7 @@ class StorageService {
   async getBusinessStaff(businessId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff`);
         if (res.ok) {
           const staff = await res.json();
           this.staffCache = this.staffCache || {};
@@ -1084,7 +1103,7 @@ class StorageService {
 
   async createStaffMember(businessId, staffData) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(staffData)
@@ -1124,7 +1143,7 @@ class StorageService {
 
   async updateStaffMember(businessId, staffId, staffData) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff/${staffId}`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff/${staffId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(staffData)
@@ -1148,7 +1167,7 @@ class StorageService {
 
   async deleteStaffMember(businessId, staffId) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/businesses/${businessId}/staff/${staffId}`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff/${staffId}`, {
         method: 'DELETE'
       });
       const data = await res.json();
@@ -1173,7 +1192,7 @@ class StorageService {
   async getAppointmentsByBusinessAsync(businessId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/appointments`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/appointments`);
         if (res.ok) {
           const data = await res.json();
           const localAll = this.getAppointments().filter(a => a.businessId !== businessId);
@@ -1228,7 +1247,7 @@ class StorageService {
     if (this.isOnlineApi && (phone || email)) {
       try {
         const url = `${this.apiBase}/clients/${encodeURIComponent(phone || 'null')}/appointments?email=${encodeURIComponent(email || '')}`;
-        const res = await fetch(url);
+        const res = await this.fetchWithAuth(url);
         if (res.ok) {
           const fresh = await res.json();
           if (Array.isArray(fresh)) {
@@ -1268,7 +1287,7 @@ class StorageService {
     let created = null;
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/appointments`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/appointments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(appointmentData)
@@ -1315,7 +1334,7 @@ class StorageService {
   async updateAppointment(appointmentId, updatedData) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/appointments/${appointmentId}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/appointments/${appointmentId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedData)
@@ -1346,7 +1365,7 @@ class StorageService {
   async updateAppointmentStatus(appointmentId, newStatus) {
     if (this.isOnlineApi) {
       try {
-        await fetch(`${this.apiBase}/appointments/${appointmentId}/status`, {
+        await this.fetchWithAuth(`${this.apiBase}/appointments/${appointmentId}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status: newStatus })
@@ -1369,7 +1388,7 @@ class StorageService {
   async deleteAppointment(appointmentId) {
     if (this.isOnlineApi) {
       try {
-        await fetch(`${this.apiBase}/appointments/${appointmentId}`, { method: 'DELETE' });
+        await this.fetchWithAuth(`${this.apiBase}/appointments/${appointmentId}`, { method: 'DELETE' });
       } catch (e) {
         console.error('Error eliminando cita en Neon:', e);
       }
@@ -1438,7 +1457,7 @@ class StorageService {
 
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/blocked-slots/toggle`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/blocked-slots/toggle`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: dateString, time: timeStr })
@@ -1497,7 +1516,7 @@ class StorageService {
   async setDayBlockedSlots(businessId, dateString, times, action) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/blocked-slots/bulk`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/blocked-slots/bulk`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ date: dateString, times, action })
@@ -1809,7 +1828,7 @@ class StorageService {
 
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/whatsapp-credits`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/whatsapp-credits`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ credits: amount })
@@ -1841,7 +1860,7 @@ class StorageService {
 
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/plan`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/plan`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1880,7 +1899,7 @@ class StorageService {
 
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/businesses/${businessId}/plan`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/businesses/${businessId}/plan`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ plan: plan.id })
@@ -1900,7 +1919,7 @@ class StorageService {
   async getBusinessBookingUsage(businessId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/businesses/${businessId}/booking-usage`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/booking-usage`);
         if (res.ok) {
           return await res.json();
         }
@@ -1941,7 +1960,7 @@ class StorageService {
   // --- CONFIGURACIÓN DE WHATSAPP / META DEVELOPER ---
   async getWhatsAppSettings() {
     try {
-      const res = await fetch(`${this.apiBase}/developer/settings/whatsapp`);
+      const res = await this.fetchWithAuth(`${this.apiBase}/developer/settings/whatsapp`);
       if (res.ok) return await res.json();
     } catch (e) {
       console.error('Error fetching whatsapp settings:', e);
@@ -1951,7 +1970,7 @@ class StorageService {
 
   async saveWhatsAppSettings(settings) {
     try {
-      const res = await fetch(`${this.apiBase}/developer/settings/whatsapp`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/developer/settings/whatsapp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
@@ -1967,7 +1986,7 @@ class StorageService {
 
   async testWhatsAppNotification(phone) {
     try {
-      const res = await fetch(`${this.apiBase}/test-whatsapp`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/test-whatsapp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone })
@@ -1981,7 +2000,7 @@ class StorageService {
   // --- RESEÑAS Y CALIFICACIONES VERIFICADAS ---
   async getReviewInfo(appointmentId) {
     try {
-      const res = await fetch(`${this.apiBase}/appointments/${appointmentId}/review-info`);
+      const res = await this.fetchWithAuth(`${this.apiBase}/appointments/${appointmentId}/review-info`);
       if (res.ok) return await res.json();
       const err = await res.json();
       return { error: err.error || 'No se pudo obtener información de la cita.' };
@@ -1992,7 +2011,7 @@ class StorageService {
 
   async submitReview(reviewData) {
     try {
-      const res = await fetch(`${this.apiBase}/reviews`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reviewData)
@@ -2023,7 +2042,7 @@ class StorageService {
 
   async getBusinessReviews(businessId) {
     try {
-      const res = await fetch(`${this.apiBase}/businesses/${businessId}/reviews`);
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/reviews`);
       if (res.ok) return await res.json();
     } catch (e) {
       console.warn('Error consultando reseñas del negocio:', e);
@@ -2033,7 +2052,7 @@ class StorageService {
 
   async testReviewEmail(email) {
     try {
-      const res = await fetch(`${this.apiBase}/test-review-email`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/test-review-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -2048,7 +2067,7 @@ class StorageService {
   async savePreRegistration(leadData) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/pre-registrations`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/pre-registrations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(leadData)
@@ -2081,7 +2100,7 @@ class StorageService {
   async getPreRegistrations() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/pre-registrations`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/pre-registrations`);
         if (res.ok) {
           const data = await res.json();
           if (data.leads) {
@@ -2099,7 +2118,7 @@ class StorageService {
   async savePreRegistrationByDeveloper(leadData) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/pre-registrations/${leadData.id}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/pre-registrations/${leadData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(leadData)
@@ -2128,7 +2147,7 @@ class StorageService {
   async togglePreRegistrationBlock(prId, isBlocked, reason = '') {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/pre-registrations/${prId}/block`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/pre-registrations/${prId}/block`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isBlocked, reason })
@@ -2159,7 +2178,7 @@ class StorageService {
   async deletePreRegistrationByDeveloper(prId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/pre-registrations/${prId}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/pre-registrations/${prId}`, {
           method: 'DELETE'
         });
         if (res.ok) {
@@ -2183,7 +2202,7 @@ class StorageService {
   async saveClientByDeveloper(clientData) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/clients/${clientData.id}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/clients/${clientData.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(clientData)
@@ -2208,7 +2227,7 @@ class StorageService {
   async toggleClientBlock(clientId, isBlocked, reason = '') {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/clients/${clientId}/block`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/clients/${clientId}/block`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ isBlocked, reason })
@@ -2235,7 +2254,7 @@ class StorageService {
   async deleteClientByDeveloper(clientId) {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/clients/${clientId}`, {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/clients/${clientId}`, {
           method: 'DELETE'
         });
         if (res.ok) {
@@ -2259,7 +2278,7 @@ class StorageService {
   async getPayPalConfig() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/paypal/config`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/paypal/config`);
         if (res.ok) {
           return await res.json();
         }
@@ -2283,7 +2302,7 @@ class StorageService {
 
   async verifyPayPalSubscription(subscriptionId, businessId, planId) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/paypal/verify-subscription`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/paypal/verify-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscriptionId, businessId, planId })
@@ -2312,7 +2331,7 @@ class StorageService {
 
   async createPayPalOrder(businessId, planId) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/paypal/create-order`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/paypal/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ businessId, planId })
@@ -2326,7 +2345,7 @@ class StorageService {
 
   async capturePayPalOrder(orderId, businessId, planId) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/paypal/capture-order`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/paypal/capture-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, businessId, planId })
@@ -2354,7 +2373,7 @@ class StorageService {
 
   async cancelPayPalSubscription(businessId, reason = 'Cancelado por el usuario') {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/paypal/cancel-subscription`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/paypal/cancel-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ businessId, reason })
@@ -2369,7 +2388,7 @@ class StorageService {
 
   async savePayPalSettings(settings) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/developer/paypal-settings`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/developer/paypal-settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
@@ -2381,7 +2400,7 @@ class StorageService {
 
   async syncPayPalPlans() {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/developer/paypal-sync-plans`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/developer/paypal-sync-plans`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -2398,7 +2417,7 @@ class StorageService {
   async getCleanupStats() {
     if (this.isOnlineApi) {
       try {
-        const res = await fetch(`${this.apiBase}/developer/cleanup/stats`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/cleanup/stats`);
         if (res.ok) {
           return await res.json();
         }
@@ -2418,7 +2437,7 @@ class StorageService {
 
   async executeDatabaseCleanup(options = {}) {
     if (this.isOnlineApi) {
-      const res = await fetch(`${this.apiBase}/developer/cleanup/execute`, {
+      const res = await this.fetchWithAuth(`${this.apiBase}/developer/cleanup/execute`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(options)
@@ -2503,7 +2522,7 @@ class StorageService {
   }
 
   async getVapidPublicKey() {
-    const res = await fetch(`${this.apiBase}/push/vapid-public-key`);
+    const res = await this.fetchWithAuth(`${this.apiBase}/push/vapid-public-key`);
     if (!res.ok) throw new Error('No se pudo obtener la clave VAPID pública');
     const data = await res.json();
     return data.publicKey;
@@ -2593,7 +2612,7 @@ class StorageService {
     }
 
     // 6. Enviar al backend para guardar en PostgreSQL
-    const res = await fetch(`${this.apiBase}/push/subscribe`, {
+    const res = await this.fetchWithAuth(`${this.apiBase}/push/subscribe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2620,7 +2639,7 @@ class StorageService {
           const subscription = await reg.pushManager.getSubscription().catch(() => null);
           if (subscription) {
             try {
-              await fetch(`${this.apiBase}/push/unsubscribe`, {
+              await this.fetchWithAuth(`${this.apiBase}/push/unsubscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -2644,7 +2663,7 @@ class StorageService {
   }
 
   async sendTestPushNotification(businessId) {
-    const res = await fetch(`${this.apiBase}/push/test`, {
+    const res = await this.fetchWithAuth(`${this.apiBase}/push/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ businessId })
@@ -2674,7 +2693,7 @@ class StorageService {
   // ==========================================
   async getNylasStatus(businessId) {
     try {
-      const res = await fetch(`${this.apiBase}/nylas/status/${encodeURIComponent(businessId)}`);
+      const res = await this.fetchWithAuth(`${this.apiBase}/nylas/status/${encodeURIComponent(businessId)}`);
       if (!res.ok) return { connected: false };
       return await res.json();
     } catch (e) {
@@ -2683,7 +2702,7 @@ class StorageService {
   }
 
   async disconnectNylas(businessId) {
-    const res = await fetch(`${this.apiBase}/nylas/disconnect`, {
+    const res = await this.fetchWithAuth(`${this.apiBase}/nylas/disconnect`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ businessId })

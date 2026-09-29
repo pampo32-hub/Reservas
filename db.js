@@ -162,6 +162,7 @@ export async function initDatabase(customPool = null) {
         comment TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       );
+      ALTER TABLE reservas_reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
     `);
 
     // 4. Crear tabla de usuarios dueños de negocio
@@ -324,13 +325,30 @@ export async function initDatabase(customPool = null) {
       );
     `);
 
+    // 13. Crear Índices B-Tree para optimización de alto rendimiento
+    await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_appointments_biz_date ON reservas_appointments (business_id, date);
+      CREATE INDEX IF NOT EXISTS idx_appointments_client_phone ON reservas_appointments (client_phone);
+      CREATE INDEX IF NOT EXISTS idx_appointments_status ON reservas_appointments (status);
+      CREATE INDEX IF NOT EXISTS idx_appointments_date ON reservas_appointments (date);
+      CREATE INDEX IF NOT EXISTS idx_services_business_id ON reservas_services (business_id);
+      CREATE INDEX IF NOT EXISTS idx_staff_business_id ON reservas_staff (business_id);
+      CREATE INDEX IF NOT EXISTS idx_reviews_business_id ON reservas_reviews (business_id);
+      CREATE INDEX IF NOT EXISTS idx_blocked_slots_biz_date ON reservas_blocked_slots (business_id, date);
+      CREATE INDEX IF NOT EXISTS idx_sinpe_status ON reservas_sinpe_transactions (status);
+      CREATE INDEX IF NOT EXISTS idx_business_users_biz_id ON reservas_business_users (business_id);
+      CREATE INDEX IF NOT EXISTS idx_clients_phone ON reservas_clients (phone);
+      CREATE INDEX IF NOT EXISTS idx_clients_email ON reservas_clients (email);
+      CREATE INDEX IF NOT EXISTS idx_push_sub_biz ON reservas_push_subscriptions (business_id);
+    `);
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';
     await client.query(`
       INSERT INTO reservas_developer_users (id, name, email, password, role)
       VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password
+      ON CONFLICT (email) DO NOTHING
     `, ['dev-master', 'Master Developer', devEmail, devPassword, 'developer']);
 
     console.log('✅ Tablas y cuenta Developer verificadas/creadas en Neon PostgreSQL.');
@@ -364,26 +382,7 @@ export async function initDatabase(customPool = null) {
           price_range, address, city, phone, email, description,
           image, cover_image, schedule, features, is_demo, portfolio
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-        ON CONFLICT (id) DO UPDATE SET
-          name = EXCLUDED.name,
-          slug = COALESCE(EXCLUDED.slug, reservas_businesses.slug),
-          category = EXCLUDED.category,
-          category_label = EXCLUDED.category_label,
-          image = EXCLUDED.image,
-          cover_image = EXCLUDED.cover_image,
-          city = EXCLUDED.city,
-          address = EXCLUDED.address,
-          phone = EXCLUDED.phone,
-          email = EXCLUDED.email,
-          description = EXCLUDED.description,
-          features = EXCLUDED.features,
-          schedule = EXCLUDED.schedule,
-          is_demo = EXCLUDED.is_demo,
-          portfolio = CASE 
-            WHEN EXCLUDED.is_demo = true OR reservas_businesses.portfolio IS NULL OR jsonb_array_length(reservas_businesses.portfolio) = 0 
-            THEN EXCLUDED.portfolio 
-            ELSE reservas_businesses.portfolio 
-          END
+        ON CONFLICT (id) DO NOTHING
       `, [
         biz.id, biz.name, biz.slug || biz.id, biz.category, biz.categoryLabel, biz.rating, biz.reviewsCount,
         biz.priceRange, biz.address, biz.city, biz.phone, biz.email, biz.description,
@@ -396,17 +395,13 @@ export async function initDatabase(customPool = null) {
           await client.query(`
             INSERT INTO reservas_services (id, business_id, name, duration, price, description)
             VALUES ($1, $2, $3, $4, $5, $6)
-            ON CONFLICT (id) DO UPDATE SET
-              name = EXCLUDED.name,
-              duration = EXCLUDED.duration,
-              price = EXCLUDED.price,
-              description = EXCLUDED.description
+            ON CONFLICT (id) DO NOTHING
           `, [srv.id, biz.id, srv.name, srv.duration, srv.price, srv.description]);
         }
       }
     }
 
-    // Sembrar o actualizar citas iniciales
+    // Sembrar citas iniciales si no existen
     for (const apt of INITIAL_APPOINTMENTS) {
       await client.query(`
         INSERT INTO reservas_appointments (
@@ -414,20 +409,7 @@ export async function initDatabase(customPool = null) {
           service_duration, date, time, client_name, client_phone,
           client_email, notes, status, whatsapp_opt_in
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-        ON CONFLICT (id) DO UPDATE SET
-          business_id = EXCLUDED.business_id,
-          service_id = EXCLUDED.service_id,
-          service_name = EXCLUDED.service_name,
-          service_price = EXCLUDED.service_price,
-          service_duration = EXCLUDED.service_duration,
-          date = EXCLUDED.date,
-          time = EXCLUDED.time,
-          client_name = EXCLUDED.client_name,
-          client_phone = EXCLUDED.client_phone,
-          client_email = EXCLUDED.client_email,
-          notes = EXCLUDED.notes,
-          status = EXCLUDED.status,
-          whatsapp_opt_in = EXCLUDED.whatsapp_opt_in
+        ON CONFLICT (id) DO NOTHING
       `, [
         apt.id, apt.businessId, apt.serviceId, apt.serviceName, apt.servicePrice,
         apt.serviceDuration, apt.date, apt.time, apt.clientName, apt.clientPhone,
@@ -435,22 +417,14 @@ export async function initDatabase(customPool = null) {
       ]);
     }
 
-    // Sembrar o actualizar personal / especialistas iniciales de ejemplo
+    // Sembrar personal / especialistas iniciales de ejemplo si no existen
     if (INITIAL_STAFF && Array.isArray(INITIAL_STAFF)) {
       for (const st of INITIAL_STAFF) {
         await client.query(`
           INSERT INTO reservas_staff (
             id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          ON CONFLICT (id) DO UPDATE SET
-            business_id = EXCLUDED.business_id,
-            name = EXCLUDED.name,
-            role_title = EXCLUDED.role_title,
-            avatar_url = EXCLUDED.avatar_url,
-            phone = EXCLUDED.phone,
-            services = EXCLUDED.services,
-            schedule = EXCLUDED.schedule,
-            is_active = EXCLUDED.is_active
+          ON CONFLICT (id) DO NOTHING
         `, [
           st.id,
           st.businessId,
@@ -463,7 +437,7 @@ export async function initDatabase(customPool = null) {
           st.isActive !== false
         ]);
       }
-      console.log('✨ Especialistas demo sembrados/actualizados en base de datos.');
+      console.log('✨ Especialistas demo sembrados/verificados en base de datos.');
     }
 
     // Asegurar planes adecuados y límites exactos para todos los negocios
@@ -488,6 +462,8 @@ export async function initDatabase(customPool = null) {
       { id: 'usr-2', businessId: 'biz-2', name: 'Dueña Studio GLAM', email: 'glam@demo.cr', password: '123' },
       { id: 'usr-3', businessId: 'biz-3', name: 'Dr. Roberto Salas', email: 'dental@demo.cr', password: '123' },
       { id: 'usr-4', businessId: 'biz-4', name: 'Carlos Monge (Taller)', email: 'taller@demo.cr', password: '123' },
+      { id: 'usr-6', businessId: 'biz-6', name: 'Dental Art Costa Rica', email: 'info@dentalart.cr', password: '123' },
+      { id: 'usr-6b', businessId: 'biz-6', name: 'Dental Art Costa Rica (Demo)', email: 'dentalart@demo.cr', password: '123' },
       { id: 'usr-7', businessId: 'biz-7', name: 'Laura Vargas (Spa)', email: 'spa@demo.cr', password: '123' }
     ];
 
@@ -501,9 +477,9 @@ export async function initDatabase(customPool = null) {
       } else {
         await client.query(`
           UPDATE reservas_business_users
-          SET business_id = $2, name = $3, email = $4, password = $5
+          SET business_id = $2, name = $3, email = $4
           WHERE id = $1 OR email = $4
-        `, [u.id, u.businessId, u.name, u.email, u.password]);
+        `, [u.id, u.businessId, u.name, u.email]);
       }
     }
     console.log('✨ Usuarios demo verificados/creados.');
@@ -519,9 +495,9 @@ export async function initDatabase(customPool = null) {
       } else {
         await client.query(`
           UPDATE reservas_clients
-          SET name = $2, phone = $3, email = $4, password = $5
+          SET name = $2, phone = $3, email = $4
           WHERE id = $1 OR email = $4 OR phone = $3
-        `, [c.id, c.name, c.phone, c.email, c.password]);
+        `, [c.id, c.name, c.phone, c.email]);
       }
     }
     console.log('✨ Usuarios de negocios y perfiles de clientes demo verificados/creados.');

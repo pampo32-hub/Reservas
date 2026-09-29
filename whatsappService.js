@@ -658,7 +658,7 @@ Hola *${clientName}*, te recordamos que tienes una cita programada en *${busines
 ⏰ *Hora:* ${timeStr}${addressStr}
 🔖 *Código:* #${appointmentCode}
 
-_Te recomendamos llegar 5 minutos antes. Si necesitas reprogramar o cancelar, responde a este mensaje con antelación._
+_Te recomendamos llegar 15 minutos antes. Si necesitas reprogramar o cancelar, responde a este mensaje con antelación._
 
 ¡Te esperamos! 🙌
 _Reservas CR • Sistema Oficial_`;
@@ -687,14 +687,17 @@ export async function sendAppointmentReminderWhatsApp(appointment, business, poo
 
   // 1. INTENTO CON META WHATSAPP CLOUD API
   if (metaCreds.isConfigured) {
-    // 1A. Intentar primero con plantilla 'recordatorio_cita'
-    try {
-      console.log(`⏰ [Meta API] Enviando recordatorio con plantilla 'recordatorio_cita' a +${metaRecipient}...`);
-      const templateResult = await sendMetaTemplateMessage(metaRecipient, appointment, business, metaCreds, 'recordatorio_cita');
-      console.log(`✅ [Meta API] Plantilla de recordatorio entregada con éxito! ID: ${templateResult.messageId}`);
-      return { success: true, provider: 'meta_template', messageId: templateResult.messageId };
-    } catch (templateErr) {
-      console.warn('ℹ️ Plantilla recordatorio_cita no disponible en Meta, intentando texto directo / fallback:', templateErr.message);
+    // 1A. Intentar primero con plantillas oficiales de Meta ('recordatorio_reserva_cliente', 'recordatorio_de_reserva', etc.)
+    const reminderTemplates = ['recordatorio_reserva_cliente', 'recordatorio_de_reserva', 'recordatorio_reserva', 'recordatorio_cita'];
+    for (const tmpl of reminderTemplates) {
+      try {
+        console.log(`⏰ [Meta API] Enviando recordatorio con plantilla '${tmpl}' a +${metaRecipient}...`);
+        const templateResult = await sendMetaTemplateMessage(metaRecipient, appointment, business, metaCreds, tmpl);
+        console.log(`✅ [Meta API] Plantilla de recordatorio (${tmpl}) entregada con éxito! ID: ${templateResult.messageId}`);
+        return { success: true, provider: 'meta_template', templateName: tmpl, messageId: templateResult.messageId };
+      } catch (templateErr) {
+        console.warn(`ℹ️ Plantilla '${tmpl}' no disponible en Meta:`, templateErr.message);
+      }
     }
 
     // 1B. Fallback con texto directo si la ventana de 24h está activa

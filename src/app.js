@@ -1307,6 +1307,7 @@ class App {
   }
 
   // --- NOTIFICACIONES TOAST ---
+  // --- NOTIFICACIONES TOAST ---
   showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -1322,19 +1323,58 @@ class App {
     }
 
     const toast = document.createElement('div');
-    const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
-    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : type === 'error' ? 'bg-rose-600 text-white' : type === 'warning' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-white';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
 
-    toast.className = `flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl ${bgClass} animate-fade-in transition-all duration-300 font-medium text-sm`;
-    toast.innerHTML = `<i class="fas ${icon} text-lg"></i> <span>${message}</span>`;
-    toast.innerHTML = `<i class="fas ${icon} text-lg"></i> <span class="whitespace-pre-line">${message}</span>`;
+    // Duración: Errores y avisos requieren más tiempo de lectura en móviles (6.5s), éxitos 3.5s
+    const duration = type === 'error' ? 6500 : type === 'warning' ? 5000 : 3500;
 
-    container.appendChild(toast);
-    setTimeout(() => {
+    toast.className = `pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} animate-fade-in transition-all duration-300 font-medium text-xs sm:text-sm border border-white/10`;
+    toast.innerHTML = `
+      <div class="flex items-center gap-2.5 min-w-0">
+        <i class="fas ${icon} text-base sm:text-lg shrink-0"></i>
+        <span class="whitespace-pre-line break-words">${message}</span>
+      </div>
+      <button type="button" class="shrink-0 p-1 -mr-1 text-white/80 hover:text-white rounded-lg transition-colors cursor-pointer" aria-label="Cerrar notificación">
+        <i class="fas fa-times text-xs"></i>
+      </button>
+    `;
+
+    const closeBtn = toast.querySelector('button');
+    let removeTimeout;
+
+    const dismissToast = () => {
+      clearTimeout(removeTimeout);
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(-10px)';
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+      setTimeout(() => toast.remove(), 250);
+    };
+
+    closeBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dismissToast();
+    });
+
+    container.appendChild(toast);
+    removeTimeout = setTimeout(dismissToast, duration);
+  }
+
+  // --- PREVENCIÓN DE DOBLE CLIC Y FEEDBACK VISUAL DE CARGA (SPINNERS) ---
+  setButtonLoading(button, isLoading, loadingText = 'Procesando...') {
+    if (!button) return;
+    if (isLoading) {
+      button.dataset.originalHtml = button.innerHTML;
+      button.disabled = true;
+      button.classList.add('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
+      button.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i> ${loadingText}`;
+    } else {
+      if (button.dataset.originalHtml) {
+        button.innerHTML = button.dataset.originalHtml;
+        delete button.dataset.originalHtml;
+      }
+      button.disabled = false;
+      button.classList.remove('opacity-75', 'cursor-not-allowed', 'pointer-events-none');
+    }
   }
 
   // --- INICIALIZADOR DE CHECKBOX INTERACTIVO CUSTOM (TÉRMINOS Y CONDICIONES) ---
@@ -4609,9 +4649,24 @@ class App {
       return;
     }
 
-    const { appointment: apt, alreadyReviewed, review } = info;
+    const { appointment: apt, alreadyReviewed, review, canEditReview, isExpired, hoursRemaining = 0, minutesRemaining = 0 } = info;
     const bizName = (apt && (apt.businessName || storage.getBusinessById(apt.businessId)?.name)) || 'Comercio';
-    let currentSelectedRating = preselectedRating && preselectedRating >= 1 && preselectedRating <= 5 ? preselectedRating : (review ? review.rating : 5);
+
+    // Formatear texto de tiempo restante para editar
+    let remainingTimeText = '';
+    if (canEditReview && alreadyReviewed) {
+      if (hoursRemaining > 0) {
+        remainingTimeText = `${hoursRemaining}h ${minutesRemaining > 0 ? minutesRemaining + 'm' : ''}`.trim();
+      } else {
+        remainingTimeText = `${Math.max(1, minutesRemaining)} min`;
+      }
+    }
+
+    // Si ya fue calificada y el plazo de 24h expiró, forzar a vista de solo lectura
+    const effectivelyAllowEdit = allowEdit && canEditReview;
+    let currentSelectedRating = preselectedRating && preselectedRating >= 1 && preselectedRating <= 5 
+      ? preselectedRating 
+      : (review ? review.rating : 5);
 
     const ratingLabels = {
       1: 'Malo',
@@ -4621,28 +4676,37 @@ class App {
       5: '¡Excelente!'
     };
 
-    if (alreadyReviewed && review && !allowEdit) {
+    // Caso 1: Cita ya calificada y NO estamos en modo edición
+    if (alreadyReviewed && review && !effectivelyAllowEdit) {
       container.innerHTML = `
         <div class="max-w-lg mx-auto px-4 py-10 animate-fade-in">
           <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl text-center space-y-6">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-md">
-              <i class="fas fa-check"></i>
+            <div class="w-16 h-16 ${canEditReview ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-600'} rounded-full flex items-center justify-center mx-auto text-2xl shadow-md">
+              <i class="fas ${canEditReview ? 'fa-check' : 'fa-lock'}"></i>
             </div>
             
             <div>
-              <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-extrabold border border-emerald-200 inline-flex items-center gap-1.5">
-                <i class="fas fa-shield-alt text-[11px]"></i> Reseña Verificada Publicada
-              </span>
-              <h1 class="text-2xl font-black text-slate-900 mt-3">¡Ya calificaste esta atención!</h1>
-              <p class="text-xs text-slate-500 mt-1">Muchas gracias por apoyar la transparencia y calidad de los negocios locales en Costa Rica.</p>
+              ${canEditReview ? `
+                <span class="px-3.5 py-1 bg-emerald-50 text-emerald-800 rounded-full text-xs font-extrabold border border-emerald-200 inline-flex items-center gap-1.5">
+                  <i class="fas fa-clock text-[11px] text-emerald-600"></i> Calificación Modificable (Te quedan ${remainingTimeText})
+                </span>
+                <h1 class="text-2xl font-black text-slate-900 mt-3">¡Ya calificaste esta atención!</h1>
+                <p class="text-xs text-slate-500 mt-1">Tienes un plazo de 24 horas para modificar tu puntuación o comentario si lo deseas.</p>
+              ` : `
+                <span class="px-3.5 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-extrabold border border-slate-300 inline-flex items-center gap-1.5">
+                  <i class="fas fa-lock text-[11px] text-slate-500"></i> Calificación Definitiva (Plazo de 24h finalizado)
+                </span>
+                <h1 class="text-2xl font-black text-slate-900 mt-3">Calificación permanente registrada</h1>
+                <p class="text-xs text-slate-500 mt-1">Han transcurrido más de 24 horas desde que enviaste tu reseña. Para proteger la autenticidad de la comunidad, ya no es posible editarla.</p>
+              `}
             </div>
 
             <!-- Resumen de su calificación -->
             <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 text-left space-y-3">
               <div class="flex items-center justify-between">
                 <div>
-                  <h3 class="font-black text-slate-900 text-sm">${bizName}</h3>
-                  <span class="text-xs text-blue-600 font-semibold">${apt.serviceName}</span>
+                  <h3 class="font-black text-slate-900 text-sm">${this.escapeHtml(bizName)}</h3>
+                  <span class="text-xs text-blue-600 font-semibold">${this.escapeHtml(apt.serviceName)}</span>
                 </div>
                 <div class="flex text-amber-400 text-base">
                   ${Array(5).fill(0).map((_, i) => `<i class="${i < review.rating ? 'fas' : 'far'} fa-star"></i>`).join('')}
@@ -4653,27 +4717,46 @@ class App {
                   "${this.escapeHtml(review.comment)}"
                 </p>
               ` : ''}
-              <div class="text-[11px] text-slate-400">Fecha de visita: ${this.formatDateDMY(apt.date)}</div>
+              <div class="text-[11px] text-slate-400 flex items-center justify-between border-t border-slate-200/60 pt-2.5 mt-2">
+                <span>Fecha de visita: ${this.formatDateDMY(apt.date)}</span>
+                ${canEditReview ? `
+                  <span class="text-emerald-700 font-bold flex items-center gap-1">
+                    <i class="fas fa-hourglass-half"></i> ${remainingTimeText} para editar
+                  </span>
+                ` : `
+                  <span class="text-slate-500 font-medium flex items-center gap-1">
+                    <i class="fas fa-lock text-slate-400"></i> Calificación cerrada
+                  </span>
+                `}
+              </div>
             </div>
 
             <div class="flex flex-col sm:flex-row items-center gap-3 justify-center pt-2">
-              <button id="edit-review-btn" class="w-full sm:w-auto px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                <i class="fas fa-edit"></i> Modificar mi Calificación
-              </button>
+              ${canEditReview ? `
+                <button id="edit-review-btn" class="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-amber-500/20">
+                  <i class="fas fa-edit"></i> Modificar mi Calificación (${remainingTimeText})
+                </button>
+              ` : `
+                <span class="w-full sm:w-auto px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 select-none cursor-default" title="El plazo de 24 horas para modificar tu reseña ha expirado">
+                  <i class="fas fa-lock"></i> Modificación no disponible (>24h)
+                </span>
+              `}
               <button id="view-biz-page-btn" class="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-500/20">
                 Ver Ficha de ${bizName}
               </button>
               <button id="go-explore-home-btn" class="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all">
-                Explorar Más Comercios
+                Explorar Comercios
               </button>
             </div>
           </div>
         </div>
       `;
 
-      document.getElementById('edit-review-btn')?.addEventListener('click', () => {
-        this.renderReviewBookingView(container, appointmentId, review?.rating, true);
-      });
+      if (canEditReview) {
+        document.getElementById('edit-review-btn')?.addEventListener('click', () => {
+          this.renderReviewBookingView(container, appointmentId, review?.rating, true);
+        });
+      }
       document.getElementById('view-biz-page-btn')?.addEventListener('click', () => {
         this.navigateTo('business-detail', { businessId: apt.businessId });
       });
@@ -4683,18 +4766,26 @@ class App {
       return;
     }
 
-    // Formulario de Calificación
+    // Caso 2: Formulario de Calificación (Nuevo o Modificando dentro de las 24h)
     container.innerHTML = `
       <div class="max-w-xl mx-auto px-4 py-8 sm:py-12 animate-fade-in">
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xl space-y-6">
           
-          <!-- Encabezado de la Cita -->
+          <!-- Encabezado de la Cita / Modo Edición -->
           <div class="text-center space-y-2 pb-4 border-b border-slate-100">
-            <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-extrabold border border-blue-200/80 inline-flex items-center gap-1.5">
-              <i class="fas fa-shield-alt text-[11px] text-blue-600"></i> Calificación Verificada por Reserva Real
-            </span>
-            <h1 class="text-2xl sm:text-3xl font-black text-slate-900">¿Cómo estuvo tu atención?</h1>
-            <p class="text-xs text-slate-500">Tu opinión ayuda al comercio a mejorar y a otros clientes a elegir el mejor servicio.</p>
+            ${effectivelyAllowEdit ? `
+              <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-amber-50 text-amber-800 rounded-full text-xs font-extrabold border border-amber-300">
+                <i class="fas fa-edit text-amber-600"></i> Modificando Calificación • Te quedan ${remainingTimeText}
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-black text-slate-900">Modifica tu opinión</h1>
+              <p class="text-xs text-slate-500">Puedes ajustar las estrellas o el comentario. Tienes hasta 24h tras tu primera publicación.</p>
+            ` : `
+              <span class="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-extrabold border border-blue-200/80 inline-flex items-center gap-1.5">
+                <i class="fas fa-shield-alt text-[11px] text-blue-600"></i> Calificación Verificada por Reserva Real
+              </span>
+              <h1 class="text-2xl sm:text-3xl font-black text-slate-900">¿Cómo estuvo tu atención?</h1>
+              <p class="text-xs text-slate-500">Tu opinión ayuda al comercio a mejorar. Podrás modificarla durante las primeras 24 horas.</p>
+            `}
           </div>
 
           <!-- Tarjeta del Comercio & Servicio -->
@@ -4703,8 +4794,8 @@ class App {
               <img src="${apt.businessImage || '/src/assets/reservas_cr_clean_badge_1.png'}" alt="${bizName}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="font-extrabold text-sm text-slate-900 truncate">${bizName}</h3>
-              <p class="text-xs text-blue-600 font-bold">${apt.serviceName}</p>
+              <h3 class="font-extrabold text-sm text-slate-900 truncate">${this.escapeHtml(bizName)}</h3>
+              <p class="text-xs text-blue-600 font-bold">${this.escapeHtml(apt.serviceName)}</p>
               <p class="text-[11px] text-slate-400 mt-0.5">Atendido el ${this.formatDateDMY(apt.date)} • ${this.formatTime12h(apt.time)}</p>
             </div>
           </div>
@@ -4744,18 +4835,30 @@ class App {
                 rows="4" 
                 class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-xs text-slate-800 transition-all resize-none"
                 placeholder="Cuéntanos qué tal la puntualidad, el trato del personal, las instalaciones y si recomendarías el lugar..."
-              ></textarea>
-              >${allowEdit && review?.comment ? this.escapeHtml(review.comment) : ''}</textarea>
+              >${effectivelyAllowEdit && review?.comment ? this.escapeHtml(review.comment) : ''}</textarea>
             </div>
 
-            <!-- Botón de Envío -->
-            <button 
-              type="submit" 
-              id="submit-review-btn" 
-              class="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2"
-            >
-              <i class="fas fa-paper-plane"></i> Publicar Reseña Verificada
-            </button>
+            <!-- Botones de Acción -->
+            <div class="space-y-3">
+              <button 
+                type="submit" 
+                id="submit-review-btn" 
+                class="w-full py-3.5 px-6 ${effectivelyAllowEdit ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'} text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fas ${effectivelyAllowEdit ? 'fa-save' : 'fa-paper-plane'}"></i> 
+                ${effectivelyAllowEdit ? 'Guardar Cambios en mi Calificación' : 'Publicar Reseña Verificada'}
+              </button>
+
+              ${effectivelyAllowEdit ? `
+                <button 
+                  type="button" 
+                  id="cancel-edit-review-btn" 
+                  class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <i class="fas fa-times"></i> Cancelar y conservar calificación actual
+                </button>
+              ` : ''}
+            </div>
           </form>
 
         </div>
@@ -4797,6 +4900,13 @@ class App {
       updateStarsVisual(currentSelectedRating);
     });
 
+    // Botón cancelar edición
+    if (effectivelyAllowEdit) {
+      document.getElementById('cancel-edit-review-btn')?.addEventListener('click', () => {
+        this.renderReviewBookingView(container, appointmentId, null, false);
+      });
+    }
+
     // Envío del Formulario
     document.getElementById('review-submission-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -4805,7 +4915,7 @@ class App {
 
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Publicando reseña...';
+        submitBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
       }
 
       try {
@@ -4815,16 +4925,22 @@ class App {
           comment: comment.trim()
         });
 
-        this.showToast('¡Muchas gracias! Tu reseña ha sido publicada con éxito.', 'success');
+        const successMsg = res.isUpdate 
+          ? '¡Tu calificación ha sido modificada con éxito!' 
+          : '¡Muchas gracias! Tu reseña ha sido publicada con éxito.';
+
+        this.showToast(successMsg, 'success');
         
-        // Renderizar vista de agradecimiento
-        await this.renderReviewBookingView(container, appointmentId);
+        // Renderizar vista de confirmación / lectura
+        await this.renderReviewBookingView(container, appointmentId, null, false);
       } catch (err) {
         console.error('Error enviando reseña:', err);
-        this.showToast(err.message || 'No se pudo publicar la reseña.', 'error');
+        this.showToast(err.message || 'No se pudo guardar la calificación.', 'error');
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Publicar Reseña Verificada';
+          submitBtn.innerHTML = effectivelyAllowEdit
+            ? '<i class="fas fa-save"></i> Guardar Cambios en mi Calificación'
+            : '<i class="fas fa-paper-plane"></i> Publicar Reseña Verificada';
         }
       }
     });
@@ -6106,15 +6222,15 @@ class App {
                       ` : ''}
                       ${apt.staffName ? `
                         <span class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                          <i class="fas fa-user-tag text-blue-500"></i> ${apt.staffName}
+                          <i class="fas fa-user-tag text-blue-500"></i> ${this.escapeHtml(apt.staffName)}
                         </span>
                       ` : ''}
                     </div>
-                    <h4 class="font-bold text-sm text-blue-600">${apt.serviceName}</h4>
+                    <h4 class="font-bold text-sm text-blue-600">${this.escapeHtml(apt.serviceName)}</h4>
                     <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
                       <span><i class="far fa-calendar mr-1 text-slate-400"></i><strong>${this.formatDateDMY(apt.date)}</strong></span>
                       <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${this.formatTime12h(apt.time)}</strong> (${apt.serviceDuration} min)</span>
-                      ${apt.notes ? `<span class="text-slate-400 italic">"${apt.notes}"</span>` : ''}
+                      ${apt.notes ? `<span class="text-slate-400 italic">"${this.escapeHtml(apt.notes)}"</span>` : ''}
                     </div>
                   </div>
 
@@ -6159,8 +6275,8 @@ class App {
                   ` : ''}
                   ${apt.status === 'completed' ? `
                     ${(apt.isReviewed || apt.reviewRating) ? `
-                      <button class="client-rate-btn px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="Ver o modificar mi calificación">
-                        <i class="fas fa-check-circle text-emerald-600"></i> Calificación enviada (${apt.reviewRating || 5}/5)
+                      <button class="client-rate-btn px-4 py-2 ${apt.reviewIsExpired ? 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'} border rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" data-apt-id="${apt.id}" title="${apt.reviewIsExpired ? 'Calificación permanente (plazo de 24h finalizado)' : 'Ver o modificar mi calificación (dentro de 24h)'}">
+                        <i class="fas ${apt.reviewIsExpired ? 'fa-lock text-slate-500' : 'fa-check-circle text-emerald-600'}"></i> Calificación enviada (${apt.reviewRating || 5}/5)${apt.reviewIsExpired ? ' • Finalizada' : ' • Modificable'}
                       </button>
                     ` : `
                       <button class="client-rate-btn px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer" data-apt-id="${apt.id}">
@@ -7223,8 +7339,8 @@ class App {
                           <i class="fas fa-user-tag text-blue-500 text-[10px]"></i> ${this.escapeHtml(apt.staffName || 'General')}
                         </span>
                         ${apt.clientPhone ? `
-                          <a href="tel:${apt.clientPhone}" class="text-blue-600 font-bold hover:underline flex items-center gap-1">
-                            <i class="fas fa-phone-alt text-[10px]"></i> ${apt.clientPhone}
+                          <a href="tel:${this.escapeHtml(apt.clientPhone)}" class="text-blue-600 font-bold hover:underline flex items-center gap-1">
+                            <i class="fas fa-phone-alt text-[10px]"></i> ${this.escapeHtml(apt.clientPhone)}
                           </a>
                         ` : ''}
                       </div>
@@ -7318,18 +7434,18 @@ class App {
                           ` : ''}
                         </td>
                         <td class="py-3.5 px-4">
-                          <div class="font-bold text-slate-800">${apt.clientName}</div>
-                          <div class="text-slate-400 text-[11px]">${apt.clientPhone}</div>
+                          <div class="font-bold text-slate-800">${this.escapeHtml(apt.clientName)}</div>
+                          <div class="text-slate-400 text-[11px]">${this.escapeHtml(apt.clientPhone)}</div>
                         </td>
                         <td class="py-3.5 px-4">
                           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-[11px] font-bold">
                             <i class="fas fa-user-tag text-blue-500 text-[10px]"></i>
-                            <span>${apt.staffName || 'Sin asignar / General'}</span>
+                            <span>${this.escapeHtml(apt.staffName || 'Sin asignar / General')}</span>
                           </span>
                         </td>
                         <td class="py-3.5 px-4 font-medium text-slate-700">
-                          <div class="font-semibold text-slate-800">${apt.serviceName}</div>
-                          ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${apt.notes}"</div>` : ''}
+                          <div class="font-semibold text-slate-800">${this.escapeHtml(apt.serviceName)}</div>
+                          ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${this.escapeHtml(apt.notes)}"</div>` : ''}
                         </td>
                         <td class="py-3.5 px-4 font-extrabold text-slate-900">
                           ${this.formatColones(apt.servicePrice)}
@@ -10938,10 +11054,10 @@ class App {
                         <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                       </div>
                       <div class="mt-2 text-[11px] font-bold truncate text-blue-900" title="${this.escapeHtml(apt.clientName)}">
-                        <i class="far fa-user text-blue-600 mr-1"></i>${apt.clientName}
+                        <i class="far fa-user text-blue-600 mr-1"></i>${this.escapeHtml(apt.clientName)}
                       </div>
                       <div class="text-[10px] text-blue-700 truncate mt-0.5">
-                        ${apt.serviceName}
+                        ${this.escapeHtml(apt.serviceName)}
                       </div>
                       <span class="mt-2 text-[9px] font-black uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md inline-block text-center">
                         Reserva #${apt.id.toUpperCase().slice(-4)}
@@ -11040,19 +11156,19 @@ class App {
             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
               <div class="flex justify-between">
                 <span class="text-slate-500">Cliente:</span>
-                <span class="font-extrabold text-slate-900">${apt.clientName}</span>
+                <span class="font-extrabold text-slate-900">${this.escapeHtml(apt.clientName)}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-500">Teléfono:</span>
-                <span class="font-bold text-slate-800">${apt.clientPhone}</span>
+                <span class="font-bold text-slate-800">${this.escapeHtml(apt.clientPhone)}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-500">Email:</span>
-                <span class="font-medium text-slate-700">${apt.clientEmail || 'No especificado'}</span>
+                <span class="font-medium text-slate-700">${this.escapeHtml(apt.clientEmail || 'No especificado')}</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-500">Servicio:</span>
-                <span class="font-bold text-blue-600">${apt.serviceName} (${apt.serviceDuration} min)</span>
+                <span class="font-bold text-blue-600">${this.escapeHtml(apt.serviceName)} (${apt.serviceDuration} min)</span>
               </div>
               <div class="flex justify-between">
                 <span class="text-slate-500">Fecha y Hora:</span>
@@ -15053,9 +15169,12 @@ class App {
     // Evento Submit: Login Cliente
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
       const identifier = document.getElementById('cli-log-identifier').value.trim();
       const password = document.getElementById('cli-log-password').value;
       const errBox = document.getElementById('cli-log-inline-error');
+
+      this.setButtonLoading(submitBtn, true, 'Iniciando sesión...');
 
       try {
         if (errBox) errBox.className = 'hidden';
@@ -15083,6 +15202,7 @@ class App {
         this.renderMobileBottomNav();
         this.navigateTo('my-client-bookings');
       } catch (err) {
+        this.setButtonLoading(submitBtn, false);
         this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
@@ -15094,6 +15214,7 @@ class App {
     // Evento Submit: Registro Cliente
     document.getElementById('auth-client-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = document.getElementById('cli-reg-submit-btn') || e.target.querySelector('button[type="submit"]');
       const name = document.getElementById('cli-reg-name').value.trim();
       const phone = document.getElementById('cli-reg-phone').value.trim();
       const email = document.getElementById('cli-reg-email').value.trim();
@@ -15143,6 +15264,8 @@ class App {
 
       const whatsappOptIn = document.getElementById('cli-reg-whatsapp-optin')?.checked ?? true;
 
+      this.setButtonLoading(submitBtn, true, 'Creando cuenta...');
+
       try {
         await storage.registerClient(name, phone, email, password, whatsappOptIn);
         this.showToast('¡Cuenta de cliente creada exitosamente!', 'success');
@@ -15151,6 +15274,7 @@ class App {
         this.renderMobileBottomNav();
         this.navigateTo('my-client-bookings');
       } catch (err) {
+        this.setButtonLoading(submitBtn, false);
         this.showToast(err.message || 'Error al registrarse.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
@@ -15162,9 +15286,12 @@ class App {
     // Evento Submit: Login Negocio
     document.getElementById('auth-biz-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
       const email = document.getElementById('biz-log-email').value;
       const password = document.getElementById('biz-log-password').value;
       const errBox = document.getElementById('biz-log-inline-error');
+
+      this.setButtonLoading(submitBtn, true, 'Iniciando sesión...');
 
       try {
         if (errBox) errBox.className = 'hidden';
@@ -15191,6 +15318,7 @@ class App {
         this.renderHeader();
         this.navigateTo('owner-dashboard');
       } catch (err) {
+        this.setButtonLoading(submitBtn, false);
         this.showToast(err.message || 'Error al iniciar sesión.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
@@ -15292,6 +15420,9 @@ class App {
       const initialSubStatus = isFreePlan ? 'active' : (isSinpe ? 'pending_sinpe' : 'pending_payment');
       const initialPayMethod = isFreePlan ? 'free' : (isSinpe ? 'sinpe_movil' : 'paypal');
 
+      const submitBtn = document.getElementById('biz-reg-submit-btn') || e.target.querySelector('button[type="submit"]');
+      this.setButtonLoading(submitBtn, true, 'Registrando negocio...');
+
       try {
         const regData = await storage.registerBusinessWithUser(ownerName, email, password, {
           name,
@@ -15335,6 +15466,7 @@ class App {
           }
         }
       } catch (err) {
+        this.setButtonLoading(submitBtn, false);
         this.showToast(err.message || 'Error al registrar negocio.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';

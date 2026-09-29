@@ -9,3 +9,13 @@ backups/
 public/uploads/*
 !public/uploads/.gitkeep
 
+# Tooling and scratch files
+.antigravity/
+.gemini/
+scratch/
+REGISTROS_CONVERSACION/
+*.py
+test_*.png
+test_*.jpg
+create_clean_reminder.js
+submit_reminder_template.js

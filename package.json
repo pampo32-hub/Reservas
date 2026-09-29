@@ -7,14 +7,19 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "build:css": "tailwindcss -i ./src/styles/tailwind-input.css -o ./public/css/tailwind.min.css --minify",
     "backup:drive": "node scripts/backup-drive.js",
     "restore:business": "node scripts/restore-business.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "compression": "^1.8.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "helmet": "^8.3.0",
     "imap-simple": "^5.1.0",
+    "jsonwebtoken": "^9.0.3",
     "mailparser": "^3.9.28",
     "nylas": "^8.4.0",
     "pg": "^8.12.0",
@@ -22,5 +27,8 @@
     "twilio": "^6.1.1",
     "web-push": "^3.6.7",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
   }
 }
