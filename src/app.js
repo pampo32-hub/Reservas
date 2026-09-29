@@ -8,7 +8,8 @@ const SHOW_LOGIN_BUTTON = true;
 const SHOW_PREREGISTER_BANNER = true;
 const SHOW_15_DAYS_FREE_BUTTON = true; // Botón "15 Días Gratis" visible en la página principal.
 const IS_DEMO_BOOKING_MODE = false; // true = Modo simulación/prueba de reserva | false = Modo reserva real activa
-const SHOW_SOCIAL_AUTH_BUTTONS = false; // Ocultar inicios de sesión y registros con Google, Hotmail y Apple (fácilmente reactivable)
+const SHOW_GOOGLE_AUTH = true; // Activar inicio de sesión y registro oficial con Google OAuth 2.0
+const SHOW_OTHER_SOCIAL_AUTH = false; // Hotmail/Outlook y Apple temporalmente desactivados hasta configurar sus credenciales
 const HIDE_SINPE_PHONE_AND_NAME = true; // Ocultar temporalmente el número de teléfono y nombre del titular de SINPE Móvil durante el lanzamiento
 
 // --- DEFINICIÓN DE TEMAS PASTEL PARA EL CALENDARIO DE AGENDA ---
@@ -680,6 +681,17 @@ class App {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, cleanUrl);
         }
+      } else if (urlParams.get('oauth_login') === 'success') {
+        const client = storage.getClientUser();
+        const biz = storage.getBusinessUser();
+        const user = client || biz;
+        setTimeout(() => {
+          this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Has iniciado sesión con Google correctamente.`, 'success', 5000);
+        }, 500);
+        const cleanUrl = window.location.pathname + (window.location.hash || '');
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
       } else if (urlParams.get('oauth_error')) {
         const errMsg = urlParams.get('oauth_error');
         setTimeout(() => {
@@ -693,9 +705,13 @@ class App {
 
       // Escuchar evento postMessage si se abrió en ventana popup
       window.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'NYLAS_OAUTH_SUCCESS') {
+        if (event.data && (event.data.type === 'GOOGLE_OAUTH_SUCCESS' || event.data.type === 'NYLAS_OAUTH_SUCCESS')) {
           const user = event.data.user;
           const role = event.data.role;
+          const token = event.data.token;
+          if (token) {
+            storage.setAuthToken(token);
+          }
           if (role === 'business') {
             storage.setBusinessUser(user);
             if (user?.businessId) {
@@ -712,12 +728,11 @@ class App {
           this.renderHeader();
           this.renderMobileBottomNav();
           this.renderCurrentView();
-          this.showToast(`¡Bienvenido, ${event.data.user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
           this.showToast(`¡Bienvenido, ${user?.name || 'Usuario'}! Sesión iniciada con Google.`, 'success', 5000);
         }
       });
     } catch (e) {
-      console.warn('Nylas status check error:', e);
+      console.warn('OAuth status check error:', e);
     }
 
     const initialUrl = this.getUrlForView(this.currentView, initialRoute.params);
@@ -14458,11 +14473,11 @@ class App {
           <!-- Cuerpo con Formularios Dinámicos -->
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
             ${mode === 'login' && role === 'client' ? `
-              <!-- FORM 1: LOGIN CLIENTE (GOOGLE, MICROSOFT, APPLE O CONTRASEÑA) -->
-              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
+              <!-- FORM 1: LOGIN CLIENTE (GOOGLE O CONTRASEÑA) -->
+              ${SHOW_GOOGLE_AUTH ? `
               <div class="space-y-2">
                 <!-- Botón Google -->
-                <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                <a href="/api/auth/google?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -14472,6 +14487,7 @@ class App {
                   <span>Continuar con Google</span>
                 </a>
 
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
                 <!-- Botones Microsoft y Apple -->
                 <div class="grid grid-cols-2 gap-2">
                   <a href="/api/auth/nylas/microsoft?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Hotmail o Outlook">
@@ -14489,6 +14505,7 @@ class App {
                     <span>Apple (iCloud)</span>
                   </a>
                 </div>
+                ` : ''}
               </div>
 
               <div class="relative flex py-1 items-center">
@@ -14524,11 +14541,11 @@ class App {
             ` : ''}
 
             ${mode === 'login' && role === 'business' ? `
-              <!-- FORM 2: LOGIN NEGOCIO (GOOGLE, MICROSOFT, APPLE O CORREO Y CONTRASEÑA) -->
-              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
+              <!-- FORM 2: LOGIN NEGOCIO (GOOGLE O CORREO Y CONTRASEÑA) -->
+              ${SHOW_GOOGLE_AUTH ? `
               <div class="space-y-2 mb-3">
                 <!-- Botón Google -->
-                <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                <a href="/api/auth/google?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -14538,6 +14555,7 @@ class App {
                   <span>Continuar con Google (Gmail)</span>
                 </a>
 
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
                 <!-- Botones Microsoft y Apple -->
                 <div class="grid grid-cols-2 gap-2">
                   <a href="/api/auth/nylas/microsoft?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Hotmail o Outlook del negocio">
@@ -14555,6 +14573,7 @@ class App {
                     <span>Apple (iCloud)</span>
                   </a>
                 </div>
+                ` : ''}
               </div>
 
               <div class="relative flex py-1 items-center">
@@ -14590,11 +14609,11 @@ class App {
             ` : ''}
 
             ${mode === 'register' && role === 'client' ? `
-              <!-- FORM 3: REGISTRO CLIENTE (GOOGLE, MICROSOFT, APPLE O MANUAL) -->
-              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
+              <!-- FORM 3: REGISTRO CLIENTE (GOOGLE O MANUAL) -->
+              ${SHOW_GOOGLE_AUTH ? `
               <div class="space-y-2 mb-3">
                 <!-- Botón Google -->
-                <a href="/api/auth/nylas/google?role=client&returnTo=/mis-reservas" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                <a href="/api/auth/google?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -14604,6 +14623,7 @@ class App {
                   <span>Registrarse con Google</span>
                 </a>
 
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
                 <!-- Botones Microsoft y Apple -->
                 <div class="grid grid-cols-2 gap-2">
                   <a href="/api/auth/nylas/microsoft?role=client&returnTo=/mis-reservas" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrarse con Hotmail o Outlook">
@@ -14621,6 +14641,7 @@ class App {
                     <span>Apple (iCloud)</span>
                   </a>
                 </div>
+                ` : ''}
               </div>
 
               <div class="relative flex py-1 items-center">
@@ -14703,11 +14724,11 @@ class App {
             ` : ''}
 
             ${mode === 'register' && role === 'business' ? `
-              <!-- FORM 4: REGISTRO NUEVO NEGOCIO (GOOGLE, MICROSOFT, APPLE O MANUAL) -->
-              ${SHOW_SOCIAL_AUTH_BUTTONS ? `
+              <!-- FORM 4: REGISTRO NUEVO NEGOCIO (GOOGLE O MANUAL) -->
+              ${SHOW_GOOGLE_AUTH ? `
               <div class="space-y-2 mb-3">
                 <!-- Botón Google -->
-                <a href="/api/auth/nylas/google?role=business&returnTo=/panel-negocio" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                <a href="/api/auth/google?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -14717,6 +14738,7 @@ class App {
                   <span>Registrar mi Negocio con Google (Gmail)</span>
                 </a>
 
+                ${SHOW_OTHER_SOCIAL_AUTH ? `
                 <!-- Botones Microsoft y Apple -->
                 <div class="grid grid-cols-2 gap-2">
                   <a href="/api/auth/nylas/microsoft?role=business&returnTo=/panel-negocio" class="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Registrar mi negocio con Hotmail u Outlook">
@@ -14734,6 +14756,7 @@ class App {
                     <span>Apple (iCloud)</span>
                   </a>
                 </div>
+                ` : ''}
               </div>
 
               <div class="relative flex py-1 items-center mb-3">
