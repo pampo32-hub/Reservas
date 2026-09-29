@@ -486,7 +486,16 @@ class StorageService {
   }
 
   logoutClient() {
-    localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
+      localStorage.removeItem('directorio_client_user_session');
+    }
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(STORAGE_KEYS.CLIENT_USER);
+      sessionStorage.removeItem('directorio_client_user_session');
+      sessionStorage.removeItem('reservas_client_user');
+      sessionStorage.removeItem('reservas_current_view');
+    }
     this.clearAuthToken();
   }
 

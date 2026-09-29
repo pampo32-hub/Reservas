@@ -1,5 +1,5 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
-import storage from './services/storage.js?v=3.44.0';
+import storage from './services/storage.js?v=3.46.9';
 
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
@@ -1556,10 +1556,15 @@ class App {
             ` : ''}
 
             ${clientUser && !bizUser && !devUser ? `
-              <button id="mobile-top-profile-badge" class="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-bold border border-blue-200/80 dark:border-blue-800 flex items-center gap-1.5 app-touch-btn shrink-0 shadow-2xs whitespace-nowrap">
-                <i class="fas fa-user-circle text-xs text-blue-600"></i>
-                <span class="max-w-[90px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mis Citas'}</span>
-              </button>
+              <div class="flex items-center gap-1 bg-blue-50 dark:bg-blue-950 border border-blue-200/80 dark:border-blue-800 p-0.5 rounded-xl shrink-0 whitespace-nowrap shadow-2xs">
+                <button id="mobile-top-profile-badge" class="px-2 py-1 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center gap-1 app-touch-btn shrink-0 cursor-pointer">
+                  <i class="fas fa-user-circle text-xs text-blue-600"></i>
+                  <span class="max-w-[75px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mis Citas'}</span>
+                </button>
+                <button id="mobile-top-client-logout-btn" type="button" class="action-logout-client p-1 text-slate-400 hover:text-rose-600 rounded-lg shrink-0 cursor-pointer transition-colors" title="Cerrar sesión de cliente">
+                  <i class="fas fa-sign-out-alt text-xs"></i>
+                </button>
+              </div>
             ` : ''}
 
             ${!clientUser && !bizUser && !devUser ? `
@@ -1699,13 +1704,8 @@ class App {
 
     // Cliente logueado
     document.getElementById('nav-client-bookings-btn')?.addEventListener('click', () => this.navigateTo('my-client-bookings'));
-    document.getElementById('nav-client-logout-btn')?.addEventListener('click', () => {
-      storage.logoutClient();
-      this.showToast('Sesión de usuario cerrada.', 'info');
-      this.renderHeader();
-      this.renderMobileBottomNav();
-      if (this.currentView === 'my-client-bookings') this.navigateTo('directory');
-    });
+    document.getElementById('nav-client-logout-btn')?.addEventListener('click', () => this.handleClientLogout());
+    document.getElementById('mobile-top-client-logout-btn')?.addEventListener('click', () => this.handleClientLogout());
 
     // Negocio logueado
     document.getElementById('nav-biz-dashboard-btn')?.addEventListener('click', () => this.navigateTo('owner-dashboard'));
@@ -1724,6 +1724,19 @@ class App {
 
     // Actualizar footer dinámico según estado de sesión
     this.renderFooter();
+  }
+
+  // --- CIERRE DE SESIÓN DE CLIENTE CENTRALIZADO (INFALIBLE) ---
+  handleClientLogout() {
+    this._lastClientSync = null;
+    this.clientSyncingInFlight = false;
+    storage.logoutClient();
+    this.showToast('Sesión cerrada correctamente.', 'info');
+    this.renderHeader();
+    this.renderMobileBottomNav();
+    if (this.currentView === 'my-client-bookings') {
+      this.navigateTo('directory');
+    }
   }
 
   // --- FOOTER DINÁMICO (MANUAL VISIBLE SOLO PARA COMERCIOS LOGUEADOS) ---
@@ -6167,21 +6180,25 @@ class App {
       return (b.time || '').localeCompare(a.time || '');
     });
 
-    // Sincronizar en segundo plano
-    if (!this.clientSyncingInFlight) {
+    // Sincronizar en segundo plano una sola vez por visita a la vista (evita loops y re-renderizados en Safari móvil)
+    const syncKey = `${clientUser.phone || ''}_${clientUser.email || ''}`;
+    if (!this.clientSyncingInFlight && this._lastClientSync !== syncKey) {
       this.clientSyncingInFlight = true;
       storage.getClientAppointmentsAsync(clientUser.phone, clientUser.email).then((fresh) => {
         this.clientSyncingInFlight = false;
+        this._lastClientSync = syncKey;
         if (fresh && this.currentView === 'my-client-bookings') {
           const localMap = new Map(allAppointments.map(a => [a.id, a]));
           const hasDiff = fresh.length !== allAppointments.length ||
             fresh.some(f => {
               const local = localMap.get(f.id);
-              return !local || f.status !== local.status || f.businessName !== local.businessName || f.isReviewed !== local.isReviewed;
+              return !local || f.status !== local.status || f.businessName !== local.businessName || Boolean(f.isReviewed) !== Boolean(local.isReviewed);
             });
           if (hasDiff) {
             const main = document.getElementById('main-content');
-            if (main) this.renderClientBookingsView(main);
+            if (main && this.currentView === 'my-client-bookings') {
+              this.renderClientBookingsView(main);
+            }
           }
         }
       }).catch(() => {
@@ -6213,13 +6230,13 @@ class App {
             <p class="text-xs text-slate-500 mt-1">Hola <strong>${clientUser.name || 'Cliente'}</strong> ${clientUser.phone ? `• ${clientUser.phone}` : ''} ${clientUser.email ? `• ${clientUser.email}` : ''}</p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
-            <button id="client-edit-profile-btn" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs">
+            <button id="client-edit-profile-btn" type="button" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer">
               <i class="fas fa-user-edit text-blue-600"></i> Mi Perfil
             </button>
-            <button id="go-explore-top-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20">
+            <button id="go-explore-top-btn" type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors shadow-md shadow-blue-500/20 cursor-pointer">
               <i class="fas fa-plus mr-1"></i> Nueva Reserva
             </button>
-            <button id="client-logout-view-btn" class="px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-colors">
+            <button id="client-logout-view-btn" type="button" class="action-logout-client px-4 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs">
               <i class="fas fa-sign-out-alt mr-1"></i> Salir
             </button>
           </div>
@@ -6365,10 +6382,7 @@ class App {
     document.getElementById('go-explore-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     
     document.getElementById('client-logout-view-btn')?.addEventListener('click', () => {
-      storage.logoutClient();
-      this.showToast('Sesión cerrada.', 'info');
-      this.renderHeader();
-      this.navigateTo('directory');
+      this.handleClientLogout();
     });
 
     document.querySelectorAll('.client-filter-btn').forEach(btn => {
@@ -18359,6 +18373,14 @@ class App {
 
     // Respuesta táctil instantánea: al tocar la X en móviles reacciona de inmediato (0ms de retraso)
     document.addEventListener('pointerdown', (e) => {
+      const clientLogoutTrigger = e.target.closest('#client-logout-view-btn, #nav-client-logout-btn, #mobile-top-client-logout-btn, .action-logout-client');
+      if (clientLogoutTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleClientLogout();
+        return;
+      }
+
       const closeBtn = isModalCloseTrigger(e.target);
       if (closeBtn) {
         e.preventDefault();
@@ -18544,6 +18566,15 @@ class App {
       if (navLandingTarget) {
         e.preventDefault();
         this.navigateTo('business-landing');
+        return;
+      }
+
+      // Logout de Cliente (Delegación Global Infalible)
+      const clientLogoutTarget = e.target.closest('#client-logout-view-btn, #nav-client-logout-btn, #mobile-top-client-logout-btn, .action-logout-client');
+      if (clientLogoutTarget) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleClientLogout();
         return;
       }
 
