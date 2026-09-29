@@ -6762,6 +6762,25 @@ app.get(['/terminos', '/terms', '/terminos-y-condiciones', '/terminos-de-servici
   res.sendFile(path.join(__dirname, 'public', 'terminos.html'));
 });
 
+// ==========================================
+// VERIFICACIÓN DE DOMINIO DE EDITOR MICROSOFT ENTRA / AZURE (.WELL-KNOWN)
+// ==========================================
+app.get([
+  '/.well-known/microsoft-identity-association',
+  '/.well-known/microsoft-identity-association.json'
+], (req, res) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.status(200).json({
+    associatedApplications: [
+      {
+        applicationId: process.env.MICROSOFT_CLIENT_ID || '18cb090d-8521-4e1a-91d9-89a1499365d7'
+      }
+    ]
+  });
+});
+
 // Middleware Catch-All para SPA (Cualquier ruta no capturada por API sirve index.html)
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {
