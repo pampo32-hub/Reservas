@@ -5656,6 +5656,7 @@ app.get(['/api/auth/google', '/api/auth/nylas/google'], (req, res) => {
     authUrl.searchParams.set('access_type', 'online');
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('prompt', 'select_account');
+    authUrl.searchParams.set('hl', 'es');
 
     res.redirect(authUrl.toString());
   } catch (err) {
