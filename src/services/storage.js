@@ -446,12 +446,32 @@ class StorageService {
     return { success: true, role: 'business', user };
   }
 
+  async sendBusinessVerificationCode(email, ownerName = '', businessName = '') {
+    if (this.isOnlineApi) {
+      const res = await fetch(`${this.apiBase}/auth/business/send-verification-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, ownerName, businessName })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al enviar código de verificación.');
+      return data;
+    }
+    return { success: true, message: 'Modo local: código enviado.' };
+  }
+
   async registerBusinessWithUser(ownerName, email, password, businessData) {
     if (this.isOnlineApi) {
       const res = await this.fetchWithAuth(`${this.apiBase}/auth/business/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ownerName, email, password, business: businessData })
+        body: JSON.stringify({ 
+          ownerName, 
+          email, 
+          password, 
+          business: businessData,
+          verificationCode: businessData?.verificationCode 
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al registrar negocio.');

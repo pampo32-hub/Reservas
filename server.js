@@ -14,6 +14,7 @@ import {
   sendBookingConfirmationEmail, 
   sendReviewRequestEmail, 
   sendPasswordResetEmail,
+  sendBusinessEmailVerificationCode,
   sendAdminPreRegistrationNotificationEmail,
   sendAdminBusinessRegistrationNotificationEmail,
   sendAdminClientRegistrationNotificationEmail,
@@ -754,20 +755,104 @@ app.post('/api/auth/business/login', async (req, res) => {
   }
 });
 
-// 2. Registro de Negocio con Usuario y Contraseña
-// 2. Registro de Negocio con Usuario y Contraseña (con Alerta para Developer si es categoría personalizada)
+// 1.1. Enviar código de verificación de correo para nuevo registro de negocio (OTP 6 dígitos)
+app.post('/api/auth/business/send-verification-code', async (req, res) => {
+  try {
+    const { email, ownerName, businessName } = req.body;
+    const cleanEmail = String(email || '').trim().toLowerCase();
+
+    if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      return res.status(400).json({ error: 'Por favor ingresa un correo electrónico válido.' });
+    }
+
+    // Verificar si ya existe una cuenta de negocio registrada con este correo
+    const existingUser = await pool.query(
+      'SELECT id FROM reservas_business_users WHERE LOWER(email) = LOWER($1)',
+      [cleanEmail]
+    );
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Ya existe una cuenta de negocio registrada con este correo electrónico.' });
+    }
+
+    // Generar código numérico de 6 dígitos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const verifId = `vcode-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+
+    // Invalidar códigos anteriores no usados para este correo
+    await pool.query(
+      'UPDATE reservas_business_email_verifications SET used = TRUE WHERE LOWER(email) = LOWER($1) AND used = FALSE',
+      [cleanEmail]
+    );
+
+    // Insertar nuevo código
+    await pool.query(`
+      INSERT INTO reservas_business_email_verifications (id, email, code, expires_at, used)
+      VALUES ($1, $2, $3, $4, FALSE)
+    `, [verifId, cleanEmail, code, expiresAt]);
+
+    // Enviar código por correo
+    const emailRes = await sendBusinessEmailVerificationCode({
+      to: cleanEmail,
+      name: ownerName || '',
+      businessName: businessName || '',
+      code
+    });
+
+    if (!emailRes.success && emailRes.reason === 'no_email_service_available') {
+      console.warn('⚠️ [DEV/PROD] Proveedor de correo no configurado o en fallback. Código de verificación:', code);
+    }
+
+    res.json({
+      success: true,
+      message: `Código de verificación enviado exitosamente a ${cleanEmail}.`
+    });
+  } catch (error) {
+    console.error('Error al enviar código de verificación de negocio:', error);
+    res.status(500).json({ error: 'Error al enviar el código de verificación por correo.' });
+  }
+});
+
+// 2. Registro de Negocio con Usuario y Contraseña (con Verificación de Correo Obligatoria y Plan Gratis por Defecto)
 app.post('/api/auth/business/register', async (req, res) => {
   try {
-    const { ownerName, email, password, business } = req.body;
-    if (!email || !password || !business || !business.name) {
+    const { ownerName, email, password, business, verificationCode } = req.body;
+    const cleanEmail = String(email || '').trim().toLowerCase();
+
+    if (!cleanEmail || !password || !business || !business.name) {
       return res.status(400).json({ error: 'Faltan campos obligatorios para registrar el negocio.' });
     }
 
+    if (!verificationCode) {
+      return res.status(400).json({ error: 'Debes ingresar el código de verificación de 6 dígitos enviado a tu correo.' });
+    }
+
     // Verificar si el correo ya existe
-    const existing = await pool.query('SELECT id FROM reservas_business_users WHERE LOWER(email) = LOWER($1)', [email.trim()]);
+    const existing = await pool.query('SELECT id FROM reservas_business_users WHERE LOWER(email) = LOWER($1)', [cleanEmail]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Ya existe una cuenta con este correo electrónico.' });
     }
+
+    // Validar código de verificación de 6 dígitos
+    const cleanCode = String(verificationCode).trim();
+    const verifCheck = await pool.query(`
+      SELECT id FROM reservas_business_email_verifications
+      WHERE LOWER(email) = LOWER($1) 
+        AND code = $2 
+        AND used = FALSE 
+        AND expires_at > NOW()
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `, [cleanEmail, cleanCode]);
+
+    if (verifCheck.rows.length === 0) {
+      return res.status(400).json({ 
+        error: 'El código de verificación es incorrecto o ha vencido. Por favor solicita uno nuevo.' 
+      });
+    }
+
+    // Marcar código como usado
+    await pool.query('UPDATE reservas_business_email_verifications SET used = TRUE WHERE id = $1', [verifCheck.rows[0].id]);
 
     const newBizId = `biz-${Date.now()}`;
     const newUserId = `usr-${Date.now()}`;
@@ -781,11 +866,13 @@ app.post('/api/auth/business/register', async (req, res) => {
     };
     const features = business.features || ['Sinpe Móvil', 'Atención Personalizada'];
 
-    const planId = business.plan || 'free';
-    const planPriceUsd = planId === 'free' ? 0 : (planId === 'unlimited' ? 35 : (planId === 'basic' ? 10 : 18));
-    const bookingLimit = planId === 'free' ? 25 : (planId === 'unlimited' ? 600 : (planId === 'basic' ? 150 : 300));
-    const subStatus = planId === 'free' ? 'active' : (business.subscriptionStatus || 'pending_payment');
-    const payMethod = planId === 'free' ? 'free' : (business.paymentMethod || 'sinpe_movil');
+    // El registro inicial siempre se activa en Plan Gratis de por vida (0 costo, 25 reservas)
+    // El dueño puede optar por un plan de pago (Básico, Pro, Premium) desde su panel
+    const planId = 'free';
+    const planPriceUsd = 0;
+    const bookingLimit = 25;
+    const subStatus = 'active';
+    const payMethod = 'free';
     const socialLinks = business.socialLinks || business.social_links || {};
     const autoConfirm = business.autoConfirmAppointments !== undefined ? Boolean(business.autoConfirmAppointments) : true;
 
@@ -796,16 +883,18 @@ app.post('/api/auth/business/register', async (req, res) => {
         price_range, address, city, phone, email, description,
         image, cover_image, schedule, features, is_demo,
         plan, plan_price_usd, monthly_booking_limit, social_links,
-        auto_confirm_appointments, subscription_status, payment_method
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+        auto_confirm_appointments, subscription_status, payment_method,
+        is_email_verified
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
     `, [
       newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
       5.0, 0, business.priceRange || '₡₡',
-      business.address || '', business.city || '', business.phone || '', email.trim(),
+      business.address || '', business.city || '', business.phone || '', cleanEmail,
       business.description || '', business.image || '', business.coverImage || '',
       JSON.stringify(schedule), JSON.stringify(features), false,
       planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks),
-      autoConfirm, subStatus, payMethod
+      autoConfirm, subStatus, payMethod,
+      true
     ]);
 
     // Si es una categoría personalizada, registrar alerta para el Developer
@@ -817,12 +906,12 @@ app.post('/api/auth/business/register', async (req, res) => {
       `, [alertId, newBizId, business.name, business.category, business.categoryLabel || business.category]);
     }
 
-    // Insertar usuario del negocio con contraseña hasheada
+    // Insertar usuario del negocio con contraseña hasheada y correo verificado
     const hashedPassword = await hashPassword(password.trim());
     await pool.query(`
-      INSERT INTO reservas_business_users (id, business_id, name, email, password)
-      VALUES ($1, $2, $3, $4, $5)
-    `, [newUserId, newBizId, ownerName || business.name, email.trim(), hashedPassword]);
+      INSERT INTO reservas_business_users (id, business_id, name, email, password, is_email_verified)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [newUserId, newBizId, ownerName || business.name, cleanEmail, hashedPassword, true]);
 
     // Insertar primer servicio si existe
     if (business.services && Array.isArray(business.services)) {

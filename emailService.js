@@ -571,6 +571,199 @@ export async function sendPasswordResetEmail({ to, code, name = 'Usuario', userT
 }
 
 /**
+ * Envía correo con código de verificación (OTP) para registro de negocio
+ */
+export async function sendBusinessEmailVerificationCode({ to, name = '', businessName = '', code }) {
+  if (!to || !to.includes('@') || !code) {
+    return { success: false, reason: 'invalid_recipient_or_code' };
+  }
+
+  const safeOwner = String(name || '').trim() || 'Emprendedor/a';
+  const safeBiz = String(businessName || '').trim() || 'Tu Comercio';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifica tu correo electrónico</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      margin: 0;
+      padding: 24px 12px;
+      color: #0f172a;
+    }
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+      padding: 36px 28px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.25);
+      color: #c7d2fe;
+      border: 1px solid rgba(165, 180, 252, 0.3);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+    .subtitle {
+      margin: 8px 0 0 0;
+      font-size: 13px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    .content {
+      padding: 32px 28px;
+    }
+    .greeting {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+    .message {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .code-card {
+      background: #f8fafc;
+      border: 2px dashed #6366f1;
+      border-radius: 20px;
+      padding: 24px 16px;
+      text-align: center;
+      margin: 24px 0;
+    }
+    .code-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #4f46e5;
+      margin-bottom: 8px;
+    }
+    .code-digits {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 40px;
+      font-weight: 900;
+      letter-spacing: 10px;
+      color: #1e1b4b;
+      padding-left: 10px;
+      margin: 4px 0;
+    }
+    .code-expiry {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 10px;
+      font-weight: 700;
+    }
+    .info-card {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 12px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+    .security-notice {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .footer {
+      background: #f8fafc;
+      padding: 20px 24px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Seguridad Reservas Costa Rica 🇨🇷</div>
+      <h1 class="title">Verificación de Correo</h1>
+      <p class="subtitle">Confirma tu correo para activar tu comercio</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">¡Hola, ${safeOwner}! 👋</div>
+      <div class="message">
+        Recibimos tu solicitud para registrar tu negocio <strong>${safeBiz}</strong> en la plataforma oficial de <strong>Reservas Costa Rica</strong>. Para garantizar que todos los comercios cuenten con correos reales y verificados, ingresa el siguiente código:
+      </div>
+
+      <div class="code-card">
+        <div class="code-label">Tu Código de Verificación</div>
+        <div class="code-digits">${code}</div>
+        <div class="code-expiry">⏱️ Este código es válido por 15 minutos</div>
+      </div>
+
+      <div class="info-card">
+        <strong>💡 ¿Cómo usarlo?</strong> Escribe o pega este código de 6 dígitos en la pantalla de registro para verificar tu dirección y activar tu acceso inmediato al Panel de Negocio.
+      </div>
+
+      <div class="security-notice">
+        <strong>¿No solicitaste este registro?</strong> Si tú no iniciaste el registro de <strong>${safeBiz}</strong>, puedes ignorar este mensaje con seguridad. Ninguna cuenta será activada sin este código.
+      </div>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">Directorio & Sistema de Reservas de Costa Rica 🇨🇷</p>
+      <p style="margin: 0;">Mensaje automático de verificación de identidad. Por favor no respondas a este correo.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`🔐 Enviando código de verificación de negocio (${code}) a: ${to}...`);
+    return await sendEmailCore({
+      to,
+      subject: `🔐 ${code} es tu código de verificación para registrar tu negocio - Reservas CR`,
+      html: htmlContent
+    });
+  } catch (err) {
+    console.error('❌ Error enviando código de verificación a negocio:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Notificación por correo al administrador cuando un comercio hace PRE-REGISTRO
  */
 export async function sendAdminPreRegistrationNotificationEmail(lead) {

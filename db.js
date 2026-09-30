@@ -311,6 +311,21 @@ export async function initDatabase(customPool = null) {
       );
     `);
 
+    // 11.1. Crear tabla de códigos de verificación de correo para registro de negocios
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_business_email_verifications (
+        id VARCHAR(64) PRIMARY KEY,
+        email VARCHAR(150) NOT NULL,
+        code VARCHAR(10) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_reservas_biz_verif_email ON reservas_business_email_verifications (email);
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT TRUE;
+      ALTER TABLE reservas_business_users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT TRUE;
+    `);
+
     // 12. Crear tabla de suscripciones Web Push para notificaciones móviles
     await client.query(`
       CREATE TABLE IF NOT EXISTS reservas_push_subscriptions (

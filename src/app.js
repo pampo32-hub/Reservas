@@ -6956,6 +6956,12 @@ class App {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            ${isFree ? `
+              <button id="dash-top-upgrade-btn" class="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" title="Ver planes y precios de suscripción">
+                <i class="fas fa-crown text-xs text-slate-950"></i>
+                <span>Mejorar Plan</span>
+              </button>
+            ` : ''}
             <a href="/negocio/${currentBiz.slug || currentBiz.id}" target="_blank" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Ver cómo ven los clientes tu página pública">
               <i class="fas fa-external-link-alt text-xs text-blue-600"></i>
               <span>Ver Tienda</span>
@@ -6969,6 +6975,32 @@ class App {
             </button>
           </div>
         </div>
+
+        <!-- Banner Informativo: Comercio en Plan Gratis -> Opción de Mejorar a Plan de Pago -->
+        ${isFree ? `
+          <div class="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/40 p-4 sm:p-5 rounded-3xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md w-full">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center text-xl shrink-0 shadow-sm font-black">
+                <i class="fas fa-gift"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs font-black uppercase tracking-wider bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-full">Plan Gratis de por vida (₡0)</span>
+                  <span class="text-xs font-bold text-emerald-300">25 reservas/mes • 1 especialista</span>
+                </div>
+                <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Tu negocio está activo y recibiendo reservas sin costo. ¿Tu equipo creció o necesitas más citas al mes? Puedes contratar un plan superior (Básico, Pro o Premium) con pago en colones por SINPE Móvil o Tarjeta cuando tú quieras.
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <button id="dash-free-upgrade-banner-btn" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
+                <i class="fas fa-rocket text-sm"></i>
+                <span>Ver Planes & Mejorar</span>
+              </button>
+            </div>
+          </div>
+        ` : ''}
 
         <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
         ${(currentBiz.subscriptionStatus === 'pending_sinpe' || currentBiz.subscription_status === 'pending_sinpe') ? `
@@ -7227,6 +7259,14 @@ class App {
       this.showToast('Sesión de negocio cerrada.', 'info');
       this.renderHeader();
       this.navigateTo('directory');
+    });
+
+    document.getElementById('dash-top-upgrade-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId });
+    });
+
+    document.getElementById('dash-free-upgrade-banner-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'free' });
     });
 
     document.getElementById('dash-change-plan-btn')?.addEventListener('click', () => {
@@ -16091,7 +16131,7 @@ class App {
   // ==========================================
   // MODAL INTEGRADO DE AUTENTICACIÓN (LOGIN & REGISTRO)
   // ==========================================
-  renderAuthModal({ mode = 'login', role = 'client', selectedPlanId = 'pro' } = {}) {
+  renderAuthModal({ mode = 'login', role = 'client', selectedPlanId = 'free', prefill = null } = {}) {
     if (role === 'business') {
       this.preloadPayPalSDK();
     }
@@ -16469,232 +16509,107 @@ class App {
               </div>
               ` : ''}
 
-              <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
-                
-                <!-- 1. SELECCIÓN DE PLAN DE SUSCRIPCIÓN -->
-                <div class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
-                  <div class="flex items-center justify-between">
-                    <span class="font-black text-amber-400 block text-xs uppercase tracking-wider flex items-center gap-1.5">
-                      <i class="fas fa-tags"></i> Elige tu Plan de Suscripción *
+              <div id="biz-reg-flow-step-container">
+                <form id="auth-biz-reg-form" class="space-y-4 text-xs sm:text-sm">
+                  <!-- 1. Cuenta de Usuario / Credenciales -->
+                  <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
+                    <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fas fa-lock text-indigo-600"></i> Credenciales de Acceso para el Dueño
                     </span>
-                    <span class="text-[10px] text-slate-300 font-medium">Cambia o cancela cuando quieras</span>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
+                        <input type="text" id="reg-owner-name" required value="${this.escapeHtml(prefill?.ownerName || '')}" placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      </div>
+                      <div>
+                        <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
+                        <input type="email" id="reg-biz-email" required value="${this.escapeHtml(prefill?.email || '')}" placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
+                        <input type="password" id="reg-biz-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
+                        <input type="password" id="reg-biz-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
+                      </div>
+                    </div>
+
+                    <!-- Mensaje Inline de Validación de Contraseñas -->
+                    <div id="biz-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
                   </div>
 
-                  <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                    <!-- Plan Gratis -->
-                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'free' ? 'bg-indigo-950 border-emerald-400 ring-2 ring-emerald-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-emerald-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider z-10 pointer-events-none">Gratis</span>
-                      <input type="radio" name="new-biz-plan" value="free" ${selectedPlanId === 'free' ? 'checked' : ''} class="sr-only">
-                      <div>
-                        <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-emerald-300">Gratis</span>
-                          <span class="text-[9px] font-bold text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">25 res.</span>
-                        </div>
-                        <div class="text-sm sm:text-base font-black text-white">₡0 <span class="text-[9px] font-normal text-slate-400">/ siempre</span></div>
-                        <p class="text-[9px] text-slate-400 mt-0.5">De por vida</p>
-                      </div>
-                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1"><i class="fas fa-check text-emerald-400 text-[8px]"></i> <span>25 res/mes</span></div>
-                        <div class="flex items-center gap-1"><i class="fas fa-user text-emerald-400 text-[8px]"></i> <span>1 dueño</span></div>
-                      </div>
-                    </label>
+                  <!-- 2. Datos Básicos del Negocio -->
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
+                      <input type="text" id="new-biz-name" required value="${this.escapeHtml(prefill?.name || '')}" placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
 
-                    <!-- Plan Básico -->
-                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'basic' ? 'bg-indigo-950 border-blue-400 ring-2 ring-blue-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <input type="radio" name="new-biz-plan" value="basic" ${selectedPlanId === 'basic' ? 'checked' : ''} class="sr-only">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-blue-300">Básico</span>
-                          <span class="text-[9px] font-bold text-blue-300 bg-blue-900/80 px-1.5 py-0.5 rounded">150 res.</span>
-                        </div>
-                        <div class="text-sm sm:text-base font-black text-white">$10 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[9px] text-slate-400 mt-0.5">~₡5,200 CRC</p>
+                        <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
+                        <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                          ${categories.map(c => `<option value="${c.id}" ${prefill?.catSelectVal === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                          <option value="otra" class="font-bold text-blue-600">Otra Categoría (Personalizada)</option>
+                        </select>
                       </div>
-                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1"><i class="fas fa-check text-emerald-400 text-[8px]"></i> <span>150 res/mes</span></div>
-                        <div class="flex items-center gap-1"><i class="fas fa-user text-blue-400 text-[8px]"></i> <span>1 dueño</span></div>
-                      </div>
-                    </label>
 
-                    <!-- Plan Profesional -->
-                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'pro' ? 'bg-indigo-950 border-amber-400 ring-2 ring-amber-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <span class="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-amber-400 text-slate-950 text-[9px] font-black rounded-full shadow-xs uppercase tracking-wider z-10 pointer-events-none">Popular</span>
-                      <input type="radio" name="new-biz-plan" value="pro" ${selectedPlanId === 'pro' ? 'checked' : ''} class="sr-only">
                       <div>
-                        <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-amber-300">Pro</span>
-                          <span class="text-[9px] font-bold text-amber-950 bg-amber-400 px-1.5 py-0.5 rounded">300 res.</span>
-                        </div>
-                        <div class="text-sm sm:text-base font-black text-amber-300">$18 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[9px] text-slate-400 mt-0.5">~₡9,400 CRC</p>
+                        <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
+                        <input type="text" id="new-biz-city" required value="${this.escapeHtml(prefill?.city || '')}" placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
                       </div>
-                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1"><i class="fas fa-check text-amber-400 text-[8px]"></i> <span>300 res/mes</span></div>
-                        <div class="flex items-center gap-1"><i class="fas fa-users text-amber-400 text-[8px]"></i> <span>Hasta 5 esp.</span></div>
-                      </div>
-                    </label>
+                    </div>
 
-                    <!-- Plan Premium -->
-                    <label class="biz-plan-card-label relative p-2.5 sm:p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${selectedPlanId === 'unlimited' ? 'bg-indigo-950 border-purple-400 ring-2 ring-purple-400/30' : 'bg-slate-800/80 border-slate-700 hover:border-slate-500'}">
-                      <input type="radio" name="new-biz-plan" value="unlimited" ${selectedPlanId === 'unlimited' ? 'checked' : ''} class="sr-only">
-                      <div>
-                        <div class="flex justify-between items-start mb-1">
-                          <span class="font-black text-xs text-purple-300">Premium</span>
-                          <span class="text-[9px] font-bold text-purple-300 bg-purple-900/80 px-1.5 py-0.5 rounded">600 res.</span>
-                        </div>
-                        <div class="text-sm sm:text-base font-black text-purple-300">$35 <span class="text-[9px] font-normal text-slate-400">/mes</span></div>
-                        <p class="text-[9px] text-slate-400 mt-0.5">~₡18,200 CRC</p>
+                    <!-- Caja para Categoría Personalizada (Aparece al seleccionar 'Otra Categoría') -->
+                    <div id="new-biz-custom-cat-box" class="hidden p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl animate-fade-in space-y-1">
+                      <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-blue-900">Escribe el Nombre de tu Nueva Categoría *</label>
+                        <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Notificará al Developer</span>
                       </div>
-                      <div class="text-[9px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/80 space-y-1">
-                        <div class="flex items-center gap-1"><i class="fas fa-check text-purple-400 text-[8px]"></i> <span>Hasta 600 res.</span></div>
-                        <div class="flex items-center gap-1"><i class="fas fa-users text-purple-400 text-[8px]"></i> <span>Esp. ilimitados</span></div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
+                      <input type="text" id="new-biz-custom-cat" placeholder="Ej. Jardinería, Clases de Música, Lavado de Muebles..." class="w-full px-3.5 py-2 bg-white border border-blue-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
 
-                <!-- 1.1 MÉTODO DE PAGO INICIAL (SINPE MÓVIL O TARJETA/PAYPAL) -->
-                <div id="biz-paymethod-wrapper" class="p-4 bg-slate-900 text-white rounded-2xl space-y-3 border border-indigo-500/30 shadow-md">
-                  <div id="biz-paymethod-free-note" class="${selectedPlanId === 'free' ? 'block' : 'hidden'} p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2.5 text-xs text-emerald-300 font-bold">
-                    <i class="fas fa-gift text-emerald-400 text-base flex-shrink-0"></i>
-                    <span>Plan 100% Gratis de por vida: No requiere método de pago. Tu cuenta se activará de inmediato.</span>
+                    <div>
+                      <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
+                      <input type="tel" id="new-biz-phone" required value="${this.escapeHtml(prefill?.phone || '')}" placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
                   </div>
 
-                  <div id="biz-paymethod-options" class="${selectedPlanId === 'free' ? 'hidden' : 'block'} space-y-3">
-                    <span class="font-black text-emerald-400 block text-xs uppercase tracking-wider flex items-center gap-1.5">
-                      <i class="fas fa-wallet"></i> Método de Pago *
-                    </span>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <!-- Opción SINPE Móvil -->
-                      <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-indigo-950 border-emerald-400 ring-2 ring-emerald-400/30">
-                        <input type="radio" name="new-biz-paymethod" value="sinpe" checked class="sr-only">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                          <i class="fas fa-mobile-alt"></i>
+                  <div class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-950">
+                    <i class="fas fa-gift text-emerald-600 mt-0.5 flex-shrink-0 text-base"></i>
+                    <span><strong>Plan Gratis de por vida (₡0):</strong> Tu cuenta se activará sin necesidad de tarjeta ni métodos de pago. Dentro de tu panel podrás optar por planes de pago en cualquier momento.</span>
+                  </div>
+
+                  <!-- Checkbox Términos y Condiciones Negocio -->
+                  <div id="biz-reg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-colors cursor-pointer select-none">
+                    <div class="flex items-center justify-between gap-3">
+                      <label for="biz-reg-terms" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
+                        <input type="checkbox" id="biz-reg-terms" name="biz_terms" checked class="sr-only">
+                        <div id="biz-reg-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
+                          <i class="fas fa-check text-xs font-black"></i>
                         </div>
-                        <div class="flex-1">
-                          <div class="flex items-center justify-between">
-                            <span class="font-black text-xs text-white">SINPE Móvil</span>
-                            <span class="text-[9px] font-black text-emerald-950 bg-emerald-400 px-1.5 py-0.5 rounded">Costa Rica</span>
-                          </div>
-                          <p class="text-[10px] text-slate-300 mt-0.5">Paga fácil y rápido por SINPE Móvil sin necesidad de tarjeta. Recibirás los datos para tu activación inmediata.</p>
-                        </div>
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
+                          Acepto los Términos, Políticas de Privacidad y Comerciales *
+                        </span>
                       </label>
-
-                      <!-- Opción Tarjeta / PayPal -->
-                      <label class="biz-paymethod-label relative p-3 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 bg-slate-800/80 border-slate-700 hover:border-slate-500">
-                        <input type="radio" name="new-biz-paymethod" value="card_paypal" class="sr-only">
-                        <div class="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">
-                          <i class="fas fa-credit-card"></i>
-                        </div>
-                        <div class="flex-1">
-                          <div class="flex items-center justify-between">
-                            <span class="font-black text-xs text-white">Tarjeta / PayPal</span>
-                            <span class="text-[9px] font-bold text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded">Automático</span>
-                          </div>
-                          <p class="text-[10px] text-slate-300 mt-0.5">Suscripción recurrente con tarjeta de débito/crédito o cuenta PayPal.</p>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 2. Cuenta de Usuario / Credenciales -->
-                <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl space-y-3">
-                  <span class="font-bold text-indigo-900 block text-xs uppercase tracking-wider">
-                    <i class="fas fa-lock mr-1"></i> Credenciales de Acceso para el Dueño
-                  </span>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label class="block font-bold text-slate-700 mb-1">Nombre del Administrador *</label>
-                      <input type="text" id="reg-owner-name" required placeholder="Ej. Carlos Rodríguez" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                    </div>
-                    <div>
-                      <label class="block font-bold text-slate-700 mb-1">Correo para Iniciar Sesión *</label>
-                      <input type="email" id="reg-biz-email" required placeholder="admin@comercio.cr" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                      <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
+                        <i class="fas fa-file-contract text-xs"></i> Leer
+                      </button>
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label class="block font-bold text-slate-700 mb-1">Crea una Contraseña *</label>
-                      <input type="password" id="reg-biz-password" required minlength="6" placeholder="Mínimo 6 caracteres" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
-                    </div>
-                    <div>
-                      <label class="block font-bold text-slate-700 mb-1">Confirmar Contraseña *</label>
-                      <input type="password" id="reg-biz-password-confirm" required minlength="6" placeholder="Repite tu contraseña" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-all">
-                    </div>
-                  </div>
-
-                  <!-- Mensaje Inline de Validación de Contraseñas -->
-                  <div id="biz-reg-inline-error" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all"></div>
-                </div>
-
-                <!-- 3. Datos Básicos del Negocio -->
-                <div class="space-y-3">
-                  <div>
-                    <label class="block font-bold text-slate-700 mb-1">Nombre Comercial del Negocio *</label>
-                    <input type="text" id="new-biz-name" required placeholder="Ej. Barbería Costa Rica, Clínica Dental..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label class="block font-bold text-slate-700 mb-1">Categoría del Negocio *</label>
-                      <select id="new-biz-cat" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        ${categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                        <option value="otra" class="font-bold text-blue-600">Otra Categoría (Personalizada)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label class="block font-bold text-slate-700 mb-1">Provincia / Cantón *</label>
-                      <input type="text" id="new-biz-city" required placeholder="Ej. San José, Escazú / Heredia..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                  </div>
-
-                  <!-- Caja para Categoría Personalizada (Aparece al seleccionar 'Otra Categoría') -->
-                  <div id="new-biz-custom-cat-box" class="hidden p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl animate-fade-in space-y-1">
-                    <div class="flex items-center justify-between">
-                      <label class="block text-xs font-bold text-blue-900">Escribe el Nombre de tu Nueva Categoría *</label>
-                      <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">Notificará al Developer</span>
-                    </div>
-                    <input type="text" id="new-biz-custom-cat" placeholder="Ej. Jardinería, Clases de Música, Lavado de Muebles..." class="w-full px-3.5 py-2 bg-white border border-blue-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  </div>
-
-                  <div>
-                    <label class="block font-bold text-slate-700 mb-1">Teléfono / WhatsApp (+506) *</label>
-                    <input type="tel" id="new-biz-phone" required placeholder="+506 8888 7777" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                  </div>
-                </div>
-
-                <div class="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
-                  <i class="fas fa-info-circle text-blue-600 mt-0.5 flex-shrink-0 text-sm"></i>
-                  <span><strong>¡Registro rápido!</strong> Tus fotos, servicios, horarios, redes sociales y ubicación exacta los podrás personalizar dentro de tu panel en la pestaña <strong>"Configurar Negocio"</strong>.</span>
-                </div>
-
-                <!-- Checkbox Términos y Condiciones Negocio (Custom Interactive Component) -->
-                <div id="biz-reg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl transition-colors cursor-pointer select-none">
-                  <div class="flex items-center justify-between gap-3">
-                    <label for="biz-reg-terms" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
-                      <input type="checkbox" id="biz-reg-terms" name="biz_terms" checked class="sr-only">
-                      <div id="biz-reg-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                        <i class="fas fa-check text-xs font-black"></i>
-                      </div>
-                      <span class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
-                        Acepto los Términos, Políticas de Privacidad y Comerciales *
-                      </span>
-                    </label>
-                    <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
-                      <i class="fas fa-file-contract text-xs"></i> Leer
-                    </button>
-                  </div>
-                </div>
-
-                <button type="submit" id="biz-reg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-950/20 transition-colors text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
-                  <i class="fas fa-check-circle text-blue-400"></i>
-                  <span>Crear Cuenta y Registrar Negocio</span>
-                </button>
-              </form>
+                  <button type="submit" id="biz-reg-submit-btn" class="w-full py-4 bg-gradient-to-r from-slate-950 via-indigo-900 to-indigo-600 hover:from-slate-900 hover:to-indigo-500 text-white rounded-2xl font-black shadow-lg shadow-indigo-950/20 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
+                    <i class="fas fa-envelope text-indigo-300"></i>
+                    <span>Continuar y Verificar Correo</span>
+                    <i class="fas fa-arrow-right text-xs ml-1"></i>
+                  </button>
+                </form>
+              </div>
             ` : ''}
           </div>
         </div>
@@ -17057,34 +16972,31 @@ class App {
       }
     });
 
-    // Evento Submit: Registro Negocio (Con Selección de Plan)
+    // Evento Submit: Registro Negocio (Envío de Código OTP por Correo)
     document.getElementById('auth-biz-reg-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const ownerName = document.getElementById('reg-owner-name').value;
-      const email = document.getElementById('reg-biz-email').value;
-      const password = document.getElementById('reg-biz-password').value;
-      const passwordConfirm = document.getElementById('reg-biz-password-confirm').value;
-      const name = document.getElementById('new-biz-name').value;
-      const catSelectVal = document.getElementById('new-biz-cat').value;
-      const city = document.getElementById('new-biz-city').value;
+      const ownerName = document.getElementById('reg-owner-name')?.value.trim();
+      const email = document.getElementById('reg-biz-email')?.value.trim().toLowerCase();
+      const password = document.getElementById('reg-biz-password')?.value;
+      const passwordConfirm = document.getElementById('reg-biz-password-confirm')?.value;
+      const name = document.getElementById('new-biz-name')?.value.trim();
+      const catSelectVal = document.getElementById('new-biz-cat')?.value;
+      const city = document.getElementById('new-biz-city')?.value.trim();
       const phone = document.getElementById('new-biz-phone')?.value.trim() || '';
       const address = document.getElementById('new-biz-address')?.value.trim() || city || 'Costa Rica';
-      const description = document.getElementById('new-biz-desc')?.value.trim() || 'Servicios profesionales y atención personalizada.';
-      const image = document.getElementById('new-biz-image')?.value.trim() || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80';
-      const coverImage = document.getElementById('new-biz-cover')?.value.trim() || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80';
-      const firstSrvName = document.getElementById('first-srv-name')?.value.trim() || 'Servicio General';
-      const firstSrvPrice = document.getElementById('first-srv-price')?.value || 10000;
-      const instagram = document.getElementById('new-biz-instagram')?.value.trim() || '';
-      const facebook = document.getElementById('new-biz-facebook')?.value.trim() || '';
-      const tiktok = document.getElementById('new-biz-tiktok')?.value.trim() || '';
-      const website = document.getElementById('new-biz-website')?.value.trim() || '';
-      const socialLinks = { instagram, facebook, tiktok, website };
+      const description = 'Servicios profesionales y atención personalizada.';
+      const image = 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80';
+      const coverImage = 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=80';
+      const firstSrvName = 'Servicio General';
+      const firstSrvPrice = 10000;
+      const socialLinks = {};
       const errBox = document.getElementById('biz-reg-inline-error');
 
-      // Plan de suscripción elegido
-      const chosenPlanRadio = document.querySelector('input[name="new-biz-plan"]:checked');
-      const chosenPlanId = chosenPlanRadio ? chosenPlanRadio.value : 'free';
-      const planConfig = storage.getPlanById(chosenPlanId) || { id: 'free', name: 'Plan Gratis', priceUsd: 0, bookingLimit: 25 };
+      if (!email || !email.includes('@')) {
+        this.showToast('Por favor ingresa un correo electrónico válido.', 'error');
+        document.getElementById('reg-biz-email')?.focus();
+        return;
+      }
 
       if (password.length < 6) {
         this.showToast('La contraseña debe tener al menos 6 caracteres.', 'error');
@@ -17092,20 +17004,19 @@ class App {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>La contraseña debe tener al menos 6 caracteres.</span>';
         }
-        document.getElementById('reg-biz-password').focus();
+        document.getElementById('reg-biz-password')?.focus();
         return;
       }
 
       if (password !== passwordConfirm) {
         this.showToast('Las contraseñas no coinciden. Por favor verifícalas.', 'error');
-        document.getElementById('reg-biz-password-confirm').focus();
+        document.getElementById('reg-biz-password-confirm')?.focus();
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
           errBox.innerHTML = '<i class="fas fa-exclamation-triangle text-rose-600 text-sm flex-shrink-0"></i> <span>Las contraseñas no coinciden. Por favor verifícalas aquí arriba.</span>';
         }
         const confirmInput = document.getElementById('reg-biz-password-confirm');
-        confirmInput.classList.add('border-rose-500', 'bg-rose-50/20');
-        confirmInput.focus();
+        confirmInput?.classList.add('border-rose-500', 'bg-rose-50/20');
         return;
       }
 
@@ -17141,69 +17052,271 @@ class App {
         categoryLabel = catObj ? catObj.name : catSelectVal;
       }
 
-      // Método de pago seleccionado
-      const isFreePlan = (planConfig.id === 'free' || planConfig.priceUsd === 0 || chosenPlanId === 'free');
-      const chosenPayRadio = document.querySelector('input[name="new-biz-paymethod"]:checked');
-      const chosenPayMethod = chosenPayRadio ? chosenPayRadio.value : 'sinpe';
-      const isSinpe = chosenPayMethod === 'sinpe';
-
-      const initialSubStatus = isFreePlan ? 'active' : (isSinpe ? 'pending_sinpe' : 'pending_payment');
-      const initialPayMethod = isFreePlan ? 'free' : (isSinpe ? 'sinpe_movil' : 'paypal');
-
       const submitBtn = document.getElementById('biz-reg-submit-btn') || e.target.querySelector('button[type="submit"]');
-      this.setButtonLoading(submitBtn, true, 'Registrando negocio...');
+      this.setButtonLoading(submitBtn, true, 'Enviando código al correo...');
+      if (errBox) errBox.classList.add('hidden');
+
+      const businessData = {
+        name,
+        category: finalCategory,
+        categoryLabel,
+        isCustomCategory,
+        plan: 'free',
+        planPriceUsd: 0,
+        monthlyBookingLimit: 25,
+        subscriptionStatus: 'active',
+        paymentMethod: 'free',
+        city,
+        phone,
+        email,
+        address,
+        description,
+        image,
+        coverImage,
+        isDemo: false,
+        features: ['Sinpe Móvil', 'Atención Personalizada'],
+        socialLinks,
+        services: [
+          { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
+        ]
+      };
 
       try {
-        const regData = await storage.registerBusinessWithUser(ownerName, email, password, {
-          name,
-          category: finalCategory,
-          categoryLabel,
-          isCustomCategory,
-          plan: isFreePlan ? 'free' : planConfig.id,
-          planPriceUsd: isFreePlan ? 0 : planConfig.priceUsd,
-          monthlyBookingLimit: isFreePlan ? 25 : planConfig.bookingLimit,
-          subscriptionStatus: initialSubStatus,
-          paymentMethod: initialPayMethod,
-          city,
-          phone,
-          email,
-          address,
-          description,
-          image,
-          coverImage,
-          isDemo: false,
-          features: ['Sinpe Móvil', 'Atención Personalizada'],
-          socialLinks,
-          services: [
-            { name: firstSrvName, duration: 30, price: parseFloat(firstSrvPrice) || 10000, description: 'Servicio principal.' }
-          ]
-        });
+        await storage.sendBusinessVerificationCode(email, ownerName, name);
+        this.showToast(`Código de verificación enviado a ${email}. Revisa tu bandeja de entrada o spam.`, 'info');
 
-        modalContainer.innerHTML = '';
-        this.renderHeader();
-        this.navigateTo('owner-dashboard');
-
-        const createdBizId = regData?.user?.businessId || storage.getActiveBusinessId();
-        if (createdBizId) {
-          if (isFreePlan) {
-            this.showToast('¡Negocio creado con éxito en el Plan Gratis de por vida!', 'success');
-          } else if (isSinpe) {
-            this.showToast(`¡Negocio creado con éxito! Realiza tu SINPE para activar tu ${planConfig.name}`, 'success');
-            this.renderSinpePaymentModal({ businessId: createdBizId, planId: planConfig.id });
-          } else {
-            this.showToast(`¡Negocio creado! Conectando con la pasarela para activar tu ${planConfig.name}...`, 'success');
-            this.renderPayPalCheckoutModal({ businessId: createdBizId, planId: planConfig.id });
-          }
+        const stepContainer = document.getElementById('biz-reg-flow-step-container');
+        if (stepContainer) {
+          this.renderBusinessOtpVerificationStep({
+            container: stepContainer,
+            ownerName,
+            email,
+            password,
+            businessData,
+            onBack: () => {
+              this.renderAuthModal({
+                mode: 'register',
+                role: 'business',
+                prefill: {
+                  ownerName,
+                  email,
+                  name,
+                  catSelectVal,
+                  city,
+                  phone
+                }
+              });
+            }
+          });
         }
       } catch (err) {
         this.setButtonLoading(submitBtn, false);
-        this.showToast(err.message || 'Error al registrar negocio.', 'error');
+        this.showToast(err.message || 'Error al enviar código de verificación.', 'error');
         if (errBox) {
           errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in';
-          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al registrar negocio.'}</span>`;
+          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al enviar código de verificación.'}</span>`;
         }
       }
     });
+  }
+
+  // ==========================================
+  // PASO 2: PANTALLA DE VERIFICACIÓN OTP DE CORREO PARA NEGOCIOS
+  // ==========================================
+  renderBusinessOtpVerificationStep({ container, ownerName, email, password, businessData, onBack }) {
+    if (!container) return;
+
+    let countdown = 60;
+    let timerId = null;
+
+    container.innerHTML = `
+      <div id="biz-otp-verification-screen" class="space-y-5 animate-fade-in text-center py-2">
+        <div class="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-2xl mx-auto shadow-sm">
+          <i class="fas fa-envelope-open-text text-indigo-600 animate-pulse"></i>
+        </div>
+
+        <div>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-900 text-[11px] font-black uppercase tracking-wider border border-indigo-200">
+            <i class="fas fa-shield-alt text-indigo-600"></i> Paso 2 de 2 • Verificación de Correo
+          </span>
+          <h3 class="text-xl font-black text-slate-900 mt-2">Revisa tu correo electrónico</h3>
+          <p class="text-xs text-slate-600 mt-1 max-w-sm mx-auto leading-relaxed">
+            Hemos enviado un código de seguridad de 6 dígitos a:<br>
+            <strong class="text-indigo-900 font-black text-sm">${this.escapeHtml(email)}</strong>
+          </p>
+        </div>
+
+        <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl text-[11px] text-amber-900 text-left flex items-start gap-2.5 max-w-md mx-auto shadow-2xs">
+          <i class="fas fa-info-circle text-amber-600 text-base mt-0.5 shrink-0"></i>
+          <span>
+            Verificamos tu correo para proteger la confianza de los comercios en Costa Rica. Si no lo encuentras en 1 minuto, revisa tu carpeta de <strong>Correo No Deseado o Spam</strong>.
+          </span>
+        </div>
+
+        <!-- Input del Código OTP -->
+        <div class="max-w-xs mx-auto space-y-2">
+          <label class="block text-xs font-black text-slate-700 uppercase tracking-wider">
+            Ingresa tu Código de 6 Dígitos:
+          </label>
+          <input 
+            type="text" 
+            id="biz-otp-code-input" 
+            maxlength="6" 
+            autocomplete="one-time-code" 
+            inputmode="numeric" 
+            pattern="[0-9]*" 
+            placeholder="••••••" 
+            class="w-full text-center text-3xl tracking-[0.4em] font-black font-mono py-3.5 px-4 bg-slate-50 border-2 border-indigo-200 focus:border-indigo-600 focus:bg-white rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 transition-all text-slate-900 shadow-inner"
+            autofocus
+          >
+          <div id="biz-otp-inline-error" class="hidden p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl text-center"></div>
+        </div>
+
+        <!-- Botones y Reenvío -->
+        <div class="space-y-3 pt-2 max-w-sm mx-auto">
+          <button 
+            type="button" 
+            id="biz-otp-verify-btn" 
+            class="w-full py-4 bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 hover:from-indigo-800 hover:to-blue-700 text-white rounded-2xl font-black shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer text-sm app-touch-btn active:scale-98"
+          >
+            <i class="fas fa-check-circle text-sm"></i>
+            <span>Verificar y Activar Mi Negocio</span>
+          </button>
+
+          <div class="flex items-center justify-between text-xs pt-2 px-1">
+            <button 
+              type="button" 
+              id="biz-otp-back-btn" 
+              class="text-slate-500 hover:text-slate-800 font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <i class="fas fa-arrow-left text-[11px]"></i> Corregir datos
+            </button>
+            <button 
+              type="button" 
+              id="biz-otp-resend-btn" 
+              disabled 
+              class="text-indigo-600 hover:text-indigo-800 font-bold transition-colors cursor-pointer disabled:text-slate-400 disabled:cursor-not-allowed"
+            >
+              Reenviar código (en <span id="biz-otp-timer">60</span>s)
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const otpInput = document.getElementById('biz-otp-code-input');
+    const verifyBtn = document.getElementById('biz-otp-verify-btn');
+    const resendBtn = document.getElementById('biz-otp-resend-btn');
+    const timerSpan = document.getElementById('biz-otp-timer');
+    const errBox = document.getElementById('biz-otp-inline-error');
+    const backBtn = document.getElementById('biz-otp-back-btn');
+
+    // Timer de reenvío
+    timerId = setInterval(() => {
+      countdown--;
+      if (timerSpan) timerSpan.textContent = String(countdown);
+      if (countdown <= 0) {
+        clearInterval(timerId);
+        if (resendBtn) {
+          resendBtn.disabled = false;
+          resendBtn.innerHTML = '<i class="fas fa-redo-alt mr-1"></i> Reenviar código';
+        }
+      }
+    }, 1000);
+
+    // Reenviar código
+    resendBtn?.addEventListener('click', async () => {
+      resendBtn.disabled = true;
+      resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...';
+      try {
+        await storage.sendBusinessVerificationCode(email, ownerName, businessData.name);
+        this.showToast(`Nuevo código enviado a ${email}.`, 'info');
+        countdown = 60;
+        resendBtn.innerHTML = 'Reenviar código (en <span id="biz-otp-timer">60</span>s)';
+        timerId = setInterval(() => {
+          countdown--;
+          const span = document.getElementById('biz-otp-timer');
+          if (span) span.textContent = String(countdown);
+          if (countdown <= 0) {
+            clearInterval(timerId);
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = '<i class="fas fa-redo-alt mr-1"></i> Reenviar código';
+          }
+        }, 1000);
+      } catch (e) {
+        resendBtn.disabled = false;
+        resendBtn.innerHTML = 'Reenviar código';
+        this.showToast(e.message || 'Error al reenviar código.', 'error');
+      }
+    });
+
+    // Volver a corregir datos
+    backBtn?.addEventListener('click', () => {
+      if (timerId) clearInterval(timerId);
+      if (typeof onBack === 'function') onBack();
+    });
+
+    // Acción de verificar y completar registro
+    const performVerification = async () => {
+      const code = (otpInput?.value || '').replace(/\D/g, '').trim();
+      if (code.length !== 6) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-exclamation-circle mr-1"></i> Por favor ingresa el código completo de 6 dígitos.';
+        }
+        otpInput?.focus();
+        return;
+      }
+
+      this.setButtonLoading(verifyBtn, true, 'Verificando y activando...');
+      if (errBox) errBox.classList.add('hidden');
+
+      try {
+        const regData = await storage.registerBusinessWithUser(ownerName, email, password, {
+          ...businessData,
+          plan: 'free',
+          planPriceUsd: 0,
+          monthlyBookingLimit: 25,
+          subscriptionStatus: 'active',
+          paymentMethod: 'free',
+          verificationCode: code
+        });
+
+        if (timerId) clearInterval(timerId);
+        const modalContainer = document.getElementById('modal-container');
+        if (modalContainer) modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.navigateTo('owner-dashboard');
+        this.showToast('¡Cuenta y correo verificados con éxito! Bienvenido a Reservas Costa Rica.', 'success');
+      } catch (err) {
+        this.setButtonLoading(verifyBtn, false);
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i> ${err.message || 'Código inválido o expirado.'}`;
+        }
+        otpInput?.focus();
+      }
+    };
+
+    verifyBtn?.addEventListener('click', performVerification);
+
+    // Auto-envío al escribir 6 dígitos o presionar Enter
+    otpInput?.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val;
+      if (val.length === 6) {
+        performVerification();
+      }
+    });
+
+    otpInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performVerification();
+      }
+    });
+
+    setTimeout(() => otpInput?.focus(), 150);
   }
 
   // ==========================================
