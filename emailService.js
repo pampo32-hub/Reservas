@@ -764,6 +764,220 @@ export async function sendBusinessEmailVerificationCode({ to, name = '', busines
 }
 
 /**
+ * Envía correo oficial de bienvenida y confirmación de negocio registrado
+ */
+export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessName = '', provider = null }) {
+  if (!to || !to.includes('@')) {
+    return { success: false, reason: 'invalid_recipient' };
+  }
+
+  const safeOwner = String(ownerName || '').trim() || 'Emprendedor/a';
+  const safeBiz = String(businessName || '').trim() || 'Tu Comercio';
+  const verificationNote = provider
+    ? `Tu cuenta ha sido verificada y vinculada exitosamente mediante tu inicio de sesión seguro con <strong>${provider}</strong>.`
+    : `Tu dirección de correo ha sido confirmada y verificada exitosamente con tu código de seguridad.`;
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>¡Bienvenido/a a Reservas Costa Rica!</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f1f5f9;
+      margin: 0;
+      padding: 24px 12px;
+      color: #0f172a;
+    }
+    .container {
+      max-width: 580px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+      padding: 36px 28px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+      border: 1px solid rgba(134, 239, 172, 0.35);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .title {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+    .subtitle {
+      margin: 8px 0 0 0;
+      font-size: 13px;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+    .content {
+      padding: 32px 28px;
+    }
+    .greeting {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+    .message {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .plan-card {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .step-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+    }
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #4f46e5;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .btn-container {
+      text-align: center;
+      margin: 28px 0 16px 0;
+    }
+    .btn-panel {
+      display: inline-block;
+      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+      color: #ffffff !important;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 14px 32px;
+      border-radius: 16px;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    }
+    .footer {
+      background: #f8fafc;
+      padding: 20px 24px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Cuenta Verificada Oficial 🇨🇷</div>
+      <h1 class="title">¡Bienvenido a Reservas CR!</h1>
+      <p class="subtitle">Tu comercio está listo para recibir citas en línea</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">¡Hola, ${safeOwner}! 👋</div>
+      <div class="message">
+        ¡Felicidades! Tu negocio <strong>${safeBiz}</strong> ha quedado registrado exitosamente en la plataforma oficial de <strong>Reservas Costa Rica</strong>.<br><br>
+        ${verificationNote}
+      </div>
+
+      <div class="plan-card">
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 1px; margin-bottom: 4px;">Tu Plan Actual</div>
+        <div style="font-size: 18px; font-weight: 900; color: #0f172a;">Plan Gratis de Por Vida 🇨🇷</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.6;">
+          ✓ Costo mensual: ₡0 / mes<br>
+          ✓ Hasta 25 reservas mensuales incluidas<br>
+          ✓ Catálogo digital y enlace directo para tus clientes
+        </div>
+      </div>
+
+      <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 20px 0 12px 0;">
+        🚀 Siguientes pasos recomendados:
+      </div>
+
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div><strong>Configura tus servicios:</strong> Agrega los tratamientos, cortes o servicios con su precio en colones y duración.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div><strong>Ajusta tus horarios:</strong> Define tus días y horas hábiles de atención en tu perfil de comercio.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div><strong>Comparte tu enlace:</strong> Pon el link de tu negocio en tu WhatsApp Business, biografía de Instagram o envíalo a tus clientes.</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">4</div>
+        <div><strong>Mejora cuando lo necesites:</strong> Si requieres citas ilimitadas o recordatorios por WhatsApp, puedes pasar a un plan de pago (Básico, Pro o Premium) desde tu panel con SINPE Móvil o tarjeta.</div>
+      </div>
+
+      <div class="btn-container">
+        <a href="https://reservascr.app/panel-negocio" class="btn-panel">
+          Abrir Mi Panel de Negocio →
+        </a>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">Directorio & Sistema de Reservas de Costa Rica 🇨🇷</p>
+      <p style="margin: 0;">¿Necesitas ayuda para configurar tu negocio? Escríbenos directamente o responde a este correo.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`✉️ Enviando correo oficial de bienvenida a comercio (${to})...`);
+    return await sendEmailCore({
+      to,
+      subject: `🎉 ¡Bienvenido/a a Reservas Costa Rica! Tu negocio "${safeBiz}" está listo 🇨🇷`,
+      html: htmlContent
+    });
+  } catch (err) {
+    console.error('❌ Error enviando correo de bienvenida a comercio:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Notificación por correo al administrador cuando un comercio hace PRE-REGISTRO
  */
 export async function sendAdminPreRegistrationNotificationEmail(lead) {

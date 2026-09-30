@@ -15,6 +15,7 @@ import {
   sendReviewRequestEmail, 
   sendPasswordResetEmail,
   sendBusinessEmailVerificationCode,
+  sendBusinessWelcomeEmail,
   sendAdminPreRegistrationNotificationEmail,
   sendAdminBusinessRegistrationNotificationEmail,
   sendAdminClientRegistrationNotificationEmail,
@@ -927,9 +928,19 @@ app.post('/api/auth/business/register', async (req, res) => {
     sendAdminBusinessRegistrationNotificationEmail({
       business: { id: newBizId, ...business },
       ownerName: ownerName || business.name,
-      email: email.trim()
+      email: cleanEmail
     }).catch(err => {
       console.error('⚠️ Error no bloqueante enviando correo de registro de negocio al admin:', err.message);
+    });
+
+    // Correo oficial de Bienvenida y Activación al Dueño del Negocio
+    sendBusinessWelcomeEmail({
+      to: cleanEmail,
+      ownerName: ownerName || business.name,
+      businessName: business.name,
+      provider: null
+    }).catch(err => {
+      console.error('⚠️ Error no bloqueante enviando correo de bienvenida al comercio:', err.message);
     });
 
     const token = generateToken({
@@ -5983,8 +5994,8 @@ app.get('/api/auth/google/callback', async (req, res) => {
               image, cover_image, schedule, features, is_demo,
               plan, plan_price_usd, monthly_booking_limit,
               auto_confirm_appointments, subscription_status, payment_method,
-              nylas_provider
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+              nylas_provider, is_email_verified
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
           `, [
             newBizId, `Negocio de ${fullName}`, 'belleza', 'Salud y Belleza',
             5.0, 0, '₡₡',
@@ -5995,7 +6006,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
             JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
             'free', 0, 25,
             true, 'active', 'free',
-            'google'
+            'google', true
           ]);
 
           const srvId = `srv-${Date.now()}`;
@@ -6005,10 +6016,29 @@ app.get('/api/auth/google/callback', async (req, res) => {
           `, [srvId, newBizId]);
 
           await pool.query(
-            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url)
-             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5)`,
-            [newUserId, newBizId, fullName, cleanEmail, avatarUrl]
+            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url, is_email_verified)
+             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5, $6)`,
+            [newUserId, newBizId, fullName, cleanEmail, avatarUrl, true]
           );
+
+          // Notificación al Administrador
+          sendAdminBusinessRegistrationNotificationEmail({
+            business: { id: newBizId, name: `Negocio de ${fullName}`, phone: '', category: 'belleza', categoryLabel: 'Salud y Belleza' },
+            ownerName: fullName,
+            email: cleanEmail
+          }).catch(err => {
+            console.error('⚠️ Error no bloqueante notificando registro de negocio por Google al admin:', err.message);
+          });
+
+          // Correo oficial de bienvenida al Dueño del Negocio (verificado con Google)
+          sendBusinessWelcomeEmail({
+            to: cleanEmail,
+            ownerName: fullName,
+            businessName: `Negocio de ${fullName}`,
+            provider: 'Google'
+          }).catch(err => {
+            console.error('⚠️ Error no bloqueante enviando correo de bienvenida por Google:', err.message);
+          });
 
           sessionUser = {
             id: newUserId,
@@ -6394,8 +6424,8 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
               image, cover_image, schedule, features, is_demo,
               plan, plan_price_usd, monthly_booking_limit,
               auto_confirm_appointments, subscription_status, payment_method,
-              nylas_provider
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+              nylas_provider, is_email_verified
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
           `, [
             newBizId, `Negocio de ${fullName}`, 'belleza', 'Salud y Belleza',
             5.0, 0, '₡₡',
@@ -6406,7 +6436,7 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
             JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
             'free', 0, 25,
             true, 'active', 'free',
-            'microsoft'
+            'microsoft', true
           ]);
 
           const srvId = `srv-${Date.now()}`;
@@ -6416,10 +6446,29 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
           `, [srvId, newBizId]);
 
           await pool.query(
-            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url)
-             VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', 'microsoft', $5)`,
-            [newUserId, newBizId, fullName, cleanEmail, avatarUrl]
+            `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url, is_email_verified)
+             VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', 'microsoft', $5, $6)`,
+            [newUserId, newBizId, fullName, cleanEmail, avatarUrl, true]
           );
+
+          // Notificación al Administrador
+          sendAdminBusinessRegistrationNotificationEmail({
+            business: { id: newBizId, name: `Negocio de ${fullName}`, phone: phoneFromMs || '', category: 'belleza', categoryLabel: 'Salud y Belleza' },
+            ownerName: fullName,
+            email: cleanEmail
+          }).catch(err => {
+            console.error('⚠️ Error no bloqueante notificando registro de negocio por Microsoft al admin:', err.message);
+          });
+
+          // Correo oficial de bienvenida al Dueño del Negocio (verificado con Microsoft/Hotmail)
+          sendBusinessWelcomeEmail({
+            to: cleanEmail,
+            ownerName: fullName,
+            businessName: `Negocio de ${fullName}`,
+            provider: 'Microsoft (Hotmail / Outlook)'
+          }).catch(err => {
+            console.error('⚠️ Error no bloqueante enviando correo de bienvenida por Microsoft:', err.message);
+          });
 
           sessionUser = {
             id: newUserId,
