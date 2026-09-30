@@ -11,7 +11,12 @@ const DEFAULT_FROM = `${DEFAULT_FROM_NAME} <${DEFAULT_FROM_EMAIL}>`;
 const resendApiKey = process.env.RESEND_API_KEY || '';
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
 const APP_URL = process.env.APP_URL || 'https://reservascr.app';
-export const ADMIN_NOTIFICATION_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'pampo32@gmail.com';
+export const ADMIN_NOTIFICATION_EMAILS = (process.env.ADMIN_NOTIFICATION_EMAIL 
+  ? process.env.ADMIN_NOTIFICATION_EMAIL.split(',') 
+  : ['reservascr.app@gmail.com', 'pampo32@gmail.com']
+).map(e => e.trim()).filter(Boolean);
+
+export const ADMIN_NOTIFICATION_EMAIL = ADMIN_NOTIFICATION_EMAILS.join(', ');
 
 /**
  * Motor central de envío de correos (Brevo API REST con fallback a Resend)
@@ -660,9 +665,9 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
   `;
 
   try {
-    console.log(`📧 Enviando notificación de pre-registro a ${ADMIN_NOTIFICATION_EMAIL}...`);
+    console.log(`📧 Enviando notificación de pre-registro a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}...`);
     return await sendEmailCore({
-      to: ADMIN_NOTIFICATION_EMAIL,
+      to: ADMIN_NOTIFICATION_EMAILS,
       subject: `🚀 [Nuevo Pre-Registro] ${lead.businessName} (${lead.contactName})`,
       html: htmlContent
     });
@@ -759,9 +764,9 @@ export async function sendAdminBusinessRegistrationNotificationEmail({ business,
   `;
 
   try {
-    console.log(`📧 Enviando notificación de registro de negocio a ${ADMIN_NOTIFICATION_EMAIL}...`);
+    console.log(`📧 Enviando notificación de registro de negocio a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}...`);
     return await sendEmailCore({
-      to: ADMIN_NOTIFICATION_EMAIL,
+      to: ADMIN_NOTIFICATION_EMAILS,
       subject: `🏪 [Nuevo Comercio] ${business.name} (${ownerName || email})`,
       html: htmlContent
     });
@@ -829,7 +834,7 @@ export async function sendAdminClientRegistrationNotificationEmail(client) {
       </div>
     </div>
     <div class="footer">
-      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAIL}
+      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAILS.join(', ')}
     </div>
   </div>
 </body>
@@ -837,9 +842,9 @@ export async function sendAdminClientRegistrationNotificationEmail(client) {
   `;
 
   try {
-    console.log(`📧 Enviando notificación de nuevo cliente a ${ADMIN_NOTIFICATION_EMAIL}...`);
+    console.log(`📧 Enviando notificación de nuevo cliente a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}...`);
     return await sendEmailCore({
-      to: ADMIN_NOTIFICATION_EMAIL,
+      to: ADMIN_NOTIFICATION_EMAILS,
       subject: `👤 [Nuevo Cliente] ${client.name} (${client.phone})`,
       html: htmlContent
     });
