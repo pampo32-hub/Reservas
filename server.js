@@ -4389,16 +4389,26 @@ async function processPendingWhatsAppReminders() {
     }
 
     for (const apt of result.rows) {
-      const cleanTime = (apt.time || '').trim().slice(0, 5);
-      const timeParts = cleanTime.split(':');
+      const rawTime = String(apt.time || '').trim().toUpperCase();
+      const isPM = rawTime.includes('PM');
+      const isAM = rawTime.includes('AM');
+      const timeDigits = rawTime.replace(/[^0-9:]/g, '');
+      const timeParts = timeDigits.split(':');
       if (timeParts.length < 2) {
         continue;
       }
-      const aptHour = parseInt(timeParts[0], 10);
+      let aptHour = parseInt(timeParts[0], 10);
       const aptMinute = parseInt(timeParts[1], 10);
 
+      // Conversión de formato 12h (AM/PM) a formato 24h
+      if (isPM && aptHour < 12) aptHour += 12;
+      if (isAM && aptHour === 12) aptHour = 0;
+
+      const hh24 = String(aptHour).padStart(2, '0');
+      const mm24 = String(aptMinute).padStart(2, '0');
+
       // 1. REGLA DE ANTICIPACIÓN: Verificar que la cita fue reservada al menos 24 horas antes
-      const aptDateTime = new Date(`${apt.date}T${cleanTime.padStart(5, '0')}:00-06:00`);
+      const aptDateTime = new Date(`${apt.date}T${hh24}:${mm24}:00-06:00`);
       const createdDateTime = new Date(apt.created_at || Date.now());
       const advanceHours = (aptDateTime.getTime() - createdDateTime.getTime()) / (1000 * 60 * 60);
 

@@ -649,7 +649,19 @@ export function buildBookingReminderText(appointment, business) {
   const addressStr = business?.address ? `\n📍 *Lugar:* ${business.address}${business?.city ? `, ${business.city}` : ''}` : '';
   const appointmentCode = String((appointment.id || 'APT-000').toUpperCase()).trim();
 
-  return `⏰ *¡Recordatorio de tu Cita Mañana!* 🇨🇷
+  const crTodayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+  const crTomorrow = new Date();
+  crTomorrow.setDate(crTomorrow.getDate() + 1);
+  const crTomorrowStr = crTomorrow.toLocaleDateString('en-CA', { timeZone: 'America/Costa_Rica' });
+
+  let reminderTitle = '¡Recordatorio de tu Cita!';
+  if (appointment.date === crTodayStr) {
+    reminderTitle = '¡Recordatorio de tu Cita Hoy!';
+  } else if (appointment.date === crTomorrowStr) {
+    reminderTitle = '¡Recordatorio de tu Cita Mañana!';
+  }
+
+  return `⏰ *${reminderTitle}* 🇨🇷
 
 Hola *${clientName}*, te recordamos que tienes una cita programada en *${businessName}*:
 
