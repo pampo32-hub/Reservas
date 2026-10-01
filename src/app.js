@@ -20829,7 +20829,7 @@ class App {
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">6</span>
-                      <span>Precios, Métodos de Pago y Suscripciones</span>
+                      <span>Precios, Métodos de Pago, Suscripciones y Anticipos</span>
                     </h4>
                     <div class="space-y-3">
                       <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
@@ -20840,9 +20840,23 @@ class App {
                       </div>
 
                       <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-crown text-amber-600 mr-1"></i> Suscripciones SaaS de Comercios a Reservas CR:</span>
+                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-shield-alt text-amber-600 mr-1"></i> Anticipos y Depósitos de Reserva (SINPE Móvil):</span>
                         <p class="text-xs text-slate-600">
-                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita</strong>. Posterior a dicho periodo, podrán contratar planes mensuales oficiales (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Premium ₡18.200/mes) pagaderos mediante <strong>SINPE Móvil con verificación automática</strong> o pasarelas habilitadas. No aplican contratos de permanencia forzosa y la suscripción puede cancelarse en cualquier momento sin penalizaciones.
+                          Determinados comercios pueden requerir un porcentaje de anticipo o depósito (ej. 20%, 50%) para confirmar citas de alta demanda o servicios especializados. <strong>Reservas CR no custodia, no retiene ni intermedia dichos fondos</strong>; la transferencia SINPE Móvil se ejecuta directamente entre el cliente y el comercio. El comercio es el único responsable de validar el comprobante y de definir sus políticas de reembolso ante inasistencias o cancelaciones.
+                        </p>
+                      </div>
+
+                      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-crown text-amber-600 mr-1"></i> Suscripciones SaaS y Periodo de Prueba de 15 Días:</span>
+                        <p class="text-xs text-slate-600">
+                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita completa</strong>, sin requerir ingreso de tarjeta bancaria ni generar cargos automáticos. Si al vencer los 15 días el comercio no contrata un plan mensual oficial (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Premium ₡18.200/mes), la agenda pasará a modo de solo lectura (no recibirá nuevas reservas automáticas de clientes), pero <strong>su catálogo, servicios y configuración se conservarán intactos</strong> para su reactivación cuando elija un plan.
+                        </p>
+                      </div>
+
+                      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fab fa-whatsapp text-emerald-600 mr-1"></i> Bolsas de Recarga Adicionales de WhatsApp (Add-ons):</span>
+                        <p class="text-xs text-slate-600">
+                          Los comercios pueden adquirir bolsas complementarias prepagadas de mensajes de WhatsApp para ampliar su cuota mensual. Dichas recargas se activan de forma inmediata tras su acreditación y, por su naturaleza de consumo digital ante la API, no están sujetas a reembolso en efectivo.
                         </p>
                       </div>
                     </div>
@@ -20852,13 +20866,13 @@ class App {
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">7</span>
-                      <span>Cancelaciones, Reprogramaciones y Ausencias ("No-Show")</span>
+                      <span>Cancelaciones, Reprogramaciones, Anticipos y Ausencias ("No-Show")</span>
                     </h4>
                     <p>
                       Los clientes pueden cancelar o reprogramar sus citas a través de la plataforma respetando los plazos y límites de anticipación configurados por cada comercio.
                     </p>
                     <p class="text-slate-600">
-                      Ante inasistencias injustificadas o cancelaciones tardías de clientes, los comercios se reservan el derecho de limitar futuras reservas o aplicar sus políticas comerciales internas.
+                      Ante inasistencias injustificadas ("No-Show") o cancelaciones fuera del plazo permitido, el comercio se reserva el derecho de limitar futuras reservas y retener el anticipo según sus condiciones comerciales previamente informadas al cliente. Reservas CR no interviene en disputas de retención de depósitos entre cliente y negocio.
                     </p>
                   </section>
 
@@ -20866,13 +20880,13 @@ class App {
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">8</span>
-                      <span>Notificaciones Transaccionales por WhatsApp y Correo</span>
+                      <span>Notificaciones Transaccionales por WhatsApp, Correo y Web Push</span>
                     </h4>
                     <p>
-                      Al solicitar una reserva o registrarse, el usuario autoriza expresamente la recepción de comunicaciones operativas (confirmaciones de reserva, recordatorios de turno previos a la cita, avisos de reprogramación y encuestas de calidad) a través de la API oficial de WhatsApp Cloud de Meta y/o correo electrónico.
+                      Al solicitar una reserva, registrarse o administrar un negocio, el usuario autoriza expresamente la recepción de comunicaciones operativas (confirmaciones de reserva, recordatorios de turno previos a la cita, códigos de verificación OTP, avisos de reprogramación y alertas de agenda) a través de la API oficial de WhatsApp Cloud de Meta, correo electrónico y/o <strong>Notificaciones Web Push en el navegador (móvil y escritorio)</strong>.
                     </p>
                     <p class="text-slate-600 text-xs">
-                      Estas comunicaciones tienen carácter estrictamente operativo y de servicio. El usuario puede gestionar o solicitar la desactivación de recordatorios automáticos comunicándose con nuestro canal de soporte.
+                      Estas comunicaciones tienen carácter estrictamente operativo y de servicio. El usuario puede desactivar las Notificaciones Web Push en cualquier momento desde los ajustes de su navegador, o solicitar la exclusión de recordatorios automáticos contactando a soporte.
                     </p>
                   </section>
 
@@ -20958,6 +20972,9 @@ class App {
                       <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 text-[10px] font-bold border border-indigo-400/40">
                         <i class="fab fa-google mr-1"></i> Google OAuth Compliant
                       </span>
+                      <span class="px-2.5 py-0.5 rounded-full bg-sky-500/30 text-sky-200 text-[10px] font-bold border border-sky-400/40">
+                        <i class="fab fa-windows mr-1"></i> Microsoft OAuth Compliant
+                      </span>
                     </div>
                     <h3 class="font-black text-base sm:text-lg text-white">Política de Privacidad y Tratamiento de Datos Personales</h3>
                     <p class="text-xs text-slate-200 leading-relaxed">
@@ -20965,17 +20982,31 @@ class App {
                     </p>
                   </div>
 
-                  <!-- Bloque Google OAuth 2.0 y Limited Use -->
-                  <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 space-y-2 text-xs">
-                    <div class="font-black text-blue-900 flex items-center gap-2">
-                      <i class="fab fa-google text-blue-600 text-sm"></i> Uso de Datos de Usuario de Google (OAuth 2.0):
+                  <!-- Bloque Google y Microsoft OAuth 2.0 (Limited Use) -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-950 space-y-2">
+                      <div class="font-black text-blue-900 flex items-center gap-2">
+                        <i class="fab fa-google text-blue-600 text-sm"></i> Uso de Datos de Google (OAuth 2.0):
+                      </div>
+                      <p class="text-blue-900 leading-relaxed">
+                        Al iniciar sesión con Google, únicamente solicitamos acceso a tu <strong>nombre, correo electrónico y foto de perfil</strong> con el único fin de autenticar tu sesión y gestionar tus reservas. <strong>Reservas CR nunca vende, alquila ni comparte tus datos de Google con terceros ni empresas publicitarias.</strong>
+                      </p>
+                      <p class="text-[11px] text-blue-800 leading-normal italic">
+                        Cumplimos estrictamente con la <strong>Google API Services User Data Policy</strong>, incluidos los requisitos de Uso Limitado.
+                      </p>
                     </div>
-                    <p class="text-blue-900 leading-relaxed">
-                      Al iniciar sesión con Google, únicamente solicitamos acceso a tu <strong>nombre, correo electrónico y foto de perfil</strong> con el único fin de autenticar tu sesión y gestionar tus reservas. <strong>Reservas CR nunca vende, alquila ni comparte tus datos de Google con terceros ni empresas publicitarias.</strong>
-                    </p>
-                    <p class="text-[11px] text-blue-800 leading-normal italic">
-                      "El uso y la transferencia que hace Reservas CR a cualquier otra aplicación de la información recibida de las APIs de Google se apegan rigurosamente a la <strong>Política de Datos de Usuario de los Servicios de API de Google (Google API Services User Data Policy)</strong>, incluidos los requisitos de Uso Limitado."
-                    </p>
+
+                    <div class="p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-950 space-y-2">
+                      <div class="font-black text-sky-900 flex items-center gap-2">
+                        <i class="fab fa-microsoft text-sky-600 text-sm"></i> Uso de Datos de Microsoft (OAuth 2.0):
+                      </div>
+                      <p class="text-sky-900 leading-relaxed">
+                        Al iniciar sesión con Microsoft (Outlook / Hotmail / Microsoft 365), únicamente solicitamos tu <strong>nombre, dirección de correo electrónico y avatar</strong> para verificar tu identidad y asociar tus citas. <strong>No accedemos a tus correos, mensajes ni calendarios personales de Microsoft.</strong>
+                      </p>
+                      <p class="text-[11px] text-sky-800 leading-normal italic">
+                        El tratamiento de datos de cuentas Microsoft se apega rigurosamente a las directrices de la <strong>Microsoft Identity Platform</strong> y el principio de acceso mínimo necesario.
+                      </p>
+                    </div>
                   </div>
 
                   <!-- Sección 1 -->
@@ -21014,7 +21045,7 @@ class App {
                           <i class="fas fa-user text-blue-600"></i> A. Datos de Clientes Finales:
                         </span>
                         <p class="text-xs text-slate-600">
-                          Nombre completo, número de teléfono móvil / WhatsApp, dirección de correo electrónico (opcional según el flujo), cantón/provincia de interés, historial de citas agendadas (fechas, horas, servicios y profesional asignado), notas de preferencia médica/estética indicadas por el usuario, estados de asistencia y reseñas o calificaciones otorgadas.
+                          Nombre completo, número de teléfono móvil / WhatsApp, dirección de correo electrónico (opcional según el flujo), cantón/provincia de interés, historial de citas agendadas (fechas, horas, servicios y profesional asignado), comprobantes de anticipo SINPE Móvil cargados, notas de preferencia médica/estética indicadas por el usuario, estados de asistencia y reseñas o calificaciones otorgadas.
                         </p>
                       </div>
 
@@ -21024,7 +21055,7 @@ class App {
                           <i class="fas fa-store text-indigo-600"></i> B. Datos de Comercios y Profesionales:
                         </span>
                         <p class="text-xs text-slate-600">
-                          Nombre comercial, razón social o nombre del titular, cédula física o jurídica, teléfono de contacto y WhatsApp comercial, número de SINPE Móvil del negocio, dirección física exacta y geolocalización, fotografías de portafolio y logotipo, catálogo de servicios y tarifas, nómina de profesionales o colaboradores, horarios de apertura y bloqueos de agenda.
+                          Nombre comercial, razón social o nombre del titular, correo electrónico comercial, códigos numéricos de verificación de un solo uso (OTP) temporales para validar la titularidad de la cuenta (vigencia de 15 minutos), cédula física o jurídica, teléfono de contacto y WhatsApp comercial, número de SINPE Móvil del negocio, dirección física exacta y geolocalización, fotografías de portafolio y logotipo, catálogo de servicios y tarifas, nómina de profesionales o colaboradores, horarios de apertura y bloqueos de agenda.
                         </p>
                       </div>
 
@@ -21034,17 +21065,17 @@ class App {
                           <i class="fas fa-laptop-code text-slate-700"></i> C. Datos Técnicos, de Navegación y Conexión:
                         </span>
                         <p class="text-xs text-slate-600">
-                          Dirección IP pública aproximada (para geolocalización de país/provincia y prevención de ataques de seguridad), identificadores de sesión cifrados, tipo de navegador, sistema operativo del dispositivo, marcas de tiempo de acceso y registros (logs) de seguridad para auditoría técnica.
+                          Dirección IP pública aproximada (para geolocalización de país/provincia y prevención de ataques de seguridad), identificadores de sesión cifrados, tokens criptográficos de suscripción a Notificaciones Web Push (PushSubscription endpoint en navegadores compatibles), tipo de navegador, sistema operativo del dispositivo, marcas de tiempo de acceso y registros (logs) de seguridad para auditoría técnica.
                         </p>
                       </div>
 
                       <!-- Datos de Transacciones -->
                       <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1">
                         <span class="font-black text-xs text-emerald-900 flex items-center gap-1.5">
-                          <i class="fas fa-receipt text-emerald-600"></i> D. Datos de Transacciones y Suscripciones:
+                          <i class="fas fa-receipt text-emerald-600"></i> D. Datos de Transacciones, Suscripciones y Recargas:
                         </span>
                         <p class="text-xs text-slate-600">
-                          Números de comprobante/referencia de transferencias SINPE Móvil, teléfono emisor de la transferencia, montos en colones (₡ CRC), fecha/hora de acreditación bancaria e historial de planes de suscripción. <em>Nota: Reservas CR no almacena números completos de tarjetas bancarias ni contraseñas bancarias de los usuarios.</em>
+                          Números de comprobante/referencia de transferencias SINPE Móvil (para planes mensuales o recargas prepagadas de bolsas de WhatsApp), teléfono emisor de la transferencia, montos en colones (₡ CRC), fecha/hora de acreditación bancaria e historial de planes de suscripción. <em>Nota: Reservas CR no almacena números completos de tarjetas bancarias ni contraseñas bancarias de los usuarios.</em>
                         </p>
                       </div>
                     </div>
@@ -21096,7 +21127,11 @@ class App {
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
                         <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
-                        <span>Enviar confirmaciones y recordatorios automáticos por WhatsApp y correo.</span>
+                        <span>Enviar confirmaciones y recordatorios automáticos por WhatsApp y correo electrónico.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Entregar Notificaciones Web Push en tiempo real en navegadores móviles y de escritorio.</span>
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
                         <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
@@ -21104,11 +21139,15 @@ class App {
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
                         <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
-                        <span>Verificar y conciliar automáticamente pagos de suscripciones mediante SINPE Móvil.</span>
+                        <span>Verificar y conciliar automáticamente pagos de suscripciones y recargas mediante SINPE Móvil.</span>
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
                         <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
                         <span>Prevenir fraudes, ataques cibernéticos, suplantaciones o reservas malintencionadas.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Generar alertas administrativas y de auditoría interna a reservascr.app@gmail.com para supervisar registros y brindar soporte.</span>
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
                         <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
@@ -21247,7 +21286,7 @@ class App {
             <div class="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               <div class="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
                 <i class="fas fa-lock text-blue-600"></i>
-                <span>Última actualización: Septiembre 2026 • Reservas CR (Costa Rica)</span>
+                <span>Última actualización: Octubre 2026 • Reservas CR (Costa Rica)</span>
               </div>
               <button id="accept-legal-modal-btn" class="w-full sm:w-auto px-7 py-2.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2">
                 <i class="fas fa-check"></i>
