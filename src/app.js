@@ -7137,6 +7137,15 @@ class App {
     const isPro = currentPlanId === 'pro';
     const isUnlimited = currentPlanId === 'unlimited';
 
+    // Cálculo del periodo de prueba de 15 días gratis para comercios registrados
+    const bizCreatedMs = currentBiz.createdAt 
+      ? new Date(currentBiz.createdAt).getTime()
+      : (currentBiz.created_at ? new Date(currentBiz.created_at).getTime() : (String(currentBiz.id).startsWith('biz-') ? parseInt(String(currentBiz.id).slice(4), 10) : Date.now()));
+    const daysSinceReg = Math.floor((Date.now() - bizCreatedMs) / (1000 * 60 * 60 * 24));
+    const trialDaysLeft = Math.max(0, 15 - daysSinceReg);
+    const isTrialExpired = isFree && daysSinceReg >= 15;
+    const isTrialActive = isFree && daysSinceReg < 15;
+
     // Si está en plan gratis o básico y tenía seleccionada la pestaña de reportes, devolver a agenda
     if ((isFree || isBasic) && this.activeDashboardTab === 'reports') {
       this.activeDashboardTab = 'appointments';
@@ -7188,9 +7197,9 @@ class App {
 
           <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             ${isFree ? `
-              <button id="dash-top-upgrade-btn" class="flex-1 sm:flex-initial px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" title="Ver planes y precios de suscripción">
-                <i class="fas fa-crown text-xs text-slate-950"></i>
-                <span>Mejorar Plan</span>
+              <button id="dash-top-upgrade-btn" class="flex-1 sm:flex-initial px-4 py-2.5 ${isTrialExpired ? 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-slate-950 animate-pulse' : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950'} font-black rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" title="Ver planes y precios de suscripción">
+                <i class="fas ${isTrialExpired ? 'fa-credit-card' : 'fa-crown'} text-xs text-slate-950"></i>
+                <span>${isTrialExpired ? 'Renovar Plan' : 'Mejorar Plan'}</span>
               </button>
             ` : ''}
             <a href="/negocio/${currentBiz.slug || currentBiz.id}" target="_blank" class="flex-1 sm:flex-initial px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer" title="Ver cómo ven los clientes tu página pública">
@@ -7207,30 +7216,60 @@ class App {
           </div>
         </div>
 
-        <!-- Banner Informativo: Comercio en Plan Gratis -> Opción de Mejorar a Plan de Pago -->
+        <!-- Banner de Periodo de Prueba de 15 Días (Activo o Vencido con Mensaje de Renovación) -->
         ${isFree ? `
-          <div class="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/40 p-4 sm:p-5 rounded-3xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md w-full">
-            <div class="flex items-center gap-3.5">
-              <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-slate-950 flex items-center justify-center text-xl shrink-0 shadow-sm font-black">
-                <i class="fas fa-gift"></i>
-              </div>
-              <div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-xs font-black uppercase tracking-wider bg-emerald-400 text-slate-950 px-2.5 py-0.5 rounded-full">Plan Gratis de por vida (₡0)</span>
-                  <span class="text-xs font-bold text-emerald-300">25 reservas/mes • 1 especialista</span>
+          ${isTrialExpired ? `
+            <!-- CASO 1: Prueba de 15 Días Vencida -> Mensaje Destacado de Renovación -->
+            <div class="bg-gradient-to-r from-rose-950 via-slate-900 to-red-950 border-2 border-rose-500/70 p-4 sm:p-6 rounded-3xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 animate-fade-in shadow-xl w-full">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-lg shadow-rose-600/40">
+                  <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                  Tu negocio está activo y recibiendo reservas sin costo. ¿Tu equipo creció o necesitas más citas al mes? Puedes contratar un plan superior (Básico, Pro o Premium) con pago en colones por SINPE Móvil o Tarjeta cuando tú quieras.
-                </p>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap mb-1">
+                    <span class="text-xs font-black uppercase tracking-wider bg-rose-500 text-white px-3 py-0.5 rounded-full shadow-xs">
+                      Periodo de 15 Días Gratis Vencido
+                    </span>
+                    <span class="text-xs font-bold text-rose-300">Renovación Requerida</span>
+                  </div>
+                  <h4 class="text-base sm:text-lg font-black text-white">¡Tus 15 días de prueba gratis han finalizado!</h4>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed max-w-2xl">
+                    Tu periodo de prueba gratuita de 15 días ha concluido. Para seguir gestionando citas con tus clientes, recibir reservas 24/7 y mantener activos los recordatorios automáticos por WhatsApp, por favor renueva y elige tu plan oficial.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button id="dash-trial-renew-btn" class="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-xl shadow-rose-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer transform hover:scale-105 active:scale-95">
+                  <i class="fas fa-credit-card text-sm"></i>
+                  <span>Renovar / Elegir Plan</span>
+                </button>
               </div>
             </div>
-            <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
-              <button id="dash-free-upgrade-banner-btn" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
-                <i class="fas fa-rocket text-sm"></i>
-                <span>Ver Planes & Mejorar</span>
-              </button>
+          ` : `
+            <!-- CASO 2: Prueba de 15 Días Activa -> Días Restantes -->
+            <div class="bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 border border-blue-500/40 p-4 sm:p-5 rounded-3xl mb-6 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in shadow-md w-full">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl shrink-0 shadow-sm font-black">
+                  <i class="fas fa-gift"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-xs font-black uppercase tracking-wider bg-blue-500 text-white px-2.5 py-0.5 rounded-full">Prueba de 15 Días Gratis</span>
+                    <span class="text-xs font-bold text-blue-300">Te quedan ${trialDaysLeft} día(s) de prueba</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    Estás disfrutando de tus <strong>15 días de prueba gratis</strong>. Tienes acceso completo para configurar tus servicios, catálogo, horarios y recibir citas con WhatsApp. Al terminar tus 15 días podrás elegir tu plan preferido.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 w-full sm:w-auto shrink-0">
+                <button id="dash-free-upgrade-banner-btn" class="w-full sm:w-auto px-5 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 text-white font-black rounded-2xl text-xs sm:text-sm shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95">
+                  <i class="fas fa-crown text-sm text-amber-300"></i>
+                  <span>Ver Planes & Precios</span>
+                </button>
+              </div>
             </div>
-          </div>
+          `}
         ` : ''}
 
         <!-- Banner de Activación SINPE Pendiente (Si aplica) -->
@@ -7291,10 +7330,10 @@ class App {
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
                 <i class="fas ${currentPlanId === 'unlimited' ? 'fa-crown' : currentPlanId === 'pro' ? 'fa-star' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
-                ${planConfig.name}
+                ${currentPlanId === 'free' ? 'Prueba Gratuita (15 Días)' : planConfig.name}
               </span>
-              <span class="text-xs ${currentPlanId === 'free' ? 'text-emerald-300' : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
-                ${planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`}
+              <span class="text-xs ${currentPlanId === 'free' ? (isTrialExpired ? 'text-rose-300' : 'text-emerald-300') : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
+                ${currentPlanId === 'free' ? (isTrialExpired ? 'Prueba 15 Días (Finalizada)' : `Prueba 15 Días (${trialDaysLeft}d restantes)`) : (planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`)}
               </span>
             </div>
             <h3 class="text-base sm:text-lg font-black text-white">Consumo de Citas & WhatsApp (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
@@ -7501,6 +7540,10 @@ class App {
 
     document.getElementById('dash-top-upgrade-btn')?.addEventListener('click', () => {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId });
+    });
+
+    document.getElementById('dash-trial-renew-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'free' });
     });
 
     document.getElementById('dash-free-upgrade-banner-btn')?.addEventListener('click', () => {
@@ -16873,7 +16916,7 @@ class App {
                   ${mode === 'login' ? 'Acceso Seguro' : 'Registro de Cuenta'}
                 </span>
                 <h3 class="text-base sm:text-lg font-bold">
-                  ${mode === 'login' ? (role === 'business' ? 'Iniciar Sesión Negocio' : 'Iniciar Sesión Usuario') : (role === 'business' ? 'Registrar mi Negocio' : 'Crear Cuenta de Usuario')}
+                  ${mode === 'login' ? (role === 'business' ? 'Iniciar Sesión Negocio' : 'Iniciar Sesión Usuario') : (role === 'business' ? 'Registrar mi Negocio (15 Días Gratis)' : 'Crear Cuenta de Usuario')}
                 </h3>
               </div>
             </div>
@@ -17291,9 +17334,14 @@ class App {
                     </div>
                   </div>
 
-                  <div class="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-950">
-                    <i class="fas fa-gift text-emerald-600 mt-0.5 flex-shrink-0 text-base"></i>
-                    <span><strong>Plan Gratis de por vida (₡0):</strong> Tu cuenta se activará sin necesidad de tarjeta ni métodos de pago. Dentro de tu panel podrás optar por planes de pago en cualquier momento.</span>
+                  <div class="p-3.5 bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3 text-xs text-blue-950">
+                    <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <i class="fas fa-gift text-sm"></i>
+                    </div>
+                    <div>
+                      <span class="font-extrabold text-blue-900 block text-xs">🎉 15 Días de Prueba Gratis Incluidos</span>
+                      <span class="text-blue-800/90 leading-relaxed block mt-0.5">Tu cuenta se activará con <strong>15 días de prueba gratis</strong> sin tarjeta ni compromiso. Podrás configurar tus servicios, catálogo y recibir citas desde hoy mismo.</span>
+                    </div>
                   </div>
 
                   <!-- Checkbox Términos y Condiciones Negocio -->
@@ -17316,7 +17364,7 @@ class App {
 
                   <button type="submit" id="biz-reg-submit-btn" class="w-full py-4 bg-gradient-to-r from-slate-950 via-indigo-900 to-indigo-600 hover:from-slate-900 hover:to-indigo-500 text-white rounded-2xl font-black shadow-lg shadow-indigo-950/20 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
                     <i class="fas fa-envelope text-indigo-300"></i>
-                    <span>Continuar y Verificar Correo</span>
+                    <span>Continuar y Verificar Correo (15 Días Gratis)</span>
                     <i class="fas fa-arrow-right text-xs ml-1"></i>
                   </button>
                 </form>
@@ -17793,7 +17841,7 @@ class App {
       };
 
       try {
-        await storage.sendBusinessVerificationCode(email, ownerName, name);
+        await storage.sendBusinessVerificationCode(email, ownerName, name, businessData);
         this.showToast(`Código de verificación enviado a ${email}. Revisa tu bandeja de entrada o spam.`, 'info');
 
         const stepContainer = document.getElementById('biz-reg-flow-step-container');
@@ -17940,7 +17988,7 @@ class App {
       resendBtn.disabled = true;
       resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...';
       try {
-        await storage.sendBusinessVerificationCode(email, ownerName, businessData.name);
+        await storage.sendBusinessVerificationCode(email, ownerName, businessData.name, businessData);
         this.showToast(`Nuevo código enviado a ${email}.`, 'info');
         countdown = 60;
         resendBtn.innerHTML = 'Reenviar código (en <span id="biz-otp-timer">60</span>s)';
@@ -18033,305 +18081,12 @@ class App {
   // ==========================================
   // MODAL DE PRE-REGISTRO DE COMERCIOS (ACCESO ANTICIPADO)
   // ==========================================
-  renderPreRegisterModal(selectedPlanId = 'pro') {
-    return this.renderPreRegistrationModal(selectedPlanId);
+  renderPreRegisterModal(selectedPlanId = 'free') {
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
   }
 
-  renderPreRegistrationModal(selectedPlanId = 'pro') {
-    const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
-
-    const categories = storage.getCategories().filter(c => c.id !== 'all');
-    const plans = storage.getSubscriptionPlans();
-
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-6 modal-card flex flex-col max-h-[92vh]">
-          
-          <!-- Header del Modal -->
-          <div class="p-5 sm:p-6 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white relative shrink-0 border-b border-indigo-900/50">
-            <button id="close-prereg-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 flex items-center justify-center text-slate-300 hover:text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar">
-              <i class="fas fa-times text-sm pointer-events-none"></i>
-            </button>
-            
-            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-black uppercase tracking-wider border border-blue-400/40">
-                <i class="fas fa-rocket text-blue-400"></i> Preventa & Prelanzamiento Costa Rica
-              </span>
-              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-600/20 text-blue-200 text-[10px] font-black border border-blue-400/30">
-                <i class="fas fa-check-circle text-[9px] text-blue-400"></i> Sin Tarjeta
-              </span>
-            </div>
-
-            <h3 class="text-lg sm:text-xl font-black text-white">¡Pre-regístrate y obtén 15 Días Gratis del Plan Profesional (PRO)!</h3>
-            <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-              A partir del día de lanzamiento tendrás <strong>15 días de prueba completa del Plan Profesional (PRO)</strong> (WhatsApp automatizado, hasta 300 citas y multi-especialistas) para probar la plataforma con tus clientes sin costo. <strong>Sin pagos hoy ni tarjetas requeridas.</strong>
-            </p>
-          </div>
-
-          <!-- Beneficio Highlight -->
-          <div class="bg-blue-50/90 border-b border-blue-200 px-5 py-2.5 flex items-center gap-2.5 text-xs text-blue-950 font-semibold shrink-0">
-            <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs shrink-0"><i class="fas fa-gift"></i></div>
-            <span><strong>0% Pago / 0% Tarjeta hoy:</strong> Te contactaremos por WhatsApp antes del estreno oficial para dejar tu catálogo y horarios listos.</span>
-          </div>
-
-          <!-- Formulario de Captura -->
-          <form id="prereg-form" class="p-5 sm:p-6 space-y-3.5 text-xs overflow-y-auto flex-1 bg-slate-50/50">
-            
-            <div>
-              <label class="block font-black text-slate-800 mb-1">Nombre Comercial del Negocio o Profesional *</label>
-              <input type="text" id="prereg-biz-name" required placeholder="Ej: Barbería Don Juan, Dra. Andrea Soto, Nails & Spa..." class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-black text-slate-800 mb-1">Nombre del Encargado / Dueño *</label>
-                <input type="text" id="prereg-contact-name" required placeholder="Tu nombre y apellido" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-              </div>
-
-              <div>
-                <label class="block font-black text-slate-800 mb-1">Correo Electrónico del Negocio *</label>
-                <input type="email" id="prereg-email" required placeholder="negocio@ejemplo.com" class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-black text-slate-800 mb-1">WhatsApp de Contacto *</label>
-                <div class="relative">
-                  <span class="absolute left-3 top-2.5 font-bold text-slate-500 text-xs pointer-events-none">+506</span>
-                  <input type="tel" id="prereg-phone" required placeholder="8888-8888" class="w-full pl-20 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-                </div>
-              </div>
-
-              <div>
-                <label class="block font-black text-slate-800 mb-1">Cantón o Ciudad</label>
-                <input type="text" id="prereg-city" placeholder="Ej: San José, Heredia, Alajuela..." class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-              </div>
-            </div>
-
-            <div>
-              <label class="block font-black text-slate-800 mb-1">Categoría del Negocio *</label>
-              <select id="prereg-category" required class="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-2xs">
-                ${categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('')}
-                <option value="Otro Servicio">Otro Tipo de Servicio</option>
-              </select>
-            </div>
-
-            <!-- Selección de Plan de Interés (4 Planes) -->
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="block font-black text-slate-800">Plan de mayor interés (Tarifa congelada tras tus 15 días gratis Pro):</label>
-                <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200/60 hidden sm:inline-block">Selecciona una opción</span>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="prereg-plans-selector-grid">
-                ${plans.map(p => {
-                  const isSelected = p.id === selectedPlanId;
-                  return `
-                    <label class="cursor-pointer prereg-plan-label block select-none" data-plan-id="${p.id}">
-                      <input type="radio" name="prereg-plan" value="${p.id}" class="sr-only prereg-plan-radio" ${isSelected ? 'checked' : ''}>
-                      <div class="prereg-plan-card p-2.5 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-between h-full relative cursor-pointer ${isSelected ? 'border-blue-600 bg-gradient-to-b from-blue-50 via-blue-50/80 to-indigo-50/60 shadow-md shadow-blue-500/20 ring-2 ring-blue-500/30' : 'border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs'}">
-                        
-                        <!-- Badge Check Activo -->
-                        <div class="prereg-plan-badge absolute -top-1.5 -right-1.5 ${isSelected ? 'flex' : 'hidden'} items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold shadow-xs">
-                          <i class="fas fa-check text-[9px]"></i>
-                        </div>
-
-                        <span class="prereg-plan-name font-black text-[11px] block truncate w-full transition-colors ${isSelected ? 'text-blue-950 font-black' : 'text-slate-700 font-bold'}">${p.name}</span>
-                        
-                        <div class="flex items-center justify-center gap-1 my-1 flex-wrap">
-                          ${p.originalPriceUsd ? `<span class="text-[10px] text-slate-400 line-through decoration-rose-500 decoration-1 font-bold">$${p.originalPriceUsd}</span>` : ''}
-                          <span class="prereg-plan-price font-black text-sm transition-colors ${isSelected ? 'text-blue-600' : 'text-slate-900'}">
-                            ${p.priceUsd === 0 ? 'Gratis' : '$' + p.priceUsd}<span class="text-[9px] text-slate-500 font-normal">${p.priceUsd === 0 ? '' : '/mes'}</span>
-                          </span>
-                        </div>
-                        
-                        <span class="text-[9px] text-slate-500 font-medium leading-none">${p.bookingLimit === 999999 || !p.bookingLimit ? 'Ilimitado' : p.bookingLimit + ' res.'}</span>
-                      </div>
-                    </label>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-
-            <!-- Checkbox Términos y Condiciones Pre-registro (Custom Interactive Component) -->
-            <div id="prereg-terms-row" class="p-3.5 bg-blue-50/70 dark:bg-slate-800/90 hover:bg-blue-100/50 dark:hover:bg-slate-800 border-2 border-blue-400/80 dark:border-blue-500 rounded-2xl shadow-2xs transition-colors cursor-pointer select-none">
-              <div class="flex items-center justify-between gap-3">
-                <label for="prereg-terms" class="flex items-center gap-3 flex-1 cursor-pointer select-none">
-                  <input type="checkbox" id="prereg-terms" name="prereg_terms" checked class="sr-only">
-                  <div id="prereg-terms-box" class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-blue-600 border-2 border-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors">
-                    <i class="fas fa-check text-xs font-black"></i>
-                  </div>
-                  <span class="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
-                    Acepto los Términos y Condiciones (Ley N° 8968) *
-                  </span>
-                </label>
-                <button type="button" class="open-terms-modal text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95">
-                  <i class="fas fa-file-contract text-xs"></i> Leer
-                </button>
-              </div>
-            </div>
-
-            <div id="prereg-error-box" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold"></div>
-
-            <button type="submit" id="prereg-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-blue-950/25 flex items-center justify-center gap-2 transition-colors cursor-pointer app-touch-btn">
-              <i class="fas fa-gift text-sm text-blue-300"></i>
-              <span>¡Asegurar mis 15 Días Gratis y Pre-registro!</span>
-            </button>
-          </form>
-        </div>
-      </div>
-    `;
-
-    // Handler de selección reactiva de planes con cambio de color y badge
-    const planRadios = modalContainer.querySelectorAll('.prereg-plan-radio');
-    const updatePlanSelectionVisuals = (activePlanId) => {
-      modalContainer.querySelectorAll('.prereg-plan-label').forEach(label => {
-        const planId = label.dataset.planId;
-        const isCurrent = planId === activePlanId;
-        const card = label.querySelector('.prereg-plan-card');
-        const badge = label.querySelector('.prereg-plan-badge');
-        const nameEl = label.querySelector('.prereg-plan-name');
-        const priceEl = label.querySelector('.prereg-plan-price');
-
-        if (card) {
-          if (isCurrent) {
-            card.className = 'prereg-plan-card p-2.5 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-between h-full relative cursor-pointer border-blue-600 bg-gradient-to-b from-blue-50 via-blue-50/80 to-indigo-50/60 shadow-md shadow-blue-500/20 ring-2 ring-blue-500/30';
-          } else {
-            card.className = 'prereg-plan-card p-2.5 rounded-2xl border-2 transition-all duration-200 flex flex-col items-center justify-between h-full relative cursor-pointer border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50/80 shadow-2xs';
-          }
-        }
-        if (badge) {
-          if (isCurrent) {
-            badge.classList.remove('hidden');
-            badge.classList.add('flex');
-          } else {
-            badge.classList.remove('flex');
-            badge.classList.add('hidden');
-          }
-        }
-        if (nameEl) {
-          nameEl.className = `prereg-plan-name font-black text-[11px] block truncate w-full transition-colors ${isCurrent ? 'text-blue-950 font-black' : 'text-slate-700 font-bold'}`;
-        }
-        if (priceEl) {
-          priceEl.className = `prereg-plan-price font-black text-sm transition-colors ${isCurrent ? 'text-blue-600' : 'text-slate-900'}`;
-        }
-      });
-    };
-
-    planRadios.forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          updatePlanSelectionVisuals(e.target.value);
-        }
-      });
-    });
-
-    document.getElementById('close-prereg-modal-btn')?.addEventListener('click', () => {
-      modalContainer.innerHTML = '';
-    });
-    this.initCustomCheckbox('prereg-terms-row', 'prereg-terms', 'prereg-terms-box', 'prereg-submit-btn');
-
-    document.getElementById('prereg-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submitBtn = document.getElementById('prereg-submit-btn');
-      const errBox = document.getElementById('prereg-error-box');
-      const bizName = document.getElementById('prereg-biz-name').value.trim();
-      const contactName = document.getElementById('prereg-contact-name').value.trim();
-      const email = document.getElementById('prereg-email')?.value.trim() || '';
-      const phone = document.getElementById('prereg-phone').value.trim();
-      const category = document.getElementById('prereg-category').value.trim();
-      const city = document.getElementById('prereg-city').value.trim();
-      const planInterest = document.querySelector('input[name="prereg-plan"]:checked')?.value || 'pro';
-
-      const preregTermsAccepted = document.getElementById('prereg-terms')?.checked;
-      if (!preregTermsAccepted) {
-        if (errBox) {
-          errBox.classList.remove('hidden');
-          errBox.textContent = 'Debes aceptar los Términos y Condiciones para pre-registrarte.';
-        }
-        document.getElementById('prereg-terms')?.focus();
-        return;
-      }
-
-      if (!bizName || !contactName || !phone || !email) {
-        if (errBox) {
-          errBox.classList.remove('hidden');
-          errBox.textContent = 'Por favor completa todos los campos obligatorios, incluyendo el correo.';
-        }
-        return;
-      }
-
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Guardando pre-registro...';
-      }
-
-      try {
-        await storage.savePreRegistration({
-          businessName: bizName,
-          contactName: contactName,
-          phone: phone,
-          email: email,
-          category: category,
-          city: city,
-          planInterest: planInterest
-        });
-
-        this.showToast('¡Pre-registro completado con éxito! 15 días gratis reservados.', 'success');
-
-        const chosenPlanObj = plans.find(p => p.id === planInterest) || { name: 'Plan Profesional', priceUsd: 18 };
-
-        modalContainer.innerHTML = `
-          <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-            <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-6 p-6 sm:p-8 text-center space-y-4">
-              
-              <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-lg shadow-blue-500/20 animate-bounce border border-blue-100">
-                <i class="fas fa-gift"></i>
-              </div>
-              
-              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 text-[11px] font-black uppercase tracking-wider border border-blue-200">
-                <i class="fas fa-check-circle text-blue-600 mr-1.5"></i> ¡Lugar y 15 Días Gratis Reservados!
-              </span>
-
-              <h3 class="text-xl sm:text-2xl font-black text-slate-900 leading-tight">¡Bienvenido a Reservas CR,<br>${this.escapeHtml(bizName)}!</h3>
-              
-              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Has asegurado tus <strong>15 Días Gratis de prueba completa</strong> a partir del día del lanzamiento oficial + <strong>Configuración asistida de catálogo</strong> para el <strong>${chosenPlanObj.name} ($${chosenPlanObj.priceUsd}/mes)</strong>.
-              </p>
-
-              <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-left text-xs space-y-1.5 text-slate-200">
-                <div class="flex items-center gap-2 font-black text-blue-400">
-                  <i class="fab fa-whatsapp text-blue-400 text-base"></i> ¿Qué sigue ahora?
-                </div>
-                <p class="text-slate-300 text-[11px] leading-relaxed">
-                  Te escribiremos a tu WhatsApp <strong>+506 ${this.escapeHtml(phone)}</strong> antes del estreno para darte acceso prioritario y ayudarte a cargar tus servicios, fotos y horarios sin costo.
-                </p>
-              </div>
-
-              <div class="pt-2 flex flex-col gap-2">
-                <button id="close-success-prereg-btn" class="w-full py-3 rounded-xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white text-xs font-black shadow-md transition-all cursor-pointer">
-                  Entendido, ¡muchas gracias!
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-
-        document.getElementById('close-success-prereg-btn')?.addEventListener('click', () => {
-          modalContainer.innerHTML = '';
-        });
-      } catch (err) {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-gift text-sm mr-2"></i> ¡Asegurar mis 15 Días Gratis y Pre-registro!';
-        }
-        if (errBox) {
-          errBox.classList.remove('hidden');
-          errBox.textContent = err.message || 'Error al guardar pre-registro. Intenta de nuevo.';
-        }
-      }
-    });
+  renderPreRegistrationModal(selectedPlanId = 'free') {
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
   }
 
   // ==========================================

@@ -1242,13 +1242,53 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
 }
 
 /**
- * Notificación por correo al administrador cuando un comercio crea su CUENTA OFICIAL
+ * Notificación por correo al administrador cuando un comercio inicia o completa su registro
+ * (funciona tanto para comercio verificado como no verificado con OTP)
  */
-export async function sendAdminBusinessRegistrationNotificationEmail({ business, ownerName, email }) {
+export async function sendAdminBusinessRegistrationNotificationEmail({ 
+  business = {}, 
+  ownerName = '', 
+  email = '', 
+  isVerified = true, 
+  verificationCode = null, 
+  provider = null 
+}) {
   if (!brevoApiKey && !resend) return { success: false, reason: 'no_email_service' };
 
-  const cleanPhone = (business.phone || '').replace(/\D/g, '');
+  const bizName = business?.name || 'Comercio en Registro';
+  const cleanPhone = (business?.phone || '').replace(/\D/g, '');
   const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+
+  const badgeStyle = isVerified 
+    ? 'display: inline-block; background: #ffffff; color: #065f46; font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px;'
+    : 'display: inline-block; background: #fffbeb; color: #92400e; font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px; border: 1px solid #fde68a;';
+
+  const badgeText = isVerified 
+    ? '🟢 Comercio Verificado y Activo' 
+    : '⏳ Registro Iniciado (No Verificado - Código OTP)';
+
+  const headerBg = isVerified 
+    ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' 
+    : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)';
+
+  const headerTitle = isVerified 
+    ? '¡Nuevo Negocio Creado y Verificado!' 
+    : '¡Nuevo Registro de Negocio en Proceso!';
+
+  const headerSubtitle = isVerified 
+    ? `Cuenta de comercio creada y verificada exitosamente${provider ? ` mediante ${provider}` : ''}`
+    : 'Un comercio ha llenado el formulario de registro y está pendiente de verificar su código OTP';
+
+  const statusVal = isVerified 
+    ? '<span style="color: #10b981; font-weight: 800;">✅ Correo Verificado (Cuenta Activa)</span>' 
+    : '<span style="color: #d97706; font-weight: 800;">⏳ No verificado aún (Código OTP pendiente de ingreso)</span>';
+
+  const otpBox = (!isVerified && verificationCode) ? `
+        <div class="info-row" style="background: #fffbeb; border: 1px dashed #f59e0b; padding: 10px 14px; border-radius: 10px; margin: 10px 0;">
+          <span class="label" style="color: #92400e; font-weight: 700;">🔑 Código OTP Enviado:</span>
+          <span class="val" style="font-family: monospace; font-size: 17px; color: #b45309; font-weight: 900; letter-spacing: 3px;">${verificationCode}</span>
+        </div>
+  ` : '';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -1258,8 +1298,7 @@ export async function sendAdminBusinessRegistrationNotificationEmail({ business,
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
     .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px 24px; text-align: center; color: #ffffff; }
-    .badge { display: inline-block; background: #ffffff; color: #065f46; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px; }
+    .header { background: ${headerBg}; padding: 30px 24px; text-align: center; color: #ffffff; }
     .content { padding: 28px 24px; }
     .info-box { background: #f1f5f9; border-radius: 14px; padding: 18px; margin: 18px 0; }
     .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
@@ -1274,64 +1313,74 @@ export async function sendAdminBusinessRegistrationNotificationEmail({ business,
 <body>
   <div class="card">
     <div class="header">
-      <span class="badge">🏪 Comercio Registrado</span>
-      <h2 style="margin: 0; font-size: 22px; font-weight: 800;">¡Nuevo Negocio Creado!</h2>
-      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Se ha registrado una nueva cuenta de comercio en la plataforma</p>
+      <span style="${badgeStyle}">${badgeText}</span>
+      <h2 style="margin: 0; font-size: 22px; font-weight: 800;">${headerTitle}</h2>
+      <p style="margin: 6px 0 0 0; opacity: 0.95; font-size: 13px;">${headerSubtitle}</p>
     </div>
     <div class="content">
       <div class="info-box">
         <div class="info-row">
           <span class="label">🏢 Nombre del Negocio:</span>
-          <span class="val">${business.name || 'Sin nombre'}</span>
+          <span class="val">${bizName}</span>
         </div>
         <div class="info-row">
           <span class="label">👤 Dueño / Encargado:</span>
-          <span class="val">${ownerName || business.name}</span>
+          <span class="val">${ownerName || bizName}</span>
         </div>
         <div class="info-row">
           <span class="label">✉️ Correo Electrónico:</span>
-          <span class="val">${email}</span>
+          <span class="val">${email || 'No especificado'}</span>
         </div>
         <div class="info-row">
+          <span class="label">📋 Estado:</span>
+          <span class="val">${statusVal}</span>
+        </div>
+        ${otpBox}
+        <div class="info-row">
           <span class="label">📱 Teléfono / WhatsApp:</span>
-          <span class="val">${business.phone || 'No especificado'}</span>
+          <span class="val">${business?.phone || 'No especificado'}</span>
         </div>
         <div class="info-row">
           <span class="label">🏷️ Categoría:</span>
-          <span class="val">${business.categoryLabel || business.category || 'General'}</span>
+          <span class="val">${business?.categoryLabel || business?.category || 'General'}</span>
         </div>
         <div class="info-row">
           <span class="label">📍 Ubicación:</span>
-          <span class="val">${business.address || ''}, ${business.city || 'Costa Rica'}</span>
+          <span class="val">${[business?.address, business?.city].filter(Boolean).join(', ') || 'Costa Rica'}</span>
         </div>
         <div class="info-row">
           <span class="label">⭐ Plan:</span>
-          <span class="val">${(business.plan || 'pro').toUpperCase()} ($${business.plan === 'unlimited' ? '35' : (business.plan === 'basic' ? '10' : '18')}/mes)</span>
+          <span class="val">${(business?.plan || 'free').toUpperCase()}</span>
         </div>
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
+        ${cleanPhone ? `
         <a href="${waLink}" class="btn btn-wa" target="_blank" style="margin-right: 8px;">
           💬 Escribir por WhatsApp
-        </a>
+        </a>` : ''}
         <a href="${APP_URL}" class="btn" target="_blank">
           🌐 Ver Directorio
         </a>
       </div>
     </div>
     <div class="footer">
-      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAIL}
+      Reservas CR © 2026 • Notificaciones administrativas enviadas a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}
     </div>
   </div>
 </body>
 </html>
   `;
 
+  const subject = isVerified 
+    ? `🏪 [Nuevo Negocio - Verificado] ${bizName} (${ownerName || email})` 
+    : `⏳ [Nuevo Negocio - Pendiente Verificación] ${bizName} (${ownerName || email})`;
+
   try {
-    console.log(`📧 Enviando notificación de registro de negocio a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}...`);
+    console.log(`📧 Enviando notificación de registro de negocio (${isVerified ? 'VERIFICADO' : 'PENDIENTE OTP'}) a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}...`);
     return await sendEmailCore({
       to: ADMIN_NOTIFICATION_EMAILS,
-      subject: `🏪 [Nuevo Comercio] ${business.name} (${ownerName || email})`,
+      subject,
       html: htmlContent
     });
   } catch (err) {
@@ -1343,11 +1392,13 @@ export async function sendAdminBusinessRegistrationNotificationEmail({ business,
 /**
  * Notificación por correo al administrador cuando un CLIENTE se registra
  */
-export async function sendAdminClientRegistrationNotificationEmail(client) {
+export async function sendAdminClientRegistrationNotificationEmail(client = {}) {
   if (!brevoApiKey && !resend) return { success: false, reason: 'no_email_service' };
 
   const cleanPhone = (client.phone || '').replace(/\D/g, '');
   const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+  const displayPhone = client.phone ? client.phone : (client.oauth_provider ? `Pendiente (Registro con ${client.oauth_provider})` : 'No especificado');
+  const contactInfo = client.phone || client.email || 'Nuevo';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -1373,7 +1424,7 @@ export async function sendAdminClientRegistrationNotificationEmail(client) {
     <div class="header">
       <span class="badge">👤 Nuevo Cliente</span>
       <h2 style="margin: 0; font-size: 22px; font-weight: 800;">¡Nuevo Cliente Registrado!</h2>
-      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Un usuario ha creado su cuenta de cliente</p>
+      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Un usuario ha creado su cuenta de cliente en Reservas CR</p>
     </div>
     <div class="content">
       <div class="info-box">
@@ -1383,22 +1434,28 @@ export async function sendAdminClientRegistrationNotificationEmail(client) {
         </div>
         <div class="info-row">
           <span class="label">📱 Teléfono / WhatsApp:</span>
-          <span class="val">${client.phone || 'No especificado'}</span>
+          <span class="val">${displayPhone}</span>
         </div>
         <div class="info-row">
           <span class="label">✉️ Correo Electrónico:</span>
           <span class="val">${client.email || 'No proporcionado'}</span>
         </div>
+        ${client.oauth_provider ? `
+        <div class="info-row">
+          <span class="label">🔑 Método de Registro:</span>
+          <span class="val">${client.oauth_provider.toUpperCase()}</span>
+        </div>` : ''}
       </div>
 
+      ${cleanPhone ? `
       <div style="text-align: center; margin-top: 24px;">
         <a href="${waLink}" style="display: inline-block; background: #22c55e; color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; text-decoration: none;" target="_blank">
           💬 Contactar por WhatsApp
         </a>
-      </div>
+      </div>` : ''}
     </div>
     <div class="footer">
-      Reservas CR © 2026 • Notificaciones para ${ADMIN_NOTIFICATION_EMAILS.join(', ')}
+      Reservas CR © 2026 • Notificaciones administrativas enviadas a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}
     </div>
   </div>
 </body>
@@ -1409,7 +1466,7 @@ export async function sendAdminClientRegistrationNotificationEmail(client) {
     console.log(`📧 Enviando notificación de nuevo cliente a ${ADMIN_NOTIFICATION_EMAILS.join(', ')}...`);
     return await sendEmailCore({
       to: ADMIN_NOTIFICATION_EMAILS,
-      subject: `👤 [Nuevo Cliente] ${client.name} (${client.phone})`,
+      subject: `👤 [Nuevo Cliente] ${client.name || 'Cliente'} (${contactInfo})`,
       html: htmlContent
     });
   } catch (err) {

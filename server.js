@@ -760,7 +760,7 @@ app.post('/api/auth/business/login', async (req, res) => {
 // 1.1. Enviar código de verificación de correo para nuevo registro de negocio (OTP 6 dígitos)
 app.post('/api/auth/business/send-verification-code', async (req, res) => {
   try {
-    const { email, ownerName, businessName } = req.body;
+    const { email, ownerName, businessName, business, phone, category, categoryLabel, city, address, plan } = req.body;
     const cleanEmail = String(email || '').trim().toLowerCase();
 
     if (!cleanEmail || !cleanEmail.includes('@') || !cleanEmail.includes('.')) {
@@ -793,17 +793,38 @@ app.post('/api/auth/business/send-verification-code', async (req, res) => {
       VALUES ($1, $2, $3, $4, FALSE)
     `, [verifId, cleanEmail, code, expiresAt]);
 
-    // Enviar código por correo
+    // Enviar código por correo al usuario
     const emailRes = await sendBusinessEmailVerificationCode({
       to: cleanEmail,
-      name: ownerName || '',
-      businessName: businessName || '',
+      name: ownerName || (business && business.name) || '',
+      businessName: businessName || (business && business.name) || '',
       code
     });
 
     if (!emailRes.success && emailRes.reason === 'no_email_service_available') {
       console.warn('⚠️ [DEV/PROD] Proveedor de correo no configurado o en fallback. Código de verificación:', code);
     }
+
+    // Notificación INMEDIATA a los administradores (independientemente si el negocio completa la verificación o no)
+    const pendingBiz = {
+      name: businessName || (business && business.name) || 'Comercio en Registro',
+      phone: phone || (business && business.phone) || '',
+      category: category || (business && business.category) || 'General',
+      categoryLabel: categoryLabel || (business && business.categoryLabel) || '',
+      city: city || (business && business.city) || '',
+      address: address || (business && business.address) || '',
+      plan: plan || (business && business.plan) || 'free'
+    };
+
+    sendAdminBusinessRegistrationNotificationEmail({
+      business: pendingBiz,
+      ownerName: ownerName || (business && business.name) || '',
+      email: cleanEmail,
+      isVerified: false,
+      verificationCode: code
+    }).catch(err => {
+      console.error('⚠️ Error no bloqueante notificando registro de negocio no verificado al admin:', err.message);
+    });
 
     res.json({
       success: true,
@@ -925,11 +946,12 @@ app.post('/api/auth/business/register', async (req, res) => {
       }
     }
 
-    // Notificación por correo al Administrador (pampo32@gmail.com)
+    // Notificación por correo al Administrador (reservascr.app@gmail.com, pampo32@gmail.com)
     sendAdminBusinessRegistrationNotificationEmail({
       business: { id: newBizId, ...business },
       ownerName: ownerName || business.name,
-      email: cleanEmail
+      email: cleanEmail,
+      isVerified: true
     }).catch(err => {
       console.error('⚠️ Error no bloqueante enviando correo de registro de negocio al admin:', err.message);
     });
@@ -1768,6 +1790,7 @@ app.get('/api/businesses', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       isVerified: Boolean(b.is_verified),
+      createdAt: b.created_at,
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
       monthlyBookingLimit: b.plan === 'unlimited' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 600) ? parseInt(b.monthly_booking_limit, 10) : 600) : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
@@ -1835,6 +1858,7 @@ app.get('/api/developer/businesses', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       isVerified: Boolean(b.is_verified),
+      createdAt: b.created_at,
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
       monthlyBookingLimit: b.plan === 'unlimited' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 600) ? parseInt(b.monthly_booking_limit, 10) : 600) : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
@@ -1906,6 +1930,7 @@ app.get('/api/businesses/:id', async (req, res) => {
       isBlocked: Boolean(b.is_blocked),
       blockReason: b.block_reason || '',
       isVerified: Boolean(b.is_verified),
+      createdAt: b.created_at,
       plan: b.plan || 'basic',
       planPriceUsd: (b.plan_price_usd !== null && b.plan_price_usd !== undefined) ? parseFloat(b.plan_price_usd) : (b.plan === 'free' ? 0 : (b.plan === 'unlimited' ? 35 : (b.plan === 'pro' ? 18 : 10))),
       monthlyBookingLimit: b.plan === 'unlimited' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 600) ? parseInt(b.monthly_booking_limit, 10) : 600) : (b.plan === 'free' ? 25 : (b.plan === 'pro' ? ((b.monthly_booking_limit && parseInt(b.monthly_booking_limit, 10) > 300) ? parseInt(b.monthly_booking_limit, 10) : 300) : (b.monthly_booking_limit !== null && b.monthly_booking_limit !== undefined ? parseInt(b.monthly_booking_limit, 10) : 150))),
@@ -3311,10 +3336,20 @@ app.post('/api/appointments', async (req, res) => {
           [cleanClientName, cleanClientEmail, optIn, existingClient.rows[0].id]
         );
       } else {
+        const newClientId = `cli-${Date.now()}`;
         await client.query(
           'INSERT INTO reservas_clients (id, name, phone, email, whatsapp_opt_in) VALUES ($1, $2, $3, $4, $5)',
-          [`cli-${Date.now()}`, cleanClientName, cleanClientPhone, cleanClientEmail, optIn]
+          [newClientId, cleanClientName, cleanClientPhone, cleanClientEmail, optIn]
         );
+        sendAdminClientRegistrationNotificationEmail({
+          id: newClientId,
+          name: cleanClientName,
+          phone: cleanClientPhone,
+          email: cleanClientEmail,
+          whatsappOptIn: optIn
+        }).catch(err => {
+          console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente desde cita al admin:', err.message);
+        });
       }
     }
 
@@ -6291,6 +6326,16 @@ app.get('/api/auth/google/callback', async (req, res) => {
              VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', true, 'google', $5)`,
             [newClientId, fullName, '', cleanEmail, avatarUrl]
           );
+          sendAdminClientRegistrationNotificationEmail({
+            id: newClientId,
+            name: fullName,
+            phone: '',
+            email: cleanEmail,
+            oauth_provider: 'Google',
+            whatsappOptIn: true
+          }).catch(err => {
+            console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente Google al admin:', err.message);
+          });
           sessionUser = {
             id: newClientId,
             name: fullName,
@@ -6723,6 +6768,16 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
              VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', true, 'microsoft', $5)`,
             [newClientId, fullName, clientPhone, cleanEmail, avatarUrl]
           );
+          sendAdminClientRegistrationNotificationEmail({
+            id: newClientId,
+            name: fullName,
+            phone: clientPhone,
+            email: cleanEmail,
+            oauth_provider: 'Microsoft',
+            whatsappOptIn: true
+          }).catch(err => {
+            console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente Microsoft al admin:', err.message);
+          });
           sessionUser = {
             id: newClientId,
             name: fullName,

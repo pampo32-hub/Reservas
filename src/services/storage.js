@@ -446,12 +446,23 @@ class StorageService {
     return { success: true, role: 'business', user };
   }
 
-  async sendBusinessVerificationCode(email, ownerName = '', businessName = '') {
+  async sendBusinessVerificationCode(email, ownerName = '', businessName = '', extraData = {}) {
     if (this.isOnlineApi) {
       const res = await fetch(`${this.apiBase}/auth/business/send-verification-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, ownerName, businessName })
+        body: JSON.stringify({ 
+          email, 
+          ownerName, 
+          businessName,
+          business: extraData,
+          phone: extraData?.phone || '',
+          category: extraData?.category || '',
+          categoryLabel: extraData?.categoryLabel || '',
+          city: extraData?.city || '',
+          address: extraData?.address || '',
+          plan: extraData?.plan || 'free'
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al enviar código de verificación.');
