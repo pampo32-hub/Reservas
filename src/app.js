@@ -16929,27 +16929,9 @@ class App {
             </button>
           </div>
 
-          <!-- Pestañas de Modo (Iniciar Sesión / Registrarse) y Selección de Rol (Cliente / Negocio) -->
-          <div class="p-5 pb-0 shrink-0 space-y-3 bg-slate-50 border-b border-slate-200/80">
-            <!-- Tabs Modo: Iniciar Sesión / Registrarse -->
-            ${REGISTRATION_ENABLED ? `
-            <div class="flex p-1 bg-slate-200/80 rounded-2xl ${mode === 'login' || lockRole ? 'mb-4' : ''}">
-              <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? 'text-blue-600' : ''}"></i> Iniciar Sesión
-              </button>
-              <button id="tab-mode-register" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-user-plus text-xs ${mode === 'register' ? (role === 'business' ? 'text-indigo-600' : 'text-blue-600') : ''}"></i> ${lockRole === 'business' ? 'Registrar Negocio' : 'Registrarse'}
-              </button>
-            </div>
-            ` : `
-            <!-- Registro temporalmente oculto: Solo Iniciar Sesión -->
-            <div class="py-2 px-3 bg-blue-50/80 rounded-xl border border-blue-100 text-center text-xs font-extrabold text-blue-800 flex items-center justify-center gap-2 mb-4">
-              <i class="fas fa-lock text-blue-600"></i> Acceso a Cuentas Existentes
-            </div>
-            `}
-
-            <!-- Tabs Rol: Cliente / Negocio (SOLO visible en modo Registrarse y cuando no está bloqueado a Negocio) -->
-            ${mode === 'register' && !lockRole ? `
+          <!-- Pestañas de Selección de Rol (Cliente / Negocio) - SOLO visible en Registro cuando no está bloqueado -->
+          ${mode === 'register' && !lockRole ? `
+          <div class="p-4 pb-0 shrink-0 bg-slate-50 border-b border-slate-200/80">
             <div class="flex gap-2 pb-3">
               <button id="tab-role-client" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${role === 'client' ? 'bg-blue-600 border-blue-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
                 <i class="fas fa-user text-xs"></i> Soy Cliente
@@ -16958,8 +16940,8 @@ class App {
                 <i class="fas fa-store text-xs"></i> Soy Negocio / Dueño
               </button>
             </div>
-            ` : ''}
           </div>
+          ` : ''}
 
           <!-- Cuerpo con Formularios Dinámicos -->
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
@@ -17031,6 +17013,15 @@ class App {
                   <i class="fas fa-sign-in-alt"></i>
                   <span>Iniciar Sesión</span>
                 </button>
+
+                ${REGISTRATION_ENABLED ? `
+                <div class="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+                  ¿No tienes una cuenta aún? 
+                  <button type="button" id="auth-switch-to-register" class="font-bold text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer ml-1">
+                    Regístrate aquí
+                  </button>
+                </div>
+                ` : ''}
               </form>
             ` : ''}
 
@@ -17149,6 +17140,13 @@ class App {
                   <i class="fas fa-user-plus"></i>
                   <span>Crear Cuenta de Cliente</span>
                 </button>
+
+                <div class="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+                  ¿Ya tienes una cuenta? 
+                  <button type="button" class="auth-switch-to-login font-bold text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer ml-1">
+                    Inicia sesión aquí
+                  </button>
+                </div>
               </form>
             ` : ''}
 
@@ -17302,6 +17300,13 @@ class App {
                     <span>Continuar y Verificar Correo (15 Días Gratis)</span>
                     <i class="fas fa-arrow-right text-xs ml-1"></i>
                   </button>
+
+                  <div class="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+                    ¿Ya tienes una cuenta? 
+                    <button type="button" class="auth-switch-to-login font-bold text-blue-600 hover:text-blue-800 underline transition-colors cursor-pointer ml-1">
+                      Inicia sesión aquí
+                    </button>
+                  </div>
                 </form>
               </div>
             ` : ''}
@@ -17326,7 +17331,17 @@ class App {
       });
     });
 
-    // Pestañas de Modo (Login / Register)
+    // Enlaces para alternar entre Iniciar Sesión y Registrarse
+    document.getElementById('auth-switch-to-register')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'register', role: 'client', selectedPlanId });
+    });
+    document.querySelectorAll('.auth-switch-to-login').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderAuthModal({ mode: 'login' });
+      });
+    });
+
+    // Pestañas de Modo (Login / Register) - soporte retrocompatible
     document.getElementById('tab-mode-login')?.addEventListener('click', () => {
       this.renderAuthModal({ mode: 'login', role, selectedPlanId, lockRole });
     });

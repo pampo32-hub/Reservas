@@ -1107,11 +1107,25 @@ app.post('/api/auth/client/login', async (req, res) => {
       console.warn('Developer check in client login:', e.message);
     }
 
-    // 2. Comprobar si es Usuario de Negocio (por si el dueño se loguea desde la pestaña de cliente)
-    const bizUserRes = await pool.query(
-      'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1)',
-      [cleanIdent]
-    );
+    // 2. Comprobar si es Usuario de Negocio (por email de usuario o teléfono del negocio)
+    const identDigits = cleanIdent.replace(/[^0-9]/g, '').slice(-8);
+    let bizUserRes;
+    if (identDigits.length === 8) {
+      bizUserRes = await pool.query(
+        `SELECT u.* FROM reservas_business_users u
+         LEFT JOIN reservas_businesses b ON b.id = u.business_id
+         WHERE LOWER(u.email) = LOWER($1)
+            OR RIGHT(regexp_replace(b.phone, '[^0-9]', '', 'g'), 8) = $2
+            OR b.phone = $1
+         LIMIT 1`,
+        [cleanIdent, identDigits]
+      );
+    } else {
+      bizUserRes = await pool.query(
+        'SELECT * FROM reservas_business_users WHERE LOWER(email) = LOWER($1)',
+        [cleanIdent]
+      );
+    }
 
     if (bizUserRes.rows.length > 0) {
       const user = bizUserRes.rows[0];
@@ -1148,7 +1162,6 @@ app.post('/api/auth/client/login', async (req, res) => {
     }
 
     // 3. Comprobar si es Cliente
-    const identDigits = cleanIdent.replace(/[^0-9]/g, '').slice(-8);
     let result;
     if (identDigits.length === 8) {
       result = await pool.query(
