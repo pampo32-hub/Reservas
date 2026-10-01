@@ -5104,6 +5104,25 @@ class App {
     );
     const clientUser = storage.getClientUser();
 
+    const isDepositRequired = Boolean(biz.requireDeposit || biz.require_deposit);
+    const depositPct = isDepositRequired ? (parseInt(biz.depositPercentage || biz.deposit_percentage, 10) || 25) : 0;
+    const depositAmount = isDepositRequired ? Math.round(((service.price || 0) * depositPct) / 100) : 0;
+    const balanceAmount = Math.max(0, (service.price || 0) - depositAmount);
+    const sinpePhone = biz.sinpePhone || biz.sinpe_phone || biz.phone || '';
+    const sinpeCleanPhone = sinpePhone.replace(/\D/g, '');
+    const sinpeHolder = biz.sinpeHolderName || biz.sinpe_holder_name || biz.name || '';
+    const depositInstructions = biz.depositInstructions || biz.deposit_instructions || '';
+
+    let presetPolicies = [];
+    try {
+      presetPolicies = Array.isArray(biz.cancellationPoliciesPreset || biz.cancellation_policies_preset)
+        ? (biz.cancellationPoliciesPreset || biz.cancellation_policies_preset)
+        : (typeof (biz.cancellationPoliciesPreset || biz.cancellation_policies_preset) === 'string' 
+            ? JSON.parse(biz.cancellationPoliciesPreset || biz.cancellation_policies_preset || '[]') 
+            : []);
+    } catch (_) {}
+    const customPolicies = (biz.cancellationPoliciesCustom || biz.cancellation_policies_custom || '').trim();
+
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-0 sm:my-8 mobile-bottom-sheet flex flex-col max-h-[92vh]">
@@ -5320,6 +5339,108 @@ class App {
                 ></textarea>
               </div>
 
+              ${isDepositRequired ? `
+                <!-- Sección de Adelanto por SINPE Móvil Requerido -->
+                <div class="p-4 sm:p-5 bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-slate-50 border-2 border-emerald-400 rounded-2xl space-y-3.5 shadow-2xs">
+                  <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                      <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs shadow-xs font-black">
+                        <i class="fas fa-shield-alt"></i>
+                      </div>
+                      <div>
+                        <span class="text-xs font-black text-emerald-950 uppercase tracking-wider block">Adelanto Requerido por SINPE Móvil</span>
+                        <span class="text-[10.5px] text-slate-500 font-medium">Este comercio aparta tu turno con el ${depositPct}% de adelanto</span>
+                      </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-600 text-white text-xs font-black rounded-lg shadow-2xs shrink-0">
+                      ${depositPct}%
+                    </span>
+                  </div>
+
+                  <!-- Desglose Financiero -->
+                  <div class="bg-white p-3.5 rounded-xl border border-emerald-200/80 shadow-2xs space-y-2 text-xs">
+                    <div class="flex items-center justify-between text-slate-600">
+                      <span>Precio total del servicio:</span>
+                      <span class="font-bold text-slate-800">${this.formatColones(service.price)}</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2.5 bg-emerald-50 rounded-lg border border-emerald-300 font-black text-emerald-900">
+                      <span class="flex items-center gap-1.5">
+                        <i class="fas fa-mobile-alt text-emerald-600"></i> Monto del Adelanto a transferir:
+                      </span>
+                      <span class="text-sm font-black text-emerald-700">${this.formatColones(depositAmount)}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500 px-1">
+                      <span>Saldo a cancelar en el establecimiento el día de la cita:</span>
+                      <span class="font-bold text-slate-700">${this.formatColones(balanceAmount)}</span>
+                    </div>
+                  </div>
+
+                  <!-- Datos para el SINPE Móvil -->
+                  <div class="p-3.5 bg-slate-900 text-white rounded-xl space-y-2 text-xs shadow-xs">
+                    <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                      <i class="fas fa-university"></i> Datos Oficiales para el SINPE Móvil
+                    </div>
+                    <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800">
+                      <div>
+                        <div class="text-[10px] text-slate-400">Teléfono Celular SINPE:</div>
+                        <div class="font-mono text-base font-black text-white tracking-wider flex items-center gap-2">
+                          <span id="booking-sinpe-phone-val">${this.escapeHtml(sinpePhone)}</span>
+                          <button 
+                            type="button" 
+                            id="btn-copy-sinpe-phone" 
+                            class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold rounded cursor-pointer transition-all active:scale-95 flex items-center gap-1"
+                            data-phone="${this.escapeHtml(sinpeCleanPhone || sinpePhone)}"
+                          >
+                            <i class="fas fa-copy"></i> Copiar
+                          </button>
+                        </div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-[10px] text-slate-400">Titular de la cuenta:</div>
+                        <div class="font-bold text-white text-xs truncate max-w-[150px]">${this.escapeHtml(sinpeHolder)}</div>
+                      </div>
+                    </div>
+                    ${depositInstructions ? `
+                      <div class="text-[10.5px] text-slate-300 italic pt-1 border-t border-slate-800">
+                        <i class="fas fa-info-circle text-emerald-400 mr-1"></i> "${this.escapeHtml(depositInstructions)}"
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <!-- Campo para número de comprobante SINPE -->
+                  <div class="space-y-1">
+                    <label class="block text-xs font-bold text-slate-700 flex items-center justify-between">
+                      <span>Número de Comprobante / Referencia SINPE (Opcional):</span>
+                      <span class="text-[10px] text-slate-400 font-normal">Acelera la validación</span>
+                    </label>
+                    <input 
+                      type="text" 
+                      id="client-deposit-reference" 
+                      placeholder="Ej: 984512 o últimos dígitos del comprobante" 
+                      class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-mono text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <!-- Políticas de Cancelación y No-Show -->
+                  ${(presetPolicies.length > 0 || customPolicies) ? `
+                    <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left space-y-1.5">
+                      <div class="text-[11px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fas fa-clipboard-list text-amber-600"></i> Políticas de Cancelación y Reprogramación
+                      </div>
+                      <ul class="text-[10.5px] text-amber-950/90 space-y-1 pl-4 list-disc leading-relaxed">
+                        ${presetPolicies.map(p => `<li>${this.escapeHtml(p)}</li>`).join('')}
+                        ${customPolicies ? `<li>${this.escapeHtml(customPolicies)}</li>` : ''}
+                      </ul>
+                    </div>
+                  ` : ''}
+
+                  <div class="text-[10.5px] text-slate-500 bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-200/50 flex items-start gap-1.5 leading-snug">
+                    <i class="fas fa-clock text-emerald-600 text-xs mt-0.5 shrink-0"></i>
+                    <span>Al enviar la reserva, tu turno quedará <strong>apartado como Pendiente</strong>. El comercio validará el ingreso de tu SINPE y te notificará por WhatsApp y correo cuando tu cita quede oficialmente confirmada.</span>
+                  </div>
+                </div>
+              ` : ''}
+
               <!-- Consentimiento previo (Opt-in) Notificaciones WhatsApp -->
               <div class="p-3.5 bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl">
                 <label class="flex items-start gap-3 cursor-pointer select-none">
@@ -5359,10 +5480,10 @@ class App {
                 type="submit" 
                 id="submit-booking-btn"
                 ${!this.bookingState.selectedTime ? 'disabled' : ''}
-                class="w-full mt-4 py-3.5 px-6 rounded-2xl ${biz.isDemo ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/25' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                class="w-full mt-4 py-3.5 px-6 rounded-2xl ${biz.isDemo ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-500/25' : isDepositRequired ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/25' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/25'} disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-bold shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <i class="fas ${biz.isDemo ? 'fa-flask' : 'fa-check-circle'}"></i>
-                <span>${biz.isDemo ? 'Probar y Confirmar Turno de Muestra' : 'Confirmar Reserva'} ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
+                <span>${biz.isDemo ? 'Probar y Confirmar Turno de Muestra' : isDepositRequired ? `Solicitar Turno con Adelanto (${this.formatColones(depositAmount)})` : 'Confirmar Reserva'} ${this.bookingState.selectedTime ? `(${this.formatTime12h(this.bookingState.selectedTime)})` : ''}</span>
               </button>
             </form>
           </div>
@@ -5371,6 +5492,16 @@ class App {
     `;
 
     document.getElementById('close-modal-btn')?.addEventListener('click', () => this.closeBookingModal());
+    document.getElementById('btn-copy-sinpe-phone')?.addEventListener('click', (e) => {
+      const phone = e.currentTarget.getAttribute('data-phone');
+      if (phone) {
+        navigator.clipboard?.writeText(phone).then(() => {
+          this.showToast('¡Teléfono SINPE copiado al portapapeles!', 'info');
+        }).catch(() => {
+          this.showToast(`Teléfono SINPE: ${phone}`, 'info');
+        });
+      }
+    });
     this.initCustomCheckbox('booking-terms-row', 'booking-terms-optin', 'booking-terms-box', 'submit-booking-btn');
 
     // Asignación interactiva de slots sin recargar el modal completo
@@ -5611,13 +5742,16 @@ class App {
           whatsappOptIn,
           status: initialStatus,
           staffId: assignedStaffId,
-          staffName: assignedStaffName
+          staffName: assignedStaffName,
+          depositReference: isDepositRequired ? (document.getElementById('client-deposit-reference')?.value?.trim() || null) : null
         });
 
         this.closeBookingModal();
         this.renderSuccessBookingModal(newAppointment, biz);
         if (IS_DEMO_BOOKING_MODE || biz.isDemo) {
           this.showToast('¡Prueba de reserva completada con éxito!', 'info');
+        } else if (isDepositRequired || newAppointment.depositRequired || newAppointment.deposit_required) {
+          this.showToast('¡Solicitud de reserva registrada! Pendiente de confirmación por el negocio.', 'success');
         } else {
           this.showToast(initialStatus === 'confirmed' ? '¡Reserva confirmada con éxito!' : '¡Solicitud de reserva enviada con éxito!', 'success');
         }
@@ -5659,6 +5793,14 @@ class App {
     if (!modalContainer) return;
 
     const isPending = appointment.status === 'pending';
+    const isDeposit = Boolean(appointment.depositRequired || appointment.deposit_required || business?.requireDeposit || business?.require_deposit);
+    const depositPct = appointment.depositPercentage || appointment.deposit_percentage || business?.depositPercentage || business?.deposit_percentage || 25;
+    const depositAmt = appointment.depositAmount || appointment.deposit_amount || (isDeposit ? Math.round(((appointment.servicePrice || 0) * depositPct) / 100) : 0);
+    const remainingAmt = Math.max(0, (appointment.servicePrice || 0) - depositAmt);
+    const sinpePhone = business?.sinpePhone || business?.sinpe_phone || business?.phone || '';
+    const sinpeClean = sinpePhone.replace(/\D/g, '');
+    const sinpeHolder = business?.sinpeHolderName || business?.sinpe_holder_name || business?.name || '';
+    const depRef = appointment.depositReference || appointment.deposit_reference || '';
 
     // MODO PRUEBA / SIMULACIÓN DE RESERVA (Se activa con IS_DEMO_BOOKING_MODE = true o si el comercio es de muestra)
     if (IS_DEMO_BOOKING_MODE || business?.isDemo) {
@@ -5811,31 +5953,77 @@ class App {
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 text-center p-6 sm:p-8">
-          <div class="w-16 h-16 ${isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
-            <i class="fas ${isPending ? 'fa-clock' : 'fa-check-circle'}"></i>
+          <div class="w-16 h-16 ${isDeposit ? 'bg-amber-100 text-amber-600' : isPending ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce shadow-md">
+            <i class="fas ${isDeposit ? 'fa-hourglass-half' : isPending ? 'fa-clock' : 'fa-check-circle'}"></i>
           </div>
 
-          <span class="text-xs uppercase font-extrabold ${isPending ? 'text-amber-600' : 'text-emerald-600'} tracking-wider">
-            ${isPending ? 'Solicitud de Turno Recibida' : '¡Reserva Confirmada con Éxito!'}
+          <span class="text-xs uppercase font-extrabold ${isDeposit ? 'text-amber-600' : isPending ? 'text-amber-600' : 'text-emerald-600'} tracking-wider">
+            ${isDeposit ? 'Cita Pendiente de Confirmación' : isPending ? 'Solicitud de Turno Recibida' : '¡Reserva Confirmada con Éxito!'}
           </span>
           <h3 class="text-2xl font-black text-slate-900 mt-1">
-            ${isPending ? 'Cita en Aprobación' : 'Tu Cita ha sido Agendada'}
+            ${isDeposit ? 'Cita Pendiente por el Negocio' : isPending ? 'Cita en Aprobación' : 'Tu Cita ha sido Agendada'}
           </h3>
           <p class="text-xs text-slate-500 mt-1">Código de reserva: <strong class="text-slate-800 font-mono">#${(appointment.id || '').toUpperCase()}</strong></p>
 
-          <!-- Tarjeta de Confirmación de Notificaciones -->
-          <div class="mt-4 p-4 ${isPending ? 'bg-amber-50/80 border-amber-200' : 'bg-emerald-50/80 border-emerald-200'} rounded-2xl border text-left space-y-2">
-            <div class="flex items-center gap-2 font-bold ${isPending ? 'text-amber-900' : 'text-emerald-950'} text-xs">
-              <i class="fas ${isPending ? 'fa-bell text-amber-600' : 'fa-check-double text-emerald-600'} text-sm"></i>
-              <span>${isPending ? 'Pendiente de confirmación por el comercio' : 'Notificaciones y Recordatorios Activos'}</span>
+          <!-- Tarjeta de Confirmación / Estado de Adelanto SINPE -->
+          ${isDeposit ? `
+            <div class="mt-4 p-4 bg-amber-50/90 border-2 border-amber-300 rounded-2xl text-left space-y-3">
+              <div class="flex items-center gap-2 font-black text-amber-900 text-xs uppercase tracking-wide">
+                <i class="fas fa-clock text-amber-600 text-base"></i>
+                <span>Cita pendiente de confirmar por el negocio</span>
+              </div>
+              
+              <p class="text-slate-800 text-xs leading-relaxed font-medium">
+                Tu turno ha quedado apartado en agenda. El comercio validará que ingresó el SINPE Móvil y activará tu cita de inmediato.
+              </p>
+
+              <div class="p-3.5 bg-white rounded-xl border border-amber-200 space-y-2 text-xs">
+                <div class="font-bold text-slate-800 flex items-center justify-between">
+                  <span>Adelanto Requerido (${depositPct}%):</span>
+                  <span class="text-sm font-black text-emerald-700">${this.formatColones(depositAmt)}</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-600 text-[11px]">
+                  <span>Saldo a cancelar en local:</span>
+                  <span class="font-bold text-slate-800">${this.formatColones(remainingAmt)}</span>
+                </div>
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                  <span>SINPE al: <strong class="text-slate-900 font-mono">${sinpePhone || 'Teléfono del comercio'}</strong></span>
+                  ${sinpePhone ? `
+                    <button type="button" id="success-copy-sinpe" class="text-emerald-700 font-bold hover:underline cursor-pointer flex items-center gap-1" data-phone="${sinpeClean || sinpePhone}">
+                      <i class="fas fa-copy"></i> Copiar
+                    </button>
+                  ` : ''}
+                </div>
+                ${sinpeHolder ? `<div class="text-[10px] text-slate-500 font-medium">Titular: <strong class="text-slate-700">${this.escapeHtml(sinpeHolder)}</strong></div>` : ''}
+                ${depRef ? `
+                  <div class="text-[10.5px] font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded border border-purple-200">
+                    <strong>Referencia ingresada:</strong> ${this.escapeHtml(depRef)}
+                  </div>
+                ` : ''}
+              </div>
+
+              <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 font-medium flex items-start gap-2.5">
+                <i class="fab fa-whatsapp text-emerald-600 text-lg shrink-0 mt-0.5"></i>
+                <div class="leading-relaxed">
+                  <strong class="text-emerald-900 block font-black">Mantente atento(a) a tu WhatsApp y correo:</strong>
+                  En cuanto el comercio valide el SINPE, te llegará la confirmación oficial con el enlace a tu cita.
+                </div>
+              </div>
             </div>
-            
-            <p class="text-slate-700 text-xs leading-relaxed">
-              ${isPending 
-                ? 'El establecimiento revisará tu solicitud de turno y confirmará tu cita a la brevedad. Te avisaremos cuando sea aprobada.' 
-                : 'La cita ha quedado registrada en tiempo real en la agenda del comercio. Recibirás los recordatorios previos a tu cita.'}
-            </p>
-          </div>
+          ` : `
+            <div class="mt-4 p-4 ${isPending ? 'bg-amber-50/80 border-amber-200' : 'bg-emerald-50/80 border-emerald-200'} rounded-2xl border text-left space-y-2">
+              <div class="flex items-center gap-2 font-bold ${isPending ? 'text-amber-900' : 'text-emerald-950'} text-xs">
+                <i class="fas ${isPending ? 'fa-bell text-amber-600' : 'fa-check-double text-emerald-600'} text-sm"></i>
+                <span>${isPending ? 'Pendiente de confirmación por el comercio' : 'Notificaciones y Recordatorios Activos'}</span>
+              </div>
+              
+              <p class="text-slate-700 text-xs leading-relaxed">
+                ${isPending 
+                  ? 'El establecimiento revisará tu solicitud de turno y confirmará tu cita a la brevedad. Te avisaremos cuando sea aprobada.' 
+                  : 'La cita ha quedado registrada en tiempo real en la agenda del comercio. Recibirás los recordatorios previos a tu cita.'}
+              </p>
+            </div>
+          `}
 
           <!-- Resumen de la Cita -->
           <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
@@ -5864,7 +6052,7 @@ class App {
               <span class="text-slate-500">Estado:</span>
               <span class="font-bold ${isPending ? 'text-amber-700 bg-amber-50' : 'text-emerald-700 bg-emerald-50'} px-2 py-0.5 rounded-md flex items-center gap-1">
                 <i class="fas ${isPending ? 'fa-hourglass-half' : 'fa-check-circle'} text-[10px]"></i>
-                ${isPending ? 'Pendiente de Aprobación' : 'Confirmada en Agenda'}
+                ${isDeposit ? 'Pendiente de Validar SINPE' : isPending ? 'Pendiente de Aprobación' : 'Confirmada en Agenda'}
               </span>
             </div>
             <div class="flex justify-between">
@@ -5917,6 +6105,17 @@ class App {
         </div>
       </div>
     `;
+
+    document.getElementById('success-copy-sinpe')?.addEventListener('click', (e) => {
+      const phone = e.currentTarget.getAttribute('data-phone');
+      if (phone) {
+        navigator.clipboard?.writeText(phone).then(() => {
+          this.showToast('¡Teléfono SINPE copiado al portapapeles!', 'info');
+        }).catch(() => {
+          this.showToast(`Teléfono SINPE: ${phone}`, 'info');
+        });
+      }
+    });
 
     document.getElementById('success-download-ics-btn')?.addEventListener('click', () => {
       this.downloadIcsFile(appointment, business);
@@ -6350,6 +6549,38 @@ class App {
                       <span><i class="far fa-clock mr-1 text-slate-400"></i><strong>${this.formatTime12h(apt.time)}</strong> (${apt.serviceDuration} min)</span>
                       ${apt.notes ? `<span class="text-slate-400 italic">"${this.escapeHtml(apt.notes)}"</span>` : ''}
                     </div>
+
+                    ${(apt.depositRequired || apt.deposit_required) ? `
+                      <div class="mt-2.5 p-3 rounded-2xl bg-amber-50/80 border border-amber-300 text-xs space-y-1.5">
+                        <div class="flex items-center justify-between">
+                          <span class="font-bold text-amber-900 flex items-center gap-1">
+                            <i class="fas fa-shield-alt text-amber-600"></i> Adelanto SINPE (${apt.depositPercentage || 0}%):
+                          </span>
+                          <span class="font-black text-amber-950">${this.formatColones(apt.depositAmount || 0)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-[11px] text-slate-600">
+                          <span>Saldo restante a pagar en el local:</span>
+                          <span class="font-bold text-slate-800">${this.formatColones(Math.max(0, (apt.servicePrice || 0) - (apt.depositAmount || 0)))}</span>
+                        </div>
+                        ${apt.depositReference ? `
+                          <div class="text-[11px] font-mono font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                            <i class="fas fa-receipt mr-1"></i> Comprobante SINPE: ${this.escapeHtml(apt.depositReference)}
+                          </div>
+                        ` : ''}
+                        <div class="pt-1 border-t border-amber-200/80 flex items-center justify-between text-[11px]">
+                          <span class="text-slate-500 font-medium">Validación del comercio:</span>
+                          ${apt.depositPaid ? `
+                            <span class="inline-flex items-center gap-1 font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+                              <i class="fas fa-check-circle"></i> SINPE Validado
+                            </span>
+                          ` : `
+                            <span class="inline-flex items-center gap-1 font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded animate-pulse">
+                              <i class="fas fa-clock"></i> Pendiente de verificación por el negocio
+                            </span>
+                          `}
+                        </div>
+                      </div>
+                    ` : ''}
                   </div>
 
                   <div class="text-right flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
@@ -7215,6 +7446,13 @@ class App {
                 <span>Portafolio (${currentBiz.portfolio ? currentBiz.portfolio.length : 0})</span>
               </button>
 
+              <!-- Adelanto por SINPE & Políticas -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'deposits' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 font-black ring-2 ring-emerald-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="deposits">
+                <i class="fas fa-hand-holding-usd text-xs ${this.activeDashboardTab === 'deposits' ? 'text-white' : 'text-emerald-600'}"></i>
+                <span>Adelanto por SINPE</span>
+                ${currentBiz.requireDeposit ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded">${currentBiz.depositPercentage || 25}%</span>` : ''}
+              </button>
+
               <!-- 8. Reportes (Si aplica) -->
               ${(!isFree && !isBasic) ? `
                 <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="reports">
@@ -7551,6 +7789,10 @@ class App {
       return this.renderReportsTabContent(currentBiz, appointments);
     }
 
+    if (this.activeDashboardTab === 'deposits') {
+      return this.renderDepositSettingsTabContent(currentBiz);
+    }
+
     if (this.activeDashboardTab === 'appointments') {
       const filter = this.ownerAppointmentFilter || 'all';
       const staffFilter = this.ownerStaffFilter || 'all';
@@ -7819,11 +8061,48 @@ class App {
                         ` : ''}
                       </div>
                       ${apt.notes ? `<p class="text-[11px] text-slate-500 italic bg-white p-2.5 rounded-xl border border-slate-100 mt-1">"${this.escapeHtml(apt.notes)}"</p>` : ''}
+
+                      ${(apt.depositRequired || apt.deposit_required) ? `
+                        <div class="p-3 bg-amber-50/80 border border-amber-300 rounded-xl space-y-1.5 mt-2">
+                          <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-amber-900 flex items-center gap-1">
+                              <i class="fas fa-shield-alt text-amber-600"></i> Adelanto SINPE (${apt.depositPercentage || 0}%):
+                            </span>
+                            <span class="font-black text-amber-950">${this.formatColones(apt.depositAmount || 0)}</span>
+                          </div>
+                          <div class="flex items-center justify-between text-[11px] text-slate-600">
+                            <span>Saldo a pagar en local:</span>
+                            <span class="font-bold text-slate-800">${this.formatColones(Math.max(0, (apt.servicePrice || 0) - (apt.depositAmount || 0)))}</span>
+                          </div>
+                          ${apt.depositReference ? `
+                            <div class="text-[11px] font-mono font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200 flex items-center justify-between">
+                              <span><i class="fas fa-receipt mr-1"></i> Comprobante SINPE:</span>
+                              <span>${this.escapeHtml(apt.depositReference)}</span>
+                            </div>
+                          ` : ''}
+                          <div class="pt-1 border-t border-amber-200/80 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500 font-medium">Estado del adelanto:</span>
+                            ${apt.depositPaid ? `
+                              <span class="inline-flex items-center gap-1 font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                                <i class="fas fa-check-circle"></i> SINPE Validado
+                              </span>
+                            ` : `
+                              <span class="inline-flex items-center gap-1 font-black text-amber-800 bg-amber-200 px-2 py-0.5 rounded-md animate-pulse">
+                                <i class="fas fa-clock"></i> Pendiente de Validar SINPE
+                              </span>
+                            `}
+                          </div>
+                        </div>
+                      ` : ''}
                     </div>
 
                     <!-- Acciones en Celular (Botones Grandes y Accesibles) -->
                     <div class="pt-2 border-t border-slate-200/80 grid grid-cols-2 gap-2">
-                      ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                      ${((apt.depositRequired || apt.deposit_required) && !apt.depositPaid && apt.status === 'pending') ? `
+                        <button class="status-change-btn col-span-2 py-3 px-4 text-emerald-950 bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 hover:from-emerald-400 hover:to-teal-400 border border-emerald-500 rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95 animate-pulse" data-apt-id="${apt.id}" data-status="confirmed">
+                          <i class="fas fa-check-double text-sm"></i> Validar SINPE y Confirmar Cita
+                        </button>
+                      ` : (apt.status === 'pending' || apt.status === 'cancelled') ? `
                         <button class="status-change-btn py-2.5 px-3 text-emerald-800 bg-emerald-100 hover:bg-emerald-200 border border-emerald-300 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}" data-status="confirmed">
                           <i class="fas fa-check-circle"></i> Aceptar
                         </button>
@@ -7853,7 +8132,11 @@ class App {
                     <!-- Enlaces de WhatsApp y Sincronización Calendario en Móvil -->
                     <div class="flex items-center justify-between pt-1 text-xs">
                       ${apt.clientPhone ? `
-                        <a href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60">
+                        <a href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                          (apt.depositRequired || apt.deposit_required) && !apt.depositPaid
+                            ? `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}. Vemos tu solicitud de turno por ${this.formatColones(apt.servicePrice)}. Por favor indícanos o confírmanos el comprobante SINPE del adelanto (${this.formatColones(apt.depositAmount || 0)}) para confirmarte la cita.`
+                            : `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`
+                        )}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/60">
                           <i class="fab fa-whatsapp text-emerald-600"></i> WhatsApp
                         </a>
                       ` : '<span></span>'}
@@ -7921,8 +8204,34 @@ class App {
                           <div class="font-semibold text-slate-800">${this.escapeHtml(apt.serviceName)}</div>
                           ${apt.notes ? `<div class="text-[10px] text-slate-400 italic">"${this.escapeHtml(apt.notes)}"</div>` : ''}
                         </td>
-                        <td class="py-3.5 px-4 font-extrabold text-slate-900">
-                          ${this.formatColones(apt.servicePrice)}
+                        <td class="py-3.5 px-4">
+                          <div class="font-extrabold text-slate-900">${this.formatColones(apt.servicePrice)}</div>
+                          ${(apt.depositRequired || apt.deposit_required) ? `
+                            <div class="mt-1 space-y-1">
+                              <div class="text-[10.5px] font-black text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-flex items-center gap-1">
+                                <i class="fas fa-shield-alt text-amber-600 text-[9px]"></i> Adelanto (${apt.depositPercentage || 0}%): ${this.formatColones(apt.depositAmount || 0)}
+                              </div>
+                              <div class="text-[10px] text-slate-500 font-medium">
+                                Saldo en local: ${this.formatColones(Math.max(0, (apt.servicePrice || 0) - (apt.depositAmount || 0)))}
+                              </div>
+                              ${apt.depositReference ? `
+                                <div class="text-[9.5px] font-mono font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                  <i class="fas fa-receipt text-[8px]"></i> Ref: ${this.escapeHtml(apt.depositReference)}
+                                </div>
+                              ` : ''}
+                              <div>
+                                ${apt.depositPaid ? `
+                                  <span class="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                    <i class="fas fa-check-circle text-emerald-600 text-[9px]"></i> SINPE Validado
+                                  </span>
+                                ` : `
+                                  <span class="inline-flex items-center gap-1 text-[10px] font-black text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 animate-pulse">
+                                    <i class="fas fa-clock text-amber-700 text-[9px]"></i> Por Validar SINPE
+                                  </span>
+                                `}
+                              </div>
+                            </div>
+                          ` : ''}
                         </td>
                         <td class="py-3.5 px-4">
                           <span class="badge-status badge-status-${apt.status}">
@@ -7931,6 +8240,23 @@ class App {
                         </td>
                         <td class="py-3.5 px-4 text-right whitespace-nowrap">
                           <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
+                            <!-- Contacto Directo WhatsApp -->
+                            ${apt.clientPhone ? `
+                              <a 
+                                href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                                  (apt.depositRequired || apt.deposit_required) && !apt.depositPaid
+                                    ? `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}. Vemos tu solicitud de turno por ${this.formatColones(apt.servicePrice)}. Por favor indícanos o confírmanos el comprobante SINPE del adelanto (${this.formatColones(apt.depositAmount || 0)}) para confirmarte la cita.`
+                                    : `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`
+                                )}" 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                class="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all inline-flex items-center justify-center shadow-2xs border border-emerald-200" 
+                                title="Contactar al cliente por WhatsApp"
+                              >
+                                <i class="fab fa-whatsapp text-xs"></i>
+                              </a>
+                            ` : ''}
+
                             <!-- Sincronización Calendario (Google Cal & .ICS) -->
                             <a 
                               href="${this.generateGoogleCalendarUrl(apt, currentBiz)}" 
@@ -7950,8 +8276,12 @@ class App {
                               <i class="fas fa-calendar-plus text-xs"></i>
                             </button>
 
-                            <!-- Aceptar / Confirmar -->
-                            ${(apt.status === 'pending' || apt.status === 'cancelled') ? `
+                            <!-- Aceptar / Confirmar / Validar SINPE -->
+                            ${((apt.depositRequired || apt.deposit_required) && !apt.depositPaid && apt.status === 'pending') ? `
+                              <button class="status-change-btn px-3 py-1.5 text-emerald-950 bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 hover:from-emerald-400 hover:to-teal-400 border border-emerald-500 rounded-lg text-xs font-black transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm whitespace-nowrap active:scale-95 animate-pulse" data-apt-id="${apt.id}" data-status="confirmed" title="Validar que el comprobante SINPE ingresó y confirmar cita">
+                                <i class="fas fa-check-double text-xs"></i> Validar SINPE y Confirmar
+                              </button>
+                            ` : (apt.status === 'pending' || apt.status === 'cancelled') ? `
                               <button class="status-change-btn px-2.5 py-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" data-apt-id="${apt.id}" data-status="confirmed" title="Aceptar y confirmar reserva">
                                 <i class="fas fa-check-circle"></i> Aceptar
                               </button>
@@ -10380,6 +10710,378 @@ class App {
       if (container) {
         container.innerHTML = this.renderCrmClientsGridHtml(filtered, currentBiz);
         this.bindCrmCardEvents(currentBiz, allClients, appointments);
+      }
+    });
+  }
+
+  // --- SUB-CONTENIDO: CONFIGURACIÓN DE ADELANTO POR SINPE MÓVIL Y POLÍTICAS ---
+  renderDepositSettingsTabContent(currentBiz) {
+    const isRequireDeposit = Boolean(currentBiz.requireDeposit);
+    const depositPct = parseInt(currentBiz.depositPercentage || 25, 10);
+    const sinpePhone = currentBiz.sinpePhone || currentBiz.phone || '';
+    const sinpeHolder = currentBiz.sinpeHolderName || currentBiz.name || '';
+    const depositInstructions = currentBiz.depositInstructions || '';
+    const customPolicies = currentBiz.cancellationPoliciesCustom || '';
+
+    // Opciones preestablecidas de políticas de cancelación y no-show
+    const presetOptions = [
+      { id: 'noshow_norefund', text: 'No hay reembolso del adelanto si el cliente no se presenta a la cita (No Show).' },
+      { id: 'reschedule_24h', text: 'Puede solicitar reprogramación sin perder el adelanto con un mínimo de 24 horas de anticipación.' },
+      { id: 'cancel_12h', text: 'Cancelación anticipada con al menos 12 horas de antelación para conservar saldo a favor.' },
+      { id: 'tolerance_15m', text: 'Tolerancia máxima de 15 minutos de retraso sobre la hora acordada.' },
+      { id: 'biz_cancel_100', text: 'Reembolso del 100% del adelanto si el comercio debe cancelar la cita por fuerza mayor.' }
+    ];
+
+    let currentPresets = [];
+    if (Array.isArray(currentBiz.cancellationPoliciesPreset)) {
+      currentPresets = currentBiz.cancellationPoliciesPreset;
+    } else if (typeof currentBiz.cancellationPoliciesPreset === 'string') {
+      try { currentPresets = JSON.parse(currentBiz.cancellationPoliciesPreset || '[]'); } catch (e) { currentPresets = []; }
+    } else {
+      currentPresets = [presetOptions[0].text, presetOptions[1].text];
+    }
+
+    const presetOptionsHtml = presetOptions.map(opt => {
+      const isChecked = currentPresets.some(p => p.toLowerCase().includes(opt.text.slice(0, 15).toLowerCase()));
+      return `
+        <label class="flex items-start gap-3 p-3 bg-white rounded-xl border border-slate-200/80 hover:bg-slate-50 transition-colors cursor-pointer select-none">
+          <input 
+            type="checkbox" 
+            class="preset-policy-checkbox mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+            value="${this.escapeHtml(opt.text)}"
+            ${isChecked ? 'checked' : ''}
+          />
+          <span class="text-xs text-slate-700 font-medium leading-relaxed">${this.escapeHtml(opt.text)}</span>
+        </label>
+      `;
+    }).join('');
+
+    const examplePrice = 20000;
+    const exampleDeposit = Math.round((examplePrice * depositPct) / 100);
+    const exampleBalance = examplePrice - exampleDeposit;
+
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 md:p-8 shadow-xs max-w-4xl mx-auto space-y-7 animate-fade-in">
+        <!-- Encabezado -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                <i class="fas fa-shield-alt text-emerald-600"></i> Garantía de Asistencia
+              </span>
+              <span class="text-xs font-bold text-slate-400">SINPE Móvil Costa Rica</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900">Exigir Adelanto por SINPE Móvil</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed max-w-2xl">
+              Protege el tiempo de tu equipo y reduce ausencias solicitando un porcentaje de adelanto al reservar. Las citas recibidas quedarán en estado <strong>Pendiente de Confirmar</strong> para que verifiques el ingreso del dinero en tu cuenta antes de confirmarlas.
+            </p>
+          </div>
+
+          <!-- Switch Principal -->
+          <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl flex items-center gap-3 shrink-0 shadow-2xs">
+            <label class="relative inline-flex items-center cursor-pointer select-none">
+              <input type="checkbox" id="deposit-require-toggle" class="sr-only peer" ${isRequireDeposit ? 'checked' : ''}>
+              <div class="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              <span class="ml-2.5 text-xs font-black text-slate-900">
+                <span id="deposit-toggle-status-label">${isRequireDeposit ? 'ACTIVO' : 'INACTIVO'}</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Campos de Configuración -->
+        <div id="deposit-config-fields-wrapper" class="${isRequireDeposit ? '' : 'opacity-50 pointer-events-none'} transition-opacity space-y-6">
+
+          <!-- 1. Selector de Porcentaje -->
+          <div class="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="block text-xs font-black text-slate-900 uppercase tracking-wider">
+                  1. Porcentaje de Adelanto a Solicitar
+                </label>
+                <p class="text-xs text-slate-500">¿Qué porcentaje del valor total del servicio debe transferir el cliente para apartar la cita?</p>
+              </div>
+              <span id="deposit-selected-pct-badge" class="px-3 py-1 bg-emerald-600 text-white rounded-xl text-xs font-black shadow-xs">
+                ${depositPct}%
+              </span>
+            </div>
+
+            <div class="grid grid-cols-4 sm:grid-cols-7 gap-2 pt-1">
+              ${[10, 15, 20, 25, 30, 50, 100].map(pct => `
+                <button 
+                  type="button" 
+                  class="deposit-pct-btn py-2.5 px-3 rounded-xl border text-xs font-black transition-all cursor-pointer ${depositPct === pct ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/25 ring-2 ring-emerald-400/30' : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'}"
+                  data-pct="${pct}"
+                >
+                  ${pct}%
+                </button>
+              `).join('')}
+            </div>
+            <input type="hidden" id="deposit-percentage-val" value="${depositPct}">
+          </div>
+
+          <!-- 2. Datos SINPE Móvil -->
+          <div class="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-4">
+            <div>
+              <label class="block text-xs font-black text-slate-900 uppercase tracking-wider">
+                2. Datos de tu Cuenta SINPE Móvil
+              </label>
+              <p class="text-xs text-slate-500">Se mostrarán claramente al cliente en la pantalla de reserva junto a un botón para copiar el número.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Teléfono SINPE Móvil del Comercio *
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                    +506
+                  </span>
+                  <input 
+                    type="tel" 
+                    id="deposit-sinpe-phone" 
+                    value="${this.escapeHtml(sinpePhone)}" 
+                    placeholder="Ej: 8888-8888" 
+                    class="w-full pl-14 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1 block">Número celular donde tus clientes harán el SINPE.</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Nombre del Titular de la Cuenta Bancaria *
+                </label>
+                <input 
+                  type="text" 
+                  id="deposit-sinpe-holder" 
+                  value="${this.escapeHtml(sinpeHolder)}" 
+                  placeholder="Ej: Juan Pérez / Salón Belleza S.A." 
+                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+                <span class="text-[10px] text-slate-400 mt-1 block">El cliente cotejará este nombre en su aplicación bancaria.</span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Instrucciones o Detalle de Transferencia (Opcional)
+              </label>
+              <input 
+                type="text" 
+                id="deposit-instructions" 
+                value="${this.escapeHtml(depositInstructions)}" 
+                placeholder="Ej: Indicar tu nombre o servicio en el detalle de la transferencia." 
+                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- 3. Políticas de Cancelación y No-Show -->
+          <div class="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-4">
+            <div>
+              <label class="block text-xs font-black text-slate-900 uppercase tracking-wider">
+                3. Políticas de Cancelación, Reprogramación y No-Show
+              </label>
+              <p class="text-xs text-slate-500">Selecciona las reglas predefinidas que aplican para tu negocio y añade condiciones personalizadas. Aparecerán en el modal de reserva y en los correos y mensajes de WhatsApp.</p>
+            </div>
+
+            <!-- Opciones preestablecidas -->
+            <div class="space-y-2">
+              ${presetOptionsHtml}
+            </div>
+
+            <!-- Políticas personalizadas -->
+            <div class="pt-2">
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Políticas o Reglas Adicionales Escritas por Ti (Opcional)
+              </label>
+              <textarea 
+                id="deposit-policies-custom" 
+                rows="3" 
+                placeholder="Ej: En caso de emergencia médica, avísanos con al menos 4 horas de anticipación y conservamos el 100% de tu saldo durante 30 días."
+                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none leading-relaxed"
+              >${this.escapeHtml(customPolicies)}</textarea>
+            </div>
+          </div>
+
+          <!-- 4. Vista Previa en Vivo -->
+          <div class="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/50 to-slate-50 border border-emerald-200 space-y-3">
+            <div class="flex items-center gap-2">
+              <div class="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs shadow-2xs font-bold">
+                <i class="fas fa-eye"></i>
+              </div>
+              <span class="text-xs font-black text-emerald-950 uppercase tracking-wider">Vista Previa para el Cliente al Reservar</span>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-2xs space-y-2.5 text-xs">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span class="text-slate-500 font-medium">Ejemplo Servicio de ₡20.000:</span>
+                <span class="font-extrabold text-slate-900">Total: ₡20.000</span>
+              </div>
+              <div class="flex items-center justify-between text-emerald-800 font-black bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                <span>Adelanto por SINPE Móvil (<span id="preview-pct-label">${depositPct}%</span>):</span>
+                <span class="text-sm font-black" id="preview-amount-label">₡${exampleDeposit.toLocaleString('es-CR')}</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-600 text-[11px] px-1">
+                <span>Saldo a cancelar en el local el día de la cita:</span>
+                <span class="font-bold text-slate-800" id="preview-balance-label">₡${exampleBalance.toLocaleString('es-CR')}</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-[11px] text-slate-700 space-y-1">
+                <div><strong>SINPE Móvil:</strong> <span id="preview-phone-label" class="font-mono font-bold text-emerald-700">${sinpePhone || '8888-8888'}</span> (Titular: <span id="preview-holder-label" class="font-bold">${sinpeHolder || 'Comercio'}</span>)</div>
+                <div class="text-[10px] text-slate-500 italic"><i class="fas fa-info-circle mr-1"></i> La cita quedará pendiente en agenda hasta que el comercio verifique el depósito y la confirme.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón Guardar Cambios -->
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <button 
+            type="button" 
+            id="save-deposit-settings-btn"
+            class="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white text-xs sm:text-sm font-black rounded-xl shadow-md shadow-emerald-500/25 flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <i class="fas fa-save"></i>
+            <span>Guardar Configuración de Adelanto</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  setupDepositSettingsEvents(currentBiz) {
+    const toggle = document.getElementById('deposit-require-toggle');
+    const fieldsWrapper = document.getElementById('deposit-config-fields-wrapper');
+    const statusLabel = document.getElementById('deposit-toggle-status-label');
+
+    toggle?.addEventListener('change', () => {
+      const isChecked = toggle.checked;
+      if (fieldsWrapper) {
+        if (isChecked) {
+          fieldsWrapper.classList.remove('opacity-50', 'pointer-events-none');
+        } else {
+          fieldsWrapper.classList.add('opacity-50', 'pointer-events-none');
+        }
+      }
+      if (statusLabel) {
+        statusLabel.textContent = isChecked ? 'ACTIVO' : 'INACTIVO';
+      }
+    });
+
+    const updatePreview = () => {
+      const pct = parseInt(document.getElementById('deposit-percentage-val')?.value, 10) || 25;
+      const phone = document.getElementById('deposit-sinpe-phone')?.value.trim() || '8888-8888';
+      const holder = document.getElementById('deposit-sinpe-holder')?.value.trim() || 'Comercio';
+
+      const examplePrice = 20000;
+      const exampleDeposit = Math.round((examplePrice * pct) / 100);
+      const exampleBalance = examplePrice - exampleDeposit;
+
+      const previewPct = document.getElementById('preview-pct-label');
+      if (previewPct) previewPct.textContent = `${pct}%`;
+
+      const previewAmount = document.getElementById('preview-amount-label');
+      if (previewAmount) previewAmount.textContent = `₡${exampleDeposit.toLocaleString('es-CR')}`;
+
+      const previewBalance = document.getElementById('preview-balance-label');
+      if (previewBalance) previewBalance.textContent = `₡${exampleBalance.toLocaleString('es-CR')}`;
+
+      const previewPhone = document.getElementById('preview-phone-label');
+      if (previewPhone) previewPhone.textContent = phone;
+
+      const previewHolder = document.getElementById('preview-holder-label');
+      if (previewHolder) previewHolder.textContent = holder;
+    };
+
+    document.querySelectorAll('.deposit-pct-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pct = parseInt(btn.getAttribute('data-pct'), 10);
+        const hiddenInput = document.getElementById('deposit-percentage-val');
+        if (hiddenInput) hiddenInput.value = pct;
+
+        document.querySelectorAll('.deposit-pct-btn').forEach(b => {
+          b.className = 'deposit-pct-btn py-2.5 px-3 rounded-xl border text-xs font-black transition-all cursor-pointer bg-white text-slate-700 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50';
+        });
+        btn.className = 'deposit-pct-btn py-2.5 px-3 rounded-xl border text-xs font-black transition-all cursor-pointer bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/25 ring-2 ring-emerald-400/30';
+
+        const badge = document.getElementById('deposit-selected-pct-badge');
+        if (badge) badge.textContent = `${pct}%`;
+
+        updatePreview();
+      });
+    });
+
+    document.getElementById('deposit-sinpe-phone')?.addEventListener('input', updatePreview);
+    document.getElementById('deposit-sinpe-holder')?.addEventListener('input', updatePreview);
+
+    document.getElementById('save-deposit-settings-btn')?.addEventListener('click', async () => {
+      const saveBtn = document.getElementById('save-deposit-settings-btn');
+      const originalHtml = saveBtn ? saveBtn.innerHTML : '';
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+      }
+
+      const requireDeposit = document.getElementById('deposit-require-toggle')?.checked ?? false;
+      const depositPercentage = parseInt(document.getElementById('deposit-percentage-val')?.value, 10) || 25;
+      const sinpePhone = document.getElementById('deposit-sinpe-phone')?.value.trim() || '';
+      const sinpeHolderName = document.getElementById('deposit-sinpe-holder')?.value.trim() || '';
+      const depositInstructions = document.getElementById('deposit-instructions')?.value.trim() || '';
+
+      const checkedPresets = Array.from(document.querySelectorAll('.preset-policy-checkbox:checked')).map(cb => cb.value);
+      const cancellationPoliciesCustom = document.getElementById('deposit-policies-custom')?.value.trim() || '';
+
+      if (requireDeposit && !sinpePhone) {
+        this.showToast('Por favor ingresa el número de teléfono SINPE Móvil para recibir los depósitos.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml;
+        }
+        document.getElementById('deposit-sinpe-phone')?.focus();
+        return;
+      }
+
+      if (requireDeposit && !sinpeHolderName) {
+        this.showToast('Por favor ingresa el nombre del titular de la cuenta bancaria.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml;
+        }
+        document.getElementById('deposit-sinpe-holder')?.focus();
+        return;
+      }
+
+      try {
+        await storage.updateBusinessDepositSettings(currentBiz.id, {
+          requireDeposit,
+          depositPercentage,
+          sinpePhone,
+          sinpeHolderName,
+          depositInstructions,
+          cancellationPoliciesPreset: checkedPresets,
+          cancellationPoliciesCustom
+        });
+
+        // Actualizar en el objeto en memoria
+        currentBiz.requireDeposit = requireDeposit;
+        currentBiz.depositPercentage = depositPercentage;
+        currentBiz.sinpePhone = sinpePhone;
+        currentBiz.sinpeHolderName = sinpeHolderName;
+        currentBiz.depositInstructions = depositInstructions;
+        currentBiz.cancellationPoliciesPreset = checkedPresets;
+        currentBiz.cancellationPoliciesCustom = cancellationPoliciesCustom;
+
+        this.showToast('¡Configuración de adelanto y políticas de cancelación guardadas correctamente!', 'success');
+        this.renderCurrentView();
+      } catch (err) {
+        console.error('Error guardando configuración de adelanto:', err);
+        this.showToast(err.message || 'Error al guardar la configuración.', 'error');
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = originalHtml;
+        }
       }
     });
   }
@@ -12943,6 +13645,9 @@ class App {
     if (this.activeDashboardTab === 'clients') {
       this.setupClientsTabEvents(currentBiz, apts);
     }
+    if (this.activeDashboardTab === 'deposits') {
+      this.setupDepositSettingsEvents(currentBiz);
+    }
 
     // Apertura directa garantizada de Manuales para Comercios (PDF y Guía Web)
     document.getElementById('btn-open-manual-pdf')?.addEventListener('click', (e) => {
@@ -13045,6 +13750,8 @@ class App {
       btn.addEventListener('click', async () => {
         const aptId = btn.getAttribute('data-apt-id');
         const newStatus = btn.getAttribute('data-status');
+        const allApts = storage.getAppointmentsByBusiness(currentBiz.id) || [];
+        const targetApt = allApts.find(a => String(a.id) === String(aptId));
         await storage.updateAppointmentStatus(aptId, newStatus);
         const isBizEmailOnly = currentBiz && (currentBiz.plan === 'free' || currentBiz.plan === 'basic' || !currentBiz.plan);
         const statusMsgs = {
@@ -13052,7 +13759,11 @@ class App {
           completed: '¡Reserva completada! Se envió automáticamente la solicitud de calificación por correo al cliente.',
           cancelled: 'Reserva cancelada.'
         };
-        this.showToast(statusMsgs[newStatus] || `Estado actualizado a: ${newStatus}`, newStatus === 'cancelled' ? 'info' : 'success');
+        if (newStatus === 'confirmed' && targetApt && (targetApt.depositRequired || targetApt.deposit_required)) {
+          this.showToast('¡SINPE verificado y cita confirmada! Se enviaron las notificaciones por correo y WhatsApp.', 'success');
+        } else {
+          this.showToast(statusMsgs[newStatus] || `Estado actualizado a: ${newStatus}`, newStatus === 'cancelled' ? 'info' : 'success');
+        }
         this.renderCurrentView();
       });
     });

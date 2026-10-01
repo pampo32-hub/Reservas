@@ -154,6 +154,12 @@ export async function sendBookingConfirmationEmail(appointment, business) {
   const businessAddress = business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : 'Costa Rica';
   const businessPhone = business?.phone || '+506 2200 0000';
 
+  const depositPaid = Boolean(appointment.depositPaid || appointment.deposit_paid);
+  const depositAmount = parseFloat(appointment.depositAmount || appointment.deposit_amount || 0);
+  const totalAmount = parseFloat(appointment.servicePrice || 0);
+  const remainingAmount = Math.max(0, totalAmount - depositAmount);
+  const policiesText = appointment.depositPoliciesSnapshot || appointment.deposit_policies_snapshot || '';
+
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="es">
@@ -171,19 +177,13 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     .content { padding: 30px 24px; }
     .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
     .message { font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 24px; }
-    .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 24px; }
+    .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
     .card-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; }
-    .row .label { color: #64748b; }
-    .row .value { font-weight: 700; color: #0f172a; text-align: right; }
-    .row.highlight .value { color: #2563eb; font-size: 15px; }
-    .total-row { border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 12px; }
-    .total-row .value { font-size: 16px; font-weight: 900; color: #059669; }
-    .whatsapp-badge { background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 16px; font-size: 12px; color: #065f46; margin-bottom: 24px; display: flex; align-items: center; }
-    .btn-container { text-align: center; margin: 30px 0 10px 0; }
+    .whatsapp-badge { background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 16px; font-size: 12px; color: #065f46; margin-bottom: 20px; display: flex; align-items: center; }
+    .policy-box { background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; font-size: 12px; color: #475569; line-height: 1.5; }
+    .btn-container { text-align: center; margin: 26px 0 10px 0; }
     .btn { display: inline-block; background-color: #2563eb; color: #ffffff !important; font-weight: 700; font-size: 14px; padding: 14px 28px; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); }
     .footer { background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
-    .footer a { color: #64748b; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -197,7 +197,7 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     <div class="content">
       <div class="greeting">¡Hola, ${clientName}! 👋</div>
       <div class="message">
-        Tu turno ha sido agendado exitosamente en <strong>${businessName}</strong>. A continuación encontrarás todos los detalles de tu reserva:
+        Tu turno ha sido confirmado exitosamente en <strong>${businessName}</strong>. A continuación encontrarás todos los detalles de tu reserva:
       </div>
 
       <div class="card">
@@ -234,15 +234,37 @@ export async function sendBookingConfirmationEmail(appointment, business) {
             <td style="padding: 6px 0; text-align: right; font-style: italic; color: #64748b;">"${appointment.notes}"</td>
           </tr>
           ` : ''}
+          ${depositPaid && depositAmount > 0 ? `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #64748b;">Total del Servicio:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #0f172a;">${formatColones(totalAmount)}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #059669; font-weight: 700;">Adelanto SINPE Verificado:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 800; color: #059669;">✓ ${formatColones(depositAmount)} pagado</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0 4px 0; font-weight: 800; color: #0f172a;">Saldo restante a pagar en el local:</td>
+            <td style="padding: 10px 0 4px 0; text-align: right; font-size: 15px; font-weight: 900; color: #2563eb;">${formatColones(remainingAmount)}</td>
+          </tr>
+          ` : `
           <tr>
             <td style="padding: 12px 0 4px 0; font-weight: 700; color: #0f172a;">Total a pagar en local:</td>
             <td style="padding: 12px 0 4px 0; text-align: right; font-size: 16px; font-weight: 900; color: #059669;">${priceStr}</td>
           </tr>
+          `}
         </table>
       </div>
 
+      ${policiesText ? `
+      <div class="policy-box">
+        <strong style="color: #0f172a; display: block; margin-bottom: 6px;">📜 Políticas de Cancelación y Reprogramación del Negocio:</strong>
+        <div style="white-space: pre-line;">${policiesText}</div>
+      </div>
+      ` : ''}
+
       <div class="whatsapp-badge">
-        <span>📲 <strong>Notificación activa:</strong> También hemos registrado tu número para enviarte recordatorios previos a tu reserva vía WhatsApp.</span>
+        <span>📲 <strong>Notificaciones y Recordatorios:</strong> Hemos activado tu cita. Recibirás recordatorios previos a tu turno.</span>
       </div>
 
       <div class="btn-container">
@@ -263,11 +285,146 @@ export async function sendBookingConfirmationEmail(appointment, business) {
     console.log(`📧 Enviando correo de confirmación a: ${appointment.clientEmail}...`);
     return await sendEmailCore({
       to: appointment.clientEmail,
-      subject: `✅ Reserva Confirmada en ${businessName} (Código: #${appointmentCode})`,
+      subject: `✅ Cita Confirmada en ${businessName} (Código: #${appointmentCode})`,
       html: htmlContent
     });
   } catch (err) {
     console.error('❌ Error inesperado enviando correo de confirmación:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Envía correo preliminar al cliente cuando envía una solicitud de reserva con adelanto por SINPE Móvil
+ */
+export async function sendBookingPendingDepositEmail(appointment, business) {
+  if (!appointment || !appointment.clientEmail || !appointment.clientEmail.includes('@')) {
+    return { success: false, reason: 'no_email' };
+  }
+
+  const clientName = appointment.clientName || 'Estimado(a) Cliente';
+  const businessName = business?.name || appointment.businessName || 'Comercio Asociado';
+  const serviceName = appointment.serviceName || 'Servicio';
+  const dateStr = formatDateDMY(appointment.date);
+  const timeStr = formatTime12h(appointment.time);
+  const durationStr = appointment.serviceDuration ? `${appointment.serviceDuration} min` : '30 min';
+  const appointmentCode = (appointment.id || 'APT-000').toUpperCase();
+  const businessAddress = business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : 'Costa Rica';
+  const businessPhone = business?.phone || '+506 2200 0000';
+
+  const depositPercentage = parseInt(appointment.depositPercentage || business?.depositPercentage || business?.deposit_percentage || 25, 10);
+  const depositAmount = parseFloat(appointment.depositAmount || appointment.deposit_amount || 0);
+  const totalAmount = parseFloat(appointment.servicePrice || 0);
+  const remainingAmount = Math.max(0, totalAmount - depositAmount);
+  const sinpePhone = business?.sinpePhone || business?.sinpe_phone || businessPhone;
+  const sinpeHolder = business?.sinpeHolderName || business?.sinpe_holder_name || businessName;
+  const depositRef = appointment.depositReference || appointment.deposit_reference || '';
+  const policiesText = appointment.depositPoliciesSnapshot || appointment.deposit_policies_snapshot || '';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de Reserva Recibida</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; padding: 0; }
+    .container { max-width: 580px; margin: 20px auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+    .header { background: linear-gradient(135deg, #d97706, #b45309); padding: 32px 24px; text-align: center; color: #ffffff; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+    .header p { margin: 6px 0 0 0; font-size: 13px; opacity: 0.9; }
+    .badge { display: inline-block; background-color: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-top: 12px; letter-spacing: 0.5px; }
+    .content { padding: 30px 24px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .message { font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 20px; }
+    .status-alert { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 16px; padding: 16px; margin-bottom: 20px; color: #92400e; font-size: 13px; line-height: 1.5; }
+    .card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .card-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+    .policy-box { background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 14px; padding: 14px 16px; margin-bottom: 20px; font-size: 12px; color: #475569; line-height: 1.5; }
+    .footer { background-color: #f1f5f9; padding: 20px 24px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Solicitud de Cita Recibida 🇨🇷</h1>
+      <p>Pendiente de validación de adelanto por SINPE Móvil</p>
+      <div class="badge">Código: #${appointmentCode}</div>
+    </div>
+    
+    <div class="content">
+      <div class="greeting">¡Hola, ${clientName}! 👋</div>
+      <div class="message">
+        Hemos recibido tu solicitud para agendar un turno en <strong>${businessName}</strong>. Tu horario se encuentra <strong>temporalmente apartado</strong> mientras el establecimiento valida la recepción de tu adelanto.
+      </div>
+
+      <div class="status-alert">
+        <strong style="display: block; margin-bottom: 4px;">⏳ Próximo Paso:</strong>
+        El comercio validará el depósito de <strong>${formatColones(depositAmount)}</strong> al SINPE Móvil <strong>${sinpePhone}</strong> (${sinpeHolder}). En cuanto lo confirme, recibirás un mensaje de WhatsApp y correo oficial con la cita 100% confirmada.
+        ${depositRef ? `<br><span style="font-size: 11px; opacity: 0.9;">Comprobante reportado: <strong>#${depositRef}</strong></span>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="card-title">Detalles de la Cita Solicitada</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #64748b;">Establecimiento:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #0f172a;">${businessName}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #64748b;">Servicio:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #0f172a;">${serviceName}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #64748b;">Fecha y Hora:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #d97706;">📅 ${dateStr} a las ${timeStr}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #64748b;">Total del Servicio:</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 700; color: #0f172a;">${formatColones(totalAmount)}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 0; color: #d97706; font-weight: 700;">Adelanto Requerido (${depositPercentage}%):</td>
+            <td style="padding: 6px 0; text-align: right; font-weight: 800; color: #d97706;">${formatColones(depositAmount)}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0 4px 0; font-weight: 700; color: #64748b;">Saldo a pagar en local:</td>
+            <td style="padding: 10px 0 4px 0; text-align: right; font-weight: 800; color: #0f172a;">${formatColones(remainingAmount)}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${policiesText ? `
+      <div class="policy-box">
+        <strong style="color: #0f172a; display: block; margin-bottom: 6px;">📜 Políticas de Cancelación y Reprogramación:</strong>
+        <div style="white-space: pre-line;">${policiesText}</div>
+      </div>
+      ` : ''}
+
+      <div style="text-align: center; margin: 24px 0 8px 0;">
+        <p style="font-size: 12px; color: #64748b; margin: 0;">¿Tienes dudas sobre tu transferencia? Puedes comunicarte al <strong>${businessPhone}</strong>.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 6px 0;">Notificación automática de solicitud de turno - Reservas Costa Rica 🇨🇷</p>
+      <p style="margin: 0;">Ningún cargo final se procesa hasta que el negocio apruebe tu cita.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  try {
+    console.log(`📧 Enviando correo de solicitud pendiente de adelanto a: ${appointment.clientEmail}...`);
+    return await sendEmailCore({
+      to: appointment.clientEmail,
+      subject: `⏳ Solicitud Recibida en ${businessName} - Pendiente Validación SINPE (Código: #${appointmentCode})`,
+      html: htmlContent
+    });
+  } catch (err) {
+    console.error('❌ Error enviando correo de solicitud pendiente:', err.message);
     return { success: false, error: err.message };
   }
 }

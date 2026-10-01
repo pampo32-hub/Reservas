@@ -12,6 +12,7 @@ import jwt from 'jsonwebtoken';
 import { pool, initDatabase } from './db.js';
 import { 
   sendBookingConfirmationEmail, 
+  sendBookingPendingDepositEmail,
   sendReviewRequestEmail, 
   sendPasswordResetEmail,
   sendBusinessEmailVerificationCode,
@@ -1718,6 +1719,13 @@ app.get('/api/appointments', async (req, res) => {
       notes: a.notes,
       status: a.status,
       whatsappOptIn: a.whatsapp_opt_in !== false,
+      depositRequired: Boolean(a.deposit_required),
+      depositAmount: parseFloat(a.deposit_amount || 0),
+      depositPercentage: parseInt(a.deposit_percentage || 0, 10),
+      depositReference: a.deposit_reference || '',
+      depositPaid: Boolean(a.deposit_paid),
+      depositPaidAt: a.deposit_paid_at,
+      depositPoliciesSnapshot: a.deposit_policies_snapshot || '',
       createdAt: a.created_at
     }));
     res.json(appointments);
@@ -1767,6 +1775,13 @@ app.get('/api/businesses', async (req, res) => {
       notifyOwnerWhatsapp: Boolean(b.notify_owner_whatsapp),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
+      requireDeposit: Boolean(b.require_deposit),
+      depositPercentage: parseInt(b.deposit_percentage || 25, 10),
+      sinpePhone: b.sinpe_phone || '',
+      sinpeHolderName: b.sinpe_holder_name || '',
+      depositInstructions: b.deposit_instructions || '',
+      cancellationPoliciesPreset: Array.isArray(b.cancellation_policies_preset) ? b.cancellation_policies_preset : (typeof b.cancellation_policies_preset === 'string' ? JSON.parse(b.cancellation_policies_preset || '[]') : []),
+      cancellationPoliciesCustom: b.cancellation_policies_custom || '',
       subscriptionStatus: b.subscription_status,
       paymentMethod: b.payment_method,
       services: srvRes.rows
@@ -1827,6 +1842,13 @@ app.get('/api/developer/businesses', async (req, res) => {
       notifyOwnerWhatsapp: Boolean(b.notify_owner_whatsapp),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
+      requireDeposit: Boolean(b.require_deposit),
+      depositPercentage: parseInt(b.deposit_percentage || 25, 10),
+      sinpePhone: b.sinpe_phone || '',
+      sinpeHolderName: b.sinpe_holder_name || '',
+      depositInstructions: b.deposit_instructions || '',
+      cancellationPoliciesPreset: Array.isArray(b.cancellation_policies_preset) ? b.cancellation_policies_preset : (typeof b.cancellation_policies_preset === 'string' ? JSON.parse(b.cancellation_policies_preset || '[]') : []),
+      cancellationPoliciesCustom: b.cancellation_policies_custom || '',
       subscriptionStatus: b.subscription_status,
       paymentMethod: b.payment_method,
       services: srvRes.rows
@@ -1891,6 +1913,13 @@ app.get('/api/businesses/:id', async (req, res) => {
       notifyOwnerWhatsapp: Boolean(b.notify_owner_whatsapp),
       socialLinks: b.social_links || {},
       autoConfirmAppointments: b.auto_confirm_appointments !== false,
+      requireDeposit: Boolean(b.require_deposit),
+      depositPercentage: parseInt(b.deposit_percentage || 25, 10),
+      sinpePhone: b.sinpe_phone || '',
+      sinpeHolderName: b.sinpe_holder_name || '',
+      depositInstructions: b.deposit_instructions || '',
+      cancellationPoliciesPreset: Array.isArray(b.cancellation_policies_preset) ? b.cancellation_policies_preset : (typeof b.cancellation_policies_preset === 'string' ? JSON.parse(b.cancellation_policies_preset || '[]') : []),
+      cancellationPoliciesCustom: b.cancellation_policies_custom || '',
       services: srvRes.rows.map(s => ({
         id: s.id,
         name: s.name,
@@ -2039,8 +2068,15 @@ app.put('/api/businesses/:id', authenticateBusinessOwnerOrDev, async (req, res) 
         is_hidden = COALESCE($19, is_hidden),
         is_verified = COALESCE($20, is_verified),
         slug = COALESCE($21, slug),
-        portfolio = COALESCE($22, portfolio)
-      WHERE id = $23 OR LOWER(slug) = LOWER($23)
+        portfolio = COALESCE($22, portfolio),
+        require_deposit = COALESCE($23, require_deposit),
+        deposit_percentage = COALESCE($24, deposit_percentage),
+        sinpe_phone = COALESCE($25, sinpe_phone),
+        sinpe_holder_name = COALESCE($26, sinpe_holder_name),
+        deposit_instructions = COALESCE($27, deposit_instructions),
+        cancellation_policies_preset = COALESCE($28, cancellation_policies_preset),
+        cancellation_policies_custom = COALESCE($29, cancellation_policies_custom)
+      WHERE id = $30 OR LOWER(slug) = LOWER($30)
       RETURNING *
     `, [
       b.name !== undefined ? b.name : null,
@@ -2065,6 +2101,13 @@ app.put('/api/businesses/:id', authenticateBusinessOwnerOrDev, async (req, res) 
       b.isVerified !== undefined ? Boolean(b.isVerified) : null,
       rawSlug,
       b.portfolio ? JSON.stringify(b.portfolio) : null,
+      b.requireDeposit !== undefined ? Boolean(b.requireDeposit) : null,
+      b.depositPercentage !== undefined ? parseInt(b.depositPercentage, 10) : null,
+      b.sinpePhone !== undefined ? String(b.sinpePhone).trim() : null,
+      b.sinpeHolderName !== undefined ? String(b.sinpeHolderName).trim() : null,
+      b.depositInstructions !== undefined ? String(b.depositInstructions).trim() : null,
+      b.cancellationPoliciesPreset !== undefined ? (Array.isArray(b.cancellationPoliciesPreset) ? JSON.stringify(b.cancellationPoliciesPreset) : b.cancellationPoliciesPreset) : null,
+      b.cancellationPoliciesCustom !== undefined ? String(b.cancellationPoliciesCustom).trim() : null,
       id
     ]);
 
@@ -2219,6 +2262,70 @@ app.put('/api/businesses/:id/auto-confirm', async (req, res) => {
   } catch (error) {
     console.error('Error al actualizar autoconfirmación:', error);
     res.status(500).json({ error: 'Error al actualizar configuración de autoconfirmación' });
+  }
+});
+
+// Actualizar configuración de adelanto por SINPE y políticas de cancelación
+app.put('/api/businesses/:id/deposit-settings', authenticateBusinessOwnerOrDev, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      requireDeposit,
+      depositPercentage,
+      sinpePhone,
+      sinpeHolderName,
+      depositInstructions,
+      cancellationPoliciesPreset,
+      cancellationPoliciesCustom
+    } = req.body;
+
+    const query = `
+      UPDATE reservas_businesses SET
+        require_deposit = COALESCE($1, require_deposit),
+        deposit_percentage = COALESCE($2, deposit_percentage),
+        sinpe_phone = COALESCE($3, sinpe_phone),
+        sinpe_holder_name = COALESCE($4, sinpe_holder_name),
+        deposit_instructions = COALESCE($5, deposit_instructions),
+        cancellation_policies_preset = COALESCE($6, cancellation_policies_preset),
+        cancellation_policies_custom = COALESCE($7, cancellation_policies_custom)
+      WHERE id = $8 OR LOWER(slug) = LOWER($8)
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, [
+      requireDeposit !== undefined ? Boolean(requireDeposit) : null,
+      depositPercentage !== undefined ? parseInt(depositPercentage, 10) : null,
+      sinpePhone !== undefined ? String(sinpePhone).trim() : null,
+      sinpeHolderName !== undefined ? String(sinpeHolderName).trim() : null,
+      depositInstructions !== undefined ? String(depositInstructions).trim() : null,
+      cancellationPoliciesPreset !== undefined ? (Array.isArray(cancellationPoliciesPreset) ? JSON.stringify(cancellationPoliciesPreset) : cancellationPoliciesPreset) : null,
+      cancellationPoliciesCustom !== undefined ? String(cancellationPoliciesCustom).trim() : null,
+      id
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Negocio no encontrado' });
+    }
+
+    const updated = result.rows[0];
+    res.json({
+      success: true,
+      message: 'Configuración de adelanto y políticas de cancelación guardadas correctamente.',
+      settings: {
+        requireDeposit: Boolean(updated.require_deposit),
+        depositPercentage: parseInt(updated.deposit_percentage || 25, 10),
+        sinpePhone: updated.sinpe_phone || '',
+        sinpeHolderName: updated.sinpe_holder_name || '',
+        depositInstructions: updated.deposit_instructions || '',
+        cancellationPoliciesPreset: Array.isArray(updated.cancellation_policies_preset) 
+          ? updated.cancellation_policies_preset 
+          : (typeof updated.cancellation_policies_preset === 'string' ? JSON.parse(updated.cancellation_policies_preset || '[]') : []),
+        cancellationPoliciesCustom: updated.cancellation_policies_custom || ''
+      }
+    });
+  } catch (error) {
+    console.error('Error al actualizar configuración de adelanto:', error);
+    res.status(500).json({ error: 'Error al actualizar configuración de adelanto.' });
   }
 });
 
@@ -2767,6 +2874,13 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
       whatsappOptIn: a.whatsapp_opt_in !== false,
       staffId: a.staff_id || null,
       staffName: a.staff_name || '',
+      depositRequired: Boolean(a.deposit_required),
+      depositAmount: parseFloat(a.deposit_amount || 0),
+      depositPercentage: parseInt(a.deposit_percentage || 0, 10),
+      depositReference: a.deposit_reference || '',
+      depositPaid: Boolean(a.deposit_paid),
+      depositPaidAt: a.deposit_paid_at,
+      depositPoliciesSnapshot: a.deposit_policies_snapshot || '',
       isReviewed: Boolean(a.review_id),
       reviewRating: a.review_rating ? parseInt(a.review_rating, 10) : null,
       reviewComment: a.review_comment || null,
@@ -2843,6 +2957,13 @@ app.get('/api/clients/:phone/appointments', async (req, res) => {
       whatsappOptIn: a.whatsapp_opt_in !== false,
       staffId: a.staff_id || null,
       staffName: a.staff_name || '',
+      depositRequired: Boolean(a.deposit_required),
+      depositAmount: parseFloat(a.deposit_amount || 0),
+      depositPercentage: parseInt(a.deposit_percentage || 0, 10),
+      depositReference: a.deposit_reference || '',
+      depositPaid: Boolean(a.deposit_paid),
+      depositPaidAt: a.deposit_paid_at,
+      depositPoliciesSnapshot: a.deposit_policies_snapshot || '',
       isReviewed: Boolean(a.review_id),
       reviewRating: a.review_rating ? parseInt(a.review_rating, 10) : null,
       reviewComment: a.review_comment || null,
@@ -2952,7 +3073,7 @@ app.post('/api/appointments', async (req, res) => {
 
     // 1. Validar comercio con bloqueo de fila para evitar condiciones de carrera (Race Conditions)
     const bizCheck = await client.query(
-      'SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments FROM reservas_businesses WHERE id = $1 FOR UPDATE',
+      'SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments, require_deposit, deposit_percentage, sinpe_phone, sinpe_holder_name, deposit_instructions, cancellation_policies_preset, cancellation_policies_custom FROM reservas_businesses WHERE id = $1 FOR UPDATE',
       [a.businessId]
     );
 
@@ -3125,8 +3246,30 @@ app.post('/api/appointments', async (req, res) => {
       assignedStaffName = `${assigned.name}${assigned.role_title ? ' (' + assigned.role_title + ')' : ''}`;
     }
 
-    const isAutoConfirm = bizData.auto_confirm_appointments !== false;
-    const initialStatus = a.status ? a.status : (isAutoConfirm ? 'confirmed' : 'pending');
+    const isDepositRequired = Boolean(bizData.require_deposit);
+    const depositPct = isDepositRequired ? (parseInt(bizData.deposit_percentage, 10) || 25) : 0;
+    const srvPrice = parseFloat(a.servicePrice) || 0;
+    const depositAmt = isDepositRequired ? Math.round((srvPrice * depositPct) / 100) : 0;
+    const depositRef = (a.depositReference || '').trim();
+
+    // Snapshot de políticas de cancelación vigentes al momento de reservar
+    let policiesSnapshot = '';
+    let presets = [];
+    try {
+      presets = Array.isArray(bizData.cancellation_policies_preset) 
+        ? bizData.cancellation_policies_preset 
+        : (typeof bizData.cancellation_policies_preset === 'string' ? JSON.parse(bizData.cancellation_policies_preset || '[]') : []);
+    } catch (e) {}
+    if (Array.isArray(presets) && presets.length > 0) {
+      policiesSnapshot += presets.map(p => `• ${p}`).join('\n');
+    }
+    if (bizData.cancellation_policies_custom) {
+      policiesSnapshot += (policiesSnapshot ? '\n' : '') + bizData.cancellation_policies_custom;
+    }
+
+    // Si exige adelanto, la cita SIEMPRE entra como 'pending' hasta que el comercio valide el SINPE
+    const isAutoConfirm = isDepositRequired ? false : (bizData.auto_confirm_appointments !== false);
+    const initialStatus = isDepositRequired ? 'pending' : (a.status ? a.status : (isAutoConfirm ? 'confirmed' : 'pending'));
     const newId = `apt-${Date.now().toString().slice(-6)}`;
     const optIn = a.whatsappOptIn !== undefined ? Boolean(a.whatsappOptIn) : true;
 
@@ -3143,13 +3286,17 @@ app.post('/api/appointments', async (req, res) => {
         id, business_id, service_id, service_name, service_price,
         service_duration, date, time, client_name, client_phone,
         client_email, notes, status, whatsapp_opt_in, staff_id, staff_name,
-        whatsapp_reminder_sent_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        whatsapp_reminder_sent_at,
+        deposit_required, deposit_amount, deposit_percentage, deposit_reference,
+        deposit_paid, deposit_policies_snapshot
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
     `, [
       newId, a.businessId, a.serviceId, a.serviceName, a.servicePrice,
       reqDuration, a.date, a.time, a.clientName, a.clientPhone,
       a.clientEmail || '', a.notes || '', initialStatus, optIn,
-      assignedStaffId, assignedStaffName, reminderSentAt
+      assignedStaffId, assignedStaffName, reminderSentAt,
+      isDepositRequired, depositAmt, depositPct, depositRef,
+      false, policiesSnapshot
     ]);
 
     // Registrar o actualizar automáticamente el cliente (evitar duplicados por teléfono o email)
@@ -3183,7 +3330,13 @@ app.post('/api/appointments', async (req, res) => {
       staffName: assignedStaffName,
       whatsappOptIn: optIn, 
       status: initialStatus,
-      autoConfirmed: isAutoConfirm
+      autoConfirmed: isAutoConfirm,
+      depositRequired: isDepositRequired,
+      depositAmount: depositAmt,
+      depositPercentage: depositPct,
+      depositReference: depositRef,
+      depositPaid: false,
+      depositPoliciesSnapshot: policiesSnapshot
     };
 
     // Emitir inmediatamente al canal en tiempo real (SSE) para actualizar pantallas de comercio en vivo sin F5
@@ -3201,8 +3354,21 @@ app.post('/api/appointments', async (req, res) => {
         .then(bizRes => {
           const business = bizRes.rows[0] || { name: bizData.name || 'Comercio Reservas CR', phone: '+506 2200 0000', plan: bizData.plan || 'pro' };
 
-          // 1. Si es autoconfirmada: enviar confirmación directa al CLIENTE
-          if (isAutoConfirm && initialStatus === 'confirmed') {
+          // 1. Si exige adelanto: Enviar correo de cita pendiente con instrucciones de SINPE
+          if (isDepositRequired) {
+            if (a.clientEmail && a.clientEmail.includes('@')) {
+              console.log(`📧 [Email Adelanto] Enviando instrucciones de adelanto para cita #${createdAppointment.id} a ${a.clientEmail}...`);
+              sendBookingPendingDepositEmail(createdAppointment, business)
+                .then(emailRes => {
+                  console.log(`📧 [Email Adelanto] Resultado cita #${createdAppointment.id}:`, emailRes?.success ? `Enviado con éxito (ID: ${emailRes?.data?.id || 'ok'})` : `No enviado (${emailRes?.reason || emailRes?.error?.message || emailRes?.error})`);
+                })
+                .catch(emailErr => {
+                  console.error('⚠️ Error no bloqueante al enviar correo de adelanto:', emailErr.message);
+                });
+            }
+          }
+          // 2. Si es autoconfirmada: enviar confirmación directa al CLIENTE
+          else if (isAutoConfirm && initialStatus === 'confirmed') {
             if (a.clientEmail && a.clientEmail.includes('@')) {
               console.log(`📧 [Email Auto] Enviando confirmación de cita #${createdAppointment.id} a ${a.clientEmail}...`);
               sendBookingConfirmationEmail(createdAppointment, business)
@@ -3250,12 +3416,14 @@ app.post('/api/appointments', async (req, res) => {
           }
 
           // 3. Enviar Notificación Push Móvil a los dispositivos suscritos del comercio
-          const pushTitle = isAutoConfirm 
-            ? '🔔 ¡Nueva Reserva Recibida!' 
-            : '⏳ ¡Nueva Solicitud de Cita (Pendiente)!';
-          const pushBody = isAutoConfirm 
-            ? `${a.clientName} ha reservado "${a.serviceName}" para el ${a.date} a las ${a.time}.`
-            : `${a.clientName} solicitó "${a.serviceName}" para el ${a.date} a las ${a.time}. Entra a tu panel para aprobarla.`;
+          const pushTitle = isDepositRequired 
+            ? '💰 ¡Nueva Cita con Adelanto por Validar!' 
+            : (isAutoConfirm ? '🔔 ¡Nueva Reserva Recibida!' : '⏳ ¡Nueva Solicitud de Cita (Pendiente)!');
+          const pushBody = isDepositRequired 
+            ? `${a.clientName} reservó "${a.serviceName}". Adelanto: ₡${depositAmt.toLocaleString('es-CR')}${depositRef ? ` (Ref: ${depositRef})` : ''}. Verifica tu SINPE.`
+            : (isAutoConfirm 
+              ? `${a.clientName} ha reservado "${a.serviceName}" para el ${a.date} a las ${a.time}.`
+              : `${a.clientName} solicitó "${a.serviceName}" para el ${a.date} a las ${a.time}. Entra a tu panel para aprobarla.`);
 
           sendPushToBusiness(pool, a.businessId, {
             title: pushTitle,
@@ -3583,8 +3751,11 @@ app.put('/api/appointments/:id', async (req, res) => {
         client_phone = COALESCE($10, client_phone),
         client_email = COALESCE($11, client_email),
         staff_id = COALESCE($12, staff_id),
-        staff_name = COALESCE($13, staff_name)
-      WHERE id = $14
+        staff_name = COALESCE($13, staff_name),
+        deposit_paid = COALESCE($14, deposit_paid),
+        deposit_paid_at = (CASE WHEN $14 = TRUE AND deposit_paid_at IS NULL THEN NOW() ELSE deposit_paid_at END),
+        deposit_reference = COALESCE($15, deposit_reference)
+      WHERE id = $16
     `, [
       a.date, a.time, a.serviceId, a.serviceName,
       a.servicePrice !== undefined ? parseFloat(a.servicePrice) : null,
@@ -3592,6 +3763,8 @@ app.put('/api/appointments/:id', async (req, res) => {
       a.notes, a.status, a.clientName, a.clientPhone, a.clientEmail,
       a.staffId !== undefined ? a.staffId : null,
       a.staffName !== undefined ? a.staffName : null,
+      a.depositPaid !== undefined ? Boolean(a.depositPaid) : (a.status === 'confirmed' && prevApt && prevApt.deposit_required ? true : null),
+      a.depositReference !== undefined ? String(a.depositReference).trim() : null,
       id
     ]);
 
@@ -3614,7 +3787,14 @@ app.put('/api/appointments/:id', async (req, res) => {
         clientEmail: a.clientEmail || prevApt.client_email,
         notes: a.notes !== undefined ? a.notes : prevApt.notes,
         status: 'confirmed',
-        whatsappOptIn: prevApt.whatsapp_opt_in !== false
+        whatsappOptIn: prevApt.whatsapp_opt_in !== false,
+        depositRequired: Boolean(prevApt.deposit_required),
+        depositAmount: parseFloat(prevApt.deposit_amount || 0),
+        depositPercentage: parseInt(prevApt.deposit_percentage || 0, 10),
+        depositReference: a.depositReference !== undefined ? a.depositReference : (prevApt.deposit_reference || ''),
+        depositPaid: true,
+        depositPaidAt: new Date(),
+        depositPoliciesSnapshot: prevApt.deposit_policies_snapshot || ''
       };
 
       if (aptNotif.clientEmail && aptNotif.clientEmail.includes('@')) {
@@ -3688,12 +3868,17 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
     const prevAptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1', [id]);
     const prevApt = prevAptRes.rows[0];
 
-    await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, id]);
+    if (status === 'confirmed' && prevApt && prevApt.deposit_required) {
+      await pool.query('UPDATE reservas_appointments SET status = $1, deposit_paid = TRUE, deposit_paid_at = NOW() WHERE id = $2', [status, id]);
+    } else {
+      await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, id]);
+    }
 
     if (prevApt && prevApt.business_id) {
       broadcastBusinessSSE(prevApt.business_id, 'appointment_updated', {
         appointmentId: id,
-        status: status
+        status: status,
+        depositPaid: status === 'confirmed' && prevApt && prevApt.deposit_required ? true : prevApt?.deposit_paid
       });
     }
 
@@ -3717,7 +3902,14 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
         clientEmail: prevApt.client_email,
         notes: prevApt.notes,
         status: 'confirmed',
-        whatsappOptIn: prevApt.whatsapp_opt_in !== false
+        whatsappOptIn: prevApt.whatsapp_opt_in !== false,
+        depositRequired: Boolean(prevApt.deposit_required),
+        depositAmount: parseFloat(prevApt.deposit_amount || 0),
+        depositPercentage: parseInt(prevApt.deposit_percentage || 0, 10),
+        depositReference: prevApt.deposit_reference || '',
+        depositPaid: true,
+        depositPaidAt: new Date(),
+        depositPoliciesSnapshot: prevApt.deposit_policies_snapshot || ''
       };
 
       if (aptNotif.clientEmail && aptNotif.clientEmail.includes('@')) {
@@ -3974,6 +4166,11 @@ app.get('/api/developer/appointments', async (req, res) => {
       clientEmail: row.client_email,
       notes: row.notes,
       status: row.status,
+      depositRequired: Boolean(row.deposit_required),
+      depositAmount: parseFloat(row.deposit_amount || 0),
+      depositPercentage: parseInt(row.deposit_percentage || 0, 10),
+      depositReference: row.deposit_reference || '',
+      depositPaid: Boolean(row.deposit_paid),
       createdAt: row.created_at
     })));
   } catch (error) {

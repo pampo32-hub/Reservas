@@ -129,19 +129,37 @@ export function buildBookingConfirmationText(appointment, business) {
   const addressStr = business?.address ? `${business.address}${business?.city ? `, ${business.city}` : ''}` : 'Costa Rica';
   const businessPhone = business?.phone || '+506 2200 0000';
 
+  const depositPaid = Boolean(appointment.depositPaid || appointment.deposit_paid);
+  const depositAmount = parseFloat(appointment.depositAmount || appointment.deposit_amount || 0);
+  const totalAmount = parseFloat(appointment.servicePrice || 0);
+  const remainingAmount = Math.max(0, totalAmount - depositAmount);
+  const policiesText = (appointment.depositPoliciesSnapshot || appointment.deposit_policies_snapshot || '').trim();
+
+  let financialDetails = `💰 *Total del Servicio:* ${priceStr}`;
+  if (depositPaid && depositAmount > 0) {
+    financialDetails = `💰 *Total del Servicio:* ${formatColones(totalAmount)}
+💵 *Adelanto SINPE Verificado:* ${formatColones(depositAmount)} ✅
+💵 *Saldo restante en local:* ${formatColones(remainingAmount)}`;
+  }
+
+  let policiesSection = '';
+  if (policiesText) {
+    policiesSection = `\n📜 *Políticas del Local:*\n_${policiesText}_\n`;
+  }
+
   return `🎉 *¡Tu Reserva está Confirmada!*
 
-Hola *${clientName}*, tu reserva en *${businessName}* ha sido registrada con éxito:
+Hola *${clientName}*, tu cita en *${businessName}* ha sido confirmada con éxito:
 
 📋 *Detalles del Turno:*
 ✨ *Servicio:* ${serviceName}
 📅 *Fecha:* ${dateStr}
 ⏰ *Hora:* ${timeStr} (${durationStr})
-💰 *Total en Local:* ${priceStr}
+${financialDetails}
 📍 *Dirección:* ${addressStr}
 📞 *Teléfono del Local:* ${businessPhone}
 🔖 *Código de Reserva:* #${appointmentCode}
-${appointment.notes ? `📝 *Notas:* "${appointment.notes}"\n` : ''}
+${appointment.notes ? `📝 *Notas:* "${appointment.notes}"\n` : ''}${policiesSection}
 📲 *Gestión de Turnos:*
 Puedes consultar tus reservas ingresando a:
 ${APP_URL}/#/mis-reservas

@@ -992,6 +992,38 @@ class StorageService {
     return true;
   }
 
+  async updateBusinessDepositSettings(businessId, settings) {
+    if (this.isOnlineApi) {
+      try {
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/deposit-settings`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          await this.loadFromApi();
+          return data;
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Error al guardar configuración de adelanto');
+        }
+      } catch (e) {
+        console.error('Error actualizando configuración de adelanto en API:', e);
+        throw e;
+      }
+    }
+
+    const businesses = this.getBusinesses();
+    const biz = businesses.find(b => b.id === businessId);
+    if (biz) {
+      Object.assign(biz, settings);
+      localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(businesses));
+      this.businessesCache = businesses;
+    }
+    return { success: true, settings };
+  }
+
   async addPortfolioImage(businessId, imageItem) {
     const businesses = this.getBusinesses();
     const biz = businesses.find(b => b.id === businessId);
@@ -1494,13 +1526,13 @@ class StorageService {
     return true;
   }
 
-  async updateAppointmentStatus(appointmentId, newStatus) {
+  async updateAppointmentStatus(appointmentId, newStatus, extraData = {}) {
     if (this.isOnlineApi) {
       try {
         await this.fetchWithAuth(`${this.apiBase}/appointments/${appointmentId}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
+          body: JSON.stringify({ status: newStatus, ...extraData })
         });
       } catch (e) {
         console.error('Error actualizando estado en Neon:', e);
@@ -1511,6 +1543,11 @@ class StorageService {
     const appt = appointments.find(a => a.id === appointmentId);
     if (appt) {
       appt.status = newStatus;
+      if (newStatus === 'confirmed' && appt.depositRequired) {
+        appt.depositPaid = true;
+        appt.depositPaidAt = new Date().toISOString();
+      }
+      Object.assign(appt, extraData);
       localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(appointments));
       this.appointmentsCache = appointments;
     }

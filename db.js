@@ -324,6 +324,23 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_reservas_biz_verif_email ON reservas_business_email_verifications (email);
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT TRUE;
       ALTER TABLE reservas_business_users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN DEFAULT TRUE;
+
+      -- 11.2. Soporte de Adelanto por SINPE Móvil y Políticas de Cancelación
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS require_deposit BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS deposit_percentage INTEGER DEFAULT 25;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS sinpe_phone VARCHAR(50);
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS sinpe_holder_name VARCHAR(150);
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS deposit_instructions TEXT;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS cancellation_policies_preset JSONB DEFAULT '[]'::jsonb;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS cancellation_policies_custom TEXT;
+
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_required BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_amount NUMERIC(12,2) DEFAULT 0;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_percentage INTEGER DEFAULT 0;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_reference VARCHAR(100);
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_paid BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_paid_at TIMESTAMP;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS deposit_policies_snapshot TEXT;
     `);
 
     // 12. Crear tabla de suscripciones Web Push para notificaciones móviles
