@@ -595,14 +595,17 @@ class StorageService {
         return data;
       }
 
-      // Si es Negocio logueándose en pestaña de cliente
+      // Si es Negocio logueándose en login unificado
       if (data.role === 'business') {
         this.setBusinessUser(data.user);
+        if (data.user?.businessId) {
+          this.setActiveBusinessId(data.user.businessId);
+        }
         await this.loadFromApi();
         return data;
       }
 
-      this.setClientUser(data.client);
+      this.setClientUser(data.client || data.user);
       return data;
     }
 

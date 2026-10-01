@@ -16907,20 +16907,20 @@ class App {
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl ${role === 'business' && mode === 'register' ? 'max-w-xl' : 'max-w-md'} w-full overflow-hidden border border-slate-200 my-0 sm:my-8 max-h-[92vh] flex flex-col mobile-bottom-sheet">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl ${mode === 'register' && role === 'business' ? 'max-w-xl' : 'max-w-md'} w-full overflow-hidden border border-slate-200 my-0 sm:my-8 max-h-[92vh] flex flex-col mobile-bottom-sheet">
           
           <!-- Header del Modal -->
           <div class="bg-slate-900 p-5 text-white flex items-center justify-between shrink-0">
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-2xl ${role === 'business' ? 'bg-indigo-600' : 'bg-blue-600'} flex items-center justify-center text-white text-lg shadow-sm">
-                <i class="fas ${role === 'business' ? 'fa-store' : 'fa-user-check'}"></i>
+              <div class="w-10 h-10 rounded-2xl ${mode === 'login' ? 'bg-blue-600' : (role === 'business' ? 'bg-indigo-600' : 'bg-blue-600')} flex items-center justify-center text-white text-lg shadow-sm">
+                <i class="fas ${mode === 'login' ? 'fa-sign-in-alt' : (role === 'business' ? 'fa-store' : 'fa-user-check')}"></i>
               </div>
               <div>
-                <span class="text-[11px] uppercase tracking-wider ${role === 'business' ? 'text-indigo-300' : 'text-blue-300'} font-bold">
-                  ${lockRole === 'business' ? 'Portal de Negocios' : (mode === 'login' ? 'Acceso Seguro' : 'Registro de Cuenta')}
+                <span class="text-[11px] uppercase tracking-wider ${mode === 'login' ? 'text-blue-300' : (role === 'business' ? 'text-indigo-300' : 'text-blue-300')} font-bold">
+                  ${mode === 'login' ? 'Acceso Seguro' : (lockRole === 'business' ? 'Portal de Negocios' : 'Registro de Cuenta')}
                 </span>
                 <h3 class="text-base sm:text-lg font-bold">
-                  ${mode === 'login' ? (role === 'business' ? 'Iniciar Sesión Negocio' : 'Iniciar Sesión Usuario') : (role === 'business' ? 'Registrar mi Negocio (15 Días Gratis)' : 'Crear Cuenta de Usuario')}
+                  ${mode === 'login' ? 'Iniciar Sesión en tu Cuenta' : (role === 'business' ? 'Registrar mi Negocio (15 Días Gratis)' : 'Crear Cuenta de Usuario')}
                 </h3>
               </div>
             </div>
@@ -16933,9 +16933,9 @@ class App {
           <div class="p-5 pb-0 shrink-0 space-y-3 bg-slate-50 border-b border-slate-200/80">
             <!-- Tabs Modo: Iniciar Sesión / Registrarse -->
             ${REGISTRATION_ENABLED ? `
-            <div class="flex p-1 bg-slate-200/80 rounded-2xl ${lockRole ? 'mb-4' : ''}">
+            <div class="flex p-1 bg-slate-200/80 rounded-2xl ${mode === 'login' || lockRole ? 'mb-4' : ''}">
               <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? (role === 'business' ? 'text-indigo-600' : 'text-blue-600') : ''}"></i> Iniciar Sesión
+                <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? 'text-blue-600' : ''}"></i> Iniciar Sesión
               </button>
               <button id="tab-mode-register" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
                 <i class="fas fa-user-plus text-xs ${mode === 'register' ? (role === 'business' ? 'text-indigo-600' : 'text-blue-600') : ''}"></i> ${lockRole === 'business' ? 'Registrar Negocio' : 'Registrarse'}
@@ -16943,13 +16943,13 @@ class App {
             </div>
             ` : `
             <!-- Registro temporalmente oculto: Solo Iniciar Sesión -->
-            <div class="py-2 px-3 bg-blue-50/80 rounded-xl border border-blue-100 text-center text-xs font-extrabold text-blue-800 flex items-center justify-center gap-2">
+            <div class="py-2 px-3 bg-blue-50/80 rounded-xl border border-blue-100 text-center text-xs font-extrabold text-blue-800 flex items-center justify-center gap-2 mb-4">
               <i class="fas fa-lock text-blue-600"></i> Acceso a Cuentas Existentes
             </div>
             `}
 
-            <!-- Tabs Rol: Cliente / Negocio (Oculto cuando el modal está dedicado exclusivamente a Negocios) -->
-            ${!lockRole ? `
+            <!-- Tabs Rol: Cliente / Negocio (SOLO visible en modo Registrarse y cuando no está bloqueado a Negocio) -->
+            ${mode === 'register' && !lockRole ? `
             <div class="flex gap-2 pb-3">
               <button id="tab-role-client" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${role === 'client' ? 'bg-blue-600 border-blue-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
                 <i class="fas fa-user text-xs"></i> Soy Cliente
@@ -16963,12 +16963,12 @@ class App {
 
           <!-- Cuerpo con Formularios Dinámicos -->
           <div class="p-6 space-y-4 overflow-y-auto flex-1">
-            ${mode === 'login' && role === 'client' ? `
-              <!-- FORM 1: LOGIN CLIENTE (GOOGLE O CONTRASEÑA) -->
+            ${mode === 'login' ? `
+              <!-- FORMULARIO UNIFICADO DE INICIO DE SESIÓN (CLIENTES, NEGOCIOS Y DESARROLLADORES) -->
               ${SHOW_GOOGLE_AUTH ? `
               <div class="space-y-2">
-                <!-- Botón Google -->
-                <a href="/api/auth/google?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
+                <!-- Botón Google con detección inteligente -->
+                <a href="/api/auth/google?role=auto&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-blue-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -16979,8 +16979,8 @@ class App {
                 </a>
 
                 ${SHOW_MICROSOFT_AUTH ? `
-                <!-- Botón Microsoft (Outlook / Hotmail) -->
-                <a href="/api/auth/microsoft?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-sky-500 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Iniciar sesión con Hotmail o Outlook">
+                <!-- Botón Microsoft (Outlook / Hotmail) con detección inteligente -->
+                <a href="/api/auth/microsoft?role=auto&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-sky-500 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Iniciar sesión con Hotmail o Outlook">
                   <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
                     <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
                     <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
@@ -16992,9 +16992,9 @@ class App {
                 ` : ''}
 
                 ${SHOW_OTHER_SOCIAL_AUTH ? `
-                <!-- Botón Apple (Próximamente) -->
+                <!-- Botón Apple -->
                 <div class="mt-2">
-                  <a href="/api/auth/apple?role=client&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID">
+                  <a href="/api/auth/apple?role=auto&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID">
                     <i class="fab fa-apple text-slate-900 text-sm"></i>
                     <span>Apple (iCloud)</span>
                   </a>
@@ -17009,98 +17009,27 @@ class App {
               </div>
               ` : ''}
               
-              <div id="cli-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
+              <div id="unified-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
 
-              <form id="auth-client-login-form" class="space-y-4 text-xs sm:text-sm">
+              <form id="auth-unified-login-form" class="space-y-4 text-xs sm:text-sm">
                 <div>
-                  <label class="block font-bold text-slate-700 mb-1">Teléfono o Correo Electrónico *</label>
-                  <input type="text" id="cli-log-identifier" required placeholder="Ej. +506 8888 7777 o juan@correo.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico o Teléfono *</label>
+                  <input type="text" id="unified-log-identifier" required placeholder="Ej. correo@ejemplo.com o +506 8888 7777" autocomplete="username" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <div>
                   <div class="flex items-center justify-between mb-1">
                     <label class="block font-bold text-slate-700">Contraseña *</label>
-                    <button type="button" class="btn-forgot-password text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer" data-role="client">
+                    <button type="button" class="btn-forgot-password text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer" data-role="auto">
                       ¿Olvidaste tu contraseña?
                     </button>
                   </div>
-                  <input type="password" id="cli-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                  <input type="password" id="unified-log-password" required placeholder="••••••••" autocomplete="current-password" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
 
                 <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
                   <i class="fas fa-sign-in-alt"></i>
-                  <span>Iniciar Sesión como Cliente</span>
-                </button>
-              </form>
-            ` : ''}
-
-            ${mode === 'login' && role === 'business' ? `
-              <!-- FORM 2: LOGIN NEGOCIO (GOOGLE O CORREO Y CONTRASEÑA) -->
-              ${SHOW_GOOGLE_AUTH ? `
-              <div class="space-y-2 mb-3">
-                <!-- Botón Google -->
-                <a href="/api/auth/google?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99]">
-                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                  </svg>
-                  <span>Continuar con Google (Gmail)</span>
-                </a>
-
-                ${SHOW_MICROSOFT_AUTH ? `
-                <!-- Botón Microsoft (Outlook / Hotmail) -->
-                <a href="/api/auth/microsoft?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-indigo-400 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer active:scale-[0.99] mt-2" title="Iniciar sesión con Hotmail o Outlook del negocio">
-                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 21 21">
-                    <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                    <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                    <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                    <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                  </svg>
-                  <span>Continuar con Microsoft (Outlook / Hotmail)</span>
-                </a>
-                ` : ''}
-
-                ${SHOW_OTHER_SOCIAL_AUTH ? `
-                <!-- Botón Apple (Próximamente) -->
-                <div class="mt-2">
-                  <a href="/api/auth/apple?role=business&returnTo=${encodeURIComponent(window.location.pathname + (window.location.hash || ''))}" class="w-full py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-800 border-2 border-slate-200 hover:border-slate-800 rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]" title="Iniciar sesión con Apple ID del negocio">
-                    <i class="fab fa-apple text-slate-900 text-sm"></i>
-                    <span>Apple (iCloud)</span>
-                  </a>
-                </div>
-                ` : ''}
-              </div>
-
-              <div class="relative flex py-1 items-center">
-                <div class="flex-grow border-t border-slate-200"></div>
-                <span class="flex-shrink mx-3 text-slate-400 text-[11px] uppercase font-bold">o con tu correo y contraseña</span>
-                <div class="flex-grow border-t border-slate-200"></div>
-              </div>
-              ` : ''}
-              
-              <div id="biz-log-inline-error" class="hidden p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2"></div>
-
-              <form id="auth-biz-login-form" class="space-y-4 text-xs sm:text-sm">
-                <div>
-                  <label class="block font-bold text-slate-700 mb-1">Correo Electrónico del Negocio *</label>
-                  <input type="email" id="biz-log-email" required placeholder="correo@tucomercio.cr" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-
-                <div>
-                  <div class="flex items-center justify-between mb-1">
-                    <label class="block font-bold text-slate-700">Contraseña *</label>
-                    <button type="button" class="btn-forgot-password text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer" data-role="business">
-                      ¿Olvidaste tu contraseña?
-                    </button>
-                  </div>
-                  <input type="password" id="biz-log-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-
-                <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
-                  <i class="fas fa-sign-in-alt"></i>
-                  <span>Ingresar al Panel de Negocio</span>
+                  <span>Iniciar Sesión</span>
                 </button>
               </form>
             ` : ''}
@@ -17391,7 +17320,7 @@ class App {
     document.querySelectorAll('.btn-forgot-password').forEach(btn => {
       btn.addEventListener('click', () => {
         const btnRole = btn.getAttribute('data-role') || role;
-        const currentEmailInput = btnRole === 'business' ? document.getElementById('biz-log-email') : document.getElementById('cli-log-identifier');
+        const currentEmailInput = document.getElementById('unified-log-identifier') || (btnRole === 'business' ? document.getElementById('biz-log-email') : document.getElementById('cli-log-identifier'));
         const prefilledEmail = currentEmailInput ? currentEmailInput.value.trim() : '';
         this.renderForgotPasswordModal({ role: btnRole, email: prefilledEmail });
       });
@@ -17405,13 +17334,13 @@ class App {
       this.renderAuthModal({ mode: 'register', role, selectedPlanId, lockRole });
     });
 
-    // Pestañas de Rol (Cliente / Negocio)
+    // Pestañas de Rol (Cliente / Negocio) - Exclusivas de Registro
     if (!lockRole) {
       document.getElementById('tab-role-client')?.addEventListener('click', () => {
-        this.renderAuthModal({ mode, role: 'client', selectedPlanId });
+        this.renderAuthModal({ mode: 'register', role: 'client', selectedPlanId });
       });
       document.getElementById('tab-role-business')?.addEventListener('click', () => {
-        this.renderAuthModal({ mode, role: 'business', selectedPlanId });
+        this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId });
       });
     }
 
@@ -17578,7 +17507,52 @@ class App {
     this.initCustomCheckbox('cli-reg-terms-row', 'cli-reg-terms', 'cli-reg-terms-box', 'cli-reg-submit-btn');
     this.initCustomCheckbox('biz-reg-terms-row', 'biz-reg-terms', 'biz-reg-terms-box', 'biz-reg-submit-btn');
 
-    // Evento Submit: Login Cliente
+    // Evento Submit: Login Unificado (Detección Automática de Rol)
+    document.getElementById('auth-unified-login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const identifier = document.getElementById('unified-log-identifier').value.trim();
+      const password = document.getElementById('unified-log-password').value;
+      const errBox = document.getElementById('unified-log-inline-error');
+
+      this.setButtonLoading(submitBtn, true, 'Iniciando sesión...');
+
+      try {
+        if (errBox) errBox.className = 'hidden';
+        const res = await storage.loginClient(identifier, password);
+        
+        if (res && res.role === 'developer') {
+          this.showToast('¡Modo SuperAdmin Developer activado!', 'success');
+          modalContainer.innerHTML = '';
+          this.renderHeader();
+          this.navigateTo('developer-dashboard');
+          return;
+        }
+
+        if (res && res.role === 'business') {
+          this.showToast('¡Bienvenido a tu panel de administración!', 'success');
+          modalContainer.innerHTML = '';
+          this.renderHeader();
+          this.navigateTo('owner-dashboard');
+          return;
+        }
+
+        this.showToast('¡Bienvenido(a)! Sesión iniciada.', 'success');
+        modalContainer.innerHTML = '';
+        this.renderHeader();
+        this.renderMobileBottomNav();
+        this.navigateTo('my-client-bookings');
+      } catch (err) {
+        this.setButtonLoading(submitBtn, false);
+        this.showToast(err.message || 'Error al iniciar sesión.', 'error');
+        if (errBox) {
+          errBox.className = 'p-3 bg-rose-50 border border-rose-300 text-rose-700 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in mb-3';
+          errBox.innerHTML = `<i class="fas fa-exclamation-circle text-rose-600 text-sm flex-shrink-0"></i> <span>${err.message || 'Error al iniciar sesión.'}</span>`;
+        }
+      }
+    });
+
+    // Evento Submit: Login Cliente (Compatibilidad)
     document.getElementById('auth-client-login-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -18090,11 +18064,11 @@ class App {
   // MODAL DE PRE-REGISTRO DE COMERCIOS (ACCESO ANTICIPADO)
   // ==========================================
   renderPreRegisterModal(selectedPlanId = 'free') {
-    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' });
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: selectedPlanId || 'free', lockRole: 'business' });
   }
 
   renderPreRegistrationModal(selectedPlanId = 'free') {
-    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' });
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: selectedPlanId || 'free', lockRole: 'business' });
   }
 
   // ==========================================
@@ -19692,7 +19666,7 @@ class App {
                   ${step === 'request' ? 'Recuperar Contraseña' : 'Crear Nueva Contraseña'}
                 </h3>
                 <span class="text-[11px] text-slate-400 font-medium block">
-                  ${role === 'business' ? 'Cuenta de Comercio / Dueño' : 'Cuenta de Cliente'}
+                  ${role === 'business' ? 'Cuenta de Comercio / Dueño' : (role === 'auto' ? 'Acceso Seguro y Recuperación' : 'Cuenta de Cliente')}
                 </span>
               </div>
             </div>
@@ -19793,7 +19767,7 @@ class App {
 
     // Volver a login
     document.getElementById('back-to-login-btn')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'login', role });
+      this.renderAuthModal({ mode: 'login' });
     });
 
     if (step === 'request') {

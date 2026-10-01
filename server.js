@@ -6058,10 +6058,10 @@ app.post('/api/push/test', async (req, res) => {
 // Iniciar sesión / Registrarse / Conectar calendario con Google OAuth 2.0 oficial directo
 app.get('/api/auth/google', (req, res) => {
   try {
-    const role = req.query.role || 'client';
+    const role = req.query.role || 'auto';
     const action = req.query.action || 'login';
     const businessId = req.query.businessId || null;
-    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : (role === 'developer' ? '/developer-dashboard' : '/mis-reservas'));
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
@@ -6102,7 +6102,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
     return res.redirect('/directorio?oauth_error=no_authorization_code');
   }
 
-  let role = 'client';
+  let role = 'auto';
   let action = 'login';
   let businessId = null;
   let returnTo = '/mis-reservas';
@@ -6110,10 +6110,10 @@ app.get('/api/auth/google/callback', async (req, res) => {
   if (state) {
     try {
       const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
-      role = decoded.role || 'client';
+      role = decoded.role || 'auto';
       action = decoded.action || 'login';
       businessId = decoded.businessId || null;
-      returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+      returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : (role === 'developer' ? '/developer-dashboard' : '/mis-reservas'));
     } catch (e) {
       console.warn('No se pudo decodificar state de Google OAuth:', e.message);
     }
@@ -6284,27 +6284,21 @@ app.get('/api/auth/google/callback', async (req, res) => {
         }
       }
     } else {
-      // Cliente final
-      const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
-      if (clientRes.rows.length > 0) {
-        const row = clientRes.rows[0];
+      // Auto-detección inteligente: Developer -> Negocio -> Cliente -> Nuevo Cliente
+      // 1. ¿Es Developer / SuperAdmin?
+      const devRes = await pool.query('SELECT * FROM reservas_developer_users WHERE LOWER(email) = $1', [cleanEmail]);
+      if (devRes.rows.length > 0) {
+        const row = devRes.rows[0];
         sessionUser = {
           id: row.id,
           name: row.name,
-          phone: row.phone || '',
           email: row.email,
-          avatarUrl: row.avatar_url || avatarUrl,
-          whatsappOptIn: row.whatsapp_opt_in !== false,
-          role: 'client',
-          oauthProvider: 'google',
-          needsPhone: !row.phone || row.phone.trim() === ''
+          role: 'developer'
         };
-        await pool.query(
-          'UPDATE reservas_clients SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url) WHERE id = $3',
-          ['google', avatarUrl, row.id]
-        ).catch(() => {});
+        finalRole = 'developer';
+        returnTo = '/developer-dashboard';
       } else {
-        // Verificar si es dueño de negocio ingresando por el acceso general
+        // 2. ¿Es Usuario de Negocio registrado?
         const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
         if (bizUserRes.rows.length > 0) {
           const row = bizUserRes.rows[0];
@@ -6318,36 +6312,84 @@ app.get('/api/auth/google/callback', async (req, res) => {
           };
           finalRole = 'business';
           returnTo = '/panel-negocio';
+          await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url) WHERE id = $3', ['google', avatarUrl, row.id]).catch(() => {});
         } else {
-          // Registrar nuevo cliente con datos de Google
-          const newClientId = `cli-${Date.now()}`;
-          await pool.query(
-            `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, avatar_url)
-             VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', true, 'google', $5)`,
-            [newClientId, fullName, '', cleanEmail, avatarUrl]
-          );
-          sendAdminClientRegistrationNotificationEmail({
-            id: newClientId,
-            name: fullName,
-            phone: '',
-            email: cleanEmail,
-            oauth_provider: 'Google',
-            whatsappOptIn: true
-          }).catch(err => {
-            console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente Google al admin:', err.message);
-          });
-          sessionUser = {
-            id: newClientId,
-            name: fullName,
-            phone: '',
-            email: cleanEmail,
-            avatarUrl: avatarUrl,
-            whatsappOptIn: true,
-            role: 'client',
-            oauthProvider: 'google',
-            needsPhone: true
-          };
-          console.log(`✅ [Google OAuth] Nuevo cliente registrado con Google: ${cleanEmail}`);
+          // 3. ¿Existe Negocio con este correo aunque no tenga usuario creado?
+          const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE LOWER(email) = $1', [cleanEmail]);
+          if (bizRes.rows.length > 0) {
+            const biz = bizRes.rows[0];
+            const newUserId = `buser-${Date.now()}`;
+            await pool.query(
+              `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url)
+               VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', 'google', $5)`,
+              [newUserId, biz.id, biz.name || fullName, cleanEmail, avatarUrl]
+            );
+            sessionUser = {
+              id: newUserId,
+              businessId: biz.id,
+              name: biz.name || fullName,
+              email: cleanEmail,
+              role: 'business',
+              oauthProvider: 'google'
+            };
+            finalRole = 'business';
+            returnTo = '/panel-negocio';
+          } else {
+            // 4. ¿Es Cliente existente?
+            const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
+            if (clientRes.rows.length > 0) {
+              const row = clientRes.rows[0];
+              sessionUser = {
+                id: row.id,
+                name: row.name,
+                phone: row.phone || '',
+                email: row.email,
+                avatarUrl: row.avatar_url || avatarUrl,
+                whatsappOptIn: row.whatsapp_opt_in !== false,
+                role: 'client',
+                oauthProvider: 'google',
+                needsPhone: !row.phone || row.phone.trim() === ''
+              };
+              finalRole = 'client';
+              returnTo = returnTo && returnTo !== '/panel-negocio' && returnTo !== '/developer-dashboard' ? returnTo : '/mis-reservas';
+              await pool.query(
+                'UPDATE reservas_clients SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url) WHERE id = $3',
+                ['google', avatarUrl, row.id]
+              ).catch(() => {});
+            } else {
+              // 5. Registrar nuevo cliente automáticamente con datos de Google
+              const newClientId = `cli-${Date.now()}`;
+              await pool.query(
+                `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, avatar_url)
+                 VALUES ($1, $2, $3, $4, 'OAUTH_GOOGLE', true, 'google', $5)`,
+                [newClientId, fullName, '', cleanEmail, avatarUrl]
+              );
+              sendAdminClientRegistrationNotificationEmail({
+                id: newClientId,
+                name: fullName,
+                phone: '',
+                email: cleanEmail,
+                oauth_provider: 'Google',
+                whatsappOptIn: true
+              }).catch(err => {
+                console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente Google al admin:', err.message);
+              });
+              sessionUser = {
+                id: newClientId,
+                name: fullName,
+                phone: '',
+                email: cleanEmail,
+                avatarUrl: avatarUrl,
+                whatsappOptIn: true,
+                role: 'client',
+                oauthProvider: 'google',
+                needsPhone: true
+              };
+              finalRole = 'client';
+              returnTo = returnTo && returnTo !== '/panel-negocio' && returnTo !== '/developer-dashboard' ? returnTo : '/mis-reservas';
+              console.log(`✅ [Google OAuth] Nuevo cliente registrado con Google: ${cleanEmail}`);
+            }
+          }
         }
       }
     }
@@ -6448,6 +6490,8 @@ app.get('/api/auth/google/callback', async (req, res) => {
               if (sessionData.businessId) {
                 localStorage.setItem('directorio_active_biz_id', sessionData.businessId);
               }
+            } else if (role === 'developer') {
+              localStorage.setItem('directorio_dev_user_session', JSON.stringify(sessionData));
             } else {
               localStorage.setItem('directorio_client_user_session', JSON.stringify(sessionData));
             }
@@ -6480,10 +6524,10 @@ app.get('/api/auth/google/callback', async (req, res) => {
 // Iniciar sesión / Registrarse / Conectar calendario con Microsoft OAuth 2.0 oficial directo
 app.get(['/api/auth/microsoft', '/api/auth/outlook', '/api/auth/hotmail'], (req, res) => {
   try {
-    const role = req.query.role || 'client';
+    const role = req.query.role || 'auto';
     const action = req.query.action || 'login';
     const businessId = req.query.businessId || null;
-    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+    const returnTo = req.query.returnTo || (role === 'business' ? '/panel-negocio' : (role === 'developer' ? '/developer-dashboard' : '/mis-reservas'));
 
     const clientId = process.env.MICROSOFT_CLIENT_ID;
     if (!clientId) {
@@ -6524,7 +6568,7 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
     return res.redirect('/directorio?oauth_error=no_authorization_code');
   }
 
-  let role = 'client';
+  let role = 'auto';
   let action = 'login';
   let businessId = null;
   let returnTo = '/mis-reservas';
@@ -6532,10 +6576,10 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
   if (state) {
     try {
       const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
-      role = decoded.role || 'client';
+      role = decoded.role || 'auto';
       action = decoded.action || 'login';
       businessId = decoded.businessId || null;
-      returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : '/mis-reservas');
+      returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : (role === 'developer' ? '/developer-dashboard' : '/mis-reservas'));
     } catch (e) {
       console.warn('No se pudo decodificar state de Microsoft OAuth:', e.message);
     }
@@ -6724,28 +6768,21 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
         }
       }
     } else {
-      // Cliente final
-      const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
-      if (clientRes.rows.length > 0) {
-        const row = clientRes.rows[0];
-        const clientPhone = row.phone || phoneFromMs || '';
+      // Auto-detección inteligente: Developer -> Negocio -> Cliente -> Nuevo Cliente
+      // 1. ¿Es Developer / SuperAdmin?
+      const devRes = await pool.query('SELECT * FROM reservas_developer_users WHERE LOWER(email) = $1', [cleanEmail]);
+      if (devRes.rows.length > 0) {
+        const row = devRes.rows[0];
         sessionUser = {
           id: row.id,
           name: row.name,
-          phone: clientPhone,
           email: row.email,
-          avatarUrl: row.avatar_url || avatarUrl,
-          whatsappOptIn: row.whatsapp_opt_in !== false,
-          role: 'client',
-          oauthProvider: 'microsoft',
-          needsPhone: !clientPhone || clientPhone.trim() === ''
+          role: 'developer'
         };
-        await pool.query(
-          'UPDATE reservas_clients SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url), phone = COALESCE(NULLIF(phone, \'\'), $3) WHERE id = $4',
-          ['microsoft', avatarUrl, phoneFromMs || null, row.id]
-        ).catch(() => {});
+        finalRole = 'developer';
+        returnTo = '/developer-dashboard';
       } else {
-        // Verificar si es dueño de negocio ingresando por el acceso general
+        // 2. ¿Es Usuario de Negocio registrado?
         const bizUserRes = await pool.query('SELECT * FROM reservas_business_users WHERE LOWER(email) = $1', [cleanEmail]);
         if (bizUserRes.rows.length > 0) {
           const row = bizUserRes.rows[0];
@@ -6759,37 +6796,86 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
           };
           finalRole = 'business';
           returnTo = '/panel-negocio';
+          await pool.query('UPDATE reservas_business_users SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url) WHERE id = $3', ['microsoft', avatarUrl, row.id]).catch(() => {});
         } else {
-          // Registrar nuevo cliente con datos de Microsoft
-          const newClientId = `cli-${Date.now()}`;
-          const clientPhone = phoneFromMs || '';
-          await pool.query(
-            `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, avatar_url)
-             VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', true, 'microsoft', $5)`,
-            [newClientId, fullName, clientPhone, cleanEmail, avatarUrl]
-          );
-          sendAdminClientRegistrationNotificationEmail({
-            id: newClientId,
-            name: fullName,
-            phone: clientPhone,
-            email: cleanEmail,
-            oauth_provider: 'Microsoft',
-            whatsappOptIn: true
-          }).catch(err => {
-            console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente Microsoft al admin:', err.message);
-          });
-          sessionUser = {
-            id: newClientId,
-            name: fullName,
-            phone: clientPhone,
-            email: cleanEmail,
-            avatarUrl: avatarUrl,
-            whatsappOptIn: true,
-            role: 'client',
-            oauthProvider: 'microsoft',
-            needsPhone: !clientPhone || clientPhone.trim() === ''
-          };
-          console.log(`✅ [Microsoft OAuth] Nuevo cliente registrado con Microsoft: ${cleanEmail}`);
+          // 3. ¿Existe Negocio con este correo aunque no tenga usuario creado?
+          const bizRes = await pool.query('SELECT * FROM reservas_businesses WHERE LOWER(email) = $1', [cleanEmail]);
+          if (bizRes.rows.length > 0) {
+            const biz = bizRes.rows[0];
+            const newUserId = `buser-${Date.now()}`;
+            await pool.query(
+              `INSERT INTO reservas_business_users (id, business_id, name, email, password, oauth_provider, avatar_url)
+               VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', 'microsoft', $5)`,
+              [newUserId, biz.id, biz.name || fullName, cleanEmail, avatarUrl]
+            );
+            sessionUser = {
+              id: newUserId,
+              businessId: biz.id,
+              name: biz.name || fullName,
+              email: cleanEmail,
+              role: 'business',
+              oauthProvider: 'microsoft'
+            };
+            finalRole = 'business';
+            returnTo = '/panel-negocio';
+          } else {
+            // 4. ¿Es Cliente existente?
+            const clientRes = await pool.query('SELECT * FROM reservas_clients WHERE LOWER(email) = $1', [cleanEmail]);
+            if (clientRes.rows.length > 0) {
+              const row = clientRes.rows[0];
+              const clientPhone = row.phone || phoneFromMs || '';
+              sessionUser = {
+                id: row.id,
+                name: row.name,
+                phone: clientPhone,
+                email: row.email,
+                avatarUrl: row.avatar_url || avatarUrl,
+                whatsappOptIn: row.whatsapp_opt_in !== false,
+                role: 'client',
+                oauthProvider: 'microsoft',
+                needsPhone: !clientPhone || clientPhone.trim() === ''
+              };
+              finalRole = 'client';
+              returnTo = returnTo && returnTo !== '/panel-negocio' && returnTo !== '/developer-dashboard' ? returnTo : '/mis-reservas';
+              await pool.query(
+                'UPDATE reservas_clients SET oauth_provider = $1, avatar_url = COALESCE($2, avatar_url), phone = COALESCE(NULLIF(phone, \'\'), $3) WHERE id = $4',
+                ['microsoft', avatarUrl, phoneFromMs || null, row.id]
+              ).catch(() => {});
+            } else {
+              // 5. Registrar nuevo cliente automáticamente con datos de Microsoft
+              const newClientId = `cli-${Date.now()}`;
+              const clientPhone = phoneFromMs || '';
+              await pool.query(
+                `INSERT INTO reservas_clients (id, name, phone, email, password, whatsapp_opt_in, oauth_provider, avatar_url)
+                 VALUES ($1, $2, $3, $4, 'OAUTH_MICROSOFT', true, 'microsoft', $5)`,
+                [newClientId, fullName, clientPhone, cleanEmail, avatarUrl]
+              );
+              sendAdminClientRegistrationNotificationEmail({
+                id: newClientId,
+                name: fullName,
+                phone: clientPhone,
+                email: cleanEmail,
+                oauth_provider: 'Microsoft',
+                whatsappOptIn: true
+              }).catch(err => {
+                console.error('⚠️ Error no bloqueante enviando correo de nuevo cliente Microsoft al admin:', err.message);
+              });
+              sessionUser = {
+                id: newClientId,
+                name: fullName,
+                phone: clientPhone,
+                email: cleanEmail,
+                avatarUrl: avatarUrl,
+                whatsappOptIn: true,
+                role: 'client',
+                oauthProvider: 'microsoft',
+                needsPhone: !clientPhone || clientPhone.trim() === ''
+              };
+              finalRole = 'client';
+              returnTo = returnTo && returnTo !== '/panel-negocio' && returnTo !== '/developer-dashboard' ? returnTo : '/mis-reservas';
+              console.log(`✅ [Microsoft OAuth] Nuevo cliente registrado con Microsoft: ${cleanEmail}`);
+            }
+          }
         }
       }
     }
@@ -6905,6 +6991,8 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
               if (sessionData.businessId) {
                 localStorage.setItem('directorio_active_biz_id', sessionData.businessId);
               }
+            } else if (role === 'developer') {
+              localStorage.setItem('directorio_dev_user_session', JSON.stringify(sessionData));
             } else {
               localStorage.setItem('directorio_client_user_session', JSON.stringify(sessionData));
             }
