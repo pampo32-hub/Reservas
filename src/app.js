@@ -3057,9 +3057,9 @@ class App {
     document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
     document.getElementById('directory-biz-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
     document.getElementById('directory-biz-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
-    document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business' }));
+    document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' }));
     document.getElementById('cta-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
-    document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business' }));
+    document.getElementById('cta-login-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'business', lockRole: 'business' }));
   }
 
   // ==========================================
@@ -3584,14 +3584,14 @@ class App {
 
     // 2. Botones de Planes Específicos
     document.getElementById('landing-plan-free-btn')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
+      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' });
     });
     document.getElementById('landing-plan-basic-btn')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'basic' });
+      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'basic', lockRole: 'business' });
     });
     document.getElementById('landing-plan-pro-btn')?.addEventListener('click', openPreRegister);
     document.getElementById('landing-plan-unlimited-btn')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'unlimited' });
+      this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'unlimited', lockRole: 'business' });
     });
 
     // 3. Smooth Scroll to Demo
@@ -16885,7 +16885,11 @@ class App {
   // ==========================================
   // MODAL INTEGRADO DE AUTENTICACIÓN (LOGIN & REGISTRO)
   // ==========================================
-  renderAuthModal({ mode = 'login', role = 'client', selectedPlanId = 'free', prefill = null } = {}) {
+  renderAuthModal({ mode = 'login', role = 'client', selectedPlanId = 'free', prefill = null, lockRole = null } = {}) {
+    if (lockRole === 'business' || lockRole === true) {
+      role = 'business';
+      lockRole = 'business';
+    }
     if (role === 'business') {
       this.preloadPayPalSDK();
     }
@@ -16913,7 +16917,7 @@ class App {
               </div>
               <div>
                 <span class="text-[11px] uppercase tracking-wider ${role === 'business' ? 'text-indigo-300' : 'text-blue-300'} font-bold">
-                  ${mode === 'login' ? 'Acceso Seguro' : 'Registro de Cuenta'}
+                  ${lockRole === 'business' ? 'Portal de Negocios' : (mode === 'login' ? 'Acceso Seguro' : 'Registro de Cuenta')}
                 </span>
                 <h3 class="text-base sm:text-lg font-bold">
                   ${mode === 'login' ? (role === 'business' ? 'Iniciar Sesión Negocio' : 'Iniciar Sesión Usuario') : (role === 'business' ? 'Registrar mi Negocio (15 Días Gratis)' : 'Crear Cuenta de Usuario')}
@@ -16929,12 +16933,12 @@ class App {
           <div class="p-5 pb-0 shrink-0 space-y-3 bg-slate-50 border-b border-slate-200/80">
             <!-- Tabs Modo: Iniciar Sesión / Registrarse -->
             ${REGISTRATION_ENABLED ? `
-            <div class="flex p-1 bg-slate-200/80 rounded-2xl">
+            <div class="flex p-1 bg-slate-200/80 rounded-2xl ${lockRole ? 'mb-4' : ''}">
               <button id="tab-mode-login" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? 'text-blue-600' : ''}"></i> Iniciar Sesión
+                <i class="fas fa-sign-in-alt text-xs ${mode === 'login' ? (role === 'business' ? 'text-indigo-600' : 'text-blue-600') : ''}"></i> Iniciar Sesión
               </button>
               <button id="tab-mode-register" class="flex-1 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${mode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'}">
-                <i class="fas fa-user-plus text-xs ${mode === 'register' ? 'text-blue-600' : ''}"></i> Registrarse
+                <i class="fas fa-user-plus text-xs ${mode === 'register' ? (role === 'business' ? 'text-indigo-600' : 'text-blue-600') : ''}"></i> ${lockRole === 'business' ? 'Registrar Negocio' : 'Registrarse'}
               </button>
             </div>
             ` : `
@@ -16944,7 +16948,8 @@ class App {
             </div>
             `}
 
-            <!-- Tabs Rol: Cliente / Negocio -->
+            <!-- Tabs Rol: Cliente / Negocio (Oculto cuando el modal está dedicado exclusivamente a Negocios) -->
+            ${!lockRole ? `
             <div class="flex gap-2 pb-3">
               <button id="tab-role-client" class="flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${role === 'client' ? 'bg-blue-600 border-blue-600 text-white shadow-xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'}">
                 <i class="fas fa-user text-xs"></i> Soy Cliente
@@ -16953,6 +16958,7 @@ class App {
                 <i class="fas fa-store text-xs"></i> Soy Negocio / Dueño
               </button>
             </div>
+            ` : ''}
           </div>
 
           <!-- Cuerpo con Formularios Dinámicos -->
@@ -17393,19 +17399,21 @@ class App {
 
     // Pestañas de Modo (Login / Register)
     document.getElementById('tab-mode-login')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'login', role, selectedPlanId });
+      this.renderAuthModal({ mode: 'login', role, selectedPlanId, lockRole });
     });
     document.getElementById('tab-mode-register')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode: 'register', role, selectedPlanId });
+      this.renderAuthModal({ mode: 'register', role, selectedPlanId, lockRole });
     });
 
     // Pestañas de Rol (Cliente / Negocio)
-    document.getElementById('tab-role-client')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode, role: 'client', selectedPlanId });
-    });
-    document.getElementById('tab-role-business')?.addEventListener('click', () => {
-      this.renderAuthModal({ mode, role: 'business', selectedPlanId });
-    });
+    if (!lockRole) {
+      document.getElementById('tab-role-client')?.addEventListener('click', () => {
+        this.renderAuthModal({ mode, role: 'client', selectedPlanId });
+      });
+      document.getElementById('tab-role-business')?.addEventListener('click', () => {
+        this.renderAuthModal({ mode, role: 'business', selectedPlanId });
+      });
+    }
 
     // Selector visual de planes
     document.querySelectorAll('.biz-plan-card-label').forEach(label => {
@@ -18082,11 +18090,11 @@ class App {
   // MODAL DE PRE-REGISTRO DE COMERCIOS (ACCESO ANTICIPADO)
   // ==========================================
   renderPreRegisterModal(selectedPlanId = 'free') {
-    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' });
   }
 
   renderPreRegistrationModal(selectedPlanId = 'free') {
-    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free' });
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' });
   }
 
   // ==========================================
@@ -20462,7 +20470,7 @@ class App {
       const bizLoginTarget = e.target.closest('.open-biz-login-modal, #nav-biz-login-btn, #nav-biz-extra-btn, #cta-login-biz-btn');
       if (bizLoginTarget) {
         e.preventDefault();
-        this.renderAuthModal({ mode: 'login', role: 'business' });
+        this.renderAuthModal({ mode: 'login', role: 'business', lockRole: 'business' });
         return;
       }
 
@@ -20470,7 +20478,7 @@ class App {
       const bizRegTarget = e.target.closest('.open-biz-register-modal, #nav-biz-register-btn, #cta-register-biz-btn, #hero-register-biz-btn');
       if (bizRegTarget) {
         e.preventDefault();
-        this.renderAuthModal({ mode: 'register', role: 'business' });
+        this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' });
         return;
       }
 
