@@ -541,9 +541,10 @@ export async function initDatabase(customPool = null) {
       for (const st of INITIAL_STAFF) {
         await client.query(`
           INSERT INTO reservas_staff (
-            id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          ON CONFLICT (id) DO NOTHING
+            id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active, pin_code
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ON CONFLICT (id) DO UPDATE SET
+            pin_code = COALESCE(reservas_staff.pin_code, EXCLUDED.pin_code, '1234')
         `, [
           st.id,
           st.businessId,
@@ -553,10 +554,19 @@ export async function initDatabase(customPool = null) {
           st.phone || '',
           JSON.stringify(st.services || ['all']),
           st.schedule ? JSON.stringify(st.schedule) : null,
-          st.isActive !== false
+          st.isActive !== false,
+          st.pinCode || '1234'
         ]);
       }
-      console.log('✨ Especialistas demo sembrados/verificados en base de datos.');
+
+      // Asegurar que TODOS los especialistas tengan un PIN de 4 dígitos si estaba nulo o vacío
+      await client.query(`
+        UPDATE reservas_staff 
+        SET pin_code = '1234' 
+        WHERE pin_code IS NULL OR TRIM(pin_code) = ''
+      `);
+
+      console.log('✨ Especialistas demo sembrados/verificados en base de datos con PIN asignado.');
     }
 
     // Asegurar planes adecuados y límites exactos para todos los negocios

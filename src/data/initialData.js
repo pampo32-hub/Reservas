@@ -2580,6 +2580,62 @@ export const INITIAL_STAFF = [
     schedule: null,
     pinCode: '1234',
     isActive: true
+  },
+
+  // ==========================================
+  // 6. Dental Art Costa Rica (biz-6)
+  // ==========================================
+  {
+    id: 'staff-601',
+    businessId: 'biz-6',
+    name: 'Dr. Andrés Morales',
+    roleTitle: 'Odontólogo Estético & Rehabilitador',
+    avatarUrl: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8899 1101',
+    services: ['all'],
+    schedule: null,
+    pinCode: '1234',
+    isActive: true
+  },
+  {
+    id: 'staff-602',
+    businessId: 'biz-6',
+    name: 'Dra. Mariana Solano',
+    roleTitle: 'Especialista en Ortodoncia & Estética',
+    avatarUrl: 'https://images.unsplash.com/photo-1594824813575-f86a2f323e42?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8899 1102',
+    services: ['all'],
+    schedule: null,
+    pinCode: '1234',
+    isActive: true
+  },
+
+  // ==========================================
+  // 7. Serenity Spa & Masajes Holísticos (biz-7)
+  // ==========================================
+  {
+    id: 'staff-701',
+    businessId: 'biz-7',
+    name: 'Ana Lucía Soto',
+    roleTitle: 'Terapeuta Holística & Masajista',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8765 4321',
+    services: ['all'],
+    schedule: null,
+    pinCode: '1234',
+    isActive: true
+  },
+  {
+    id: 'staff-702',
+    businessId: 'biz-7',
+    name: 'Carolina Méndez',
+    roleTitle: 'Especialista en Maderoterapia & Spa',
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
+    phone: '+506 8765 4322',
+    services: ['all'],
+    schedule: null,
+    pinCode: '1234',
+    isActive: true
   }
 ];
 

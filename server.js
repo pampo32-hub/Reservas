@@ -3621,6 +3621,18 @@ app.post('/api/auth/staff/login', async (req, res) => {
 
     const business = bizRes.rows[0];
 
+    // Verificar si el negocio tiene especialistas registrados
+    const totalStaffRes = await pool.query(
+      'SELECT COUNT(*) FROM reservas_staff WHERE business_id = $1',
+      [business.id]
+    );
+
+    if (parseInt(totalStaffRes.rows[0].count, 10) === 0) {
+      return res.status(404).json({
+        error: `El comercio "${business.name}" aún no tiene especialistas registrados con PIN. El administrador del negocio debe agregarlos desde la pestaña "Equipo / Especialistas" de su panel.`
+      });
+    }
+
     // Buscar especialista con ese PIN en ese comercio
     const staffRes = await pool.query(
       'SELECT * FROM reservas_staff WHERE business_id = $1 AND pin_code = $2 AND is_active = TRUE',
