@@ -3010,7 +3010,19 @@ class StorageService {
     if (status) params.append('status', status);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
+    const token = this.getToken();
+    if (token) params.append('token', token);
     return `${this.apiBase}/developer/export/appointments-excel?${params.toString()}`;
+  }
+
+  getBusinessExportExcelUrl(businessId, { status = 'all', startDate = '', endDate = '' } = {}) {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const token = this.getToken();
+    if (token) params.append('token', token);
+    return `${this.apiBase}/businesses/${encodeURIComponent(businessId)}/export/appointments-excel?${params.toString()}`;
   }
 
   // ==========================================
@@ -3033,7 +3045,7 @@ class StorageService {
           }
         } catch (cleanErr) {}
 
-        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.21', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.22', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
 
         // Forzar chequeo de actualización inmediata en el servidor

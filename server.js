@@ -209,7 +209,7 @@ export function generateToken(payload) {
 
 export function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = (authHeader && authHeader.split(' ')[1]) || req.query?.token;
 
   if (!token) {
     return res.status(401).json({ error: 'Acceso no autorizado: Token de sesión requerido.' });
@@ -4043,6 +4043,93 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
   } catch (error) {
     console.error('Error consultando citas:', error);
     res.status(500).json({ error: 'Error al consultar citas' });
+  }
+});
+
+// Exportar Citas y Reporte Contable de un Negocio a Excel Profesional (.xlsx)
+app.get('/api/businesses/:id/export/appointments-excel', authenticateBusinessOwnerOrDev, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status = 'all', startDate, endDate } = req.query;
+
+    let query = `
+      SELECT a.id, a.date, a.time, a.status, a.client_name, a.client_phone, a.client_email,
+             a.service_name, a.service_price, a.service_duration, a.notes, a.created_at,
+             a.staff_name,
+             b.name as business_name, b.category as business_category, b.city as business_city, b.phone as business_phone
+      FROM reservas_appointments a
+      LEFT JOIN reservas_businesses b ON a.business_id = b.id
+      WHERE a.business_id = $1
+    `;
+    const params = [id];
+    let pIdx = 2;
+
+    if (status && status !== 'all') {
+      query += ` AND a.status = $${pIdx++}`;
+      params.push(status.trim());
+    }
+
+    if (startDate && startDate.trim()) {
+      query += ` AND a.date >= $${pIdx++}`;
+      params.push(startDate.trim());
+    }
+
+    if (endDate && endDate.trim()) {
+      query += ` AND a.date <= $${pIdx++}`;
+      params.push(endDate.trim());
+    }
+
+    query += ' ORDER BY a.date DESC, a.time DESC';
+
+    const dbRes = await pool.query(query, params);
+    const rows = dbRes.rows;
+
+    const statusLabels = {
+      'completed': 'Completada / Atendida',
+      'confirmed': 'Confirmada',
+      'pending': 'Pendiente',
+      'cancelled': 'Cancelada'
+    };
+
+    const excelData = rows.map((r, i) => ({
+      '#': i + 1,
+      'ID Reserva': r.id,
+      'Fecha Cita': r.date,
+      'Hora': r.time,
+      'Estado': statusLabels[r.status] || r.status,
+      'Comercio': r.business_name || 'N/A',
+      'Nombre Cliente': r.client_name || 'Cliente',
+      'Teléfono Cliente': r.client_phone || '',
+      'WhatsApp Enlace': r.client_phone && formatMetaPhone(r.client_phone) ? `https://wa.me/${formatMetaPhone(r.client_phone)}` : '',
+      'Correo Cliente': r.client_email || 'Sin correo',
+      'Servicio': r.service_name || 'Servicio General',
+      'Especialista': r.staff_name || 'Sin asignar / General',
+      'Duración (min)': r.service_duration || 30,
+      'Monto (CRC ₡)': parseFloat(r.service_price) || 0,
+      'Notas / Observaciones': r.notes || '',
+      'Fecha de Registro': r.created_at ? new Date(r.created_at).toLocaleString('es-CR') : ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    worksheet['!cols'] = [
+      { wch: 5 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 22 },
+      { wch: 28 }, { wch: 26 }, { wch: 16 }, { wch: 28 }, { wch: 26 },
+      { wch: 28 }, { wch: 24 }, { wch: 14 }, { wch: 16 }, { wch: 30 }, { wch: 22 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Historial de Citas');
+
+    const buf = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const bizSlug = (rows[0]?.business_name || `Comercio_${id}`).toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const filename = `Reporte_Reservas_${bizSlug}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buf);
+  } catch (error) {
+    console.error('Error generando Excel de citas:', error);
+    res.status(500).json({ error: 'Error al generar el archivo Excel.' });
   }
 });
 

@@ -12757,9 +12757,15 @@ Esperamos atenderle pronto de nuevo.`;
     if (typeof window !== 'undefined' && typeof window.XLSX !== 'undefined') return true;
     return new Promise((resolve) => {
       const script = document.createElement('script');
-      script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+      script.src = '/public/js/xlsx.full.min.js';
       script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onerror = () => {
+        const cdnScript = document.createElement('script');
+        cdnScript.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+        cdnScript.onload = () => resolve(true);
+        cdnScript.onerror = () => resolve(false);
+        document.head.appendChild(cdnScript);
+      };
       document.head.appendChild(script);
     });
   }
@@ -14378,11 +14384,14 @@ Esperamos atenderle pronto de nuevo.`;
   }
 
   // --- EXPORTACIÓN PROFESIONAL A EXCEL (.XLSX CON SHEETJS) ---
-  exportBusinessReportsExcel(currentBiz, appointments) {
+  async exportBusinessReportsExcel(currentBiz, appointments) {
     if (!appointments || appointments.length === 0) {
       this.showToast('No hay datos de reservas para exportar.', 'info');
       return;
     }
+
+    this.showToast('Generando reporte contable en Excel (.xlsx)...', 'info');
+    await this.ensureXlsxLoaded();
 
     const statusLabels = {
       'completed': 'Completada / Atendida',
@@ -14480,63 +14489,72 @@ Esperamos atenderle pronto de nuevo.`;
 
     // Si XLSX está disponible en window (SheetJS)
     if (typeof window.XLSX !== 'undefined') {
-      const wb = window.XLSX.utils.book_new();
+      try {
+        const wb = window.XLSX.utils.book_new();
 
-      // Hoja 1: Citas
-      const ws1 = window.XLSX.utils.json_to_sheet(excelAppointmentsData);
-      ws1['!cols'] = [
-        { wch: 5 },  // #
-        { wch: 14 }, // ID
-        { wch: 12 }, // Fecha
-        { wch: 10 }, // Hora
-        { wch: 22 }, // Estado
-        { wch: 26 }, // Comercio
-        { wch: 26 }, // Cliente
-        { wch: 16 }, // Tel
-        { wch: 28 }, // WA
-        { wch: 24 }, // Email
-        { wch: 28 }, // Servicio
-        { wch: 24 }, // Especialista
-        { wch: 14 }, // Duración
-        { wch: 16 }, // Monto
-        { wch: 30 }, // Notas
-        { wch: 22 }  // Registro
-      ];
-      window.XLSX.utils.book_append_sheet(wb, ws1, 'Historial de Citas');
+        // Hoja 1: Citas
+        const ws1 = window.XLSX.utils.json_to_sheet(excelAppointmentsData);
+        ws1['!cols'] = [
+          { wch: 5 },  // #
+          { wch: 14 }, // ID
+          { wch: 12 }, // Fecha
+          { wch: 10 }, // Hora
+          { wch: 22 }, // Estado
+          { wch: 26 }, // Comercio
+          { wch: 26 }, // Cliente
+          { wch: 16 }, // Tel
+          { wch: 28 }, // WA
+          { wch: 24 }, // Email
+          { wch: 28 }, // Servicio
+          { wch: 24 }, // Especialista
+          { wch: 14 }, // Duración
+          { wch: 16 }, // Monto
+          { wch: 30 }, // Notas
+          { wch: 22 }  // Registro
+        ];
+        window.XLSX.utils.book_append_sheet(wb, ws1, 'Historial de Citas');
 
-      // Hoja 2: Clientes
-      const ws2 = window.XLSX.utils.json_to_sheet(excelClientsData);
-      ws2['!cols'] = [
-        { wch: 8 },  // Ranking
-        { wch: 26 }, // Cliente
-        { wch: 18 }, // Tel
-        { wch: 28 }, // WA
-        { wch: 15 }, // Total
-        { wch: 18 }, // Completadas
-        { wch: 16 }, // Canceladas
-        { wch: 22 }, // Invertido
-        { wch: 16 }  // Última
-      ];
-      window.XLSX.utils.book_append_sheet(wb, ws2, 'Clientes Frecuentes');
+        // Hoja 2: Clientes
+        const ws2 = window.XLSX.utils.json_to_sheet(excelClientsData);
+        ws2['!cols'] = [
+          { wch: 8 },  // Ranking
+          { wch: 26 }, // Cliente
+          { wch: 18 }, // Tel
+          { wch: 28 }, // WA
+          { wch: 15 }, // Total
+          { wch: 18 }, // Completadas
+          { wch: 16 }, // Canceladas
+          { wch: 22 }, // Invertido
+          { wch: 16 }  // Última
+        ];
+        window.XLSX.utils.book_append_sheet(wb, ws2, 'Clientes Frecuentes');
 
-      // Hoja 3: Resumen
-      const ws3 = window.XLSX.utils.json_to_sheet(excelSummaryData);
-      ws3['!cols'] = [
-        { wch: 35 },
-        { wch: 25 },
-        { wch: 35 }
-      ];
-      window.XLSX.utils.book_append_sheet(wb, ws3, 'Resumen Ejecutivo');
+        // Hoja 3: Resumen
+        const ws3 = window.XLSX.utils.json_to_sheet(excelSummaryData);
+        ws3['!cols'] = [
+          { wch: 35 },
+          { wch: 25 },
+          { wch: 35 }
+        ];
+        window.XLSX.utils.book_append_sheet(wb, ws3, 'Resumen Ejecutivo');
 
-      window.XLSX.writeFile(wb, fileName);
-      this.showToast('¡Reporte en Excel (.xlsx) descargado exitosamente!', 'success');
-      return;
+        window.XLSX.writeFile(wb, fileName);
+        this.showToast('¡Reporte en Excel (.xlsx) descargado exitosamente!', 'success');
+        return;
+      } catch (xlsxErr) {
+        console.error('Error generando libro Excel con SheetJS:', xlsxErr);
+      }
     }
 
-    // Fallback: endpoint del servidor
-    const exportUrl = `${storage.apiBase}/developer/export/appointments-excel?businessId=${encodeURIComponent(currentBiz.id)}&status=all`;
-    window.open(exportUrl, '_blank');
-    this.showToast('Descargando reporte Excel...', 'info');
+    // Fallback: endpoint del servidor autenticado
+    try {
+      const exportUrl = storage.getBusinessExportExcelUrl ? storage.getBusinessExportExcelUrl(currentBiz.id) : `${storage.apiBase}/businesses/${encodeURIComponent(currentBiz.id)}/export/appointments-excel?token=${encodeURIComponent(storage.getToken() || '')}&status=all`;
+      window.open(exportUrl, '_blank');
+      this.showToast('Descargando reporte Excel...', 'info');
+    } catch (fbErr) {
+      console.warn('Fallback a CSV por error en Excel:', fbErr);
+      this.exportBusinessReportsCSV(currentBiz, appointments);
+    }
   }
 
   // --- EXPORTACIÓN A FORMATO CSV ---
@@ -16312,7 +16330,7 @@ Esperamos atenderle pronto de nuevo.`;
         </div>
 
         <div class="text-center text-slate-500 text-[11px] py-2 flex items-center justify-center gap-1.5 flex-wrap">
-          <span>ReservasCR.app v3.46.21</span>
+          <span>ReservasCR.app v3.46.22</span>
           <span>•</span>
           <button type="button" id="staff-force-reload-btn" class="text-blue-400 hover:text-blue-300 underline cursor-pointer">
             <i class="fas fa-arrows-rotate mr-0.5"></i> Actualizar versión
