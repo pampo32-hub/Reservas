@@ -527,6 +527,24 @@ class App {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${datesStr}&ctz=America/Costa_Rica&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
   }
 
+  // --- GENERACIÓN DE ENLACE WAZE (RUTA EN VIVO) ---
+  generateWazeUrl(business) {
+    if (!business) return 'https://waze.com';
+    const biz = business.name ? business : (storage.getBusinessById(business.businessId || business.id) || { name: 'Comercio Reservas CR' });
+    const queryParts = [biz.name, biz.address, biz.city, 'Costa Rica'].filter(Boolean);
+    const query = queryParts.join(', ');
+    return `https://waze.com/ul?q=${encodeURIComponent(query)}&navigate=yes`;
+  }
+
+  // --- GENERACIÓN DE ENLACE GOOGLE MAPS ---
+  generateGoogleMapsUrl(business) {
+    if (!business) return 'https://maps.google.com';
+    const biz = business.name ? business : (storage.getBusinessById(business.businessId || business.id) || { name: 'Comercio Reservas CR' });
+    const queryParts = [biz.name, biz.address, biz.city, 'Costa Rica'].filter(Boolean);
+    const query = queryParts.join(', ');
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  }
+
   // --- DESCARGA DE ARCHIVO .ICS (APPLE CALENDAR / OUTLOOK / ANDROID) ---
   downloadIcsFile(appointment, business) {
     if (!appointment) return;
@@ -4906,9 +4924,31 @@ class App {
                 </span>
               </div>
               <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">${biz.name}</h1>
-              <p class="text-sm text-slate-300 flex items-center gap-1.5">
-                <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.address || ''}${biz.address && biz.city ? ', ' : ''}${biz.city || ''}
-              </p>
+              <div class="text-sm text-slate-300 flex flex-wrap items-center gap-2">
+                <span class="flex items-center gap-1.5">
+                  <i class="fas fa-map-marker-alt text-rose-400"></i> ${biz.address || ''}${biz.address && biz.city ? ', ' : ''}${biz.city || ''}
+                </span>
+                <span class="inline-flex items-center gap-1.5 ml-1">
+                  <a 
+                    href="${this.generateWazeUrl(biz)}" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="px-2.5 py-0.5 rounded-full bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-sm transition-all"
+                    title="Navegar con Waze"
+                  >
+                    <i class="fab fa-waze"></i> Waze
+                  </a>
+                  <a 
+                    href="${this.generateGoogleMapsUrl(biz)}" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="px-2.5 py-0.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-sm transition-all"
+                    title="Ver en Google Maps"
+                  >
+                    <i class="fas fa-map-location-dot"></i> Maps
+                  </a>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -5111,11 +5151,33 @@ class App {
                   <span class="truncate">${biz.email || 'No especificado'}</span>
                 </div>
 
-                <div class="flex items-center gap-3 text-slate-600">
-                  <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0">
+                <div class="flex items-start gap-3 text-slate-600">
+                  <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <i class="fas fa-map-pin text-xs"></i>
                   </div>
-                  <span>${biz.address}</span>
+                  <div class="flex-1">
+                    <span class="block">${biz.address || 'Costa Rica'}</span>
+                    <div class="mt-2 flex items-center gap-2">
+                      <a 
+                        href="${this.generateWazeUrl(biz)}" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        class="px-2.5 py-1 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors shadow-2xs"
+                        title="Abrir ruta en Waze"
+                      >
+                        <i class="fab fa-waze text-sky-500"></i> Waze
+                      </a>
+                      <a 
+                        href="${this.generateGoogleMapsUrl(biz)}" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        class="px-2.5 py-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors shadow-2xs"
+                        title="Abrir ubicación en Google Maps"
+                      >
+                        <i class="fas fa-map-location-dot text-emerald-600"></i> Maps
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -6749,32 +6811,63 @@ class App {
               </div>
             </div>
 
-            <!-- Sincronización con Calendario Personal -->
-            <div class="mt-4 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-left space-y-2 animate-fade-in">
-              <div class="flex items-center gap-2">
-                <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
-                <span class="text-xs font-bold text-indigo-950">Añadir a tu Calendario Personal</span>
+            <!-- Sincronización con Calendario Personal y Ruta de Navegación -->
+            <div class="mt-4 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 text-left space-y-3 animate-fade-in shadow-2xs">
+              <div>
+                <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-1.5">
+                  <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
+                  <span>Añadir a tu Calendario Personal</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <a 
+                    href="${this.generateGoogleCalendarUrl(appointment, business)}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="py-2 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                    title="Sincronizar directamente con Google Calendar"
+                  >
+                    <i class="fab fa-google text-rose-500"></i>
+                    <span>Google Calendar</span>
+                  </a>
+                  <button 
+                    type="button" 
+                    id="success-download-ics-btn"
+                    class="py-2 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
+                    title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
+                  >
+                    <i class="fab fa-apple text-slate-800"></i>
+                    <span>Apple / .ics</span>
+                  </button>
+                </div>
               </div>
-              <div class="grid grid-cols-2 gap-2">
-                <a 
-                  href="${this.generateGoogleCalendarUrl(appointment, business)}" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
-                  title="Sincronizar directamente con Google Calendar"
-                >
-                  <i class="fab fa-google text-rose-500"></i>
-                  <span>Google Calendar</span>
-                </a>
-                <button 
-                  type="button" 
-                  id="success-download-ics-btn"
-                  class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
-                  title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
-                >
-                  <i class="fas fa-calendar-alt text-blue-600"></i>
-                  <span>Apple / Outlook (.ics)</span>
-                </button>
+
+              <div class="pt-2 border-t border-slate-200">
+                <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-1.5">
+                  <i class="fas fa-route text-sky-600 text-xs"></i>
+                  <span>¿Cómo llegar al local? (Ruta en Vivo)</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <a 
+                    href="${this.generateWazeUrl(business)}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="py-2 px-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                    title="Abrir ruta de navegación en Waze"
+                  >
+                    <i class="fab fa-waze text-white"></i>
+                    <span>Abrir en Waze</span>
+                  </a>
+                  <a 
+                    href="${this.generateGoogleMapsUrl(business)}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                    title="Abrir ubicación en Google Maps"
+                  >
+                    <i class="fas fa-map-location-dot text-white"></i>
+                    <span>Google Maps</span>
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -6927,32 +7020,63 @@ class App {
             </div>
           </div>
 
-          <!-- Sincronización con Calendario Personal -->
-          <div class="mt-4 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-left space-y-2 animate-fade-in">
-            <div class="flex items-center gap-2">
-              <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
-              <span class="text-xs font-bold text-indigo-950">Añadir a tu Calendario Personal</span>
+          <!-- Sincronización con Calendario Personal y Ruta de Navegación -->
+          <div class="mt-4 p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 text-left space-y-3 animate-fade-in shadow-2xs">
+            <div>
+              <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-1.5">
+                <i class="fas fa-calendar-plus text-indigo-600 text-xs"></i>
+                <span>Añadir a tu Calendario Personal</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <a 
+                  href="${this.generateGoogleCalendarUrl(appointment, business)}" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="py-2 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  title="Sincronizar directamente con Google Calendar"
+                >
+                  <i class="fab fa-google text-rose-500"></i>
+                  <span>Google Calendar</span>
+                </a>
+                <button 
+                  type="button" 
+                  id="success-download-ics-btn"
+                  class="py-2 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
+                  title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
+                >
+                  <i class="fab fa-apple text-slate-800"></i>
+                  <span>Apple / .ics</span>
+                </button>
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-2">
-              <a 
-                href="${this.generateGoogleCalendarUrl(appointment, business)}" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
-                title="Sincronizar directamente con Google Calendar"
-              >
-                <i class="fab fa-google text-rose-500"></i>
-                <span>Google Calendar</span>
-              </a>
-              <button 
-                type="button" 
-                id="success-download-ics-btn"
-                class="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
-                title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
-              >
-                <i class="fas fa-calendar-alt text-blue-600"></i>
-                <span>Apple / Outlook (.ics)</span>
-              </button>
+
+            <div class="pt-2 border-t border-slate-200">
+              <div class="flex items-center gap-1.5 text-xs font-bold text-slate-800 mb-1.5">
+                <i class="fas fa-route text-sky-600 text-xs"></i>
+                <span>¿Cómo llegar al local? (Ruta en Vivo)</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <a 
+                  href="${this.generateWazeUrl(business)}" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="py-2 px-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  title="Abrir ruta de navegación en Waze"
+                >
+                  <i class="fab fa-waze text-white"></i>
+                  <span>Abrir en Waze</span>
+                </a>
+                <a 
+                  href="${this.generateGoogleMapsUrl(business)}" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  class="py-2 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  title="Abrir ubicación en Google Maps"
+                >
+                  <i class="fas fa-map-location-dot text-white"></i>
+                  <span>Google Maps</span>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -7470,8 +7594,27 @@ class App {
                       data-apt-id="${apt.id}"
                       title="Descargar archivo .ics (Apple Calendar / iPhone / Outlook)"
                     >
-                      <i class="fas fa-calendar-alt text-blue-600 text-xs"></i> .ICS
+                      <i class="fab fa-apple text-slate-800 text-xs"></i> .ICS
                     </button>
+                    <!-- Ruta GPS Waze y Google Maps -->
+                    <a 
+                      href="${this.generateWazeUrl(storage.getBusinessById(apt.businessId) || { name: apt.businessName })}" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="px-3 py-2 bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+                      title="Abrir ruta directa en Waze"
+                    >
+                      <i class="fab fa-waze text-sky-500 text-xs"></i> Waze
+                    </a>
+                    <a 
+                      href="${this.generateGoogleMapsUrl(storage.getBusinessById(apt.businessId) || { name: apt.businessName })}" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      class="px-3 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
+                      title="Abrir ubicación en Google Maps"
+                    >
+                      <i class="fas fa-map-location-dot text-emerald-600 text-xs"></i> Maps
+                    </a>
                     <button class="client-reschedule-btn px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5" data-apt-id="${apt.id}">
                       <i class="fas fa-calendar-alt"></i> Reprogramar Turno
                     </button>

@@ -152,6 +152,10 @@ export function buildBookingConfirmationText(appointment, business) {
     policiesSection = `\n📜 *Políticas del Local:*\n_${policiesText}_\n`;
   }
 
+  const navQuery = [businessName, addressStr, 'Costa Rica'].filter(Boolean).join(', ');
+  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(navQuery)}&navigate=yes`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(navQuery)}`;
+
   return `🎉 *¡Tu Reserva está Confirmada!*
 
 Hola *${clientName}*, tu cita en *${businessName}* ha sido confirmada con éxito:
@@ -165,6 +169,12 @@ ${financialDetails}
 📞 *Teléfono del Local:* ${businessPhone}
 🔖 *Código de Reserva:* #${appointmentCode}
 ${appointment.notes ? `📝 *Notas:* "${appointment.notes}"\n` : ''}${policiesSection}
+🚗 *¿Cómo llegar? (Ruta en Waze):*
+${wazeUrl}
+
+📍 *Ver en Google Maps:*
+${googleMapsUrl}
+
 📲 *Gestión de Turnos:*
 Puedes consultar tus reservas ingresando a:
 ${APP_URL}/#/mis-reservas

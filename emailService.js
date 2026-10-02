@@ -183,6 +183,39 @@ export async function sendBookingConfirmationEmail(appointment, business) {
   const remainingAmount = Math.max(0, totalAmount - depositAmount);
   const policiesText = appointment.depositPoliciesSnapshot || appointment.deposit_policies_snapshot || '';
 
+  // Generación de Enlaces de Calendario y Rutas de Navegación
+  const pad = (n) => String(n).padStart(2, '0');
+  const formatCalDate = (dt) => `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+  const [y, m, d] = String(appointment.date).split('-').map(Number);
+  let hh = 9, mm = 0;
+  if (appointment.time) {
+    const isPM = /pm/i.test(appointment.time);
+    const isAM = /am/i.test(appointment.time);
+    const cleanTime = String(appointment.time).replace(/[^0-9:]/g, '');
+    const parts = cleanTime.split(':').map(Number);
+    if (parts.length >= 1 && !isNaN(parts[0])) {
+      hh = parts[0];
+      if (isPM && hh < 12) hh += 12;
+      if (isAM && hh === 12) hh = 0;
+    }
+    if (parts.length >= 2 && !isNaN(parts[1])) mm = parts[1];
+  }
+  const duration = parseInt(appointment.serviceDuration || 30, 10);
+  const startDt = new Date(y, m - 1, d, hh, mm, 0);
+  const endDt = new Date(startDt.getTime() + duration * 60000);
+  const datesStr = `${formatCalDate(startDt)}/${formatCalDate(endDt)}`;
+
+  const calTitle = `Cita: ${serviceName} en ${businessName}`;
+  const calLocation = `${businessName}, ${businessAddress}`;
+  const calDetails = `Turno agendado en ${businessName}\nServicio: ${serviceName}\nCódigo: #${appointmentCode}\nDirección: ${businessAddress}\nTeléfono: ${businessPhone}\nGestionado por Reservas CR (https://reservascr.app)`;
+
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(calTitle)}&dates=${datesStr}&ctz=America/Costa_Rica&details=${encodeURIComponent(calDetails)}&location=${encodeURIComponent(calLocation)}`;
+  const icsDownloadUrl = `${APP_URL}/api/appointments/${appointment.id || appointmentCode}/calendar.ics`;
+  
+  const navQuery = [businessName, businessAddress, 'Costa Rica'].filter(Boolean).join(', ');
+  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(navQuery)}&navigate=yes`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(navQuery)}`;
+
   const htmlContent = `
 <!DOCTYPE html>
 <html lang="es">
@@ -277,6 +310,43 @@ export async function sendBookingConfirmationEmail(appointment, business) {
           </tr>
           `}
         </table>
+      <!-- Acciones Rápidas: Calendario y Navegación Waze / Maps -->
+      <div style="background: #f8fafc; border-radius: 16px; padding: 18px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+          📅 Añadir a tu Calendario Personal
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+          <tr>
+            <td style="width: 50%; padding-right: 5px;">
+              <a href="${googleCalendarUrl}" target="_blank" style="display: block; background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; text-decoration: none; font-weight: 700; font-size: 12px; padding: 10px 8px; border-radius: 10px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <span style="color: #ea4335; font-weight: 900;">G</span> Google Calendar
+              </a>
+            </td>
+            <td style="width: 50%; padding-left: 5px;">
+              <a href="${icsDownloadUrl}" target="_blank" style="display: block; background: #ffffff; border: 1px solid #cbd5e1; color: #1e293b; text-decoration: none; font-weight: 700; font-size: 12px; padding: 10px 8px; border-radius: 10px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                🍏 Apple / Outlook (.ics)
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <div style="font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+          🚗 ¿Cómo llegar a tu cita? (Ruta en Vivo)
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="width: 50%; padding-right: 5px;">
+              <a href="${wazeUrl}" target="_blank" style="display: block; background: #0284c7; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 12px; padding: 10px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);">
+                🚗 Abrir en Waze
+              </a>
+            </td>
+            <td style="width: 50%; padding-left: 5px;">
+              <a href="${googleMapsUrl}" target="_blank" style="display: block; background: #059669; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 12px; padding: 10px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);">
+                📍 Google Maps
+              </a>
+            </td>
+          </tr>
+        </table>
       </div>
 
       ${policiesText ? `
@@ -343,6 +413,10 @@ export async function sendBookingPendingDepositEmail(appointment, business) {
   const sinpeHolder = business?.sinpeHolderName || business?.sinpe_holder_name || businessName;
   const depositRef = appointment.depositReference || appointment.deposit_reference || '';
   const policiesText = appointment.depositPoliciesSnapshot || appointment.deposit_policies_snapshot || '';
+
+  const navQuery = [businessName, businessAddress, 'Costa Rica'].filter(Boolean).join(', ');
+  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(navQuery)}&navigate=yes`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(navQuery)}`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -414,6 +488,25 @@ export async function sendBookingPendingDepositEmail(appointment, business) {
           <tr>
             <td style="padding: 10px 0 4px 0; font-weight: 700; color: #64748b;">Saldo a pagar en local:</td>
             <td style="padding: 10px 0 4px 0; text-align: right; font-weight: 800; color: #0f172a;">${formatColones(remainingAmount)}</td>
+          </tr>
+        </table>
+      <!-- ¿Cómo llegar? (Ruta Waze / Maps) -->
+      <div style="background: #f8fafc; border-radius: 16px; padding: 18px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 12px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+          🚗 ¿Cómo llegar al local? (Ruta en Vivo)
+        </div>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="width: 50%; padding-right: 5px;">
+              <a href="${wazeUrl}" target="_blank" style="display: block; background: #0284c7; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 12px; padding: 10px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);">
+                🚗 Abrir en Waze
+              </a>
+            </td>
+            <td style="width: 50%; padding-left: 5px;">
+              <a href="${googleMapsUrl}" target="_blank" style="display: block; background: #059669; color: #ffffff !important; text-decoration: none; font-weight: 700; font-size: 12px; padding: 10px 8px; border-radius: 10px; text-align: center; box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);">
+                📍 Google Maps
+              </a>
+            </td>
           </tr>
         </table>
       </div>

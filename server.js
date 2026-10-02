@@ -7034,6 +7034,89 @@ async function processPendingWhatsAppReminders() {
 }
 
 
+// Descargar archivo .ics compatible con Apple Calendar, iPhone, Mac y Outlook
+app.get('/api/appointments/:id/calendar.ics', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cleanId = (id || '').trim();
+
+    const aptRes = await pool.query(`
+      SELECT a.*, b.name as business_name, b.address as business_address, b.city as business_city, b.phone as business_phone
+      FROM reservas_appointments a
+      LEFT JOIN reservas_businesses b ON a.business_id = b.id
+      WHERE LOWER(a.id) = LOWER($1)
+    `, [cleanId]);
+
+    if (aptRes.rows.length === 0) {
+      return res.status(404).send('Cita no encontrada.');
+    }
+
+    const apt = aptRes.rows[0];
+    const bizName = apt.business_name || 'Comercio Reservas CR';
+    const bizLocation = [apt.business_address, apt.business_city, 'Costa Rica'].filter(Boolean).join(', ');
+    
+    const rawDate = apt.date;
+    const rawTime = apt.time;
+    const duration = parseInt(apt.service_duration || apt.serviceDuration || 30, 10);
+    
+    const [y, m, d] = String(rawDate).split('-').map(Number);
+    let hh = 9, mm = 0;
+    if (rawTime) {
+      const isPM = /pm/i.test(rawTime);
+      const isAM = /am/i.test(rawTime);
+      const cleanTime = String(rawTime).replace(/[^0-9:]/g, '');
+      const parts = cleanTime.split(':').map(Number);
+      if (parts.length >= 1 && !isNaN(parts[0])) {
+        hh = parts[0];
+        if (isPM && hh < 12) hh += 12;
+        if (isAM && hh === 12) hh = 0;
+      }
+      if (parts.length >= 2 && !isNaN(parts[1])) mm = parts[1];
+    }
+
+    const startDt = new Date(y, m - 1, d, hh, mm, 0);
+    const endDt = new Date(startDt.getTime() + duration * 60000);
+    const pad = (n) => String(n).padStart(2, '0');
+    const formatIcsDate = (dt) => `${dt.getFullYear()}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+    const nowUtc = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+    const title = `Cita: ${apt.service_name || apt.serviceName || 'Servicio'} en ${bizName}`.replace(/,/g, '\\,');
+    const location = `${bizName}, ${bizLocation}`.replace(/,/g, '\\,');
+    const details = `Turno agendado en ${bizName}\\n` +
+      `Servicio: ${apt.service_name || apt.serviceName || 'General'}\\n` +
+      `Especialista: ${apt.staff_name || apt.staffName || 'Asignado en local'}\\n` +
+      `Cliente: ${apt.client_name || apt.clientName || 'Cliente'}\\n` +
+      `Código de reserva: #${(apt.id || '').toUpperCase()}\\n` +
+      `Gestionado por Reservas CR (https://reservascr.app)`;
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Reservas CR//Directorio y Citas Costa Rica//ES',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `UID:reserva-${apt.id}@reservascr.app`,
+      `DTSTAMP:${nowUtc}`,
+      `DTSTART:${formatIcsDate(startDt)}`,
+      `DTEND:${formatIcsDate(endDt)}`,
+      `SUMMARY:${title}`,
+      `DESCRIPTION:${details}`,
+      `LOCATION:${location}`,
+      'STATUS:CONFIRMED',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="cita_${(apt.id || 'reserva').toLowerCase()}.ics"`);
+    res.send(icsContent);
+  } catch (err) {
+    console.error('Error generando archivo .ics:', err);
+    res.status(500).send('Error generando archivo de calendario.');
+  }
+});
+
 // 1. Obtener información para calificar una cita específica
 app.get('/api/appointments/:id/review-info', async (req, res) => {
   try {
