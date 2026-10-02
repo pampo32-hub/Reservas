@@ -2743,7 +2743,9 @@ app.get('/api/businesses/:id/staff', async (req, res) => {
       schedule: s.schedule || null,
       commissionType: s.commission_type || 'percentage',
       commissionRate: s.commission_rate !== null ? parseFloat(s.commission_rate) : 50.0,
+      staffCode: s.staff_code || '',
       pinCode: s.pin_code || '',
+      mustChangePin: s.must_change_pin !== false,
       isActive: s.is_active !== false,
       createdAt: s.created_at
     }));
@@ -2787,14 +2789,33 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       });
     }
 
+    // Procesar y validar código único de colaborador dentro del negocio
+    let staffCode = s.staffCode ? s.staffCode.toString().trim().toUpperCase() : '';
+    if (!staffCode) {
+      staffCode = s.name.trim().split(' ')[0].replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    }
+    const codeCheck = await pool.query(
+      'SELECT id FROM reservas_staff WHERE business_id = $1 AND LOWER(staff_code) = LOWER($2) LIMIT 1',
+      [businessId, staffCode]
+    );
+    if (codeCheck.rows.length > 0) {
+      return res.status(400).json({ error: `El código "${staffCode}" ya está en uso por otro colaborador de este negocio. Elige un código diferente.` });
+    }
+
+    // Validar PIN de 6 dígitos numéricos
+    let pinCode = s.pinCode ? s.pinCode.toString().trim() : '123456';
+    if (!/^\d{6}$/.test(pinCode)) {
+      return res.status(400).json({ error: 'El PIN de acceso debe tener exactamente 6 dígitos numéricos.' });
+    }
+
     const newStaffId = `staff-${Date.now()}`;
     const cleanAvatar = s.avatarUrl ? processAndSaveImage(s.avatarUrl, `comercios/${businessId}/equipo`, `staff_${newStaffId}`) : '';
     await pool.query(`
       INSERT INTO reservas_staff (
         id, business_id, name, role_title, avatar_url, phone, email, 
-        services, schedule, commission_type, commission_rate, pin_code, is_active
+        services, schedule, commission_type, commission_rate, pin_code, staff_code, must_change_pin, is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
     `, [
       newStaffId, 
       businessId, 
@@ -2807,7 +2828,9 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       s.schedule ? JSON.stringify(s.schedule) : null,
       s.commissionType || 'percentage',
       s.commissionRate !== undefined && s.commissionRate !== null ? parseFloat(s.commissionRate) : 50.0,
-      s.pinCode ? s.pinCode.trim() : null,
+      pinCode,
+      staffCode,
+      true, // must_change_pin = TRUE inicialmente
       s.isActive !== false
     ]);
 
@@ -2823,7 +2846,9 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       schedule: s.schedule || null,
       commissionType: s.commissionType || 'percentage',
       commissionRate: s.commissionRate !== undefined ? parseFloat(s.commissionRate) : 50.0,
-      pinCode: s.pinCode || '',
+      staffCode,
+      pinCode,
+      mustChangePin: true,
       isActive: s.isActive !== false
     });
   } catch (error) {
@@ -2844,6 +2869,33 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
     const s = req.body;
     const cleanUpdateAvatar = s.avatarUrl !== undefined ? (s.avatarUrl ? processAndSaveImage(s.avatarUrl, `comercios/${businessId}/equipo`, `staff_${staffId}`) : '') : null;
 
+    let staffCode = s.staffCode !== undefined ? (s.staffCode ? s.staffCode.toString().trim().toUpperCase() : null) : undefined;
+    if (staffCode) {
+      const codeCheck = await pool.query(
+        'SELECT id FROM reservas_staff WHERE business_id = $1 AND LOWER(staff_code) = LOWER($2) AND id != $3 LIMIT 1',
+        [businessId, staffCode, staffId]
+      );
+      if (codeCheck.rows.length > 0) {
+        return res.status(400).json({ error: `El código "${staffCode}" ya está en uso por otro colaborador de este negocio.` });
+      }
+    }
+
+    let pinCode = undefined;
+    let mustChangePin = undefined;
+    if (s.pinCode !== undefined && s.pinCode !== null && s.pinCode !== '') {
+      const trimmedPin = s.pinCode.toString().trim();
+      if (!/^\d{6}$/.test(trimmedPin)) {
+        return res.status(400).json({ error: 'El PIN de acceso debe tener exactamente 6 dígitos numéricos.' });
+      }
+      const currentStaffRes = await pool.query('SELECT pin_code FROM reservas_staff WHERE id = $1 AND business_id = $2', [staffId, businessId]);
+      if (currentStaffRes.rows.length > 0 && currentStaffRes.rows[0].pin_code !== trimmedPin) {
+        pinCode = trimmedPin;
+        mustChangePin = true; // Si el dueño cambia el PIN, obligar al colaborador a setear su nuevo PIN
+      } else {
+        pinCode = trimmedPin;
+      }
+    }
+
     await pool.query(`
       UPDATE reservas_staff SET
         name = COALESCE($1, name),
@@ -2856,8 +2908,10 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
         commission_type = COALESCE($8, commission_type),
         commission_rate = COALESCE($9, commission_rate),
         pin_code = COALESCE($10, pin_code),
-        is_active = COALESCE($11, is_active)
-      WHERE id = $12 AND business_id = $13
+        staff_code = COALESCE($11, staff_code),
+        must_change_pin = COALESCE($12, must_change_pin),
+        is_active = COALESCE($13, is_active)
+      WHERE id = $14 AND business_id = $15
     `, [
       s.name ? s.name.trim() : null,
       s.roleTitle ? s.roleTitle.trim() : null,
@@ -2868,7 +2922,9 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
       s.schedule ? JSON.stringify(s.schedule) : null,
       s.commissionType !== undefined ? s.commissionType : null,
       s.commissionRate !== undefined ? parseFloat(s.commissionRate) : null,
-      s.pinCode !== undefined ? (s.pinCode ? s.pinCode.trim() : null) : null,
+      pinCode !== undefined ? pinCode : null,
+      staffCode !== undefined ? staffCode : null,
+      mustChangePin !== undefined ? mustChangePin : null,
       s.isActive !== undefined ? s.isActive : null,
       staffId,
       businessId
@@ -3600,13 +3656,18 @@ app.post('/api/businesses/:id/staff-payouts', async (req, res) => {
 // PORTAL DE COLABORADORES (STAFF)
 // ==========================================
 
-// 10. Login de Colaborador por PIN y Comercio
+// 10. Login de Colaborador por Código, PIN de 6 dígitos y Comercio
 app.post('/api/auth/staff/login', async (req, res) => {
   try {
-    const { businessIdentifier, pinCode } = req.body;
+    const { businessIdentifier, staffCode, pinCode } = req.body;
 
-    if (!businessIdentifier || !pinCode) {
-      return res.status(400).json({ error: 'Debes ingresar el identificador del comercio y tu PIN de 4 dígitos.' });
+    if (!businessIdentifier || !staffCode || !pinCode) {
+      return res.status(400).json({ error: 'Debes ingresar tu comercio, tu código de colaborador y tu PIN de 6 dígitos.' });
+    }
+
+    const cleanPin = pinCode.toString().trim();
+    if (!/^\d{6}$/.test(cleanPin)) {
+      return res.status(400).json({ error: 'El PIN de acceso debe tener exactamente 6 dígitos numéricos.' });
     }
 
     // Buscar negocio por slug, id o nombre
@@ -3633,31 +3694,41 @@ app.post('/api/auth/staff/login', async (req, res) => {
       });
     }
 
-    // Buscar especialista con ese PIN en ese comercio
+    // Buscar especialista con ese código de colaborador en ese comercio
     const staffRes = await pool.query(
-      'SELECT * FROM reservas_staff WHERE business_id = $1 AND pin_code = $2 AND is_active = TRUE',
-      [business.id, pinCode.trim()]
+      'SELECT * FROM reservas_staff WHERE business_id = $1 AND LOWER(staff_code) = LOWER($2) AND is_active = TRUE',
+      [business.id, staffCode.toString().trim()]
     );
 
     if (staffRes.rows.length === 0) {
-      return res.status(401).json({ error: 'PIN incorrecto o especialista no activo en este negocio.' });
+      return res.status(401).json({ error: 'No se encontró ningún colaborador activo con ese código en este negocio.' });
     }
 
     const staff = staffRes.rows[0];
+
+    if (staff.pin_code !== cleanPin) {
+      return res.status(401).json({ error: 'PIN incorrecto. Verifica e inténtalo de nuevo.' });
+    }
 
     const token = generateToken({
       role: 'staff',
       staffId: staff.id,
       businessId: business.id,
-      name: staff.name
+      name: staff.name,
+      staffCode: staff.staff_code
     });
+
+    const mustChangePin = staff.must_change_pin !== false;
 
     res.json({
       success: true,
       token,
+      mustChangePin,
       staff: {
         id: staff.id,
         name: staff.name,
+        staffCode: staff.staff_code,
+        mustChangePin,
         roleTitle: staff.role_title || 'Especialista',
         avatarUrl: staff.avatar_url,
         phone: staff.phone,
@@ -3672,6 +3743,56 @@ app.post('/api/auth/staff/login', async (req, res) => {
   } catch (error) {
     console.error('Error en login de colaborador:', error);
     res.status(500).json({ error: 'Error al iniciar sesión de colaborador.' });
+  }
+});
+
+// 10.1 Cambio forzado / voluntario de PIN por parte del colaborador
+app.post('/api/auth/staff/change-pin', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'staff' && req.user.role !== 'developer') {
+      return res.status(403).json({ error: 'Acceso exclusivo para colaboradores autorizados.' });
+    }
+
+    const { newPin, confirmPin } = req.body;
+    const cleanNewPin = (newPin || '').toString().trim();
+    const cleanConfirmPin = (confirmPin || '').toString().trim();
+
+    if (!cleanNewPin || !/^\d{6}$/.test(cleanNewPin)) {
+      return res.status(400).json({ error: 'El nuevo PIN debe tener exactamente 6 dígitos numéricos.' });
+    }
+
+    if (cleanNewPin !== cleanConfirmPin) {
+      return res.status(400).json({ error: 'Los dos PINs ingresados no coinciden.' });
+    }
+
+    if (cleanNewPin === '123456') {
+      return res.status(400).json({ error: 'Por seguridad, no puedes usar "123456" como tu PIN personal.' });
+    }
+
+    const staffId = req.user.staffId;
+    const businessId = req.user.businessId;
+
+    await pool.query(
+      'UPDATE reservas_staff SET pin_code = $1, must_change_pin = FALSE WHERE id = $2 AND business_id = $3',
+      [cleanNewPin, staffId, businessId]
+    );
+
+    const token = generateToken({
+      role: 'staff',
+      staffId: staffId,
+      businessId: businessId,
+      name: req.user.name,
+      staffCode: req.user.staffCode
+    });
+
+    res.json({
+      success: true,
+      message: 'PIN actualizado exitosamente.',
+      token
+    });
+  } catch (error) {
+    console.error('Error cambiando PIN de colaborador:', error);
+    res.status(500).json({ error: 'Error al actualizar el PIN de seguridad.' });
   }
 });
 
@@ -3735,6 +3856,8 @@ app.get('/api/staff/me/dashboard', authenticateToken, async (req, res) => {
       staff: {
         id: staff.id,
         name: staff.name,
+        staffCode: staff.staff_code || '',
+        mustChangePin: staff.must_change_pin !== false,
         roleTitle: staff.role_title,
         avatarUrl: staff.avatar_url,
         phone: staff.phone,

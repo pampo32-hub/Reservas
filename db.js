@@ -396,6 +396,10 @@ export async function initDatabase(customPool = null) {
       ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS commission_rate NUMERIC(10,2) DEFAULT 50.00;
       ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS pin_code VARCHAR(10) DEFAULT NULL;
       ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS email VARCHAR(150) DEFAULT NULL;
+      ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS staff_code VARCHAR(50) DEFAULT NULL;
+      ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS must_change_pin BOOLEAN DEFAULT TRUE;
+
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_staff_biz_code ON reservas_staff (business_id, LOWER(staff_code)) WHERE staff_code IS NOT NULL;
 
       -- Columnas de cobro y liquidación en citas
       ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'pending';
@@ -541,10 +545,12 @@ export async function initDatabase(customPool = null) {
       for (const st of INITIAL_STAFF) {
         await client.query(`
           INSERT INTO reservas_staff (
-            id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active, pin_code
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active, pin_code, staff_code, must_change_pin
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           ON CONFLICT (id) DO UPDATE SET
-            pin_code = COALESCE(reservas_staff.pin_code, EXCLUDED.pin_code, '1234')
+            pin_code = COALESCE(reservas_staff.pin_code, EXCLUDED.pin_code, '123456'),
+            staff_code = COALESCE(reservas_staff.staff_code, EXCLUDED.staff_code),
+            must_change_pin = COALESCE(reservas_staff.must_change_pin, EXCLUDED.must_change_pin, TRUE)
         `, [
           st.id,
           st.businessId,
@@ -555,18 +561,27 @@ export async function initDatabase(customPool = null) {
           JSON.stringify(st.services || ['all']),
           st.schedule ? JSON.stringify(st.schedule) : null,
           st.isActive !== false,
-          st.pinCode || '1234'
+          st.pinCode || '123456',
+          st.staffCode || null,
+          st.mustChangePin !== false
         ]);
       }
 
-      // Asegurar que TODOS los especialistas tengan un PIN de 4 dígitos si estaba nulo o vacío
+      // Asignar código de colaborador basado en su primer nombre si está nulo o vacío
       await client.query(`
         UPDATE reservas_staff 
-        SET pin_code = '1234' 
-        WHERE pin_code IS NULL OR TRIM(pin_code) = ''
+        SET staff_code = UPPER(REGEXP_REPLACE(SPLIT_PART(TRIM(name), ' ', 1), '[^a-zA-Z0-9]', '', 'g'))
+        WHERE staff_code IS NULL OR TRIM(staff_code) = ''
       `);
 
-      console.log('✨ Especialistas demo sembrados/verificados en base de datos con PIN asignado.');
+      // Asegurar que TODOS los especialistas tengan PIN de 6 dígitos ('123456' por defecto) y requieran cambio inicial
+      await client.query(`
+        UPDATE reservas_staff 
+        SET pin_code = '123456', must_change_pin = TRUE 
+        WHERE pin_code IS NULL OR LENGTH(TRIM(pin_code)) < 6 OR pin_code = '1234'
+      `);
+
+      console.log('✨ Especialistas demo sembrados/verificados en base de datos con código y PIN de 6 dígitos.');
     }
 
     // Asegurar planes adecuados y límites exactos para todos los negocios

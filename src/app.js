@@ -15315,8 +15315,12 @@ Esperamos atenderle pronto de nuevo.`;
                         `}
                         <div>
                           <h3 class="text-sm font-bold text-slate-900">${st.name}</h3>
-                          <span class="text-xs text-blue-600 font-semibold block">${st.roleTitle || 'Especialista'}</span>
-                          ${st.phone ? `<span class="text-[11px] text-slate-400 font-mono"><i class="fab fa-whatsapp mr-1 text-emerald-500"></i>${st.phone}</span>` : ''}
+                          <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            <span class="text-xs text-blue-600 font-semibold">${st.roleTitle || 'Especialista'}</span>
+                            ${st.staffCode ? `<span class="px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-mono font-bold text-[10px] border border-blue-200">Cód: ${st.staffCode}</span>` : ''}
+                            ${st.pinCode ? `<span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-mono font-bold text-[10px] border border-slate-200">PIN: ${st.pinCode}</span>` : ''}
+                          </div>
+                          ${st.phone ? `<span class="text-[11px] text-slate-400 font-mono block mt-0.5"><i class="fab fa-whatsapp mr-1 text-emerald-500"></i>${st.phone}</span>` : ''}
                         </div>
                       </div>
 
@@ -15604,7 +15608,7 @@ Esperamos atenderle pronto de nuevo.`;
                           >
                           <div>
                             <strong class="font-bold text-slate-900 block">${st.name}</strong>
-                            <span class="text-[11px] text-slate-500">${st.roleTitle || 'Especialista'} ${st.pinCode ? `• PIN: ${st.pinCode}` : ''}</span>
+                            <span class="text-[11px] text-slate-500">${st.roleTitle || 'Especialista'} ${st.staffCode ? `• Código: <span class="font-mono font-bold text-blue-600 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">${st.staffCode}</span>` : ''} ${st.pinCode ? `• PIN: ${st.pinCode}` : ''}</span>
                           </div>
                         </div>
                       </td>
@@ -16143,6 +16147,11 @@ Esperamos atenderle pronto de nuevo.`;
     const staffUser = storage.getStaffUser();
 
     if (staffUser) {
+      if (staffUser.mustChangePin) {
+        this.renderStaffChangePinView(container, staffUser);
+        return;
+      }
+
       // Mostrar pantalla de carga rápida
       container.innerHTML = `
         <div class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -16158,17 +16167,21 @@ Esperamos atenderle pronto de nuevo.`;
 
       try {
         const data = await storage.getStaffDashboard();
+        if (data.staff && data.staff.mustChangePin) {
+          this.renderStaffChangePinView(container, data.staff);
+          return;
+        }
         this.renderStaffPortalDashboard(container, data);
       } catch (err) {
         console.error('Error cargando dashboard de colaborador:', err);
-        this.showToast('Tu sesión expiró o es inválida. Por favor ingresa tu PIN nuevamente.', 'info');
+        this.showToast('Tu sesión expiró o es inválida. Por favor ingresa nuevamente.', 'info');
         await storage.logoutStaff();
         this.renderStaffPortalView(container);
       }
       return;
     }
 
-    // Pantalla de Login de Colaborador con PIN (Mobile First)
+    // Pantalla de Login de Colaborador con Código y PIN (Mobile First)
     let allBusinesses = (typeof storage.getBusinesses === 'function' ? storage.getBusinesses() : []) || [];
     if (allBusinesses.length === 0 && storage.isOnlineApi) {
       try {
@@ -16226,19 +16239,52 @@ Esperamos atenderle pronto de nuevo.`;
 
             <div>
               <div class="flex items-center justify-between mb-1">
-                <label class="block text-xs font-bold text-slate-300">Tu PIN de Acceso (4 dígitos) *</label>
-                <span class="text-[11px] text-slate-400">Asignado por el dueño</span>
+                <label class="block text-xs font-bold text-slate-300">Código de Colaborador *</label>
+                <span class="text-[11px] text-slate-400">Asignado por el negocio</span>
               </div>
-              <input 
-                type="password" 
-                inputmode="numeric" 
-                pattern="[0-9]{4}" 
-                maxlength="4" 
-                id="staff-login-pin" 
-                required 
-                placeholder="••••" 
-                class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-black tracking-widest text-center text-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-              >
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-user-tag text-xs"></i>
+                </span>
+                <input 
+                  type="text" 
+                  id="staff-login-code" 
+                  required 
+                  placeholder="Ej: CARLOS, 101, B-01" 
+                  autocomplete="username"
+                  class="w-full pl-9 pr-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-bold text-sm tracking-wide uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all placeholder:normal-case placeholder:font-normal placeholder:text-slate-500"
+                >
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-300">Tu PIN de Acceso (6 dígitos) *</label>
+                <span class="text-[11px] text-slate-400">Numérico</span>
+              </div>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-key text-xs"></i>
+                </span>
+                <input 
+                  type="password" 
+                  inputmode="numeric" 
+                  pattern="[0-9]{6}" 
+                  maxlength="6" 
+                  id="staff-login-pin" 
+                  required 
+                  placeholder="••••••" 
+                  autocomplete="current-password"
+                  class="w-full pl-9 pr-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-black tracking-widest text-center text-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                >
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <label class="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-300 hover:text-white transition-colors">
+                <input type="checkbox" id="staff-login-remember" checked class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700 focus:ring-blue-500 focus:ring-offset-slate-800 cursor-pointer">
+                <span>Recordar sesión en este dispositivo</span>
+              </label>
             </div>
 
             <div id="staff-login-error" class="hidden p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-center gap-2"></div>
@@ -16279,41 +16325,213 @@ Esperamos atenderle pronto de nuevo.`;
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const bizSelect = document.getElementById('staff-login-biz');
+      const codeInput = document.getElementById('staff-login-code');
       const pinInput = document.getElementById('staff-login-pin');
+      const rememberInput = document.getElementById('staff-login-remember');
       const errBox = document.getElementById('staff-login-error');
       const submitBtn = document.getElementById('staff-login-submit-btn');
 
       const businessIdentifier = bizSelect?.value.trim();
+      const staffCode = codeInput?.value.trim().toUpperCase();
       const pinCode = pinInput?.value.trim();
+      const rememberMe = rememberInput ? rememberInput.checked : true;
 
-      if (!businessIdentifier || !pinCode || pinCode.length !== 4) {
+      if (!businessIdentifier || !staffCode || !pinCode || pinCode.length !== 6 || !/^\d{6}$/.test(pinCode)) {
         if (errBox) {
           errBox.classList.remove('hidden');
-          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Ingresa tu comercio y tu PIN de 4 dígitos.</span>';
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Ingresa tu comercio, tu código de colaborador y tu PIN de 6 dígitos numéricos.</span>';
         }
         return;
       }
 
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando PIN...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando credenciales...';
       }
       if (errBox) errBox.classList.add('hidden');
 
       try {
-        const res = await storage.loginStaff(businessIdentifier, pinCode);
-        this.showToast(`¡Bienvenido(a), ${res.staff?.name || 'Especialista'}!`, 'success');
-        this.renderStaffPortalView(container);
+        const res = await storage.loginStaff(businessIdentifier, staffCode, pinCode, rememberMe);
+        if (res.mustChangePin || res.staff?.mustChangePin) {
+          this.showToast(`¡Hola, ${res.staff?.name || 'Especialista'}! Por seguridad debes definir tu nuevo PIN personal.`, 'info');
+          this.renderStaffChangePinView(container, res.staff, rememberMe);
+        } else {
+          this.showToast(`¡Bienvenido(a), ${res.staff?.name || 'Especialista'}!`, 'success');
+          this.renderStaffPortalView(container);
+        }
       } catch (err) {
         if (errBox) {
           errBox.classList.remove('hidden');
-          errBox.innerHTML = `<i class="fas fa-circle-exclamation"></i><span>${err.message || 'PIN incorrecto o comercio no encontrado.'}</span>`;
+          errBox.innerHTML = `<i class="fas fa-circle-exclamation"></i><span>${err.message || 'Credenciales incorrectas o colaborador no encontrado.'}</span>`;
         } else {
           this.showToast(err.message || 'Error de autenticación.', 'error');
         }
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i><span>Ingresar a Mi Portal</span>';
+        }
+      }
+    });
+  }
+
+  // --- VISTA: CAMBIO OBLIGATORIO DE PIN INICIAL ---
+  renderStaffChangePinView(container, staffUser, rememberMe = true) {
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 flex flex-col justify-between p-4 sm:p-6 text-white">
+        <!-- Barra superior -->
+        <div class="max-w-md mx-auto w-full flex items-center justify-between py-2">
+          <button id="staff-change-pin-logout-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i class="fas fa-arrow-left"></i> Cancelar y Salir
+          </button>
+          <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider">
+            Seguridad Requerida
+          </span>
+        </div>
+
+        <!-- Tarjeta de Cambio de PIN -->
+        <div class="max-w-md mx-auto w-full bg-slate-800/95 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md my-auto">
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg shadow-orange-500/25">
+              <i class="fas fa-shield-halved"></i>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Establece tu PIN Personal</h2>
+            <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+              Hola <strong class="text-white">${this.escapeHtml(staffUser?.name || 'Colaborador')}</strong>. Por tu seguridad y la de tu comercio, debes reemplazar el PIN inicial por tu propio <strong>PIN personal de 6 dígitos numéricos</strong> antes de acceder.
+            </p>
+          </div>
+
+          <form id="staff-change-pin-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Nuevo PIN (6 dígitos numéricos) *</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-lock text-xs"></i>
+                </span>
+                <input 
+                  type="password" 
+                  inputmode="numeric" 
+                  pattern="[0-9]{6}" 
+                  maxlength="6" 
+                  id="staff-new-pin" 
+                  required 
+                  placeholder="••••••" 
+                  autocomplete="new-password"
+                  class="w-full pl-9 pr-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-black tracking-widest text-center text-xl focus:ring-2 focus:ring-amber-500 focus:outline-none transition-all"
+                >
+              </div>
+              <span class="text-[10px] text-slate-400 mt-1 block">Debe ser de 6 números (ej: 482910) que solo tú conozcas.</span>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Confirmar Nuevo PIN *</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <i class="fas fa-check-double text-xs"></i>
+                </span>
+                <input 
+                  type="password" 
+                  inputmode="numeric" 
+                  pattern="[0-9]{6}" 
+                  maxlength="6" 
+                  id="staff-confirm-pin" 
+                  required 
+                  placeholder="••••••" 
+                  autocomplete="new-password"
+                  class="w-full pl-9 pr-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-black tracking-widest text-center text-xl focus:ring-2 focus:ring-amber-500 focus:outline-none transition-all"
+                >
+              </div>
+            </div>
+
+            <div id="staff-change-pin-error" class="hidden p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-center gap-2"></div>
+
+            <button 
+              type="submit" 
+              id="staff-change-pin-submit-btn" 
+              class="w-full py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-xl shadow-lg shadow-amber-500/25 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-key"></i>
+              <span>Guardar Mi PIN Personal y Entrar</span>
+            </button>
+          </form>
+
+          <div class="mt-4 text-center">
+            <button id="staff-change-pin-cancel-btn" class="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer">
+              Cerrar sesión y salir
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center text-slate-500 text-[11px] py-2">
+          ReservasCR.app • Acceso Seguro para Colaboradores
+        </div>
+      </div>
+    `;
+
+    const logoutAction = async () => {
+      await storage.logoutStaff();
+      this.renderStaffPortalView(container);
+    };
+
+    document.getElementById('staff-change-pin-logout-btn')?.addEventListener('click', logoutAction);
+    document.getElementById('staff-change-pin-cancel-btn')?.addEventListener('click', logoutAction);
+
+    const form = document.getElementById('staff-change-pin-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newPinInput = document.getElementById('staff-new-pin');
+      const confirmPinInput = document.getElementById('staff-confirm-pin');
+      const errBox = document.getElementById('staff-change-pin-error');
+      const submitBtn = document.getElementById('staff-change-pin-submit-btn');
+
+      const newPin = newPinInput?.value.trim();
+      const confirmPin = confirmPinInput?.value.trim();
+
+      if (!newPin || !/^\d{6}$/.test(newPin)) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>El PIN debe contener exactamente 6 dígitos numéricos.</span>';
+        }
+        return;
+      }
+
+      if (newPin !== confirmPin) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Los dos PINs ingresados no coinciden.</span>';
+        }
+        return;
+      }
+
+      if (newPin === '123456') {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Por tu seguridad, no puedes usar "123456" como tu PIN personal. Por favor ingresa una clave diferente.</span>';
+        }
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando nuevo PIN...';
+      }
+      if (errBox) errBox.classList.add('hidden');
+
+      try {
+        await storage.changeStaffPin(newPin, confirmPin, rememberMe);
+        this.showToast('¡PIN personal guardado exitosamente!', 'success');
+        this.renderStaffPortalView(container);
+      } catch (err) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = `<i class="fas fa-circle-exclamation"></i><span>${err.message || 'Error al actualizar el PIN.'}</span>`;
+        } else {
+          this.showToast(err.message || 'Error al actualizar el PIN.', 'error');
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-key"></i><span>Guardar Mi PIN Personal y Entrar</span>';
         }
       }
     });
@@ -16815,33 +17033,49 @@ Esperamos atenderle pronto de nuevo.`;
                 </div>
               </div>
 
-              <!-- PIN de 4 dígitos y Correo Opcional -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- Código de Colaborador, PIN Inicial y Correo Opcional -->
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                    PIN de Acceso al Portal (4 Dígitos)
+                    Código Colaborador *
                   </label>
                   <input 
-                    type="password" 
-                    id="staff-pin-code" 
-                    value="${staffMember?.pinCode || ''}" 
-                    placeholder="Ej: 1234" 
-                    maxlength="4" 
-                    inputmode="numeric" 
-                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-center tracking-widest"
+                    type="text" 
+                    id="staff-code-input" 
+                    required
+                    value="${staffMember?.staffCode || ''}" 
+                    placeholder="Ej: CARLOS, 101" 
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-blue-700 uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
-                  <span class="text-[10px] text-slate-400 mt-0.5 block">Para ingresar en /colaborador y ver su agenda y ganancias.</span>
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">Identificador para login.</span>
                 </div>
                 <div>
                   <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
-                    Correo del Especialista (Opcional)
+                    PIN Inicial (6 Dígitos) *
+                  </label>
+                  <input 
+                    type="text" 
+                    id="staff-pin-code" 
+                    required
+                    value="${staffMember?.pinCode || '123456'}" 
+                    placeholder="Ej: 123456" 
+                    maxlength="6" 
+                    pattern="[0-9]{6}"
+                    inputmode="numeric" 
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-center tracking-widest"
+                  />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">${isEdit ? 'Si lo cambias, requerirá nuevo PIN.' : 'Deberá cambiarlo al ingresar.'}</span>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    Correo (Opcional)
                   </label>
                   <input 
                     type="email" 
                     id="staff-email-input" 
                     value="${staffMember?.email || ''}" 
                     placeholder="colaborador@correo.com" 
-                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -17030,7 +17264,18 @@ Esperamos atenderle pronto de nuevo.`;
       const email = document.getElementById('staff-email-input')?.value?.trim() || null;
       const commissionType = document.getElementById('staff-commission-type')?.value || 'percentage';
       const commissionRate = parseFloat(document.getElementById('staff-commission-rate')?.value) || 0;
-      const pinCode = document.getElementById('staff-pin-code')?.value?.trim() || null;
+      const staffCode = document.getElementById('staff-code-input')?.value?.trim().toUpperCase() || null;
+      const pinCode = document.getElementById('staff-pin-code')?.value?.trim() || '123456';
+
+      if (!staffCode) {
+        this.showToast('Debes asignar un código único al colaborador.', 'error');
+        return;
+      }
+
+      if (!/^\d{6}$/.test(pinCode)) {
+        this.showToast('El PIN debe tener exactamente 6 dígitos numéricos.', 'error');
+        return;
+      }
 
       const isAll = document.getElementById('staff-all-services-checkbox')?.checked ?? true;
       let selectedServices = ['all'];
@@ -17064,6 +17309,7 @@ Esperamos atenderle pronto de nuevo.`;
         avatarUrl,
         commissionType,
         commissionRate,
+        staffCode,
         pinCode,
         services: selectedServices,
         schedule: customSchedule,

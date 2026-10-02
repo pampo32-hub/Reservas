@@ -32,22 +32,37 @@ class StorageService {
   }
 
   getAuthToken() {
-    return (typeof localStorage !== 'undefined') ? localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
+    let token = null;
+    if (typeof localStorage !== 'undefined') {
+      token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
+    if (!token && typeof sessionStorage !== 'undefined') {
+      token = sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
+    return token;
   }
 
-  setAuthToken(token) {
-    if (typeof localStorage !== 'undefined') {
-      if (token) {
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+  setAuthToken(token, remember = true) {
+    if (token) {
+      if (remember) {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       } else {
-        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+        if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       }
+    } else {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
   }
 
   clearAuthToken() {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
   }
 
@@ -1314,17 +1329,28 @@ class StorageService {
 
   // --- GESTIÓN DE COLABORADORES / STAFF SESIÓN ---
   getStaffUser() {
-    const data = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.STAFF_USER) : null;
+    let data = null;
+    if (typeof localStorage !== 'undefined') {
+      data = localStorage.getItem(STORAGE_KEYS.STAFF_USER);
+    }
+    if (!data && typeof sessionStorage !== 'undefined') {
+      data = sessionStorage.getItem(STORAGE_KEYS.STAFF_USER);
+    }
     return data ? JSON.parse(data) : null;
   }
 
-  setStaffUser(staffUser) {
-    if (typeof localStorage !== 'undefined') {
-      if (staffUser) {
-        localStorage.setItem(STORAGE_KEYS.STAFF_USER, JSON.stringify(staffUser));
+  setStaffUser(staffUser, remember = true) {
+    if (staffUser) {
+      if (remember) {
+        if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEYS.STAFF_USER, JSON.stringify(staffUser));
+        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEYS.STAFF_USER);
       } else {
-        localStorage.removeItem(STORAGE_KEYS.STAFF_USER);
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(STORAGE_KEYS.STAFF_USER, JSON.stringify(staffUser));
+        if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEYS.STAFF_USER);
       }
+    } else {
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEYS.STAFF_USER);
+      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_KEYS.STAFF_USER);
     }
   }
 
@@ -1333,16 +1359,33 @@ class StorageService {
     this.clearAuthToken();
   }
 
-  async loginStaff(businessIdentifier, pinCode) {
+  async loginStaff(businessIdentifier, staffCode, pinCode, rememberMe = true) {
     const res = await this.fetchWithAuth(`${this.apiBase}/auth/staff/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ businessIdentifier, pinCode })
+      body: JSON.stringify({ businessIdentifier, staffCode, pinCode })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión como colaborador.');
-    if (data.token) this.setAuthToken(data.token);
-    this.setStaffUser(data.staff);
+    if (data.token) this.setAuthToken(data.token, rememberMe);
+    this.setStaffUser(data.staff, rememberMe);
+    return data;
+  }
+
+  async changeStaffPin(newPin, confirmPin, rememberMe = true) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/auth/staff/change-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newPin, confirmPin })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cambiar PIN.');
+    if (data.token) this.setAuthToken(data.token, rememberMe);
+    const currentUser = this.getStaffUser();
+    if (currentUser) {
+      currentUser.mustChangePin = false;
+      this.setStaffUser(currentUser, rememberMe);
+    }
     return data;
   }
 

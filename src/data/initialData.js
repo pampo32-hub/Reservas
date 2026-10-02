@@ -2486,7 +2486,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8877 6651',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'CARLOS',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2498,7 +2500,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8877 6652',
     services: ['srv-102', 'srv-103', 'srv-104'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'BRYAN',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2510,7 +2514,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8877 6653',
     services: ['srv-101', 'srv-103'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'MATEO',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
 
@@ -2526,7 +2532,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8344 1123',
     services: ['srv-201', 'srv-202'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'VALERIA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2538,7 +2546,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8344 1124',
     services: ['srv-203'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'SOFIA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2550,7 +2560,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8344 1125',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'CAMILA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
 
@@ -2566,7 +2578,9 @@ export const INITIAL_STAFF = [
     phone: '+506 2271 8891',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'ELENA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2578,7 +2592,9 @@ export const INITIAL_STAFF = [
     phone: '+506 2271 8892',
     services: ['srv-301', 'srv-302'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'ALEJANDRO',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
 
@@ -2594,7 +2610,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8899 1101',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'ANDRES',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2606,7 +2624,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8899 1102',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'MARIANA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
 
@@ -2622,7 +2642,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8765 4321',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'ANALUCIA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   },
   {
@@ -2634,7 +2656,9 @@ export const INITIAL_STAFF = [
     phone: '+506 8765 4322',
     services: ['all'],
     schedule: null,
-    pinCode: '1234',
+    staffCode: 'CAROLINA',
+    pinCode: '123456',
+    mustChangePin: true,
     isActive: true
   }
 ];
