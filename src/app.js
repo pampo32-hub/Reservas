@@ -7171,6 +7171,11 @@ class App {
       });
     }
 
+    // 3. Sincronizar estado de Caja & POS en segundo plano
+    if (!this.posDataLoadedBizId || this.posDataLoadedBizId !== currentBiz.id) {
+      this.loadPosData(currentBiz);
+    }
+
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');
     const estimatedRevenue = appointments.filter(a => a.status === 'confirmed' || a.status === 'completed').reduce((sum, a) => sum + (a.servicePrice || 0), 0);
@@ -7488,7 +7493,7 @@ class App {
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'pos' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 font-black ring-2 ring-emerald-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="pos">
                 <i class="fas fa-cash-register text-xs ${this.activeDashboardTab === 'pos' ? 'text-white' : 'text-emerald-600'}"></i>
                 <span>Caja & POS</span>
-                <span class="w-2 h-2 rounded-full ${this.activeCashRegisterSession?.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'} inline-block shadow-2xs"></span>
+                <span class="w-2 h-2 rounded-full ${(this.cachedPosSession?.isOpen || this.cachedPosSession?.status === 'open' || this.cachedPosSession?.id || this.activeCashRegisterSession?.isOpen) ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'} inline-block shadow-2xs"></span>
               </button>
 
               <!-- 3. Clientes CRM (Fidelización) -->
@@ -11248,8 +11253,19 @@ class App {
   async loadPosData(currentBiz) {
     try {
       const res = await storage.getCurrentCashRegister(currentBiz.id);
-      this.cachedPosSession = (res && res.isOpen) ? res.session : null;
+      const isSessionOpen = Boolean(res && (res.isOpen || res.session?.status === 'open' || res.session?.id));
+      this.cachedPosSession = (isSessionOpen && res.session) 
+        ? { ...res.session, status: 'open', isOpen: true } 
+        : null;
+      this.activeCashRegisterSession = this.cachedPosSession;
       this.posDataLoadedBizId = currentBiz.id;
+
+      // Actualizar el indicador visual (punto verde/gris) de la pestaña Caja & POS
+      const posDot = document.querySelector('[data-tab="pos"] span.rounded-full');
+      if (posDot) {
+        posDot.className = `w-2 h-2 rounded-full ${isSessionOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'} inline-block shadow-2xs`;
+      }
+
       if (this.activeDashboardTab === 'pos') {
         const tabContent = document.getElementById('dashboard-tab-content');
         if (tabContent) {
@@ -11261,7 +11277,12 @@ class App {
     } catch (e) {
       console.warn('Error cargando estado de caja:', e);
       this.cachedPosSession = null;
+      this.activeCashRegisterSession = null;
       this.posDataLoadedBizId = currentBiz.id;
+      const posDot = document.querySelector('[data-tab="pos"] span.rounded-full');
+      if (posDot) {
+        posDot.className = 'w-2 h-2 rounded-full bg-slate-400 inline-block shadow-2xs';
+      }
     }
   }
 
@@ -11281,7 +11302,7 @@ class App {
     }
 
     const session = this.cachedPosSession;
-    const isOpen = Boolean(session && session.status === 'open');
+    const isOpen = Boolean(session && (session.status === 'open' || session.isOpen || session.id));
 
     // 1. ESTADO: CAJA CERRADA
     if (!isOpen) {
@@ -11428,7 +11449,7 @@ class App {
               </div>
             </div>
             <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              ${this.formatColones(session.sinpeSales || 0)}
+              ${this.formatColones(session.sinpeSales || session.sinpeIncomes || 0)}
             </div>
             <span class="text-[11px] text-slate-400 block mt-1">Directo a cuenta bancaria</span>
           </div>
@@ -11442,7 +11463,7 @@ class App {
               </div>
             </div>
             <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
-              ${this.formatColones((session.cardSales || 0) + (session.otherSales || 0))}
+              ${this.formatColones((session.cardSales || session.cardIncomes || 0) + (session.otherSales || session.otherIncomes || 0))}
             </div>
             <span class="text-[11px] text-slate-400 block mt-1">Cobrado por terminal POS</span>
           </div>
@@ -11644,10 +11665,18 @@ class App {
 
       try {
         const res = await storage.openCashRegister(currentBiz.id, initialCash, notes, openedBy);
-        this.cachedPosSession = res.session;
+        this.cachedPosSession = res.session ? { ...res.session, status: 'open', isOpen: true } : res;
+        this.activeCashRegisterSession = this.cachedPosSession;
         this.showToast('¡Caja abierta con éxito! Ya puedes registrar cobros y movimientos.', 'success');
         this.renderCurrentView();
       } catch (err) {
+        if (err.message && err.message.toLowerCase().includes('ya existe una caja abierta')) {
+          this.showToast('Se detectó la caja abierta en el sistema. Sincronizando turno...', 'info');
+          this.posDataLoadedBizId = null;
+          await this.loadPosData(currentBiz);
+          this.renderCurrentView();
+          return;
+        }
         this.showToast(err.message || 'Error al abrir la caja.', 'error');
         if (btn) {
           btn.disabled = false;
@@ -12380,6 +12409,8 @@ Esperamos atenderle pronto de nuevo.`;
       try {
         await storage.closeCashRegister(currentBiz.id, counted, notes, closedBy);
         this.cachedPosSession = null;
+        this.activeCashRegisterSession = null;
+        this.posDataLoadedBizId = null;
         this.showToast('¡Caja cerrada y arqueo completado con éxito!', 'success');
         closeModal();
         await this.loadPosData(currentBiz);
@@ -14721,7 +14752,7 @@ Esperamos atenderle pronto de nuevo.`;
     if (!modalContainer) return;
 
     const allStaff = storage.getBusinessStaffSync(currentBiz.id) || [];
-    const isRegisterOpen = Boolean(this.cachedPosSession && this.cachedPosSession.status === 'open');
+    const isRegisterOpen = Boolean(this.cachedPosSession && (this.cachedPosSession.status === 'open' || this.cachedPosSession.isOpen || this.cachedPosSession.id));
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">

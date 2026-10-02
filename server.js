@@ -2927,11 +2927,27 @@ app.get('/api/businesses/:id/cash-register/current', async (req, res) => {
     const expectedCash = initialCash + cashIncomes - expenses;
     const totalSales = cashIncomes + sinpeIncomes + cardIncomes + otherIncomes;
 
+    // Obtener los movimientos detallados de este turno para mostrar en vivo
+    const txListRes = await pool.query(`
+      SELECT 
+        id, cash_register_id as "cashRegisterId", appointment_id as "appointmentId",
+        type, category, description, amount, payment_method as "paymentMethod",
+        staff_id as "staffId", staff_name as "staffName", client_name as "clientName",
+        client_phone as "clientPhone", sinpe_reference as "sinpeReference",
+        created_at as "createdAt"
+      FROM reservas_pos_transactions
+      WHERE cash_register_id = $1
+      ORDER BY created_at DESC
+      LIMIT 100
+    `, [reg.id]);
+
     res.json({
       isOpen: true,
       session: {
         id: reg.id,
         businessId: reg.business_id,
+        status: reg.status || 'open',
+        isOpen: true,
         openedAt: reg.opened_at,
         openedBy: reg.opened_by,
         initialCash,
@@ -2940,10 +2956,15 @@ app.get('/api/businesses/:id/cash-register/current', async (req, res) => {
         sinpeIncomes,
         cardIncomes,
         otherIncomes,
+        cashSales: cashIncomes,
+        sinpeSales: sinpeIncomes,
+        cardSales: cardIncomes,
+        otherSales: otherIncomes,
         expenses,
         totalSales,
         totalTransactions: parseInt(stats.total_transactions, 10) || 0,
-        notes: reg.notes
+        notes: reg.notes,
+        transactions: txListRes.rows || []
       }
     });
   } catch (error) {
@@ -2967,7 +2988,8 @@ app.post('/api/businesses/:id/cash-register/open', async (req, res) => {
     if (existing.rows.length > 0) {
       return res.status(400).json({ 
         error: 'Ya existe una caja abierta para este comercio. Debe cerrarla antes de abrir una nueva.',
-        existingRegisterId: existing.rows[0].id
+        existingRegisterId: existing.rows[0].id,
+        isOpen: true
       });
     }
 
@@ -2978,10 +3000,31 @@ app.post('/api/businesses/:id/cash-register/open', async (req, res) => {
       ) VALUES ($1, $2, 'open', $3, $4, $5, NOW())
     `, [regId, businessId, parseFloat(initialCash) || 0, openedBy.trim(), notes.trim()]);
 
+    const newSession = {
+      id: regId,
+      businessId,
+      status: 'open',
+      isOpen: true,
+      openedAt: new Date().toISOString(),
+      openedBy: openedBy.trim(),
+      initialCash: parseFloat(initialCash) || 0,
+      expectedCash: parseFloat(initialCash) || 0,
+      cashIncomes: 0,
+      sinpeIncomes: 0,
+      cardIncomes: 0,
+      otherIncomes: 0,
+      expenses: 0,
+      totalSales: 0,
+      totalTransactions: 0,
+      notes: notes.trim()
+    };
+
     res.status(201).json({
       success: true,
       message: 'Caja abierta con éxito.',
-      registerId: regId
+      registerId: regId,
+      isOpen: true,
+      session: newSession
     });
   } catch (error) {
     console.error('Error abriendo caja:', error);
