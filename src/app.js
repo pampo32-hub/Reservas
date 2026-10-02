@@ -7704,6 +7704,10 @@ class App {
       this.exportBusinessReportsPDF(currentBiz, appointments);
     });
 
+    if (this.activeDashboardTab === 'reports') {
+      this.setupSalesReportEvents(currentBiz, appointments);
+    }
+
     document.querySelectorAll('.dash-tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const tab = btn.getAttribute('data-tab');
@@ -12905,6 +12909,11 @@ Esperamos atenderle pronto de nuevo.`;
       `;
     }
 
+    // Cargar transacciones POS en segundo plano para el dashboard de ventas inferior
+    if (!this.reportsPosLoadedBizId || this.reportsPosLoadedBizId !== currentBiz.id) {
+      this.loadReportsPosData(currentBiz, appointments);
+    }
+
     // Cálculos para Plan Profesional e Ilimitado
     const validAppointments = appointments.filter(a => a.status !== 'cancelled');
     const completedAppointments = appointments.filter(a => a.status === 'completed');
@@ -13155,8 +13164,707 @@ Esperamos atenderle pronto de nuevo.`;
           </div>
 
         </div>
+
+        <!-- ======================================================== -->
+        <!-- DASHBOARD DE VENTAS & RENDIMIENTO CONTABLE (PARTE INFERIOR) -->
+        <!-- ======================================================== -->
+        <div id="reports-sales-dashboard-container" class="space-y-6 pt-2 border-t border-slate-200">
+          ${this.renderSalesAnalyticsDashboardContent(currentBiz, appointments)}
+        </div>
       </div>
     `;
+  }
+
+  // --- SUB-MÓDULO: RANGOS DE FECHA PARA EL DASHBOARD DE VENTAS ---
+  getSalesReportDateRange(filterKey, customStart, customEnd) {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const formatYMD = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+    if (filterKey === 'today') {
+      const todayStr = formatYMD(now);
+      return { key: 'today', start: todayStr, end: todayStr, label: 'Hoy' };
+    }
+    if (filterKey === 'this_week') {
+      const day = now.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + diffToMonday);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return { key: 'this_week', start: formatYMD(monday), end: formatYMD(sunday), label: 'Esta Semana' };
+    }
+    if (filterKey === 'last_month') {
+      const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
+      const monthName = firstDay.toLocaleString('es-CR', { month: 'long', year: 'numeric' });
+      return { 
+        key: 'last_month', 
+        start: formatYMD(firstDay), 
+        end: formatYMD(lastDay), 
+        label: `Mes Anterior (${monthName})` 
+      };
+    }
+    if (filterKey === 'this_year') {
+      return { 
+        key: 'this_year', 
+        start: `${now.getFullYear()}-01-01`, 
+        end: `${now.getFullYear()}-12-31`, 
+        label: `Año ${now.getFullYear()}` 
+      };
+    }
+    if (filterKey === 'custom' && customStart && customEnd) {
+      return { key: 'custom', start: customStart, end: customEnd, label: 'Rango Personalizado' };
+    }
+    // Por defecto: 'this_month'
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const monthName = firstDay.toLocaleString('es-CR', { month: 'long', year: 'numeric' });
+    return { 
+      key: 'this_month', 
+      start: formatYMD(firstDay), 
+      end: formatYMD(lastDay), 
+      label: `Este Mes (${monthName})` 
+    };
+  }
+
+  // --- CARGA ASÍNCRONA DE TRANSACCIONES POS PARA EL DASHBOARD DE VENTAS ---
+  async loadReportsPosData(currentBiz, appointments) {
+    try {
+      this.cachedReportsPosTransactions = await storage.getPosTransactions(currentBiz.id, { limit: 1000 });
+      this.reportsPosLoadedBizId = currentBiz.id;
+      const container = document.getElementById('reports-sales-dashboard-container');
+      if (container && this.activeDashboardTab === 'reports') {
+        container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+        this.setupSalesReportEvents(currentBiz, appointments);
+      }
+    } catch (e) {
+      console.warn('Error cargando transacciones POS para reportes:', e);
+      this.cachedReportsPosTransactions = [];
+      this.reportsPosLoadedBizId = currentBiz.id;
+    }
+  }
+
+  // --- CONTENIDO: DASHBOARD DE VENTAS Y RENDIMIENTO CONTABLE (PARTE INFERIOR) ---
+  renderSalesAnalyticsDashboardContent(currentBiz, appointments = []) {
+    const filterKey = this.salesReportFilter || 'this_month';
+    const range = this.getSalesReportDateRange(filterKey, this.salesReportCustomStart, this.salesReportCustomEnd);
+
+    // 1. Filtrar Citas en el rango de fechas
+    const filteredAppointments = (appointments || []).filter(a => {
+      if (a.status === 'cancelled') return false;
+      const d = a.date || '';
+      return d >= range.start && d <= range.end;
+    });
+
+    // 2. Filtrar Transacciones POS en el rango
+    const posTxs = (this.cachedReportsPosTransactions || []).filter(t => {
+      const d = (t.createdAt || t.created_at || '').slice(0, 10);
+      if (!d) return true;
+      return d >= range.start && d <= range.end;
+    });
+
+    // 3. Cálculos Financieros
+    const totalServices = filteredAppointments.reduce((sum, a) => {
+      return sum + parseFloat(a.servicePrice || a.service_price || a.price || 0);
+    }, 0);
+
+    const totalProducts = posTxs
+      .filter(t => t.type === 'income' && (t.category === 'product_sale' || t.category === 'product' || t.category === 'inventory'))
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+    const totalAdvances = posTxs
+      .filter(t => t.type === 'expense' && (t.category === 'vale' || t.category === 'staff_advance'))
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+    const totalExpenses = posTxs
+      .filter(t => t.type === 'expense' && t.category !== 'vale' && t.category !== 'staff_advance')
+      .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+    const totalDiscounts = filteredAppointments.reduce((sum, a) => {
+      return sum + parseFloat(a.discountAmount || a.discount || 0);
+    }, 0);
+
+    const grossSales = totalServices + totalProducts;
+    const netSales = Math.max(0, grossSales - totalAdvances - totalExpenses - totalDiscounts);
+
+    // 4. DÍAS DE LA SEMANA (l m m j v s d)
+    const daysOfWeek = [
+      { key: 'l', label: 'l', name: 'Lunes', amount: 0, count: 0 },
+      { key: 'm', label: 'm', name: 'Martes', amount: 0, count: 0 },
+      { key: 'x', label: 'm', name: 'Miércoles', amount: 0, count: 0 },
+      { key: 'j', label: 'j', name: 'Jueves', amount: 0, count: 0 },
+      { key: 'v', label: 'v', name: 'Viernes', amount: 0, count: 0 },
+      { key: 's', label: 's', name: 'Sábado', amount: 0, count: 0 },
+      { key: 'd', label: 'd', name: 'Domingo', amount: 0, count: 0 }
+    ];
+
+    filteredAppointments.forEach(a => {
+      if (!a.date) return;
+      const parts = a.date.split('-');
+      if (parts.length !== 3) return;
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      const dayIndex = (d.getDay() + 6) % 7; // 0=Lunes, 6=Domingo
+      if (dayIndex >= 0 && dayIndex < 7) {
+        const p = parseFloat(a.servicePrice || a.service_price || a.price || 0);
+        daysOfWeek[dayIndex].amount += p;
+        daysOfWeek[dayIndex].count += 1;
+      }
+    });
+
+    posTxs.filter(t => t.type === 'income' && (t.category === 'product_sale' || t.category === 'product')).forEach(t => {
+      const dStr = (t.createdAt || t.created_at || '').slice(0, 10);
+      if (!dStr) return;
+      const parts = dStr.split('-');
+      if (parts.length !== 3) return;
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      const dayIndex = (d.getDay() + 6) % 7;
+      if (dayIndex >= 0 && dayIndex < 7) {
+        daysOfWeek[dayIndex].amount += parseFloat(t.amount || 0);
+      }
+    });
+
+    const maxDayAmount = Math.max(...daysOfWeek.map(d => d.amount), 0);
+    const peakDayIndex = maxDayAmount > 0 
+      ? daysOfWeek.findIndex(d => d.amount === maxDayAmount)
+      : -1;
+
+    // 5. ANÁLISIS POR HORA (Curva de Onda Continua)
+    const hourlyBuckets = [
+      { label: '8 a.m.', minHour: 7, maxHour: 10, amount: 0, count: 0 },
+      { label: '11 a.m.', minHour: 10, maxHour: 13, amount: 0, count: 0 },
+      { label: '2 p.m.', minHour: 13, maxHour: 16, amount: 0, count: 0 },
+      { label: '5 p.m.', minHour: 16, maxHour: 19, amount: 0, count: 0 },
+      { label: '8 p.m.', minHour: 19, maxHour: 23, amount: 0, count: 0 }
+    ];
+
+    filteredAppointments.forEach(a => {
+      const timeStr = a.time || '10:00';
+      const hour = parseInt(timeStr.split(':')[0], 10);
+      const p = parseFloat(a.servicePrice || a.service_price || a.price || 0);
+      for (const b of hourlyBuckets) {
+        if (hour >= b.minHour && hour < b.maxHour) {
+          b.amount += p;
+          b.count += 1;
+          break;
+        }
+      }
+    });
+
+    const maxHourAmount = Math.max(...hourlyBuckets.map(b => b.amount), 0);
+    const xCoords = [24, 82, 140, 198, 256];
+    const yCoords = hourlyBuckets.map(b => {
+      if (maxHourAmount <= 0) return 55;
+      const ratio = b.amount / maxHourAmount;
+      return Math.round(58 - (ratio * 44));
+    });
+
+    let pathD = `M ${xCoords[0]} ${yCoords[0]}`;
+    for (let i = 0; i < xCoords.length - 1; i++) {
+      const x1 = xCoords[i];
+      const y1 = yCoords[i];
+      const x2 = xCoords[i + 1];
+      const y2 = yCoords[i + 1];
+      const cpX1 = x1 + (x2 - x1) / 2;
+      const cpX2 = x1 + (x2 - x1) / 2;
+      pathD += ` C ${cpX1} ${y1}, ${cpX2} ${y2}, ${x2} ${y2}`;
+    }
+    const areaPathD = `${pathD} L ${xCoords[xCoords.length - 1]} 68 L ${xCoords[0]} 68 Z`;
+
+    const circlesHtml = xCoords.map((x, i) => {
+      const b = hourlyBuckets[i];
+      const isPeak = maxHourAmount > 0 && b.amount === maxHourAmount;
+      return `
+        <g class="cursor-pointer group">
+          <circle cx="${x}" cy="${yCoords[i]}" r="${isPeak ? 4.5 : 3}" fill="${isPeak ? '#2563eb' : '#3b82f6'}" stroke="#ffffff" stroke-width="2" />
+          <title>${b.label}: ₡${b.amount.toLocaleString('es-CR')} (${b.count} citas)</title>
+        </g>
+      `;
+    }).join('');
+
+    // 6. Canales de Cobro (Métodos de Pago)
+    const paymentCounts = {
+      sinpe: { label: 'SINPE Móvil', icon: 'fa-mobile-screen', color: 'emerald', amount: 0, count: 0 },
+      cash: { label: 'Efectivo', icon: 'fa-money-bill-wave', color: 'amber', amount: 0, count: 0 },
+      card: { label: 'Tarjeta / Datáfono', icon: 'fa-credit-card', color: 'blue', amount: 0, count: 0 }
+    };
+
+    filteredAppointments.forEach(a => {
+      const pm = (a.paymentMethod || a.payment_method || 'cash').toLowerCase();
+      const p = parseFloat(a.servicePrice || a.service_price || a.price || 0);
+      if (pm.includes('sinpe')) {
+        paymentCounts.sinpe.amount += p;
+        paymentCounts.sinpe.count += 1;
+      } else if (pm.includes('card') || pm.includes('tarjeta')) {
+        paymentCounts.card.amount += p;
+        paymentCounts.card.count += 1;
+      } else {
+        paymentCounts.cash.amount += p;
+        paymentCounts.cash.count += 1;
+      }
+    });
+
+    posTxs.forEach(t => {
+      if (t.type !== 'income') return;
+      const pm = (t.paymentMethod || 'cash').toLowerCase();
+      const amt = parseFloat(t.amount || 0);
+      if (pm.includes('sinpe')) {
+        paymentCounts.sinpe.amount += amt;
+        paymentCounts.sinpe.count += 1;
+      } else if (pm.includes('card') || pm.includes('tarjeta')) {
+        paymentCounts.card.amount += amt;
+        paymentCounts.card.count += 1;
+      } else {
+        paymentCounts.cash.amount += amt;
+        paymentCounts.cash.count += 1;
+      }
+    });
+
+    const totalPayAmount = paymentCounts.sinpe.amount + paymentCounts.cash.amount + paymentCounts.card.amount;
+    const sinpePct = totalPayAmount > 0 ? Math.round((paymentCounts.sinpe.amount / totalPayAmount) * 100) : 0;
+    const cashPct = totalPayAmount > 0 ? Math.round((paymentCounts.cash.amount / totalPayAmount) * 100) : 0;
+    const cardPct = totalPayAmount > 0 ? Math.max(0, 100 - sinpePct - cashPct) : 0;
+
+    // 7. Rendimiento por Especialista
+    const staffPerformanceMap = new Map();
+    const allStaff = storage.getBusinessStaffSync(currentBiz.id) || [];
+    allStaff.forEach(s => {
+      staffPerformanceMap.set(s.id, {
+        id: s.id,
+        name: s.name,
+        roleTitle: s.roleTitle || 'Especialista',
+        avatarUrl: s.avatarUrl || '',
+        revenue: 0,
+        servicesCount: 0
+      });
+    });
+
+    filteredAppointments.forEach(a => {
+      const sId = a.staffId || a.staff_id;
+      const sName = a.staffName || a.staff_name;
+      let target = null;
+      if (sId && staffPerformanceMap.has(sId)) {
+        target = staffPerformanceMap.get(sId);
+      } else if (sName) {
+        target = Array.from(staffPerformanceMap.values()).find(s => s.name.trim().toLowerCase() === sName.trim().toLowerCase());
+      }
+
+      const p = parseFloat(a.servicePrice || a.service_price || a.price || 0);
+      if (target) {
+        target.revenue += p;
+        target.servicesCount += 1;
+      } else if (sName) {
+        staffPerformanceMap.set(sName, {
+          id: sName,
+          name: sName,
+          roleTitle: 'Especialista',
+          avatarUrl: '',
+          revenue: p,
+          servicesCount: 1
+        });
+      }
+    });
+
+    const staffPerformanceList = Array.from(staffPerformanceMap.values())
+      .filter(s => s.revenue > 0 || s.servicesCount > 0)
+      .sort((a, b) => b.revenue - a.revenue || b.servicesCount - a.servicesCount);
+
+    return `
+      <!-- Encabezado del Nuevo Dashboard Inferior -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-black">
+                <i class="fas fa-chart-pie"></i>
+              </span>
+              <h3 class="text-lg font-black text-slate-900">Dashboard de Ventas & Rendimiento Contable</h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+              Visualización detallada de facturación por servicios y productos, salidas de vales, afluencia horaria y formas de pago.
+            </p>
+          </div>
+
+          <!-- Rango Actual Badge -->
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold flex items-center gap-1.5">
+              <i class="fas fa-calendar-alt text-blue-600"></i>
+              <span>${range.label}</span>
+              <span class="text-[11px] text-blue-600/80 font-normal">(${this.formatDateDMY(range.start)} - ${this.formatDateDMY(range.end)})</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Píldoras de Filtro Rápido y Selector de Fechas -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+              <i class="fas fa-filter text-slate-400"></i> Período:
+            </span>
+            ${[
+              { key: 'today', label: 'Hoy' },
+              { key: 'this_week', label: 'Esta Semana' },
+              { key: 'this_month', label: 'Este Mes' },
+              { key: 'last_month', label: 'Mes Anterior' },
+              { key: 'this_year', label: 'Este Año' }
+            ].map(f => `
+              <button 
+                type="button" 
+                class="sales-report-filter-pill px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${filterKey === f.key ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}"
+                data-sales-filter="${f.key}"
+              >
+                ${f.label}
+              </button>
+            `).join('')}
+          </div>
+
+          <!-- Selector Personalizado Desde / Hasta -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-slate-500 font-medium">Personalizado:</span>
+            <input 
+              type="date" 
+              id="sales-report-custom-start" 
+              value="${range.start}" 
+              class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+            <span class="text-slate-400 text-xs">al</span>
+            <input 
+              type="date" 
+              id="sales-report-custom-end" 
+              value="${range.end}" 
+              class="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            >
+            <button 
+              type="button" 
+              id="sales-report-custom-apply-btn" 
+              class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              Filtrar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Métricas Clave (Top 5 KPIs) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- 1. Ventas Totales Brutas -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs relative overflow-hidden">
+          <div class="flex items-center justify-between text-slate-500 mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider">Ventas Totales</span>
+            <div class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-black">
+              <i class="fas fa-coins"></i>
+            </div>
+          </div>
+          <span class="text-xl font-black text-slate-900">₡${grossSales.toLocaleString('es-CR')}</span>
+          <span class="text-[11px] text-blue-600 font-bold block mt-1">Servicios + Productos</span>
+        </div>
+
+        <!-- 2. Ventas de Servicios -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider">Ventas Servicios</span>
+            <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">
+              <i class="fas fa-scissors"></i>
+            </div>
+          </div>
+          <span class="text-xl font-black text-indigo-700">₡${totalServices.toLocaleString('es-CR')}</span>
+          <span class="text-[11px] text-slate-500 font-medium block mt-1">${filteredAppointments.length} citas en el período</span>
+        </div>
+
+        <!-- 3. Ventas de Productos -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider">Ventas Productos</span>
+            <div class="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-sm font-black">
+              <i class="fas fa-bag-shopping"></i>
+            </div>
+          </div>
+          <span class="text-xl font-black text-purple-700">₡${totalProducts.toLocaleString('es-CR')}</span>
+          <span class="text-[11px] text-slate-500 font-medium block mt-1">Mostrador / POS</span>
+        </div>
+
+        <!-- 4. Vales y Anticipos -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+          <div class="flex items-center justify-between text-slate-500 mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider">Vales & Anticipos</span>
+            <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm font-black">
+              <i class="fas fa-hand-holding-dollar"></i>
+            </div>
+          </div>
+          <span class="text-xl font-black text-amber-700">₡${totalAdvances.toLocaleString('es-CR')}</span>
+          <span class="text-[11px] text-amber-800 font-semibold block mt-1">Salidas a colaboradores</span>
+        </div>
+
+        <!-- 5. Ingreso Neto Real -->
+        <div class="bg-emerald-50/70 p-5 rounded-2xl border border-emerald-200 shadow-xs">
+          <div class="flex items-center justify-between text-emerald-800 mb-2">
+            <span class="text-xs font-bold uppercase tracking-wider">Neto Disponible</span>
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-sm font-black">
+              <i class="fas fa-wallet"></i>
+            </div>
+          </div>
+          <span class="text-xl font-black text-emerald-700">₡${netSales.toLocaleString('es-CR')}</span>
+          <span class="text-[11px] text-emerald-600 font-semibold block mt-1">Ventas − Vales − Gastos</span>
+        </div>
+      </div>
+
+      <!-- Grid Principal: Tarjeta 'Resumen de ventas' (Diseño Imagen) + Canales y Especialistas -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Columna Izquierda: Tarjeta 'Resumen de ventas' idéntica a la imagen (7 Cols) -->
+        <div class="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-6">
+          <h3 class="text-lg font-bold text-slate-900">Resumen de ventas</h3>
+
+          <!-- Mini gráficos: DÍAS DE LA SEMANA y ANÁLISIS POR HORA -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
+            
+            <!-- Gráfico 1: DÍAS DE LA SEMANA -->
+            <div class="space-y-3">
+              <div class="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+                DÍAS DE LA SEMANA
+              </div>
+              <div class="h-28 flex items-end justify-between gap-1.5 pt-2">
+                ${daysOfWeek.map((d, i) => {
+                  const isPeak = i === peakDayIndex && maxDayAmount > 0;
+                  const heightPct = maxDayAmount > 0 
+                    ? Math.max(12, Math.round((d.amount / maxDayAmount) * 100))
+                    : 12;
+
+                  return `
+                    <div class="flex-1 flex flex-col items-center gap-1.5 group relative">
+                      <div class="w-full flex items-end justify-center h-20">
+                        <div 
+                          class="w-full max-w-[26px] rounded-t-md transition-all duration-300 ${isPeak ? 'bg-blue-600 shadow-sm shadow-blue-500/30' : 'bg-blue-100/90 group-hover:bg-blue-200'}" 
+                          style="height: ${heightPct}%;"
+                        ></div>
+                      </div>
+                      <span class="text-xs font-semibold ${isPeak ? 'text-blue-600 font-black' : 'text-slate-500'} font-mono lowercase">
+                        ${d.label}
+                      </span>
+                      <!-- Tooltip al pasar mouse -->
+                      <div class="absolute -top-10 bg-slate-900 text-white text-[10px] py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-md">
+                        <strong>${d.name}:</strong> ₡${d.amount.toLocaleString('es-CR')} (${d.count} citas)
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Gráfico 2: ANÁLISIS POR HORA -->
+            <div class="space-y-3">
+              <div class="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+                ANÁLISIS POR HORA
+              </div>
+              <div class="h-28 flex flex-col justify-between pt-1">
+                <svg viewBox="0 0 280 75" class="w-full h-18 overflow-visible">
+                  <defs>
+                    <linearGradient id="hourWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3" />
+                      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="${areaPathD}" fill="url(#hourWaveGrad)" />
+                  <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                  ${circlesHtml}
+                </svg>
+                <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono text-center px-1">
+                  <span>8<br>a.m.</span>
+                  <span>11<br>a.m.</span>
+                  <span>2<br>p.m.</span>
+                  <span>5<br>p.m.</span>
+                  <span>8<br>p.m.</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Desglose Contable Tipo Ticket (Exacto a la imagen) -->
+          <div class="space-y-2.5 pt-1">
+            <h4 class="text-sm font-bold text-slate-900 mb-2">Ventas:</h4>
+
+            <div class="flex items-center justify-between text-xs py-1">
+              <span class="text-slate-500 font-medium">Ventas brutas</span>
+              <strong class="text-slate-900 font-black text-sm">₡${grossSales.toLocaleString('es-CR')}</strong>
+            </div>
+
+            <div class="flex items-center justify-between text-xs py-1">
+              <span class="text-slate-500 font-medium">Total servicios</span>
+              <strong class="text-slate-900 font-bold">₡${totalServices.toLocaleString('es-CR')}</strong>
+            </div>
+
+            <div class="flex items-center justify-between text-xs py-1">
+              <span class="text-slate-500 font-medium">Total productos</span>
+              <strong class="text-slate-900 font-bold">₡${totalProducts.toLocaleString('es-CR')}</strong>
+            </div>
+
+            <div class="flex items-center justify-between text-xs py-1">
+              <span class="text-slate-500 font-medium">Descuentos</span>
+              <strong class="text-slate-900 font-bold">₡${totalDiscounts.toLocaleString('es-CR')}</strong>
+            </div>
+
+            ${totalAdvances > 0 ? `
+              <div class="flex items-center justify-between text-xs py-1">
+                <span class="text-amber-800 font-semibold">Vales de colaboradores</span>
+                <strong class="text-amber-800 font-bold">-₡${totalAdvances.toLocaleString('es-CR')}</strong>
+              </div>
+            ` : ''}
+
+            ${totalExpenses > 0 ? `
+              <div class="flex items-center justify-between text-xs py-1">
+                <span class="text-rose-600 font-semibold">Gastos de caja chica</span>
+                <strong class="text-rose-600 font-bold">-₡${totalExpenses.toLocaleString('es-CR')}</strong>
+              </div>
+            ` : ''}
+
+            <div class="flex items-center justify-between text-xs py-1">
+              <span class="text-slate-500 font-medium">Impuestos</span>
+              <strong class="text-slate-900 font-bold">₡0</strong>
+            </div>
+
+            <div class="h-0.5 bg-slate-900 my-3"></div>
+
+            <div class="flex items-center justify-between pt-1">
+              <span class="text-base font-black text-slate-900">Total</span>
+              <span class="text-xl font-black text-slate-900">₡${netSales.toLocaleString('es-CR')}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna Derecha: Canales de Cobro & Rendimiento por Especialista (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
+
+          <!-- Card: Canales de Cobro (Métodos de Pago) -->
+          <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fas fa-money-check-dollar text-emerald-600"></i> Métodos de Pago
+              </h4>
+              <span class="text-xs text-slate-400 font-semibold">
+                Total: ₡${totalPayAmount.toLocaleString('es-CR')}
+              </span>
+            </div>
+
+            <!-- Barra Proporcional Multilateral -->
+            <div class="w-full bg-slate-100 rounded-full h-3 flex overflow-hidden">
+              <div class="bg-emerald-500 h-full transition-all" style="width: ${sinpePct}%;" title="SINPE: ${sinpePct}%"></div>
+              <div class="bg-amber-500 h-full transition-all" style="width: ${cashPct}%;" title="Efectivo: ${cashPct}%"></div>
+              <div class="bg-blue-500 h-full transition-all" style="width: ${cardPct}%;" title="Tarjeta: ${cardPct}%"></div>
+            </div>
+
+            <!-- 3 Indicadores -->
+            <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+              <div class="p-3 bg-emerald-50/70 rounded-2xl border border-emerald-100">
+                <div class="text-[11px] font-bold text-emerald-900 mb-0.5 flex items-center justify-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> SINPE
+                </div>
+                <strong class="text-xs font-black text-emerald-800 block">₡${paymentCounts.sinpe.amount.toLocaleString('es-CR')}</strong>
+                <span class="text-[10px] text-emerald-600 font-bold">${sinpePct}%</span>
+              </div>
+
+              <div class="p-3 bg-amber-50/70 rounded-2xl border border-amber-100">
+                <div class="text-[11px] font-bold text-amber-900 mb-0.5 flex items-center justify-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-amber-500"></span> Efectivo
+                </div>
+                <strong class="text-xs font-black text-amber-800 block">₡${paymentCounts.cash.amount.toLocaleString('es-CR')}</strong>
+                <span class="text-[10px] text-amber-600 font-bold">${cashPct}%</span>
+              </div>
+
+              <div class="p-3 bg-blue-50/70 rounded-2xl border border-blue-100">
+                <div class="text-[11px] font-bold text-blue-900 mb-0.5 flex items-center justify-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-blue-500"></span> Tarjeta
+                </div>
+                <strong class="text-xs font-black text-blue-800 block">₡${paymentCounts.card.amount.toLocaleString('es-CR')}</strong>
+                <span class="text-[10px] text-blue-600 font-bold">${cardPct}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card: Ventas por Especialista -->
+          <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <i class="fas fa-user-tie text-indigo-600"></i> Ventas por Especialista
+              </h4>
+              <span class="text-xs text-slate-400 font-medium">En servicios</span>
+            </div>
+
+            ${staffPerformanceList.length === 0 ? `
+              <p class="text-xs text-slate-400 py-4 text-center">No hay ventas registradas con especialista asignado en este período.</p>
+            ` : `
+              <div class="space-y-3.5">
+                ${staffPerformanceList.map(st => {
+                  const pct = totalServices > 0 ? Math.round((st.revenue / totalServices) * 100) : 0;
+                  return `
+                    <div class="space-y-1.5">
+                      <div class="flex items-center justify-between text-xs">
+                        <div class="flex items-center gap-2">
+                          <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-[11px] border border-indigo-200">
+                            ${st.name ? st.name.charAt(0).toUpperCase() : 'E'}
+                          </div>
+                          <div>
+                            <strong class="text-slate-900 font-bold block">${this.escapeHtml(st.name)}</strong>
+                            <span class="text-[10px] text-slate-400">${st.servicesCount} citas</span>
+                          </div>
+                        </div>
+                        <div class="text-right">
+                          <strong class="text-indigo-700 font-black block">₡${st.revenue.toLocaleString('es-CR')}</strong>
+                          <span class="text-[10px] text-slate-400">${pct}% del total</span>
+                        </div>
+                      </div>
+                      <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-600 h-full rounded-full transition-all" style="width: ${pct}%;"></div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+
+        </div>
+      </div>
+    `;
+  }
+
+  // --- LISTENERS DE EVENTOS DEL DASHBOARD DE VENTAS ---
+  setupSalesReportEvents(currentBiz, appointments = []) {
+    // 1. Píldoras de filtro rápido
+    document.querySelectorAll('.sales-report-filter-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filter = btn.getAttribute('data-sales-filter');
+        this.salesReportFilter = filter;
+        const container = document.getElementById('reports-sales-dashboard-container');
+        if (container) {
+          container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+          this.setupSalesReportEvents(currentBiz, appointments);
+        }
+      });
+    });
+
+    // 2. Filtro personalizado de fechas
+    document.getElementById('sales-report-custom-apply-btn')?.addEventListener('click', () => {
+      const startInput = document.getElementById('sales-report-custom-start');
+      const endInput = document.getElementById('sales-report-custom-end');
+      if (startInput && endInput && startInput.value && endInput.value) {
+        if (startInput.value > endInput.value) {
+          this.showToast('La fecha inicial no puede ser posterior a la fecha final.', 'error');
+          return;
+        }
+        this.salesReportFilter = 'custom';
+        this.salesReportCustomStart = startInput.value;
+        this.salesReportCustomEnd = endInput.value;
+        const container = document.getElementById('reports-sales-dashboard-container');
+        if (container) {
+          container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+          this.setupSalesReportEvents(currentBiz, appointments);
+        }
+      } else {
+        this.showToast('Por favor selecciona ambas fechas (Desde y Hasta).', 'info');
+      }
+    });
   }
 
   // --- SUB-CONTENIDO: SINCRONIZACIÓN DE CALENDARIOS (GOOGLE & OUTLOOK DIRECTO) ---

@@ -3378,8 +3378,13 @@ app.post('/api/businesses/:id/pos/expense', async (req, res) => {
 // 7. Listar transacciones POS de una sesión de caja o generales
 app.get('/api/businesses/:id/pos/transactions', async (req, res) => {
   try {
-    const { id: businessId } = req.params;
-    const { registerId, limit = 50 } = req.query;
+    const { id: rawBusinessId } = req.params;
+    let businessId = rawBusinessId;
+    const bizCheck = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
+    if (bizCheck.rows.length > 0) {
+      businessId = bizCheck.rows[0].id;
+    }
+    const { registerId, limit = 500, startDate, endDate } = req.query;
 
     let query = 'SELECT * FROM reservas_pos_transactions WHERE business_id = $1';
     const params = [businessId];
@@ -3388,8 +3393,16 @@ app.get('/api/businesses/:id/pos/transactions', async (req, res) => {
       params.push(registerId);
       query += ` AND cash_register_id = $${params.length}`;
     }
+    if (startDate && startDate !== '[object Object]') {
+      params.push(startDate);
+      query += ` AND created_at >= $${params.length}`;
+    }
+    if (endDate && endDate !== '[object Object]') {
+      params.push(endDate);
+      query += ` AND created_at <= $${params.length}`;
+    }
 
-    query += ' ORDER BY created_at DESC LIMIT ' + (parseInt(limit, 10) || 50);
+    query += ' ORDER BY created_at DESC LIMIT ' + (parseInt(limit, 10) || 500);
 
     const result = await pool.query(query, params);
     const transactions = result.rows.map(t => ({

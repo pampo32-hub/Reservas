@@ -1423,13 +1423,42 @@ class StorageService {
     return data;
   }
 
-  async getPosTransactions(businessId, registerId = null) {
-    const url = registerId 
-      ? `${this.apiBase}/businesses/${businessId}/pos/transactions?registerId=${registerId}`
-      : `${this.apiBase}/businesses/${businessId}/pos/transactions`;
-    const res = await this.fetchWithAuth(url);
-    if (!res.ok) return [];
-    return await res.json();
+  async getPosTransactions(businessId, options = null) {
+    if (!businessId) return [];
+    const biz = this.getBusinessById(businessId);
+    const canonicalId = biz ? biz.id : businessId;
+
+    let registerId = null;
+    let limit = 500;
+    let startDate = null;
+    let endDate = null;
+
+    if (options && typeof options === 'object') {
+      registerId = options.registerId || null;
+      limit = options.limit || 500;
+      startDate = options.startDate || null;
+      endDate = options.endDate || null;
+    } else if (typeof options === 'string') {
+      registerId = options;
+    }
+
+    const params = [];
+    if (registerId) params.push(`registerId=${encodeURIComponent(registerId)}`);
+    if (limit) params.push(`limit=${encodeURIComponent(limit)}`);
+    if (startDate) params.push(`startDate=${encodeURIComponent(startDate)}`);
+    if (endDate) params.push(`endDate=${encodeURIComponent(endDate)}`);
+
+    let url = `${this.apiBase}/businesses/${canonicalId}/pos/transactions`;
+    if (params.length > 0) url += `?${params.join('&')}`;
+
+    try {
+      const res = await this.fetchWithAuth(url);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (e) {
+      console.warn('Error en getPosTransactions:', e);
+      return [];
+    }
   }
 
   // --- MÓDULO DE COMISIONES Y LIQUIDACIONES ---
