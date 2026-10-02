@@ -26286,6 +26286,23 @@ Esperamos atenderle pronto de nuevo.`;
     });
   }
 
+  // --- FORMATEADOR DE NÚMERO DE TARJETA ESTILO BANCARIO (SOLO DÍGITOS) ---
+  formatNumericCardId(card, clientUser = {}) {
+    const rawId = `${card.business_id || ''}-${card.card_id || ''}`;
+    let hash = 0;
+    for (let i = 0; i < rawId.length; i++) {
+      hash = ((hash << 5) - hash) + rawId.charCodeAt(i);
+      hash |= 0;
+    }
+    const abs = Math.abs(hash).toString().padStart(10, '7');
+    const onlyNums = String(card.card_id || '').replace(/\D/g, '');
+    const prefix = '4' + abs.substring(0, 3);
+    const mid1 = abs.substring(3, 7);
+    const mid2 = abs.substring(7, 10) + ((onlyNums.length > 0) ? onlyNums[0] : '8');
+    const last4 = (onlyNums.length >= 4) ? onlyNums.slice(-4) : (onlyNums + abs).slice(-4).padStart(4, '0');
+    return `${prefix} ${mid1} ${mid2} ${last4}`;
+  }
+
   // --- GENERACIÓN DE QR REUTILIZABLE PARA BILLETERA ---
   renderWalletQrElement(qrContainer, payload, size = 180) {
     if (!qrContainer) return;
@@ -26346,6 +26363,7 @@ Esperamos atenderle pronto de nuevo.`;
     const current = card.current_stamps || 0;
     const isCompleted = current >= target;
     const pct = Math.min(100, Math.round((current / target) * 100));
+    const cardNumber = this.formatNumericCardId(card, clientUser);
 
     // Ranuras visuales de sellos
     let slots = '';
@@ -26465,11 +26483,11 @@ Esperamos atenderle pronto de nuevo.`;
               </div>
             </div>
 
-            <div class="text-[11px] text-slate-400 flex items-center justify-center gap-1.5 font-mono">
-              <i class="fas fa-user text-amber-400 text-[10px]"></i>
-              <span>${clientUser.name}</span>
+            <div class="text-[11px] text-slate-400 flex items-center justify-center gap-2 font-mono flex-wrap">
+              <span class="text-amber-400 font-bold"><i class="fas fa-credit-card text-[10px] mr-1"></i>${cardNumber}</span>
               <span>•</span>
-              <span>${clientUser.phone || ''}</span>
+              <span>${clientUser.name}</span>
+              ${clientUser.phone ? `<span>•</span><span>${clientUser.phone}</span>` : ''}
             </div>
           </div>
 
@@ -26489,8 +26507,17 @@ Esperamos atenderle pronto de nuevo.`;
       this.renderWalletQrElement(document.getElementById('card-modal-qr-display'), qrPayload, 180);
     }, 50);
 
+    // Cierre en botón X
     document.getElementById('close-loyalty-detail-modal-btn')?.addEventListener('click', () => {
       this.closeCurrentModal();
+    });
+
+    // Cierre al pulsar el fondo exterior oscuro
+    const overlay = modalContainer.querySelector('.fixed.inset-0');
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        this.closeCurrentModal();
+      }
     });
 
     document.getElementById('modal-card-book-btn')?.addEventListener('click', () => {
@@ -26664,9 +26691,10 @@ Esperamos atenderle pronto de nuevo.`;
         const isCompleted = current >= target;
         const pct = Math.min(100, Math.round((current / target) * 100));
         const themeClass = CARD_THEMES[index % CARD_THEMES.length];
+        const cardNumber = this.formatNumericCardId(c, clientUser);
 
         return `
-          <div class="loyalty-credit-card ${themeClass}" data-card-id="${c.card_id}">
+          <div class="loyalty-credit-card ${themeClass}" data-card-index="${index}" data-card-id="${c.card_id || c.id || index}">
             
             <!-- Parte Superior: Info Negocio & Estado -->
             <div class="flex items-start justify-between gap-3 relative z-10">
@@ -26705,8 +26733,8 @@ Esperamos atenderle pronto de nuevo.`;
                 <i class="fas fa-wifi rotate-90 text-white/40 text-sm"></i>
               </div>
               <div class="text-right">
-                <span class="text-[9px] font-mono tracking-widest text-white/50 uppercase block">MEMBRESÍA VIP</span>
-                <p class="text-xs font-mono font-bold tracking-wider text-white/90">#CR-${String(c.business_id).padStart(3, '0')}-${String(c.card_id).padStart(4, '0')}</p>
+                <span class="text-[9px] font-mono tracking-widest text-white/60 uppercase block font-semibold">Nº DE TARJETA</span>
+                <p class="text-xs sm:text-sm font-mono font-black tracking-wider text-white/95 drop-shadow-sm">${cardNumber}</p>
               </div>
             </div>
 
@@ -26728,10 +26756,10 @@ Esperamos atenderle pronto de nuevo.`;
                   <span class="text-[8px] sm:text-[9px] font-mono uppercase tracking-widest text-white/50 block">TITULAR</span>
                   <span class="text-xs sm:text-sm font-mono font-black uppercase tracking-wider text-white drop-shadow-sm">${clientUser.name || 'CLIENTE VIP'}</span>
                 </div>
-                <div class="flex items-center gap-1.5 text-[11px] font-bold text-white/90 bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg backdrop-blur-md border border-white/15 transition-all">
+                <button type="button" class="wallet-open-card-btn flex items-center gap-1.5 text-[11px] font-bold text-white/95 bg-white/15 hover:bg-white/25 active:scale-95 px-3 py-1.5 rounded-xl backdrop-blur-md border border-white/25 transition-all cursor-pointer shadow-xs" data-card-index="${index}">
                   <span>Ver Sellos & QR</span>
                   <i class="fas fa-chevron-right text-[10px] text-amber-400"></i>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -26739,14 +26767,33 @@ Esperamos atenderle pronto de nuevo.`;
         `;
       }).join('');
 
-      // Evento de clic en cada tarjeta para abrir el modal interactivo con sus sellos y QR
+      // Manejador centralizado para abrir el modal de la tarjeta
+      const handleOpenCardModal = (cardIndex) => {
+        const cardData = (!isNaN(cardIndex) && cards[cardIndex])
+          ? cards[cardIndex]
+          : cards.find((_, i) => i === cardIndex);
+
+        if (cardData) {
+          this.openLoyaltyCardDetailModal(cardData, clientUser);
+        } else {
+          console.warn('No se encontró información para la tarjeta en el índice:', cardIndex);
+        }
+      };
+
+      // 1. Clic en cualquier parte de la tarjeta
       cardsListContainer.querySelectorAll('.loyalty-credit-card').forEach(cardEl => {
         cardEl.addEventListener('click', () => {
-          const cardId = parseInt(cardEl.getAttribute('data-card-id'), 10);
-          const cardData = cards.find(item => item.card_id === cardId);
-          if (cardData) {
-            this.openLoyaltyCardDetailModal(cardData, clientUser);
-          }
+          const index = parseInt(cardEl.getAttribute('data-card-index'), 10);
+          handleOpenCardModal(index);
+        });
+      });
+
+      // 2. Clic directo en el botón "Ver Sellos & QR"
+      cardsListContainer.querySelectorAll('.wallet-open-card-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const index = parseInt(btn.getAttribute('data-card-index'), 10);
+          handleOpenCardModal(index);
         });
       });
 
