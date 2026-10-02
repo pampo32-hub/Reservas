@@ -3033,7 +3033,7 @@ class StorageService {
           }
         } catch (cleanErr) {}
 
-        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.20', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.21', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
 
         // Forzar chequeo de actualización inmediata en el servidor

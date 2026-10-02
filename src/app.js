@@ -16312,7 +16312,7 @@ Esperamos atenderle pronto de nuevo.`;
         </div>
 
         <div class="text-center text-slate-500 text-[11px] py-2 flex items-center justify-center gap-1.5 flex-wrap">
-          <span>ReservasCR.app v3.46.20</span>
+          <span>ReservasCR.app v3.46.21</span>
           <span>•</span>
           <button type="button" id="staff-force-reload-btn" class="text-blue-400 hover:text-blue-300 underline cursor-pointer">
             <i class="fas fa-arrows-rotate mr-0.5"></i> Actualizar versión
@@ -25026,13 +25026,24 @@ Esperamos atenderle pronto de nuevo.`;
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">9</span>
-                      <span>Perfiles Públicos, Contenido y Reseñas de Clientes</span>
+                      <span>Perfiles Públicos, Portafolio y Derechos de Imagen en Fotografías</span>
                     </h4>
                     <p>
-                      Los comercios son responsables de la exactitud, legitimidad y derechos de autor sobre las fotografías, descripciones, nombres y logotipos que cargan en sus perfiles públicos.
+                      Los comercios y profesionales son los únicos y exclusivos responsables de la exactitud, legitimidad, originalidad y derechos de autor sobre las fotografías, imágenes de trabajos realizados, descripciones, nombres y logotipos que cargan en su perfil público y galería de portafolio.
                     </p>
-                    <p class="text-slate-600">
-                      Las reseñas y calificaciones de clientes deben ser auténticas y fundamentadas en experiencias reales de servicio. Reservas CR se reserva el derecho de moderar o remover contenido ofensivo, difamatorio o fraudulento.
+                    <div class="p-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-950 space-y-1.5">
+                      <div class="font-bold flex items-center gap-1.5 text-purple-900">
+                        <i class="fas fa-camera text-purple-600"></i> Garantía de Consentimiento de Clientes para Fotos de Portafolio
+                      </div>
+                      <p class="leading-relaxed">
+                        Al cargar fotografías de trabajos (cortes, tintes, uñas, estética, barbería u otros) donde sean reconocibles rostros, rasgos físicos o imágenes corporales de personas físicas, el comercio garantiza bajo fe de juramento haber obtenido previamente el <strong>consentimiento informado, expreso e inequívoco</strong> de dicho cliente de conformidad con la Ley N° 8968 y el derecho fundamental a la propia imagen.
+                      </p>
+                      <p class="text-[11px] text-purple-800">
+                        Reservas CR no asume ninguna responsabilidad civil, mercantil o administrativa por imágenes publicadas sin el consentimiento de sus titulares y procederá a su baja inmediata ante cualquier reclamo justificado de terceros.
+                      </p>
+                    </div>
+                    <p class="text-slate-600 text-xs">
+                      Las reseñas y calificaciones de clientes deben ser auténticas y fundamentadas en experiencias reales de servicio. Reservas CR se reserva el derecho de moderar o remover contenido difamatorio, fraudulento u ofensivo.
                     </p>
                   </section>
 
@@ -25040,6 +25051,37 @@ Esperamos atenderle pronto de nuevo.`;
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
                       <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">10</span>
+                      <span>Portal de Colaboradores, Códigos Únicos, PIN de Seguridad y Comisiones Internas</span>
+                    </h4>
+                    <p>
+                      Los comercios afiliados pueden facultar el acceso independiente a sus especialistas y miembros del equipo a través del <strong>Portal de Colaboradores</strong> (<code>/colaborador</code>).
+                    </p>
+                    <div class="space-y-2 text-xs">
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                        <strong class="text-slate-900 block font-bold"><i class="fas fa-id-badge text-amber-600 mr-1"></i> Asignación y Custodia de Credenciales:</strong>
+                        <p class="text-slate-600 leading-relaxed">
+                          El administrador del comercio genera y entrega a cada colaborador su <strong>Código Único de Colaborador</strong> y un <strong>PIN temporal inicial de 6 dígitos</strong>. Por razones de estricta seguridad, la plataforma exige al especialista sustituir dicho PIN provisional por uno nuevo, personal y confidencial al ingresar por primera vez. El colaborador y el comercio son solidariamente responsables de la custodia de sus credenciales.
+                        </p>
+                      </div>
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                        <strong class="text-slate-900 block font-bold"><i class="fas fa-check-double text-blue-600 mr-1"></i> Validez de Acciones Operativas y Marcar Citas:</strong>
+                        <p class="text-slate-600 leading-relaxed">
+                          Toda acción ejecutada bajo una sesión autenticada de colaborador (incluyendo marcar citas como <em>"Atendidas"</em>, reprogramar turnos o ingresar notas de servicio) se considera efectuada de manera válida y autorizada por el comercio.
+                        </p>
+                      </div>
+                      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                        <strong class="text-slate-900 block font-bold"><i class="fas fa-calculator text-emerald-600 mr-1"></i> Deslinde sobre Relaciones Laborales y Cómputo de Comisiones:</strong>
+                        <p class="text-slate-600 leading-relaxed">
+                          Las herramientas de cálculo de comisiones, porcentajes y totales acumulados provistas en el Portal de Colaboradores tienen carácter exclusivamente informativo y de auxilio tecnológico para la administración interna del negocio. <strong>Reservas CR no es patrono, no es agente de retención ni intermediario laboral</strong> en la relación contractual, salarial o de servicios profesionales existente entre el comercio y sus colaboradores o contratistas.
+                        </p>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Cláusula 11 -->
+                  <section class="space-y-2 border-b border-slate-100 pb-5">
+                    <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">11</span>
                       <span>Uso Aceptable y Prohibiciones</span>
                     </h4>
                     <p>Queda terminantemente prohibido a los usuarios y comercios:</p>
@@ -25051,10 +25093,10 @@ Esperamos atenderle pronto de nuevo.`;
                     </ul>
                   </section>
 
-                  <!-- Cláusula 11 -->
+                  <!-- Cláusula 12 -->
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
-                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">11</span>
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">12</span>
                       <span>Propiedad Intelectual</span>
                     </h4>
                     <p>
@@ -25062,10 +25104,10 @@ Esperamos atenderle pronto de nuevo.`;
                     </p>
                   </section>
 
-                  <!-- Cláusula 12 -->
+                  <!-- Cláusula 13 -->
                   <section class="space-y-2 border-b border-slate-100 pb-5">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
-                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">12</span>
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">13</span>
                       <span>Disponibilidad del Sistema y Límite de Responsabilidad</span>
                     </h4>
                     <p>
@@ -25076,10 +25118,10 @@ Esperamos atenderle pronto de nuevo.`;
                     </p>
                   </section>
 
-                  <!-- Cláusula 13 -->
+                  <!-- Cláusula 14 -->
                   <section class="space-y-2">
                     <h4 class="font-black text-slate-900 text-sm sm:text-base flex items-center gap-2.5">
-                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">13</span>
+                      <span class="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-black shrink-0">14</span>
                       <span>Legislación Aplicable y Jurisdicción</span>
                     </h4>
                     <p>
@@ -25187,7 +25229,7 @@ Esperamos atenderle pronto de nuevo.`;
                           <i class="fas fa-store text-indigo-600"></i> B. Datos de Comercios y Profesionales:
                         </span>
                         <p class="text-xs text-slate-600">
-                          Nombre comercial, razón social o nombre del titular, correo electrónico comercial, códigos numéricos de verificación de un solo uso (OTP) temporales para validar la titularidad de la cuenta (vigencia de 15 minutos), cédula física o jurídica, teléfono de contacto y WhatsApp comercial, número de SINPE Móvil del negocio, dirección física exacta y geolocalización, fotografías de portafolio y logotipo, catálogo de servicios y tarifas, nómina de profesionales o colaboradores, horarios de apertura y bloqueos de agenda.
+                          Nombre comercial, razón social o nombre del titular, correo electrónico comercial, códigos numéricos de verificación de un solo uso (OTP) temporales para validar la titularidad de la cuenta (vigencia de 15 minutos), cédula física o jurídica, teléfono de contacto y WhatsApp comercial, número de SINPE Móvil del negocio, dirección física exacta y geolocalización, fotografías de portafolio y logotipo (almacenadas de forma segura y optimizada en servidores de la plataforma), catálogo de servicios y tarifas, nómina de profesionales o colaboradores, horarios de apertura y bloqueos de agenda.
                         </p>
                       </div>
 
@@ -25208,6 +25250,16 @@ Esperamos atenderle pronto de nuevo.`;
                         </span>
                         <p class="text-xs text-slate-600">
                           Números de comprobante/referencia de transferencias SINPE Móvil (para planes mensuales o recargas prepagadas de bolsas de WhatsApp), teléfono emisor de la transferencia, montos en colones (₡ CRC), fecha/hora de acreditación bancaria e historial de planes de suscripción. <em>Nota: Reservas CR no almacena números completos de tarjetas bancarias ni contraseñas bancarias de los usuarios.</em>
+                        </p>
+                      </div>
+
+                      <!-- Datos Colaboradores -->
+                      <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-1">
+                        <span class="font-black text-xs text-amber-900 flex items-center gap-1.5">
+                          <i class="fas fa-id-badge text-amber-600"></i> E. Datos de Especialistas y Colaboradores:
+                        </span>
+                        <p class="text-xs text-slate-600">
+                          Nombre completo o alias profesional, rol o especialidad técnica, código único de colaborador asignado por el comercio, clave de acceso (PIN numérico de 6 dígitos procesado bajo hash criptográfico unidireccional, nunca accesible en texto plano), historial de citas atendidas, registros de comisiones operativas acumuladas, y tokens de persistencia en almacenamiento local (<code>localStorage</code>) cuando se habilita la opción de recordar sesión en el dispositivo móvil o terminal de trabajo.
                         </p>
                       </div>
                     </div>
@@ -25279,6 +25331,14 @@ Esperamos atenderle pronto de nuevo.`;
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
                         <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Autenticar y gestionar el acceso independiente de especialistas y colaboradores (mediante código único y PIN secreto de 6 dígitos) para control de turnos y comisiones.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
+                        <span>Almacenar y desplegar en la galería pública las imágenes del portafolio comercial cargadas y autorizadas por el comercio para ilustrar sus servicios.</span>
+                      </li>
+                      <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
+                        <i class="fas fa-check text-blue-600 mt-0.5 shrink-0"></i>
                         <span>Generar alertas administrativas y de auditoría interna a reservascr.app@gmail.com para supervisar registros y brindar soporte.</span>
                       </li>
                       <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-2">
@@ -25313,6 +25373,7 @@ Esperamos atenderle pronto de nuevo.`;
                     </p>
                     <ul class="list-disc list-inside space-y-1 text-slate-600 text-xs">
                       <li>Mantener la sesión activa y segura del usuario o comercio.</li>
+                      <li>Persistencia segura de credenciales de colaborador cuando se activa la casilla <em>"Recordar sesión en este dispositivo"</em>.</li>
                       <li>Guardar preferencias de interfaz (modo oscuro, filtros de búsqueda frecuentes).</li>
                       <li>Permitir el funcionamiento rápido y offline de la aplicación web progresiva (PWA).</li>
                     </ul>
@@ -25339,7 +25400,7 @@ Esperamos atenderle pronto de nuevo.`;
                       <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
                         <i class="fas fa-key text-indigo-600 mb-1 block text-base"></i>
                         <span class="font-bold text-slate-900 block">Hashing Criptográfico</span>
-                        <span class="text-slate-600">Las contraseñas se almacenan procesadas mediante algoritmos seguros unidireccionales (bcrypt).</span>
+                        <span class="text-slate-600">Las contraseñas de comercios y los PINs de 6 dígitos de colaboradores se almacenan procesados mediante algoritmos seguros unidireccionales (bcrypt/hash), nunca en texto plano.</span>
                       </div>
                       <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
                         <i class="fas fa-database text-emerald-600 mb-1 block text-base"></i>
