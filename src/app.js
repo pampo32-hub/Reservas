@@ -3924,9 +3924,9 @@ class App {
                 <ul class="space-y-2 text-xs text-slate-300 pt-2">
                   <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Hasta 150 reservas / mes</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> 1 especialista (dueño)</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Catálogo ilimitado de servicios</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Confirmaciones automáticas</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Bloqueo flexible de horarios</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> <strong>Fidelización Digital (Sellos QR Wallet)</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Confirmaciones automáticas por WhatsApp</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-blue-400"></i> Catálogo ilimitado y enlace directo</li>
                 </ul>
               </div>
 
@@ -3957,10 +3957,12 @@ class App {
 
                 <ul class="space-y-2 text-xs text-slate-200 pt-2">
                   <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Hasta 300 reservas / mes</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Hasta 5 especialistas / empleados</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>WhatsApp oficial automatizado</strong></li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> Reportes y métricas de ingresos</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> Google Calendar (.ics)</li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Hasta 5 especialistas / horarios propios</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Todo lo del Plan Básico (con Fidelización)</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Punto de Venta (Caja & POS) para mostrador</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Dashboard & Reportes Financieros (Excel)</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> <strong>Comisiones & Liquidaciones de especialistas</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check-circle text-blue-400"></i> WhatsApp oficial automatizado</li>
                 </ul>
               </div>
 
@@ -3988,10 +3990,10 @@ class App {
                 <ul class="space-y-2 text-xs text-slate-300 pt-2">
                   <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Hasta 600 reservas / mes</strong></li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Especialistas y personal ilimitados</strong></li>
+                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> <strong>Todo lo del Plan Pro (Fidelización, Caja POS, Reportes y Comisiones)</strong></li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> WhatsApp y correo automático para clientes</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Posición preferencial en el directorio</li>
                   <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Bolsas de recarga de WhatsApp disponibles</li>
-                  <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-400"></i> Todo lo del Plan Profesional</li>
                 </ul>
               </div>
 
@@ -7734,10 +7736,12 @@ class App {
     const isTrialExpired = isFree && daysSinceReg >= 15;
     const isTrialActive = isFree && daysSinceReg < 15;
 
-    // Si está en plan gratis o básico y tenía seleccionada la pestaña de reportes, devolver a agenda
-    if ((isFree || isBasic) && this.activeDashboardTab === 'reports') {
-      this.activeDashboardTab = 'appointments';
-    }
+    // Permisos por plan: Fidelización en Básico, Pro y Premium (todos menos Free sin trial)
+    // Caja POS, Reportes y Comisiones: Exclusivos de Pro y Premium (o Free con trial activo)
+    const canAccessLoyalty = !isFree || isTrialActive;
+    const canAccessPos = isPro || isUnlimited || isTrialActive;
+    const canAccessReports = isPro || isUnlimited || isTrialActive;
+    const canAccessCommissions = isPro || isUnlimited || isTrialActive;
 
     let monthlyLimit = planConfig.bookingLimit;
     if (isUnlimited) {
@@ -8022,7 +8026,7 @@ class App {
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'pos' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 font-black ring-2 ring-emerald-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="pos">
                 <i class="fas fa-cash-register text-xs ${this.activeDashboardTab === 'pos' ? 'text-white' : 'text-emerald-600'}"></i>
                 <span>Caja & POS</span>
-                <span class="w-2 h-2 rounded-full ${(this.cachedPosSession?.isOpen || this.cachedPosSession?.status === 'open' || this.cachedPosSession?.id || this.activeCashRegisterSession?.isOpen) ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'} inline-block shadow-2xs"></span>
+                ${!canAccessPos ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-blue-100 text-blue-800 border border-blue-200 shadow-2xs">PRO</span>` : `<span class="w-2 h-2 rounded-full ${(this.cachedPosSession?.isOpen || this.cachedPosSession?.status === 'open' || this.cachedPosSession?.id || this.activeCashRegisterSession?.isOpen) ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'} inline-block shadow-2xs"></span>`}
               </button>
 
               <!-- 3. Clientes CRM (Fidelización) -->
@@ -8036,6 +8040,7 @@ class App {
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'loyalty' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 font-black ring-2 ring-emerald-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="loyalty">
                 <i class="fas fa-stamp text-xs ${this.activeDashboardTab === 'loyalty' ? 'text-white' : 'text-emerald-600'}"></i>
                 <span>Fidelización (Sellos)</span>
+                ${!canAccessLoyalty ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs">BÁSICO+</span>` : ''}
               </button>
 
               <!-- 4. Bloqueos -->
@@ -8093,13 +8098,12 @@ class App {
                 ${currentBiz.requireDeposit ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-1.5 py-0.5 rounded">${currentBiz.depositPercentage || 25}%</span>` : ''}
               </button>
 
-              <!-- 8. Reportes (Si aplica) -->
-              ${(!isFree && !isBasic) ? `
-                <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="reports">
-                  <i class="fas fa-chart-pie text-xs ${this.activeDashboardTab === 'reports' ? 'text-white' : 'text-emerald-500'}"></i>
-                  <span>Reportes</span>
-                </button>
-              ` : ''}
+              <!-- 8. Reportes -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'reports' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="reports">
+                <i class="fas fa-chart-pie text-xs ${this.activeDashboardTab === 'reports' ? 'text-white' : 'text-emerald-500'}"></i>
+                <span>Reportes</span>
+                ${!canAccessReports ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-blue-100 text-blue-800 border border-blue-200 shadow-2xs">PRO</span>` : ''}
+              </button>
 
               <!-- 9. Configuración -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'profile' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="profile">
@@ -8422,10 +8426,221 @@ class App {
     }
   }
 
+  // --- BANNER DE BLOQUEO DE FUNCIONES POR PLAN (UPSELL COMERCIAL) ---
+  renderPlanFeatureLockBanner(featureKey, currentBiz, wrapInCard = true) {
+    const plan = currentBiz?.plan || 'free';
+    const isFree = !plan || plan === 'free';
+    const isBasic = plan === 'basic';
+    
+    let config = {
+      badge: 'Exclusivo Plan Pro & Premium',
+      badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+      icon: 'fa-lock',
+      iconBg: 'bg-blue-100 text-blue-600',
+      title: 'Función Pro',
+      description: 'Esta función está disponible en planes superiores.',
+      features: [],
+      showBasicBtn: false,
+      showProBtn: true,
+      showUnlimitedBtn: true
+    };
+
+    if (featureKey === 'loyalty') {
+      config = {
+        badge: 'Disponible desde Plan Básico ($10/mes)',
+        badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
+        icon: 'fa-stamp',
+        iconBg: 'bg-amber-100 text-amber-600',
+        title: 'Programa de Fidelización Digital (Tarjetas de Sellos)',
+        description: `Tu plan actual es <strong>${isFree ? 'Plan Gratis (₡0)' : 'Plan Básico ($10/mes)'}</strong>. Activa el programa de fidelización digital para premiar a tus clientes más fieles y aumentar la recurrencia de visitas en tu negocio.`,
+        features: [
+          {
+            icon: 'fa-qrcode',
+            title: 'Tarjetas de Sellos Digitales',
+            desc: 'Sustituye cartones perdidos por un monedero digital en el móvil del cliente sin descargas obligatorias.'
+          },
+          {
+            icon: 'fa-camera',
+            title: 'Escaneo QR Ultrarrápido',
+            desc: 'Otorga sellos en 2 segundos desde la cámara de tu celular con el escáner del panel.'
+          },
+          {
+            icon: 'fa-gift',
+            title: 'Premios y Fidelidad',
+            desc: 'Define la meta de visitas para regalar un servicio o descuento y haz que vuelvan siempre.'
+          }
+        ],
+        showBasicBtn: true,
+        showProBtn: true,
+        showUnlimitedBtn: false
+      };
+    } else if (featureKey === 'pos') {
+      config = {
+        badge: 'Exclusivo de Plan Profesional & Premium',
+        badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        icon: 'fa-cash-register',
+        iconBg: 'bg-emerald-100 text-emerald-600',
+        title: 'Punto de Venta (Caja & POS) para Mostrador',
+        description: `Tu plan actual (${isFree ? 'Plan Gratis' : isBasic ? 'Plan Básico' : plan}) no incluye el módulo de Punto de Venta. Con el <strong>Plan Profesional ($18/mes)</strong> o <strong>Premium ($35/mes)</strong> gestiona cobros presenciales, control de efectivo y comprobantes digitales.`,
+        features: [
+          {
+            icon: 'fa-cash-register',
+            title: 'Apertura y Cierre de Turnos',
+            desc: 'Control de fondo inicial en gaveta, registro de entradas/salidas y cuadre diario sin descuadres.'
+          },
+          {
+            icon: 'fa-money-bill-wave',
+            title: 'Cobro en Mostrador y Walk-ins',
+            desc: 'Cobra citas agendadas o clientes que llegan de paso con SINPE Móvil, efectivo, tarjeta o mixto.'
+          },
+          {
+            icon: 'fab fa-whatsapp',
+            title: 'Comprobantes por WhatsApp',
+            desc: 'Envía recibos digitales oficiales con desglose de servicios y productos al WhatsApp del cliente.'
+          }
+        ],
+        showBasicBtn: false,
+        showProBtn: true,
+        showUnlimitedBtn: true
+      };
+    } else if (featureKey === 'reports') {
+      config = {
+        badge: 'Exclusivo de Plan Profesional & Premium',
+        badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+        icon: 'fa-chart-pie',
+        iconBg: 'bg-blue-100 text-blue-600',
+        title: 'Dashboard y Reportes Financieros Avanzados',
+        description: `Tu plan actual (${isFree ? 'Plan Gratis' : isBasic ? 'Plan Básico' : plan}) incluye la agenda básica. Para desbloquear analíticas avanzadas, ticket promedio, clientes frecuentes y exportación contable a Excel y PDF, sube al <strong>Plan Profesional</strong> o <strong>Premium</strong>.`,
+        features: [
+          {
+            icon: 'fa-coins',
+            title: 'Reporte de Ingresos & KPIs',
+            desc: 'Facturación total, ingresos por servicios y productos mostrador, ticket promedio y gráficos en vivo.'
+          },
+          {
+            icon: 'fa-user-check',
+            title: 'Ranking de Clientes Frecuentes',
+            desc: 'Historial detallado de visitas, recurrencia y valor acumulado de cada cliente.'
+          },
+          {
+            icon: 'fa-file-excel',
+            title: 'Exportación a Excel & PDF',
+            desc: 'Descarga tu base de datos completa de citas, clientes y ventas lista para tu contador.'
+          }
+        ],
+        showBasicBtn: false,
+        showProBtn: true,
+        showUnlimitedBtn: true
+      };
+    } else if (featureKey === 'commissions') {
+      config = {
+        badge: 'Exclusivo de Plan Profesional & Premium',
+        badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
+        icon: 'fa-hand-holding-dollar',
+        iconBg: 'bg-indigo-100 text-indigo-600',
+        title: 'Cálculo de Comisiones y Liquidaciones',
+        description: `Tu plan actual (${isFree ? 'Plan Gratis' : isBasic ? 'Plan Básico' : plan}) no incluye comisiones de personal. Con el <strong>Plan Profesional ($18/mes)</strong> o <strong>Premium ($35/mes)</strong> automatiza pagos a especialistas, vales de caja y liquidaciones transparentes.`,
+        features: [
+          {
+            icon: 'fa-calculator',
+            title: 'Cálculo Automático por Cita',
+            desc: 'Asigna porcentajes o montos fijos por servicio a cada especialista sin necesidad de hojas de cálculo.'
+          },
+          {
+            icon: 'fa-receipt',
+            title: 'Vales y Adelantos de Caja',
+            desc: 'Registra anticipos tomados de la gaveta de cobro que se descuentan automáticamente de la liquidación.'
+          },
+          {
+            icon: 'fa-id-badge',
+            title: 'Portal de Colaborador',
+            desc: 'Cada especialista puede ingresar desde su teléfono móvil y ver sus citas y saldo acumulado.'
+          }
+        ],
+        showBasicBtn: false,
+        showProBtn: true,
+        showUnlimitedBtn: true
+      };
+    }
+
+    const contentHtml = `
+      <div class="max-w-3xl mx-auto text-center py-6 px-2">
+        <div class="w-16 h-16 rounded-3xl ${config.iconBg} flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+          <i class="fas ${config.icon}"></i>
+        </div>
+        <span class="text-xs uppercase font-extrabold px-3 py-1 rounded-full ${config.badgeColor} border tracking-wider inline-block">
+          ${config.badge}
+        </span>
+        <h2 class="text-2xl sm:text-3xl font-black text-slate-900 mt-3">${config.title}</h2>
+        <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
+          ${config.description}
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
+          ${config.features.map(f => `
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+              <div class="w-8 h-8 rounded-xl ${config.iconBg} flex items-center justify-center text-sm font-bold mb-2">
+                <i class="fas ${f.icon}"></i>
+              </div>
+              <h4 class="text-xs font-bold text-slate-900">${f.title}</h4>
+              <p class="text-[11px] text-slate-500 mt-1 leading-snug">${f.desc}</p>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          ${config.showBasicBtn ? `
+            <button class="dash-gate-upgrade-basic-btn w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95">
+              <i class="fas fa-rocket"></i> Activar Plan Básico ($10/mes)
+            </button>
+          ` : ''}
+          ${config.showProBtn ? `
+            <button class="dash-gate-upgrade-pro-btn w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95">
+              <i class="fas fa-rocket"></i> Activar Plan Profesional ($18/mes)
+            </button>
+          ` : ''}
+          ${config.showUnlimitedBtn ? `
+            <button class="dash-gate-upgrade-unlimited-btn w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95">
+              <i class="fas fa-crown text-amber-300"></i> Plan Premium ($35/mes)
+            </button>
+          ` : ''}
+          <button class="dash-gate-view-plans-btn w-full sm:w-auto px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95">
+            <i class="fas fa-list-check"></i> Ver Comparativa de Planes
+          </button>
+        </div>
+      </div>
+    `;
+
+    if (wrapInCard) {
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          ${contentHtml}
+        </div>
+      `;
+    }
+    return contentHtml;
+  }
+
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
     try {
+      const plan = currentBiz?.plan || 'free';
+      const isFree = !plan || plan === 'free';
+      const isBasic = plan === 'basic';
+      const isPro = plan === 'pro';
+      const isUnlimited = plan === 'unlimited';
+      const registrationDate = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
+      const daysSinceReg = Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24));
+      const isTrialActive = isFree && daysSinceReg < 15;
+
+      const canAccessLoyalty = !isFree || isTrialActive;
+      const canAccessPos = isPro || isUnlimited || isTrialActive;
+      const canAccessReports = isPro || isUnlimited || isTrialActive;
+
       if (this.activeDashboardTab === 'pos') {
+        if (!canAccessPos) {
+          return this.renderPlanFeatureLockBanner('pos', currentBiz);
+        }
         return this.renderPosTabContent(currentBiz, appointments);
       }
 
@@ -8434,6 +8649,9 @@ class App {
       }
 
       if (this.activeDashboardTab === 'loyalty') {
+        if (!canAccessLoyalty) {
+          return this.renderPlanFeatureLockBanner('loyalty', currentBiz);
+        }
         return this.renderLoyaltyTabContent(currentBiz);
       }
 
@@ -8441,17 +8659,20 @@ class App {
         return this.renderManualTabContent(currentBiz);
       }
 
-    if (this.activeDashboardTab === 'integrations') {
-      return this.renderIntegrationsTabContent(currentBiz);
-    }
+      if (this.activeDashboardTab === 'integrations') {
+        return this.renderIntegrationsTabContent(currentBiz);
+      }
 
-    if (this.activeDashboardTab === 'reports') {
-      return this.renderReportsTabContent(currentBiz, appointments);
-    }
+      if (this.activeDashboardTab === 'reports') {
+        if (!canAccessReports) {
+          return this.renderPlanFeatureLockBanner('reports', currentBiz);
+        }
+        return this.renderReportsTabContent(currentBiz, appointments);
+      }
 
-    if (this.activeDashboardTab === 'deposits') {
-      return this.renderDepositSettingsTabContent(currentBiz);
-    }
+      if (this.activeDashboardTab === 'deposits') {
+        return this.renderDepositSettingsTabContent(currentBiz);
+      }
 
     if (this.activeDashboardTab === 'appointments') {
       const filter = this.ownerAppointmentFilter || 'all';
@@ -11834,6 +12055,19 @@ class App {
   }
 
   renderPosTabContent(currentBiz, appointments = []) {
+    const plan = currentBiz?.plan || 'free';
+    const isPro = plan === 'pro';
+    const isUnlimited = plan === 'unlimited';
+    const isFree = !plan || plan === 'free';
+    const registrationDate = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
+    const daysSinceReg = Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24));
+    const isTrialActive = isFree && daysSinceReg < 15;
+    const canAccessPos = isPro || isUnlimited || isTrialActive;
+
+    if (!canAccessPos) {
+      return this.renderPlanFeatureLockBanner('pos', currentBiz);
+    }
+
     // Si aún no hemos cargado la sesión de caja para este negocio, iniciar carga
     if (!this.posDataLoadedBizId || this.posDataLoadedBizId !== currentBiz.id) {
       this.loadPosData(currentBiz);
@@ -13340,62 +13574,17 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- SUB-CONTENIDO: REPORTES DE INGRESOS Y ESTADÍSTICAS DE CLIENTES FRECUENTES ---
   renderReportsTabContent(currentBiz, appointments) {
-    const plan = currentBiz.plan || 'free';
-    const isFree = plan === 'free';
-    const isBasic = plan === 'basic';
+    const plan = currentBiz?.plan || 'free';
+    const isFree = !plan || plan === 'free';
     const isPro = plan === 'pro';
     const isUnlimited = plan === 'unlimited';
+    const registrationDate = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
+    const daysSinceReg = Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24));
+    const isTrialActive = isFree && daysSinceReg < 15;
+    const canAccessReports = isPro || isUnlimited || isTrialActive;
 
-    if (isFree || isBasic) {
-      return `
-        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-          <div class="max-w-3xl mx-auto text-center py-6">
-            <div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
-              <i class="fas fa-chart-line"></i>
-            </div>
-            <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Incluido en Plan Pro & Premium</span>
-            <h2 class="text-2xl font-black text-slate-900 mt-1">Reportes de Ingresos y Clientes Frecuentes</h2>
-            <p class="text-sm text-slate-600 mt-2 max-w-xl mx-auto leading-relaxed">
-              Tu plan actual (<strong>${isFree ? 'Plan Gratis (₡0)' : 'Plan Básico ($10/mes)'}</strong>) incluye la agenda y reservas estándar. Para acceder a analíticas financieras avanzadas, ranking de clientes frecuentes, servicios más rentables y exportación de datos en Excel (.xlsx) y PDF, sube al <strong>Plan Profesional</strong> o <strong>Premium</strong>.
-            </p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-8 text-left">
-              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-bold mb-2">
-                  <i class="fas fa-coins"></i>
-                </div>
-                <h4 class="text-xs font-bold text-slate-900">Reporte de Ingresos</h4>
-                <p class="text-[11px] text-slate-500 mt-1">Total recaudado, ingresos mensuales y ticket promedio por reserva.</p>
-              </div>
-
-              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold mb-2">
-                  <i class="fas fa-user-check"></i>
-                </div>
-                <h4 class="text-xs font-bold text-slate-900">Clientes Frecuentes</h4>
-                <p class="text-[11px] text-slate-500 mt-1">Ranking de fidelidad con historial de visitas y monto total consumido.</p>
-              </div>
-
-              <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm font-bold mb-2">
-                  <i class="fas fa-file-excel"></i>
-                </div>
-                <h4 class="text-xs font-bold text-slate-900">Exportación a Excel & PDF</h4>
-                <p class="text-[11px] text-slate-500 mt-1">Descarga tu base de datos de clientes, citas e ingresos en hojas de cálculo y PDF.</p>
-              </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button id="dash-upgrade-reports-pro-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
-                <i class="fas fa-rocket"></i> Activar Plan Profesional ($18/mes)
-              </button>
-              <button id="dash-upgrade-reports-unlimited-btn" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
-                <i class="fas fa-crown text-amber-300"></i> Plan Premium ($35/mes)
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
+    if (!canAccessReports) {
+      return this.renderPlanFeatureLockBanner('reports', currentBiz);
     }
 
     // Cargar transacciones POS en segundo plano para el dashboard de ventas inferior
@@ -15688,7 +15877,7 @@ Esperamos atenderle pronto de nuevo.`;
     if (isFree || isBasic) {
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-          ${this.renderTeamSubNav('specialists')}
+          ${this.renderTeamSubNav('specialists', currentBiz)}
           <div class="max-w-3xl mx-auto text-center py-6">
             <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
               <i class="fas fa-lock"></i>
@@ -15744,7 +15933,7 @@ Esperamos atenderle pronto de nuevo.`;
 
     return `
       <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
-        ${this.renderTeamSubNav('specialists')}
+        ${this.renderTeamSubNav('specialists', currentBiz)}
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -15885,7 +16074,15 @@ Esperamos atenderle pronto de nuevo.`;
   }
 
   // --- SUB-NAVEGACIÓN DE EQUIPO: ESPECIALISTAS VS COMISIONES ---
-  renderTeamSubNav(activeSubTab = 'specialists') {
+  renderTeamSubNav(activeSubTab = 'specialists', currentBiz = null) {
+    const biz = currentBiz || this.currentBusiness || (typeof storage !== 'undefined' ? storage.getCurrentBusiness() : null);
+    const plan = biz?.plan || 'free';
+    const isFree = !plan || plan === 'free';
+    const registrationDate = biz?.createdAt ? new Date(biz.createdAt) : new Date();
+    const daysSinceReg = Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24));
+    const isTrialActive = isFree && daysSinceReg < 15;
+    const canAccessCommissions = plan === 'pro' || plan === 'unlimited' || isTrialActive;
+
     return `
       <div class="flex items-center gap-2 border-b border-slate-200 pb-3 mb-6 overflow-x-auto">
         <button 
@@ -15901,6 +16098,7 @@ Esperamos atenderle pronto de nuevo.`;
         >
           <i class="fas fa-hand-holding-dollar"></i>
           <span>Comisiones & Liquidaciones</span>
+          ${!canAccessCommissions ? `<span class="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-blue-100 text-blue-800 border border-blue-200 shadow-2xs">PRO</span>` : ''}
         </button>
       </div>
     `;
@@ -15946,11 +16144,29 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- SUB-CONTENIDO: COMISIONES Y LIQUIDACIONES ---
   renderCommissionsTabContent(currentBiz) {
+    const plan = currentBiz?.plan || 'free';
+    const isFree = !plan || plan === 'free';
+    const isPro = plan === 'pro';
+    const isUnlimited = plan === 'unlimited';
+    const registrationDate = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
+    const daysSinceReg = Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24));
+    const isTrialActive = isFree && daysSinceReg < 15;
+    const canAccessCommissions = isPro || isUnlimited || isTrialActive;
+
+    if (!canAccessCommissions) {
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          ${this.renderTeamSubNav('commissions', currentBiz)}
+          ${this.renderPlanFeatureLockBanner('commissions', currentBiz, false)}
+        </div>
+      `;
+    }
+
     if (!this.commissionsDataLoadedBizId || this.commissionsDataLoadedBizId !== currentBiz.id) {
       this.loadCommissionsData(currentBiz);
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
-          ${this.renderTeamSubNav('commissions')}
+          ${this.renderTeamSubNav('commissions', currentBiz)}
           <div class="p-12 text-center animate-pulse">
             <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4">
               <i class="fas fa-hand-holding-dollar fa-bounce"></i>
@@ -15974,7 +16190,7 @@ Esperamos atenderle pronto de nuevo.`;
 
     return `
       <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-6">
-        ${this.renderTeamSubNav('commissions')}
+        ${this.renderTeamSubNav('commissions', currentBiz)}
 
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -16291,6 +16507,26 @@ Esperamos atenderle pronto de nuevo.`;
     });
 
     // 3. Upgrade CTA buttons
+    document.querySelectorAll('.dash-gate-view-plans-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+      });
+    });
+    document.querySelectorAll('.dash-gate-upgrade-basic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'free' });
+      });
+    });
+    document.querySelectorAll('.dash-gate-upgrade-pro-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+      });
+    });
+    document.querySelectorAll('.dash-gate-upgrade-unlimited-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'pro' });
+      });
+    });
     document.getElementById('commissions-upgrade-btn')?.addEventListener('click', () => {
       this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
     });
@@ -18391,6 +18627,28 @@ Esperamos atenderle pronto de nuevo.`;
     if (this.activeDashboardTab === 'loyalty') {
       this.setupLoyaltyTabEvents(currentBiz);
     }
+
+    // Botones de llamada a la acción en banners de bloqueo de funciones por plan (Upsell)
+    document.querySelectorAll('.dash-gate-view-plans-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+      });
+    });
+    document.querySelectorAll('.dash-gate-upgrade-basic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: 'free' });
+      });
+    });
+    document.querySelectorAll('.dash-gate-upgrade-pro-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+      });
+    });
+    document.querySelectorAll('.dash-gate-upgrade-unlimited-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'pro' });
+      });
+    });
 
     // Apertura directa garantizada de Manuales para Comercios (PDF y Guía Web)
     document.getElementById('btn-open-manual-pdf')?.addEventListener('click', (e) => {
@@ -23046,7 +23304,7 @@ Esperamos atenderle pronto de nuevo.`;
 
                       <!-- Lista de Beneficios Compacta -->
                       <ul class="space-y-1.5 text-[11px] text-slate-600">
-                        ${plan.features.slice(0, 5).map(f => `
+                        ${plan.features.slice(0, 6).map(f => `
                           <li class="flex items-start gap-1.5 leading-tight">
                             <i class="fas fa-check-circle text-blue-600 mt-0.5 text-[10px] flex-shrink-0"></i>
                             <span>${f}</span>
@@ -27346,6 +27604,17 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- SUB-CONTENIDO: PESTAÑA FIDELIZACIÓN (SELLOS) EN OWNER DASHBOARD ---
   renderLoyaltyTabContent(currentBiz) {
+    const plan = currentBiz?.plan || 'free';
+    const isFree = !plan || plan === 'free';
+    const registrationDate = currentBiz?.createdAt ? new Date(currentBiz.createdAt) : new Date();
+    const daysSinceReg = Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24));
+    const isTrialActive = isFree && daysSinceReg < 15;
+    const canAccessLoyalty = !isFree || isTrialActive;
+
+    if (!canAccessLoyalty) {
+      return this.renderPlanFeatureLockBanner('loyalty', currentBiz);
+    }
+
     return `
       <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-7 shadow-xs space-y-6">
         

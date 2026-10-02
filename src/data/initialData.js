@@ -40,6 +40,7 @@ export const SUBSCRIPTION_PLANS = [
       'Hasta 150 reservas mensuales',
       '1 especialista / operador (dueño único)',
       'Confirmación y recordatorio automático por WhatsApp para tus clientes',
+      'Programa de Fidelización Digital (Tarjetas de Sellos & QR Wallet)',
       'Alerta instantánea en tu panel y correo electrónico',
       'Catálogo con todos tus servicios y precios',
       'Enlace directo a tu perfil para Instagram, TikTok y WhatsApp',
@@ -64,10 +65,11 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       'Hasta 300 reservas mensuales',
       'Hasta 5 empleados / especialistas con horarios propios',
-      'Todo lo incluido en el Plan Básico',
+      'Todo lo incluido en el Plan Básico (incluye Fidelización de Sellos)',
+      'Punto de Venta (Caja & POS) para cobro en mostrador',
+      'Dashboard y Reportes Financieros avanzados (exportación a Excel y PDF)',
+      'Cálculo de Comisiones y Liquidaciones para especialistas',
       'Confirmación y recordatorio automático por WhatsApp para tus clientes',
-      'Alerta instantánea en tu panel y correo electrónico',
-      'Reportes de ingresos y estadísticas de clientes frecuentes',
       'Horarios avanzados (bloqueo de descansos, almuerzo y feriados)',
       'Insignia oficial de Negocio Verificado en el directorio'
     ],
@@ -90,7 +92,7 @@ export const SUBSCRIPTION_PLANS = [
     features: [
       'Hasta 600 reservas mensuales con WhatsApp y correo',
       'Especialistas y colaboradores ilimitados',
-      'Todo lo incluido en el Plan Profesional',
+      'Todo lo incluido en el Plan Profesional (Fidelización, Caja POS, Reportes y Comisiones)',
       'Confirmación y recordatorio automático por WhatsApp para tus clientes',
       'Alerta instantánea en tu panel y correo electrónico',
       'Posición preferencial en el buscador del directorio',
