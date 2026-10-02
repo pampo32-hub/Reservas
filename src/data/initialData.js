@@ -2665,3 +2665,160 @@ export const INITIAL_STAFF = [
   }
 ];
 
+// ==========================================
+// ARTÍCULOS INICIALES PARA LA VITRINA DIGITAL
+// ==========================================
+export const INITIAL_VITRINA_ITEMS = [
+  // 1. Barbería Capital / Vintage (biz-1)
+  {
+    id: 'vit-101',
+    businessId: 'biz-1',
+    name: 'Pomada Fijadora Mate Premium',
+    description: 'Fijación fuerte y duradera con acabado mate sin brillo. A base de agua, fácil de retirar en la ducha.',
+    price: 8500,
+    imageUrl: 'https://images.unsplash.com/photo-1597854710119-a5a8fc00282b?auto=format&fit=crop&w=600&q=80',
+    category: 'Cuidado Capilar',
+    isAvailable: true,
+    stock: 15,
+    badge: 'Más Vendido'
+  },
+  {
+    id: 'vit-102',
+    businessId: 'biz-1',
+    name: 'Aceite Orgánico para Barba & Bigote',
+    description: 'Fórmula nutritiva con aceites de argán, jojoba y cedro. Hidrata la piel y suaviza el vello facial.',
+    price: 7000,
+    imageUrl: 'https://images.unsplash.com/photo-1621607512214-68297480165e?auto=format&fit=crop&w=600&q=80',
+    category: 'Cuidado de Barba',
+    isAvailable: true,
+    stock: 20,
+    badge: 'Recomendado'
+  },
+  {
+    id: 'vit-103',
+    businessId: 'biz-1',
+    name: 'Champú Revitalizante Menta & Romero',
+    description: 'Sensación extra refrescante, purifica el cuero cabelludo y previene la debilidad capilar.',
+    price: 9000,
+    imageUrl: 'https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?auto=format&fit=crop&w=600&q=80',
+    category: 'Cuidado Capilar',
+    isAvailable: true,
+    stock: 12,
+    badge: 'Nuevo'
+  },
+
+  // 2. Studio GLAM Nails & Beauty (biz-2)
+  {
+    id: 'vit-201',
+    businessId: 'biz-2',
+    name: 'Aceite Hidratante de Cutículas con Vitamina E',
+    description: 'Tratamiento intensivo con aroma a almendras dulces para cutículas sanas, hidratadas y brillantes.',
+    price: 4500,
+    imageUrl: 'https://images.unsplash.com/photo-1608248597359-54316972cb76?auto=format&fit=crop&w=600&q=80',
+    category: 'Uñas & Manos',
+    isAvailable: true,
+    stock: 25,
+    badge: 'Más Vendido'
+  },
+  {
+    id: 'vit-202',
+    businessId: 'biz-2',
+    name: 'Crema Reparadora de Manos Manteca de Karité',
+    description: 'Absorción rápida que protege contra la resequedad. Deja las manos suaves y delicadamente perfumadas.',
+    price: 6000,
+    imageUrl: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=600&q=80',
+    category: 'Cuidado de la Piel',
+    isAvailable: true,
+    stock: 18,
+    badge: 'Promoción'
+  },
+  {
+    id: 'vit-203',
+    businessId: 'biz-2',
+    name: 'Kit de Esmaltes de Larga Duración GLAM',
+    description: 'Set de 3 tonos de temporada de alta pigmentación y brillo efecto gel sin necesidad de lámpara UV.',
+    price: 12000,
+    imageUrl: 'https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=600&q=80',
+    category: 'Uñas & Manos',
+    isAvailable: true,
+    stock: 8,
+    badge: 'Edición Especial'
+  },
+
+  // 6. Dental Art Costa Rica (biz-6)
+  {
+    id: 'vit-601',
+    businessId: 'biz-6',
+    name: 'Kit de Blanqueamiento Dental Domiciliario',
+    description: 'Fórmula clínica segura supervisada por odontólogos para uso en casa. Resultados visibles desde la primera semana.',
+    price: 28000,
+    imageUrl: 'https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?auto=format&fit=crop&w=600&q=80',
+    category: 'Estética Dental',
+    isAvailable: true,
+    stock: 10,
+    badge: 'Recomendado'
+  },
+  {
+    id: 'vit-602',
+    businessId: 'biz-6',
+    name: 'Cepillo Dental Sónico Recargable Pro',
+    description: '40,000 vibraciones por minuto con temporizador de 2 minutos y 3 modos de limpieza profunda.',
+    price: 22500,
+    imageUrl: 'https://images.unsplash.com/photo-1559591937-e1032b498f7e?auto=format&fit=crop&w=600&q=80',
+    category: 'Higiene Avanzada',
+    isAvailable: true,
+    stock: 6,
+    badge: 'Tecnología'
+  },
+  {
+    id: 'vit-603',
+    businessId: 'biz-6',
+    name: 'Enjuague Bucal Remineralizante sin Alcohol',
+    description: 'Protección activa contra la sensibilidad y caries. Sabor a menta suave con efecto refrescante prolongado.',
+    price: 6500,
+    imageUrl: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=600&q=80',
+    category: 'Higiene Bucal',
+    isAvailable: true,
+    stock: 30,
+    badge: 'Uso Diario'
+  },
+
+  // 7. Serenity Spa & Masajes Holísticos (biz-7)
+  {
+    id: 'vit-701',
+    businessId: 'biz-7',
+    name: 'Trío de Aceites Esenciales para Aromaterapia',
+    description: 'Aceites 100% puros de Lavanda Francesa, Eucalipto y Bergamota. Ideales para difusores o masajes relajantes.',
+    price: 14500,
+    imageUrl: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=600&q=80',
+    category: 'Aromaterapia',
+    isAvailable: true,
+    stock: 14,
+    badge: 'Más Vendido'
+  },
+  {
+    id: 'vit-702',
+    businessId: 'biz-7',
+    name: 'Vela Botánica para Masajes de Cera de Soja',
+    description: 'Se derrite a temperatura tibia agradable. Nutre intensamente la piel con manteca de cacao y aceites nutritivos.',
+    price: 9500,
+    imageUrl: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?auto=format&fit=crop&w=600&q=80',
+    category: 'Spa & Relajación',
+    isAvailable: true,
+    stock: 10,
+    badge: 'Artesanal'
+  },
+  {
+    id: 'vit-703',
+    businessId: 'biz-7',
+    name: 'Exfoliante Corporal Sales del Himalaya & Coco',
+    description: 'Renueva y desintoxica la piel dejándola suave y luminosa. Textura rica y aroma tropical envolvente.',
+    price: 8000,
+    imageUrl: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?auto=format&fit=crop&w=600&q=80',
+    category: 'Cuidado Corporal',
+    isAvailable: true,
+    stock: 16,
+    badge: '100% Natural'
+  }
+];
+

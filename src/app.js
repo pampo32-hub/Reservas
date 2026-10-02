@@ -4855,6 +4855,7 @@ class App {
     const ttUrl = formatTt(social.tiktok);
     const webUrl = formatWeb(social.website);
     const hasSocial = Boolean(igUrl || fbUrl || ttUrl || webUrl);
+    const vitrinaItems = storage.getVitrinaItemsSync(biz.id) || [];
 
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
@@ -4959,43 +4960,80 @@ class App {
             <!-- Portafolio / Galería de Trabajos (Estilo Fresha) -->
             ${this.renderPortfolioSection(biz)}
 
-            <!-- Servicios -->
-            <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-              <h2 class="text-xl font-bold text-slate-900 mb-2">Servicios Disponibles</h2>
-              <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas para ver turnos disponibles y agendar.</p>
+            <!-- Selector de Sección: Servicios vs Vitrina -->
+            <div class="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 mb-6 w-fit shadow-xs">
+              <button id="detail-nav-services-btn" class="detail-catalog-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all cursor-pointer bg-white text-blue-600 shadow-xs flex items-center gap-2" data-section="services">
+                <i class="fas fa-calendar-check"></i>
+                <span>Servicios (${biz.services ? biz.services.length : 0})</span>
+              </button>
+              <button id="detail-nav-vitrina-btn" class="detail-catalog-tab-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-white/60 flex items-center gap-2" data-section="vitrina">
+                <i class="fas fa-store text-purple-600"></i>
+                <span id="detail-nav-vitrina-title">Vitrina ${vitrinaItems.length > 0 ? `<span class="bg-purple-100 text-purple-800 text-[10px] font-black px-2 py-0.5 rounded-full ml-1">${vitrinaItems.length}</span>` : ''}</span>
+              </button>
+            </div>
 
-              <div class="space-y-4">
-                ${biz.services && biz.services.length > 0 ? biz.services.map(srv => `
-                  <div class="p-5 rounded-2xl border border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex-1">
-                      <div class="flex items-center gap-3">
-                        <h3 class="font-bold text-base text-slate-900">${srv.name}</h3>
-                        <span class="px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-xs font-semibold">
-                          <i class="far fa-clock mr-1 text-slate-500"></i>${srv.duration} min
-                        </span>
+            <!-- Contenedor Sección: Servicios -->
+            <div id="detail-section-services-wrapper">
+              <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+                <h2 class="text-xl font-bold text-slate-900 mb-2">Servicios Disponibles</h2>
+                <p class="text-sm text-slate-500 mb-6">Selecciona el servicio que deseas para ver turnos disponibles y agendar.</p>
+
+                <div class="space-y-4">
+                  ${biz.services && biz.services.length > 0 ? biz.services.map(srv => `
+                    <div class="p-5 rounded-2xl border border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/20 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                          <h3 class="font-bold text-base text-slate-900">${srv.name}</h3>
+                          <span class="px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-xs font-semibold">
+                            <i class="far fa-clock mr-1 text-slate-500"></i>${srv.duration} min
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1.5">${srv.description || 'Sin descripción detallada'}</p>
                       </div>
-                      <p class="text-xs text-slate-500 mt-1.5">${srv.description || 'Sin descripción detallada'}</p>
-                    </div>
 
-                    <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
-                      <span class="text-lg font-extrabold text-blue-600">${this.formatColones(srv.price)}</span>
-                      ${biz.isBlocked ? `
-                        <button disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1.5">
-                          <i class="fas fa-lock"></i> Suspendido
-                        </button>
-                      ` : `
-                        <button 
-                          class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
-                          data-service-id="${srv.id}"
-                        >
-                          <i class="fas fa-calendar-plus"></i> Reservar
-                        </button>
-                      `}
+                      <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3">
+                        <span class="text-lg font-extrabold text-blue-600">${this.formatColones(srv.price)}</span>
+                        ${biz.isBlocked ? `
+                          <button disabled class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-400 text-xs font-bold cursor-not-allowed flex items-center gap-1.5">
+                            <i class="fas fa-lock"></i> Suspendido
+                          </button>
+                        ` : `
+                          <button 
+                            class="book-service-btn px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-md shadow-blue-500/20 flex items-center gap-1.5"
+                            data-service-id="${srv.id}"
+                          >
+                            <i class="fas fa-calendar-plus"></i> Reservar
+                          </button>
+                        `}
+                      </div>
                     </div>
+                  `).join('') : `
+                    <p class="text-sm text-slate-400 py-4">Este comercio aún no tiene servicios agregados.</p>
+                  `}
+                </div>
+              </div>
+            </div>
+
+            <!-- Contenedor Sección: Vitrina Digital -->
+            <div id="detail-section-vitrina-wrapper" class="hidden">
+              <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h2 class="text-xl font-bold text-slate-900">Vitrina de ${this.escapeHtml(biz.name)}</h2>
+                      <span class="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-black border border-purple-200 flex items-center gap-1">
+                        <i class="fas fa-store text-[10px]"></i> Vitrina
+                      </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                      Productos y artículos exclusivos disponibles en el local. Solicítalos directamente por WhatsApp o adquiérelos al llegar a tu cita.
+                    </p>
                   </div>
-                `).join('') : `
-                  <p class="text-sm text-slate-400 py-4">Este comercio aún no tiene servicios agregados.</p>
-                `}
+                </div>
+
+                <div id="biz-vitrina-items-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  ${this.renderPublicVitrinaCardsList(biz, vitrinaItems)}
+                </div>
               </div>
             </div>
 
@@ -5233,6 +5271,248 @@ class App {
         this.openBookingModal(biz.id, sId);
       });
     });
+
+    // Control de pestañas Servicios vs Vitrina en perfil público
+    const btnNavServices = document.getElementById('detail-nav-services-btn');
+    const btnNavVitrina = document.getElementById('detail-nav-vitrina-btn');
+    const secServicesWrapper = document.getElementById('detail-section-services-wrapper');
+    const secVitrinaWrapper = document.getElementById('detail-section-vitrina-wrapper');
+
+    const switchDetailTab = (tab) => {
+      if (tab === 'vitrina') {
+        secServicesWrapper?.classList.add('hidden');
+        secVitrinaWrapper?.classList.remove('hidden');
+        btnNavServices?.classList.remove('bg-white', 'text-blue-600', 'shadow-xs', 'font-black');
+        btnNavServices?.classList.add('text-slate-600', 'hover:text-slate-900', 'font-bold');
+        btnNavVitrina?.classList.add('bg-white', 'text-purple-700', 'shadow-xs', 'font-black');
+        btnNavVitrina?.classList.remove('text-slate-600', 'hover:text-slate-900', 'font-bold');
+      } else {
+        secVitrinaWrapper?.classList.add('hidden');
+        secServicesWrapper?.classList.remove('hidden');
+        btnNavVitrina?.classList.remove('bg-white', 'text-purple-700', 'shadow-xs', 'font-black');
+        btnNavVitrina?.classList.add('text-slate-600', 'hover:text-slate-900', 'font-bold');
+        btnNavServices?.classList.add('bg-white', 'text-blue-600', 'shadow-xs', 'font-black');
+        btnNavServices?.classList.remove('text-slate-600', 'hover:text-slate-900', 'font-bold');
+      }
+    };
+
+    btnNavServices?.addEventListener('click', () => switchDetailTab('services'));
+    btnNavVitrina?.addEventListener('click', () => switchDetailTab('vitrina'));
+
+    // Cargar artículos frescos de la vitrina desde el backend de forma asíncrona
+    storage.getVitrinaItems(biz.id).then(freshItems => {
+      const grid = document.getElementById('biz-vitrina-items-grid');
+      const badgeSpan = document.getElementById('detail-nav-vitrina-title');
+      if (grid && freshItems) {
+        grid.innerHTML = this.renderPublicVitrinaCardsList(biz, freshItems);
+        this.bindPublicVitrinaEvents(biz, freshItems);
+      }
+      if (badgeSpan && freshItems) {
+        badgeSpan.innerHTML = `Vitrina ${freshItems.length > 0 ? `<span class="bg-purple-100 text-purple-800 text-[10px] font-black px-2 py-0.5 rounded-full ml-1">${freshItems.length}</span>` : ''}`;
+      }
+    }).catch(() => {});
+
+    this.bindPublicVitrinaEvents(biz, vitrinaItems);
+  }
+
+  // --- MÉTODOS PÚBLICOS DE LA VITRINA DIGITAL ---
+
+  renderPublicVitrinaCard(biz, item) {
+    const isAvailable = item.isAvailable !== false;
+    const rawPhone = biz.phone ? String(biz.phone).replace(/\D/g, '') : '';
+    const waPhone = rawPhone.length === 8 ? `506${rawPhone}` : rawPhone;
+    const waMsg = encodeURIComponent(`¡Hola! Vi en la Vitrina de ${biz.name} el producto "${item.name}" (${this.formatColones(item.price)}) y me gustaría pedirlo / consultar disponibilidad.`);
+    const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : null;
+
+    return `
+      <div class="vitrina-card group bg-white rounded-2xl border border-slate-200/90 hover:border-purple-300 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden">
+        <div class="relative bg-slate-100 aspect-square w-full overflow-hidden cursor-pointer open-vitrina-detail-btn" data-item-id="${item.id}">
+          ${item.imageUrl ? `
+            <img src="${this.escapeHtml(item.imageUrl)}" alt="${this.escapeHtml(item.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100\\'><i class=\\'fas fa-store text-3xl mb-1\\'></i><span class=\\'text-[10px]\\'>Vitrina</span></div>';">
+          ` : `
+            <div class="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100">
+              <i class="fas fa-store text-3xl mb-1"></i>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Vitrina</span>
+            </div>
+          `}
+          ${item.badge ? `
+            <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-purple-600/95 backdrop-blur-xs text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
+              ${this.escapeHtml(item.badge)}
+            </span>
+          ` : ''}
+          ${!isAvailable ? `
+            <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
+              <span class="px-3 py-1 rounded-full bg-slate-900/90 border border-white/20 text-white text-xs font-black uppercase tracking-wider">
+                Agotado Temporalmente
+              </span>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <div>
+            ${item.category ? `
+              <span class="text-[10px] font-extrabold text-purple-700 uppercase tracking-wider block mb-1">
+                ${this.escapeHtml(item.category)}
+              </span>
+            ` : ''}
+            <h3 class="font-bold text-sm text-slate-900 line-clamp-2 cursor-pointer hover:text-purple-600 transition-colors open-vitrina-detail-btn" data-item-id="${item.id}">
+              ${this.escapeHtml(item.name)}
+            </h3>
+            ${item.description ? `
+              <p class="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                ${this.escapeHtml(item.description)}
+              </p>
+            ` : ''}
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-100">
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div>
+                <span class="text-[10px] text-slate-400 font-bold uppercase block leading-none">Precio</span>
+                <span class="text-base font-black text-slate-900 leading-tight">${this.formatColones(item.price)}</span>
+              </div>
+              ${isAvailable ? `
+                <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-black border border-emerald-200 flex items-center gap-1">
+                  <i class="fas fa-check-circle text-[9px]"></i> Disponible
+                </span>
+              ` : `
+                <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold">
+                  Agotado
+                </span>
+              `}
+            </div>
+
+            ${isAvailable && waUrl ? `
+              <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95">
+                <i class="fab fa-whatsapp text-sm"></i>
+                <span>Pedir por WhatsApp</span>
+              </a>
+            ` : `
+              <button class="open-vitrina-detail-btn w-full py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer" data-item-id="${item.id}">
+                <i class="fas fa-eye text-xs"></i>
+                <span>Ver Detalle</span>
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderPublicVitrinaCardsList(biz, items) {
+    if (!items || items.length === 0) {
+      return `
+        <div class="col-span-full py-12 px-4 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+          <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-xl mb-2">
+            <i class="fas fa-store"></i>
+          </div>
+          <h4 class="text-sm font-bold text-slate-800">Vitrina en Preparación</h4>
+          <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1 leading-relaxed">
+            Este comercio aún no ha publicado artículos en su Vitrina. ¡Vuelve pronto para descubrir sus novedades!
+          </p>
+        </div>
+      `;
+    }
+    return items.map(item => this.renderPublicVitrinaCard(biz, item)).join('');
+  }
+
+  bindPublicVitrinaEvents(biz, items) {
+    document.querySelectorAll('.open-vitrina-detail-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const itemId = btn.getAttribute('data-item-id');
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+          this.renderVitrinaItemDetailModal(biz, item);
+        }
+      });
+    });
+  }
+
+  renderVitrinaItemDetailModal(biz, item) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+    const isAvailable = item.isAvailable !== false;
+    const rawPhone = biz.phone ? String(biz.phone).replace(/\D/g, '') : '';
+    const waPhone = rawPhone.length === 8 ? `506${rawPhone}` : rawPhone;
+    const waMsg = encodeURIComponent(`¡Hola! Vi en la Vitrina de ${biz.name} el producto "${item.name}" (${this.formatColones(item.price)}) y me gustaría adquirirlo.`);
+    const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${waMsg}` : null;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-scale-up">
+          <div class="relative bg-slate-900 h-64 sm:h-72 w-full overflow-hidden">
+            ${item.imageUrl ? `
+              <img src="${this.escapeHtml(item.imageUrl)}" alt="${this.escapeHtml(item.name)}" class="w-full h-full object-cover">
+            ` : `
+              <div class="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-800">
+                <i class="fas fa-store text-5xl mb-2"></i>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Vitrina de ${this.escapeHtml(biz.name)}</span>
+              </div>
+            `}
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent"></div>
+            
+            <button id="close-vitrina-detail-btn" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white flex items-center justify-center transition-all cursor-pointer shadow-lg">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+
+            ${item.badge ? `
+              <span class="absolute top-4 left-4 px-3 py-1 rounded-full bg-purple-600 text-white text-xs font-black uppercase tracking-wider shadow-md">
+                ${this.escapeHtml(item.badge)}
+              </span>
+            ` : ''}
+
+            <div class="absolute bottom-4 left-4 right-4 text-white">
+              ${item.category ? `<span class="text-xs font-bold text-purple-300 uppercase tracking-wider block mb-1">${this.escapeHtml(item.category)}</span>` : ''}
+              <h3 class="text-xl font-extrabold">${this.escapeHtml(item.name)}</h3>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <span class="text-xs text-slate-400 font-bold uppercase block">Precio en Local</span>
+                <span class="text-2xl font-black text-purple-700">${this.formatColones(item.price)}</span>
+              </div>
+              <div>
+                ${isAvailable ? `
+                  <span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black border border-emerald-200 flex items-center gap-1.5">
+                    <i class="fas fa-check-circle"></i> Disponible
+                  </span>
+                ` : `
+                  <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
+                    Agotado Temporalmente
+                  </span>
+                `}
+              </div>
+            </div>
+
+            <div>
+              <h4 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-1.5">Descripción del Artículo</h4>
+              <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                ${this.escapeHtml(item.description || 'Sin descripción detallada. Puedes consultar directamente por WhatsApp al comercio.')}
+              </p>
+            </div>
+
+            <div class="pt-2 flex flex-col gap-2">
+              ${isAvailable && waUrl ? `
+                <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs sm:text-sm font-black transition-all shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2">
+                  <i class="fab fa-whatsapp text-lg"></i>
+                  <span>Pedir este artículo por WhatsApp</span>
+                </a>
+              ` : ''}
+              <button id="close-vitrina-detail-secondary-btn" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-vitrina-detail-btn')?.addEventListener('click', () => modalContainer.innerHTML = '');
+    document.getElementById('close-vitrina-detail-secondary-btn')?.addEventListener('click', () => modalContainer.innerHTML = '');
   }
 
   // ==========================================
@@ -8085,6 +8365,12 @@ class App {
                 <span>Servicios (${currentBiz.services ? currentBiz.services.length : 0})</span>
               </button>
 
+              <!-- Vitrina -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'vitrina' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/25 font-black ring-2 ring-purple-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-purple-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="vitrina">
+                <i class="fas fa-store text-xs ${this.activeDashboardTab === 'vitrina' ? 'text-white' : 'text-purple-600'}"></i>
+                <span>Vitrina</span>
+              </button>
+
               <!-- 7. Portafolio -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'portfolio' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="portfolio">
                 <i class="fas fa-camera-retro text-xs ${this.activeDashboardTab === 'portfolio' ? 'text-white' : 'text-purple-600'}"></i>
@@ -8672,6 +8958,10 @@ class App {
 
       if (this.activeDashboardTab === 'deposits') {
         return this.renderDepositSettingsTabContent(currentBiz);
+      }
+
+      if (this.activeDashboardTab === 'vitrina') {
+        return this.renderVitrinaTabContent(currentBiz);
       }
 
     if (this.activeDashboardTab === 'appointments') {
@@ -12011,6 +12301,187 @@ class App {
           saveBtn.innerHTML = originalHtml;
         }
       }
+    });
+  }
+
+  // ==========================================
+  // --- SUB-CONTENIDO: GESTIÓN DE VITRINA DIGITAL ---
+  // ==========================================
+
+  renderVitrinaTabContent(currentBiz) {
+    const items = storage.getVitrinaItemsSync(currentBiz.id) || [];
+    const totalCount = items.length;
+    const availableCount = items.filter(i => i.isAvailable !== false).length;
+    const outOfStockCount = totalCount - availableCount;
+
+    // Sincronizar en segundo plano si no se ha sincronizado recientemente
+    if (!this._vitrinaSyncingBizId || this._vitrinaSyncingBizId !== currentBiz.id) {
+      this._vitrinaSyncingBizId = currentBiz.id;
+      storage.getVitrinaItems(currentBiz.id, true).then(freshItems => {
+        if (freshItems && freshItems.length !== items.length && this.activeDashboardTab === 'vitrina') {
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) this.renderOwnerDashboardView(mainContent);
+        }
+      }).catch(() => {});
+    }
+
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <!-- Encabezado de la Vitrina -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-xl font-bold text-slate-900">Vitrina de tu Negocio</h2>
+              <span class="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-black uppercase tracking-wider border border-purple-200">
+                Vitrina Digital
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+              Exhibe los productos y artículos que vendes en tu local (pomadas, cremas, accesorios, kits, tratamientos). Tus clientes podrán verlos en tu perfil público y solicitártelos por WhatsApp o adquirirlos en su cita.
+            </p>
+          </div>
+
+          <button id="add-vitrina-item-btn" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-purple-500/20 active:scale-95 shrink-0">
+            <i class="fas fa-plus"></i>
+            <span>Agregar a la Vitrina</span>
+          </button>
+        </div>
+
+        <!-- Resumen Estadístico -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+            <span class="text-[10px] font-black uppercase text-slate-400 block mb-1">Total en Vitrina</span>
+            <span class="text-2xl font-black text-slate-800">${totalCount}</span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">artículos registrados</span>
+          </div>
+          <div class="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200/80">
+            <span class="text-[10px] font-black uppercase text-emerald-700 block mb-1">Disponibles</span>
+            <span class="text-2xl font-black text-emerald-800">${availableCount}</span>
+            <span class="text-[11px] text-emerald-600 block mt-0.5">visibles con opción de pedido</span>
+          </div>
+          <div class="p-4 bg-amber-50/70 rounded-2xl border border-amber-200/80">
+            <span class="text-[10px] font-black uppercase text-amber-700 block mb-1">Agotados</span>
+            <span class="text-2xl font-black text-amber-800">${outOfStockCount}</span>
+            <span class="text-[11px] text-amber-600 block mt-0.5">pausados temporalmente</span>
+          </div>
+        </div>
+
+        <!-- Grid de Artículos o Estado Vacío -->
+        <div id="vitrina-items-grid-container">
+          ${items && items.length > 0 ? `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${items.map(item => `
+                <div class="bg-slate-50/70 rounded-2xl border border-slate-200/80 overflow-hidden flex flex-col justify-between hover:border-purple-300 transition-colors">
+                  <div class="p-4">
+                    <div class="flex items-start gap-3 mb-3">
+                      <div class="w-16 h-16 rounded-xl overflow-hidden bg-slate-200 shrink-0 border border-slate-200">
+                        ${item.imageUrl ? `
+                          <img src="${this.escapeHtml(item.imageUrl)}" alt="${this.escapeHtml(item.name)}" class="w-full h-full object-cover">
+                        ` : `
+                          <div class="w-full h-full flex items-center justify-center text-slate-400">
+                            <i class="fas fa-store text-xl"></i>
+                          </div>
+                        `}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        ${item.badge ? `
+                          <span class="inline-block px-2 py-0.2 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black uppercase tracking-wider mb-1">
+                            ${this.escapeHtml(item.badge)}
+                          </span>
+                        ` : ''}
+                        <h3 class="font-bold text-sm text-slate-900 truncate" title="${this.escapeHtml(item.name)}">${this.escapeHtml(item.name)}</h3>
+                        <div class="flex items-center gap-2 mt-1">
+                          <span class="text-sm font-black text-purple-700">${this.formatColones(item.price)}</span>
+                          ${item.category ? `<span class="text-[10px] text-slate-400 font-semibold truncate">• ${this.escapeHtml(item.category)}</span>` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      ${this.escapeHtml(item.description || 'Sin descripción')}
+                    </p>
+                  </div>
+
+                  <div class="p-3 bg-white border-t border-slate-200/80 flex items-center justify-between gap-2">
+                    <!-- Toggle rápido de Disponibilidad -->
+                    <button class="toggle-vitrina-availability-btn px-2.5 py-1.5 rounded-lg text-[11px] font-black flex items-center gap-1.5 transition-all cursor-pointer ${item.isAvailable !== false ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-200'}" data-item-id="${item.id}" data-current-available="${item.isAvailable !== false}">
+                      <i class="fas ${item.isAvailable !== false ? 'fa-check-circle text-emerald-600' : 'fa-times-circle text-slate-400'}"></i>
+                      <span>${item.isAvailable !== false ? 'Disponible' : 'Agotado'}</span>
+                    </button>
+
+                    <div class="flex items-center gap-1">
+                      <button class="edit-vitrina-item-btn p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer text-xs font-bold" data-item-id="${item.id}" title="Editar artículo">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="delete-vitrina-item-btn p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer text-xs font-bold" data-item-id="${item.id}" title="Eliminar de la vitrina">
+                        <i class="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="py-12 px-4 text-center rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 space-y-3">
+              <div class="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto text-2xl">
+                <i class="fas fa-store"></i>
+              </div>
+              <h3 class="text-base font-bold text-slate-800">Tu Vitrina está vacía</h3>
+              <p class="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+                Exhibe tus productos favoritos, tratamientos, accesorios o artículos de cuidado personal. Tus clientes podrán verlos al reservar y solicitártelos por WhatsApp.
+              </p>
+              <button id="empty-add-vitrina-item-btn" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer">
+                <i class="fas fa-plus mr-1"></i> Agregar tu Primer Artículo a la Vitrina
+              </button>
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+  }
+
+  setupVitrinaTabEvents(currentBiz) {
+    document.getElementById('add-vitrina-item-btn')?.addEventListener('click', () => {
+      this.renderNewVitrinaItemModal(currentBiz.id);
+    });
+    document.getElementById('empty-add-vitrina-item-btn')?.addEventListener('click', () => {
+      this.renderNewVitrinaItemModal(currentBiz.id);
+    });
+
+    document.querySelectorAll('.edit-vitrina-item-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const itemId = btn.getAttribute('data-item-id');
+        const items = storage.getVitrinaItemsSync(currentBiz.id) || [];
+        const item = items.find(i => i.id === itemId);
+        if (item) {
+          this.renderEditVitrinaItemModal(currentBiz.id, item);
+        }
+      });
+    });
+
+    document.querySelectorAll('.delete-vitrina-item-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const itemId = btn.getAttribute('data-item-id');
+        if (confirm('¿Deseas eliminar este artículo de tu Vitrina?')) {
+          await storage.deleteVitrinaItem(currentBiz.id, itemId);
+          this.showToast('Artículo eliminado de la Vitrina.', 'info');
+          const mainContent = document.getElementById('main-content');
+          if (mainContent) this.renderOwnerDashboardView(mainContent);
+        }
+      });
+    });
+
+    document.querySelectorAll('.toggle-vitrina-availability-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const itemId = btn.getAttribute('data-item-id');
+        const currentAvailable = btn.getAttribute('data-current-available') === 'true';
+        const newStatus = !currentAvailable;
+        btn.disabled = true;
+        await storage.updateVitrinaItem(currentBiz.id, itemId, { isAvailable: newStatus });
+        this.showToast(newStatus ? 'Artículo marcado como Disponible en la Vitrina' : 'Artículo marcado como Agotado', 'info');
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) this.renderOwnerDashboardView(mainContent);
+      });
     });
   }
 
@@ -18626,6 +19097,9 @@ Esperamos atenderle pronto de nuevo.`;
     }
     if (this.activeDashboardTab === 'loyalty') {
       this.setupLoyaltyTabEvents(currentBiz);
+    }
+    if (this.activeDashboardTab === 'vitrina') {
+      this.setupVitrinaTabEvents(currentBiz);
     }
 
     // Botones de llamada a la acción en banners de bloqueo de funciones por plan (Upsell)
@@ -25464,6 +25938,416 @@ Esperamos atenderle pronto de nuevo.`;
       this.showToast('Servicio actualizado con éxito.', 'success');
       modalContainer.innerHTML = '';
       this.renderCurrentView();
+    });
+  }
+
+  // ==========================================
+  // MODALES DE GESTIÓN DE VITRINA DIGITAL
+  // ==========================================
+
+  renderNewVitrinaItemModal(businessId) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto border border-slate-200 p-6 sm:p-7">
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-black text-slate-900">Agregar a la Vitrina</h3>
+                <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-black uppercase tracking-wider">
+                  Vitrina Digital
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Exhibe tus artículos para que tus clientes puedan pedirlos por WhatsApp.</p>
+            </div>
+            <button id="close-new-vit-modal-btn" class="modal-close-btn w-9 h-9 rounded-full hover:bg-slate-100 active:scale-90 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-all cursor-pointer" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
+            </button>
+          </div>
+
+          <form id="new-vitrina-form" class="space-y-4 text-xs sm:text-sm">
+            <!-- Foto del Artículo -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1.5">Foto del Artículo</label>
+              <div class="flex items-center gap-4">
+                <div class="w-20 h-20 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-200 overflow-hidden shrink-0 flex items-center justify-center relative">
+                  <img id="new-vit-img-preview" src="" alt="Previsualización" class="w-full h-full object-cover hidden">
+                  <div id="new-vit-img-placeholder" class="text-center p-2 text-slate-400">
+                    <i class="fas fa-image text-xl mb-0.5 block"></i>
+                    <span class="text-[9px] font-bold uppercase">Foto</span>
+                  </div>
+                </div>
+
+                <div class="flex-1 space-y-2">
+                  <input type="file" id="new-vit-file-input" accept="image/*" class="hidden">
+                  <button type="button" id="new-vit-upload-btn" class="w-full py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <i class="fas fa-camera"></i>
+                    <span>Subir Foto del Dispositivo</span>
+                  </button>
+                  <input type="url" id="new-vit-url-input" placeholder="O pega enlace URL (https://...)" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- Nombre -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nombre del Artículo *</label>
+              <input type="text" id="new-vit-name" required placeholder="Ej. Pomada Fijadora Mate, Crema Reparadora, etc." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            </div>
+
+            <!-- Precio y Categoría -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Precio en Colones (CRC ₡) *</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold">₡</span>
+                  <input type="number" id="new-vit-price" required min="0" step="100" placeholder="8500" class="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none font-bold">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Categoría</label>
+                <input type="text" id="new-vit-category" list="vitrina-category-suggestions" placeholder="Ej. Cuidado Capilar, Uñas..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                <datalist id="vitrina-category-suggestions">
+                  <option value="Cuidado Capilar">
+                  <option value="Cuidado de Barba">
+                  <option value="Cuidado de la Piel">
+                  <option value="Uñas & Manos">
+                  <option value="Estética Dental">
+                  <option value="Higiene & Aseo">
+                  <option value="Aromaterapia & Spa">
+                  <option value="Accesorios">
+                  <option value="Kits & Regalos">
+                </datalist>
+              </div>
+            </div>
+
+            <!-- Insignia y Disponibilidad -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Insignia Destacada</label>
+                <select id="new-vit-badge" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                  <option value="">Ninguna</option>
+                  <option value="Más Vendido">🔥 Más Vendido</option>
+                  <option value="Nuevo">✨ Nuevo</option>
+                  <option value="Promoción">🏷️ Promoción</option>
+                  <option value="Recomendado">⭐ Recomendado</option>
+                  <option value="Edición Especial">💎 Edición Especial</option>
+                  <option value="100% Natural">🌿 100% Natural</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Estado de Disponibilidad</label>
+                <select id="new-vit-available" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                  <option value="true" selected>✅ Disponible para Pedidos</option>
+                  <option value="false">❌ Agotado Temporalmente</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Descripción del Artículo</label>
+              <textarea id="new-vit-desc" rows="3" placeholder="Describe los beneficios, ingredientes, modo de uso o especificaciones..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-xs sm:text-sm"></textarea>
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" id="submit-new-vit-btn" class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-black shadow-md shadow-purple-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-check"></i>
+                <span>Publicar en la Vitrina</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-new-vit-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    let currentImageData = '';
+    const fileInput = document.getElementById('new-vit-file-input');
+    const uploadBtn = document.getElementById('new-vit-upload-btn');
+    const urlInput = document.getElementById('new-vit-url-input');
+    const previewImg = document.getElementById('new-vit-img-preview');
+    const placeholder = document.getElementById('new-vit-img-placeholder');
+
+    uploadBtn?.addEventListener('click', () => fileInput?.click());
+
+    fileInput?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 800, 800, 0.85);
+        currentImageData = compressed;
+        if (previewImg && placeholder) {
+          previewImg.src = compressed;
+          previewImg.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        }
+        if (urlInput) urlInput.value = '';
+      } catch (err) {
+        this.showToast('Error al procesar la foto.', 'error');
+      }
+    });
+
+    urlInput?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val) {
+        currentImageData = val;
+        if (previewImg && placeholder) {
+          previewImg.src = val;
+          previewImg.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        }
+      }
+    });
+
+    document.getElementById('new-vitrina-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submit-new-vit-btn');
+      const name = document.getElementById('new-vit-name')?.value.trim();
+      const price = parseFloat(document.getElementById('new-vit-price')?.value) || 0;
+      const category = document.getElementById('new-vit-category')?.value.trim() || '';
+      const badge = document.getElementById('new-vit-badge')?.value || '';
+      const isAvailable = document.getElementById('new-vit-available')?.value === 'true';
+      const description = document.getElementById('new-vit-desc')?.value.trim() || '';
+
+      if (!name) {
+        this.showToast('Por favor ingresa el nombre del artículo.', 'warning');
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Publicando...';
+      }
+
+      try {
+        await storage.saveVitrinaItem(businessId, {
+          name,
+          price,
+          category,
+          badge,
+          isAvailable,
+          description,
+          imageUrl: currentImageData
+        });
+        this.showToast('¡Artículo publicado en tu Vitrina con éxito!', 'success');
+        modalContainer.innerHTML = '';
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) this.renderOwnerDashboardView(mainContent);
+      } catch (err) {
+        console.error('Error al guardar artículo:', err);
+        this.showToast(err.message || 'Error al guardar el artículo.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check"></i> Publicar en la Vitrina';
+        }
+      }
+    });
+  }
+
+  renderEditVitrinaItemModal(businessId, item) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer || !item) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto border border-slate-200 p-6 sm:p-7">
+          <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-black text-slate-900">Editar Artículo</h3>
+                <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[10px] font-black uppercase tracking-wider">
+                  Vitrina
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Modifica los detalles, precio, foto o disponibilidad del producto.</p>
+            </div>
+            <button id="close-edit-vit-modal-btn" class="modal-close-btn w-9 h-9 rounded-full hover:bg-slate-100 active:scale-90 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-all cursor-pointer" title="Cerrar">
+              <i class="fas fa-times text-base pointer-events-none"></i>
+            </button>
+          </div>
+
+          <form id="edit-vitrina-form" class="space-y-4 text-xs sm:text-sm">
+            <!-- Foto del Artículo -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1.5">Foto del Artículo</label>
+              <div class="flex items-center gap-4">
+                <div class="w-20 h-20 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center relative">
+                  <img id="edit-vit-img-preview" src="${this.escapeHtml(item.imageUrl || '')}" alt="${this.escapeHtml(item.name)}" class="w-full h-full object-cover ${item.imageUrl ? '' : 'hidden'}">
+                  <div id="edit-vit-img-placeholder" class="text-center p-2 text-slate-400 ${item.imageUrl ? 'hidden' : ''}">
+                    <i class="fas fa-image text-xl mb-0.5 block"></i>
+                    <span class="text-[9px] font-bold uppercase">Foto</span>
+                  </div>
+                </div>
+
+                <div class="flex-1 space-y-2">
+                  <input type="file" id="edit-vit-file-input" accept="image/*" class="hidden">
+                  <button type="button" id="edit-vit-upload-btn" class="w-full py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <i class="fas fa-camera"></i>
+                    <span>Cambiar Foto del Dispositivo</span>
+                  </button>
+                  <input type="url" id="edit-vit-url-input" value="${this.escapeHtml(item.imageUrl || '')}" placeholder="O pega enlace URL (https://...)" class="w-full px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                </div>
+              </div>
+            </div>
+
+            <!-- Nombre -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Nombre del Artículo *</label>
+              <input type="text" id="edit-vit-name" required value="${this.escapeHtml(item.name || '')}" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            </div>
+
+            <!-- Precio y Categoría -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Precio en Colones (CRC ₡) *</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-2.5 text-slate-400 font-bold">₡</span>
+                  <input type="number" id="edit-vit-price" required min="0" step="100" value="${item.price || 0}" class="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none font-bold">
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Categoría</label>
+                <input type="text" id="edit-vit-category" list="vitrina-category-suggestions" value="${this.escapeHtml(item.category || '')}" placeholder="Ej. Cuidado Capilar..." class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Insignia y Disponibilidad -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Insignia Destacada</label>
+                <select id="edit-vit-badge" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                  <option value="" ${!item.badge ? 'selected' : ''}>Ninguna</option>
+                  <option value="Más Vendido" ${item.badge === 'Más Vendido' ? 'selected' : ''}>🔥 Más Vendido</option>
+                  <option value="Nuevo" ${item.badge === 'Nuevo' ? 'selected' : ''}>✨ Nuevo</option>
+                  <option value="Promoción" ${item.badge === 'Promoción' ? 'selected' : ''}>🏷️ Promoción</option>
+                  <option value="Recomendado" ${item.badge === 'Recomendado' ? 'selected' : ''}>⭐ Recomendado</option>
+                  <option value="Edición Especial" ${item.badge === 'Edición Especial' ? 'selected' : ''}>💎 Edición Especial</option>
+                  <option value="100% Natural" ${item.badge === '100% Natural' ? 'selected' : ''}>🌿 100% Natural</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Estado de Disponibilidad</label>
+                <select id="edit-vit-available" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                  <option value="true" ${item.isAvailable !== false ? 'selected' : ''}>✅ Disponible para Pedidos</option>
+                  <option value="false" ${item.isAvailable === false ? 'selected' : ''}>❌ Agotado Temporalmente</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Descripción -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Descripción del Artículo</label>
+              <textarea id="edit-vit-desc" rows="3" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none text-xs sm:text-sm">${this.escapeHtml(item.description || '')}</textarea>
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" id="submit-edit-vit-btn" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-black shadow-md shadow-blue-500/20 transition-all cursor-pointer flex items-center justify-center gap-2">
+                <i class="fas fa-save"></i>
+                <span>Guardar Cambios</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('close-edit-vit-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    let currentImageData = item.imageUrl || '';
+    const fileInput = document.getElementById('edit-vit-file-input');
+    const uploadBtn = document.getElementById('edit-vit-upload-btn');
+    const urlInput = document.getElementById('edit-vit-url-input');
+    const previewImg = document.getElementById('edit-vit-img-preview');
+    const placeholder = document.getElementById('edit-vit-img-placeholder');
+
+    uploadBtn?.addEventListener('click', () => fileInput?.click());
+
+    fileInput?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const compressed = await this.compressImageFile(file, 800, 800, 0.85);
+        currentImageData = compressed;
+        if (previewImg && placeholder) {
+          previewImg.src = compressed;
+          previewImg.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        }
+        if (urlInput) urlInput.value = '';
+      } catch (err) {
+        this.showToast('Error al procesar la foto.', 'error');
+      }
+    });
+
+    urlInput?.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      currentImageData = val;
+      if (previewImg && placeholder) {
+        if (val) {
+          previewImg.src = val;
+          previewImg.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        } else {
+          previewImg.classList.add('hidden');
+          placeholder.classList.remove('hidden');
+        }
+      }
+    });
+
+    document.getElementById('edit-vitrina-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submit-edit-vit-btn');
+      const name = document.getElementById('edit-vit-name')?.value.trim();
+      const price = parseFloat(document.getElementById('edit-vit-price')?.value) || 0;
+      const category = document.getElementById('edit-vit-category')?.value.trim() || '';
+      const badge = document.getElementById('edit-vit-badge')?.value || '';
+      const isAvailable = document.getElementById('edit-vit-available')?.value === 'true';
+      const description = document.getElementById('edit-vit-desc')?.value.trim() || '';
+
+      if (!name) {
+        this.showToast('Por favor ingresa el nombre del artículo.', 'warning');
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+      }
+
+      try {
+        await storage.updateVitrinaItem(businessId, item.id, {
+          name,
+          price,
+          category,
+          badge,
+          isAvailable,
+          description,
+          imageUrl: currentImageData
+        });
+        this.showToast('¡Artículo de la Vitrina actualizado con éxito!', 'success');
+        modalContainer.innerHTML = '';
+        const mainContent = document.getElementById('main-content');
+        if (mainContent) this.renderOwnerDashboardView(mainContent);
+      } catch (err) {
+        console.error('Error al actualizar artículo:', err);
+        this.showToast(err.message || 'Error al actualizar el artículo.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        }
+      }
     });
   }
 

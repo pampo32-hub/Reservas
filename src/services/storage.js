@@ -1,5 +1,5 @@
 // Servicio de almacenamiento conectado a Neon PostgreSQL con autenticación de Negocios y Clientes
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES } from '../data/initialData.js?v=3.44.0';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CATEGORIES, SUBSCRIPTION_PLANS, TEST_SUBSCRIPTION_PLANS, WHATSAPP_PACKS, COSTA_RICA_PROVINCES, INITIAL_VITRINA_ITEMS } from '../data/initialData.js?v=3.48.11';
 
 
 const STORAGE_KEYS = {
@@ -11,7 +11,8 @@ const STORAGE_KEYS = {
   DEV_USER: 'directorio_dev_user_session',
   STAFF_USER: 'directorio_staff_user_session',
   BLOCKED_SLOTS: 'directorio_blocked_slots_v1',
-  AUTH_TOKEN: 'reservas_auth_token_v1'
+  AUTH_TOKEN: 'reservas_auth_token_v1',
+  VITRINA: 'directorio_vitrina_v1'
 };
 
 class StorageService {
@@ -20,12 +21,15 @@ class StorageService {
     this.businessesCache = [];
     this.appointmentsCache = [];
     this.blockedSlotsCache = [];
+    this.vitrinaCache = [];
     const localBiz = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.BUSINESSES) : null;
     this.businessesCache = localBiz ? JSON.parse(localBiz) : INITIAL_BUSINESSES;
     const localApts = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.APPOINTMENTS) : null;
     this.appointmentsCache = localApts ? JSON.parse(localApts) : INITIAL_APPOINTMENTS;
     const localSlots = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.BLOCKED_SLOTS) : null;
     this.blockedSlotsCache = localSlots ? JSON.parse(localSlots) : [];
+    const localVitrina = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.VITRINA) : null;
+    this.vitrinaCache = localVitrina ? JSON.parse(localVitrina) : (INITIAL_VITRINA_ITEMS || []);
     this.isOnlineApi = true;
     this._paypalConfigCache = null;
     this.init();
@@ -3446,6 +3450,153 @@ class StorageService {
     } catch (e) {
       console.error('Error al obtener billetera de sellos:', e);
       return { success: false, cards: [] };
+    }
+  }
+
+  // ==========================================
+  // MÉTODOS DE LA VITRINA DIGITAL
+  // ==========================================
+
+  getVitrinaItemsSync(businessId) {
+    if (!businessId) return [];
+    return (this.vitrinaCache || []).filter(item => item.businessId === businessId);
+  }
+
+  async getVitrinaItems(businessId, includeAll = false) {
+    if (!businessId) return [];
+    try {
+      const endpoint = includeAll
+        ? `${this.apiBase}/businesses/${businessId}/vitrina/all`
+        : `${this.apiBase}/businesses/${businessId}/vitrina`;
+      
+      const res = await this.fetchWithAuth(endpoint);
+      if (res.ok) {
+        const items = await res.json();
+        // Actualizar caché local para este negocio
+        const otherItems = (this.vitrinaCache || []).filter(i => i.businessId !== businessId);
+        this.vitrinaCache = [...otherItems, ...items];
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+          } catch (e) {}
+        }
+        return items;
+      }
+    } catch (e) {
+      console.warn('Error consultando vitrina en API, usando caché:', e);
+    }
+
+    // Fallback a caché local
+    const items = (this.vitrinaCache || []).filter(item => item.businessId === businessId);
+    if (!includeAll) {
+      return items.filter(item => item.isAvailable !== false);
+    }
+    return items;
+  }
+
+  async saveVitrinaItem(businessId, itemData) {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/vitrina`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData)
+      });
+      if (res.ok) {
+        const created = await res.json();
+        this.vitrinaCache = [created, ...(this.vitrinaCache || []).filter(i => i.id !== created.id)];
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+          } catch (e) {}
+        }
+        return created;
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Error al guardar artículo en la vitrina');
+    } catch (e) {
+      console.error('Error guardando artículo de vitrina:', e);
+      // Fallback local
+      const localItem = {
+        id: `vit-${Date.now()}`,
+        businessId,
+        ...itemData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      this.vitrinaCache = [localItem, ...(this.vitrinaCache || [])];
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+        } catch (err) {}
+      }
+      return localItem;
+    }
+  }
+
+  async updateVitrinaItem(businessId, itemId, itemData) {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/vitrina/${itemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(itemData)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        this.vitrinaCache = (this.vitrinaCache || []).map(i => i.id === itemId ? { ...i, ...updated } : i);
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+          } catch (e) {}
+        }
+        return updated;
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Error al actualizar artículo');
+    } catch (e) {
+      console.error('Error actualizando artículo de vitrina:', e);
+      // Fallback local
+      let updated = null;
+      this.vitrinaCache = (this.vitrinaCache || []).map(i => {
+        if (i.id === itemId) {
+          updated = { ...i, ...itemData, updatedAt: new Date().toISOString() };
+          return updated;
+        }
+        return i;
+      });
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+        } catch (err) {}
+      }
+      return updated;
+    }
+  }
+
+  async deleteVitrinaItem(businessId, itemId) {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/vitrina/${itemId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        this.vitrinaCache = (this.vitrinaCache || []).filter(i => i.id !== itemId);
+        if (typeof localStorage !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+          } catch (e) {}
+        }
+        return { success: true };
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Error al eliminar artículo');
+    } catch (e) {
+      console.error('Error eliminando artículo de vitrina:', e);
+      this.vitrinaCache = (this.vitrinaCache || []).filter(i => i.id !== itemId);
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEYS.VITRINA, JSON.stringify(this.vitrinaCache));
+        } catch (err) {}
+      }
+      return { success: true };
     }
   }
 }

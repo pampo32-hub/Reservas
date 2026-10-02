@@ -2796,6 +2796,225 @@ app.delete('/api/services/:id', async (req, res) => {
 });
 
 // ==========================================
+// ENDPOINTS DE VITRINA DIGITAL (PRODUCTOS / ARTÍCULOS)
+// ==========================================
+
+// Obtener artículos públicos disponibles en la Vitrina de un negocio
+app.get('/api/businesses/:id/vitrina', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let actualBizId = id;
+    const bizCheck = await pool.query(
+      'SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1',
+      [id]
+    );
+    if (bizCheck.rows.length > 0) {
+      actualBizId = bizCheck.rows[0].id;
+    }
+
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        business_id as "businessId", 
+        name, 
+        description, 
+        price::float as price, 
+        image_url as "imageUrl", 
+        category, 
+        is_available as "isAvailable", 
+        stock, 
+        badge, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+      FROM reservas_vitrina_items
+      WHERE business_id = $1 AND is_available = TRUE
+      ORDER BY created_at DESC
+    `, [actualBizId]);
+
+    res.json(result.rows || []);
+  } catch (error) {
+    console.error('Error al obtener artículos de la vitrina:', error);
+    res.status(500).json({ error: 'Error al consultar la vitrina' });
+  }
+});
+
+// Obtener TODOS los artículos de la Vitrina para el dueño del negocio (incluye agotados/ocultos)
+app.get('/api/businesses/:id/vitrina/all', authenticateBusinessOwnerOrDev, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let actualBizId = id;
+    const bizCheck = await pool.query(
+      'SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1',
+      [id]
+    );
+    if (bizCheck.rows.length > 0) {
+      actualBizId = bizCheck.rows[0].id;
+    }
+
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        business_id as "businessId", 
+        name, 
+        description, 
+        price::float as price, 
+        image_url as "imageUrl", 
+        category, 
+        is_available as "isAvailable", 
+        stock, 
+        badge, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+      FROM reservas_vitrina_items
+      WHERE business_id = $1
+      ORDER BY created_at DESC
+    `, [actualBizId]);
+
+    res.json(result.rows || []);
+  } catch (error) {
+    console.error('Error al obtener catálogo completo de la vitrina:', error);
+    res.status(500).json({ error: 'Error al consultar todos los artículos de la vitrina' });
+  }
+});
+
+// Agregar nuevo artículo a la Vitrina
+app.post('/api/businesses/:id/vitrina', authenticateBusinessOwnerOrDev, async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { name, description, price, imageUrl, category, isAvailable, stock, badge } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'El nombre del artículo es obligatorio' });
+    }
+
+    const cleanPrice = parseFloat(String(price || 0).replace(/[^0-9.]/g, '')) || 0;
+    const cleanStock = stock !== undefined && stock !== null && stock !== '' ? parseInt(stock, 10) : null;
+    const cleanImageUrl = processAndSaveImage(imageUrl, 'vitrina', 'vit');
+    const newItemId = `vit-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+
+    const insertResult = await pool.query(`
+      INSERT INTO reservas_vitrina_items (
+        id, business_id, name, description, price, image_url, category, is_available, stock, badge, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      RETURNING 
+        id, 
+        business_id as "businessId", 
+        name, 
+        description, 
+        price::float as price, 
+        image_url as "imageUrl", 
+        category, 
+        is_available as "isAvailable", 
+        stock, 
+        badge, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+    `, [
+      newItemId,
+      businessId,
+      name.trim(),
+      description || '',
+      cleanPrice,
+      cleanImageUrl || '',
+      category || '',
+      isAvailable !== false,
+      isNaN(cleanStock) ? null : cleanStock,
+      badge || ''
+    ]);
+
+    res.status(201).json(insertResult.rows[0]);
+  } catch (error) {
+    console.error('Error al agregar artículo a la vitrina:', error);
+    res.status(500).json({ error: 'Error al registrar artículo en la vitrina' });
+  }
+});
+
+// Actualizar artículo de la Vitrina
+app.put('/api/businesses/:id/vitrina/:itemId', authenticateBusinessOwnerOrDev, async (req, res) => {
+  try {
+    const { id: businessId, itemId } = req.params;
+    const { name, description, price, imageUrl, category, isAvailable, stock, badge } = req.body;
+
+    let processedImageUrl = imageUrl;
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('data:image/')) {
+      processedImageUrl = processAndSaveImage(imageUrl, 'vitrina', 'vit');
+    }
+
+    const cleanPrice = price !== undefined ? parseFloat(String(price).replace(/[^0-9.]/g, '')) : undefined;
+    const cleanStock = stock !== undefined ? (stock === '' || stock === null ? null : parseInt(stock, 10)) : undefined;
+
+    const updateResult = await pool.query(`
+      UPDATE reservas_vitrina_items SET
+        name = COALESCE($1, name),
+        description = COALESCE($2, description),
+        price = CASE WHEN $3::numeric IS NOT NULL THEN $3::numeric ELSE price END,
+        image_url = COALESCE($4, image_url),
+        category = COALESCE($5, category),
+        is_available = CASE WHEN $6::boolean IS NOT NULL THEN $6::boolean ELSE is_available END,
+        stock = CASE WHEN $7::boolean THEN $8::int ELSE stock END,
+        badge = COALESCE($9, badge),
+        updated_at = NOW()
+      WHERE id = $10 AND business_id = $11
+      RETURNING 
+        id, 
+        business_id as "businessId", 
+        name, 
+        description, 
+        price::float as price, 
+        image_url as "imageUrl", 
+        category, 
+        is_available as "isAvailable", 
+        stock, 
+        badge, 
+        created_at as "createdAt", 
+        updated_at as "updatedAt"
+    `, [
+      name !== undefined ? name.trim() : null,
+      description !== undefined ? description : null,
+      (cleanPrice !== undefined && !isNaN(cleanPrice)) ? cleanPrice : null,
+      processedImageUrl !== undefined ? processedImageUrl : null,
+      category !== undefined ? category : null,
+      isAvailable !== undefined ? Boolean(isAvailable) : null,
+      stock !== undefined, // $7: true si se pasó stock explícitamente
+      (cleanStock !== undefined && !isNaN(cleanStock)) ? cleanStock : null, // $8
+      badge !== undefined ? badge : null,
+      itemId,
+      businessId
+    ]);
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Artículo no encontrado en la vitrina' });
+    }
+
+    res.json(updateResult.rows[0]);
+  } catch (error) {
+    console.error('Error al actualizar artículo de la vitrina:', error);
+    res.status(500).json({ error: 'Error al actualizar artículo' });
+  }
+});
+
+// Eliminar artículo de la Vitrina
+app.delete('/api/businesses/:id/vitrina/:itemId', authenticateBusinessOwnerOrDev, async (req, res) => {
+  try {
+    const { id: businessId, itemId } = req.params;
+
+    const delResult = await pool.query(
+      'DELETE FROM reservas_vitrina_items WHERE id = $1 AND business_id = $2',
+      [itemId, businessId]
+    );
+
+    if (delResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Artículo no encontrado' });
+    }
+
+    res.json({ success: true, message: 'Artículo eliminado de la vitrina exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar artículo de la vitrina:', error);
+    res.status(500).json({ error: 'Error al eliminar artículo de la vitrina' });
+  }
+});
+
+// ==========================================
 // ENDPOINTS DE EQUIPO / ESPECIALISTAS (STAFF)
 // ==========================================
 

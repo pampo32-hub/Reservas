@@ -1,6 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
-import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CLIENTS, INITIAL_STAFF } from './src/data/initialData.js';
+import { INITIAL_BUSINESSES, INITIAL_APPOINTMENTS, INITIAL_CLIENTS, INITIAL_STAFF, INITIAL_VITRINA_ITEMS } from './src/data/initialData.js';
 
 dotenv.config();
 
@@ -511,6 +511,26 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_loyalty_log_biz ON reservas_loyalty_stamps_log (business_id);
     `);
 
+    // 16. Módulo de Vitrina Digital (Exhibición y Venta de Productos por Comercio)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_vitrina_items (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        name VARCHAR(150) NOT NULL,
+        description TEXT DEFAULT '',
+        price NUMERIC(12,2) NOT NULL DEFAULT 0,
+        image_url TEXT DEFAULT '',
+        category VARCHAR(100) DEFAULT '',
+        is_available BOOLEAN DEFAULT TRUE,
+        stock INT DEFAULT NULL,
+        badge VARCHAR(50) DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_vitrina_biz_id ON reservas_vitrina_items (business_id);
+      CREATE INDEX IF NOT EXISTS idx_vitrina_available ON reservas_vitrina_items (is_available);
+    `);
+
     // Migración para actualizar textos de fidelización antiguos por defecto a uno universal y claro
     await client.query(`
       UPDATE reservas_loyalty_programs
@@ -722,6 +742,37 @@ export async function initDatabase(customPool = null) {
       }
     }
     console.log('✨ Usuarios de negocios y perfiles de clientes demo verificados/creados.');
+
+    // Sembrar artículos iniciales para la Vitrina Digital de comercios demo
+    if (INITIAL_VITRINA_ITEMS && Array.isArray(INITIAL_VITRINA_ITEMS)) {
+      for (const item of INITIAL_VITRINA_ITEMS) {
+        await client.query(`
+          INSERT INTO reservas_vitrina_items (
+            id, business_id, name, description, price, image_url, category, is_available, stock, badge
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            description = EXCLUDED.description,
+            price = EXCLUDED.price,
+            image_url = EXCLUDED.image_url,
+            category = EXCLUDED.category,
+            badge = EXCLUDED.badge
+        `, [
+          item.id,
+          item.businessId,
+          item.name,
+          item.description || '',
+          item.price || 0,
+          item.imageUrl || '',
+          item.category || '',
+          item.isAvailable !== false,
+          item.stock || null,
+          item.badge || ''
+        ]);
+      }
+      console.log('✨ Artículos iniciales de la Vitrina Digital sembrados/verificados.');
+    }
+
     console.log('✨ Base de datos poblada exitosamente con 32 comercios en 16 categorías.');
 
   } catch (error) {
