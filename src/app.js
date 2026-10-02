@@ -548,6 +548,15 @@ class App {
   // --- DESCARGA DE ARCHIVO .ICS (APPLE CALENDAR / OUTLOOK / ANDROID) ---
   downloadIcsFile(appointment, business) {
     if (!appointment) return;
+
+    // Si la cita tiene un ID válido en base de datos, usamos la ruta HTTPS directa del servidor.
+    // En iPhone/iOS Safari, una URL directa con Content-Type text/calendar abre automáticamente
+    // la ventana nativa del Calendario de iOS con el botón "Añadir".
+    if (appointment.id && !String(appointment.id).startsWith('demo-')) {
+      window.location.href = `/api/appointments/${encodeURIComponent(appointment.id)}/calendar.ics`;
+      return;
+    }
+
     const biz = business || storage.getBusinessById(appointment.businessId) || { name: 'Comercio Reservas CR' };
     const dateData = this.parseAppointmentDates(appointment);
     if (!dateData) return;
@@ -7038,15 +7047,15 @@ class App {
                   <i class="fab fa-google text-rose-500"></i>
                   <span>Google Calendar</span>
                 </a>
-                <button 
-                  type="button" 
+                <a 
+                  href="/api/appointments/${appointment.id}/calendar.ics"
                   id="success-download-ics-btn"
-                  class="py-2 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer text-center"
-                  title="Descargar archivo .ics compatible con Apple Calendar, iPhone y Outlook"
+                  class="py-2 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  title="Añadir a Apple Calendar en iPhone, iPad, Mac o Outlook"
                 >
                   <i class="fab fa-apple text-slate-800"></i>
                   <span>Apple / .ics</span>
-                </button>
+                </a>
               </div>
             </div>
 
@@ -7588,14 +7597,13 @@ class App {
                     >
                       <i class="fab fa-google text-rose-500 text-xs"></i> Google Cal
                     </a>
-                    <button 
-                      type="button" 
-                      class="client-download-ics-btn px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" 
-                      data-apt-id="${apt.id}"
-                      title="Descargar archivo .ics (Apple Calendar / iPhone / Outlook)"
+                    <a 
+                      href="/api/appointments/${apt.id}/calendar.ics"
+                      class="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer" 
+                      title="Añadir a Apple Calendar (iPhone / Mac / Outlook)"
                     >
                       <i class="fab fa-apple text-slate-800 text-xs"></i> .ICS
-                    </button>
+                    </a>
                     <!-- Ruta GPS Waze y Google Maps -->
                     <a 
                       href="${this.generateWazeUrl(storage.getBusinessById(apt.businessId) || { name: apt.businessName })}" 
