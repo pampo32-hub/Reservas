@@ -19722,11 +19722,23 @@ Esperamos atenderle pronto de nuevo.`;
         (c.email && c.email.toLowerCase().includes(q))
       );
 
-      const filteredAppointments = appointments.filter(a => 
+      this.devAppointmentStatusFilter = this.devAppointmentStatusFilter || 'all';
+      let devAppointmentsList = appointments;
+      if (this.devAppointmentStatusFilter && this.devAppointmentStatusFilter !== 'all') {
+        devAppointmentsList = appointments.filter(a => a.status === this.devAppointmentStatusFilter);
+      }
+
+      const filteredAppointments = devAppointmentsList.filter(a => 
         !q || ((a.clientName || a.client_name) && (a.clientName || a.client_name).toLowerCase().includes(q)) || 
         ((a.businessName || a.business_name) && (a.businessName || a.business_name).toLowerCase().includes(q)) || 
         ((a.serviceName || a.service_name) && (a.serviceName || a.service_name).toLowerCase().includes(q))
       );
+
+      const totalDevApts = appointments.length;
+      const completedDevApts = appointments.filter(a => a.status === 'completed').length;
+      const confirmedDevApts = appointments.filter(a => a.status === 'confirmed').length;
+      const pendingDevApts = appointments.filter(a => a.status === 'pending').length;
+      const cancelledDevApts = appointments.filter(a => a.status === 'cancelled').length;
 
       const filteredAlerts = alerts.filter(a => 
         !q || ((a.businessName || a.business_name) && (a.businessName || a.business_name).toLowerCase().includes(q)) || 
@@ -20515,17 +20527,36 @@ Esperamos atenderle pronto de nuevo.`;
               <!-- PESTAÑA 4: HISTORIAL DE RESERVAS GLOBALES -->
               ${this.activeDevTab === 'appointments' ? `
                 <div class="space-y-4">
-                  <div class="flex items-center justify-between">
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
                     <div>
                       <h3 class="text-base font-bold text-slate-800">Reservas Globales Agendadas</h3>
-                      <p class="text-xs text-slate-500">Historial en vivo de todas las reservas agendadas entre clientes y comercios.</p>
+                      <p class="text-xs text-slate-500">Historial en vivo de todas las reservas agendadas entre clientes y comercios (${totalDevApts} total).</p>
+                    </div>
+
+                    <!-- Filtros Rápidos por Estado -->
+                    <div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                      <button type="button" class="dev-apt-filter-btn px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${this.devAppointmentStatusFilter === 'all' ? 'bg-slate-900 text-white border-slate-900 shadow-2xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}" data-status="all">
+                        Todas (${totalDevApts})
+                      </button>
+                      <button type="button" class="dev-apt-filter-btn px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${this.devAppointmentStatusFilter === 'completed' ? 'bg-blue-600 text-white border-blue-600 shadow-2xs' : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'}" data-status="completed">
+                        <i class="fas fa-check-double mr-1 text-[10px]"></i>Completadas (${completedDevApts})
+                      </button>
+                      <button type="button" class="dev-apt-filter-btn px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${this.devAppointmentStatusFilter === 'confirmed' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}" data-status="confirmed">
+                        <i class="fas fa-check mr-1 text-[10px]"></i>Confirmadas (${confirmedDevApts})
+                      </button>
+                      <button type="button" class="dev-apt-filter-btn px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${this.devAppointmentStatusFilter === 'pending' ? 'bg-amber-600 text-white border-amber-600 shadow-2xs' : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'}" data-status="pending">
+                        <i class="fas fa-clock mr-1 text-[10px]"></i>Pendientes (${pendingDevApts})
+                      </button>
+                      <button type="button" class="dev-apt-filter-btn px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${this.devAppointmentStatusFilter === 'cancelled' ? 'bg-rose-600 text-white border-rose-600 shadow-2xs' : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'}" data-status="cancelled">
+                        <i class="fas fa-times mr-1 text-[10px]"></i>Canceladas (${cancelledDevApts})
+                      </button>
                     </div>
                   </div>
 
                   ${filteredAppointments.length === 0 ? `
                     <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
                       <i class="fas fa-calendar-times text-3xl mb-2"></i>
-                      <p class="text-sm font-bold text-slate-700">No hay reservas registradas en el sistema</p>
+                      <p class="text-sm font-bold text-slate-700">No hay reservas registradas en esta categoría</p>
                     </div>
                   ` : `
                     <div class="overflow-x-auto">
@@ -20568,11 +20599,24 @@ Esperamos atenderle pronto de nuevo.`;
                                 ${this.formatColones(price)}
                               </td>
                               <td class="p-3">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${
-                                  a.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' :
-                                  a.status === 'cancelled' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-extrabold inline-flex items-center gap-1 ${
+                                  a.status === 'completed' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                  a.status === 'confirmed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                                  a.status === 'cancelled' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                                  'bg-amber-100 text-amber-800 border border-amber-200'
                                 }">
-                                  ${a.status === 'confirmed' ? 'Confirmada' : a.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+                                  <i class="fas ${
+                                    a.status === 'completed' ? 'fa-check-double text-blue-600' :
+                                    a.status === 'confirmed' ? 'fa-check text-emerald-600' :
+                                    a.status === 'cancelled' ? 'fa-times text-rose-600' :
+                                    'fa-clock text-amber-600'
+                                  } text-[9px]"></i>
+                                  ${
+                                    a.status === 'completed' ? 'Completada' :
+                                    a.status === 'confirmed' ? 'Confirmada' :
+                                    a.status === 'cancelled' ? 'Cancelada' :
+                                    'Pendiente'
+                                  }
                                 </span>
                               </td>
                             </tr>
@@ -21167,6 +21211,12 @@ Esperamos atenderle pronto de nuevo.`;
       document.getElementById('dev-tab-businesses')?.addEventListener('click', () => setDevTab('businesses'));
       document.getElementById('dev-tab-clients')?.addEventListener('click', () => setDevTab('clients'));
       document.getElementById('dev-tab-appointments')?.addEventListener('click', () => setDevTab('appointments'));
+      document.querySelectorAll('.dev-apt-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          this.devAppointmentStatusFilter = btn.getAttribute('data-status') || 'all';
+          this.renderDeveloperDashboardView(container);
+        });
+      });
       document.getElementById('dev-tab-whatsapp')?.addEventListener('click', () => setDevTab('whatsapp'));
       document.getElementById('dev-tab-preregistrations')?.addEventListener('click', () => setDevTab('preregistrations'));
       document.getElementById('dev-tab-sinpe')?.addEventListener('click', () => setDevTab('sinpe'));
