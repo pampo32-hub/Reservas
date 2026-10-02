@@ -11854,7 +11854,7 @@ class App {
     document.getElementById('pos-confirm-charge-submit-btn')?.addEventListener('click', async () => {
       const submitBtn = document.getElementById('pos-confirm-charge-submit-btn');
       const staffId = document.getElementById('pos-charge-staff-select')?.value || null;
-      const sinpeReference = document.getElementById('pos-sinpe-reference-input')?.value?.trim() || null;
+      const sinpeReference = selectedMethod === 'sinpe' ? (document.getElementById('pos-sinpe-reference-input')?.value?.trim() || null) : null;
       const received = parseFloat(cashInput?.value) || balanceDue;
       const change = Math.max(0, received - balanceDue);
 

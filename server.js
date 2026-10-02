@@ -3096,7 +3096,7 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
       appointmentId, 
       paymentMethod = 'cash', 
       amountPaid, 
-      sinpeReference = '', 
+      sinpeReference = null, 
       staffId = null,
       markCompleted = true,
       notes = '' 
@@ -3112,12 +3112,17 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
     }
 
     const apt = aptRes.rows[0];
-    const finalAmount = amountPaid !== undefined ? parseFloat(amountPaid) : parseFloat(apt.service_price || 0);
-    const assignedStaffId = staffId || apt.staff_id;
+    const finalAmount = (amountPaid !== undefined && amountPaid !== null) 
+      ? parseFloat(amountPaid) 
+      : parseFloat(apt.service_price || 0);
+
+    const assignedStaffId = (staffId !== undefined && staffId !== null && staffId !== '') 
+      ? staffId 
+      : (apt.staff_id || null);
 
     // Calcular comisión si hay especialista asignado
     let commissionAmount = 0;
-    let staffName = apt.staff_name || '';
+    let staffName = apt.staff_name || null;
 
     if (assignedStaffId) {
       const staffRes = await pool.query('SELECT * FROM reservas_staff WHERE id = $1', [assignedStaffId]);
@@ -3131,7 +3136,11 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
           // percentage
           commissionAmount = Math.round((finalAmount * rate) / 100);
         }
+      } else {
+        staffName = null;
       }
+    } else {
+      staffName = null;
     }
 
     // Verificar si hay una sesión de caja abierta
@@ -3149,21 +3158,25 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
         paid_amount = $2,
         paid_at = NOW(),
         status = CASE WHEN $3 = TRUE THEN 'completed' ELSE status END,
-        staff_id = COALESCE($4, staff_id),
-        staff_name = COALESCE($5, staff_name),
+        staff_id = $4,
+        staff_name = $5,
         commission_amount = $6,
         cash_register_id = $7
       WHERE id = $8
     `, [
       paymentMethod, 
       finalAmount, 
-      markCompleted, 
+      markCompleted === true || markCompleted === 'true', 
       assignedStaffId, 
       staffName, 
       commissionAmount, 
       activeRegisterId,
       appointmentId
     ]);
+
+    const cleanSinpeRef = (sinpeReference && typeof sinpeReference === 'string') 
+      ? sinpeReference.trim() 
+      : (sinpeReference ? String(sinpeReference).trim() : null);
 
     // 2. Registrar la transacción en el POS
     const txId = `tx-${Date.now()}`;
@@ -3178,14 +3191,14 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
       businessId,
       activeRegisterId,
       appointmentId,
-      `Pago de servicio: ${apt.service_name} (${apt.client_name})`,
+      `Pago de servicio: ${apt.service_name || 'Servicio'} (${apt.client_name || 'Cliente'})`,
       finalAmount,
       paymentMethod,
-      sinpeReference.trim(),
+      cleanSinpeRef,
       assignedStaffId,
       staffName,
-      apt.client_name,
-      apt.client_phone
+      apt.client_name || null,
+      apt.client_phone || null
     ]);
 
     // Emitir por SSE actualización de cita y de caja
@@ -3194,7 +3207,7 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
       appointmentId,
       amount: finalAmount,
       paymentMethod,
-      message: `¡Cita de ${apt.client_name} cobrada con éxito (${paymentMethod})!`
+      message: `¡Cita de ${apt.client_name || 'Cliente'} cobrada con éxito (${paymentMethod})!`
     });
 
     res.json({
@@ -3208,7 +3221,7 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
     });
   } catch (error) {
     console.error('Error cobrando cita en POS:', error);
-    res.status(500).json({ error: 'Error al registrar el cobro de la cita.' });
+    res.status(500).json({ error: error.message || 'Error al registrar el cobro de la cita.' });
   }
 });
 
@@ -3262,7 +3275,7 @@ app.post('/api/businesses/:id/pos/expense', async (req, res) => {
     ]);
 
     // Si es vale/adelanto a colaborador, registrar también en tabla de liquidaciones
-    if (category === 'staff_advance' && staffId) {
+    if ((category === 'staff_advance' || category === 'vale') && staffId) {
       const payoutId = `pay-${Date.now()}`;
       await pool.query(`
         INSERT INTO reservas_staff_payouts (
