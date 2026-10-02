@@ -1,5 +1,5 @@
 // Service Worker para Reservas CR (PWA)
-const CACHE_NAME = 'reservascr-pwa-v58';
+const CACHE_NAME = 'reservascr-pwa-v59';
 
 
 const STATIC_ASSETS = [
@@ -10,6 +10,8 @@ const STATIC_ASSETS = [
   './src/app.js',
   './src/services/storage.js',
   './src/data/initialData.js',
+  './public/js/qrcode.min.js',
+  './public/js/html5-qrcode.min.js',
   './src/assets/reservas_cr_clean_badge_1.png',
   './src/assets/reservas_cr_clean_badge_1.jpg',
   'https://cdn.tailwindcss.com',

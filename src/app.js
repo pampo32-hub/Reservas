@@ -853,6 +853,8 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
+      case 'client-wallet':
+        return '/mis-sellos';
       case 'staff-portal':
         return '/colaborador';
       case 'owner-dashboard': {
@@ -882,6 +884,7 @@ class App {
       'pruebas', 'planes-prueba', 'test-planes', 'planes-test', 'demo-planes',
       'unete', 'para-negocios', 'para-comercios', 'negocios', 'empresas', 'hazte-socio', 'registro-negocio', 'planes', 'precios',
       'mis-reservas', 'cliente', 'panel-usuario', 'panel-cliente', 'usuario', 'mi-cuenta', 'perfil', 'mis-citas',
+      'mis-sellos', 'billetera', 'wallet', 'tarjetas-sellos', 'mis-tarjetas',
       'panel-negocio', 'panel-negocios', 'panel', 'dashboard', 'owner', 'mi-negocio', 'mi-panel',
       'colaborador', 'portal-colaborador', 'staff', 'portal-staff',
       'developer', 'developer-dashboard', 'admin',
@@ -927,6 +930,9 @@ class App {
             rating: rating ? parseInt(rating, 10) : null
           }
         };
+      }
+      if (/^\/?(mis-sellos|billetera|wallet|tarjetas-sellos|mis-tarjetas)$/i.test(pathname)) {
+        return { view: 'client-wallet', params: {} };
       }
       if (/^\/?(mis-reservas|cliente|panel-usuario|panel-cliente|usuario|mi-cuenta|perfil|mis-citas)$/i.test(pathname)) {
         return { view: 'my-client-bookings', params: {} };
@@ -987,6 +993,9 @@ class App {
         }
         if (savedView === 'my-client-bookings' && storage.getClientUser()) {
           return { view: 'my-client-bookings', params: {} };
+        }
+        if (savedView === 'client-wallet' && storage.getClientUser()) {
+          return { view: 'client-wallet', params: {} };
         }
         if (savedView === 'business-detail' && savedBizId) {
           return { view: 'business-detail', params: { businessId: savedBizId } };
@@ -1665,12 +1674,16 @@ class App {
             <!-- 1. SI EL CLIENTE ESTÁ LOGUEADO -->
             ${clientUser && !devUser ? `
               <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 whitespace-nowrap border border-slate-200/80 dark:border-slate-700">
-                <button id="nav-client-bookings-btn" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap ${this.currentView === 'my-client-bookings' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400' : ''}">
+                <button id="nav-client-wallet-btn" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${this.currentView === 'client-wallet' ? 'bg-white dark:bg-slate-700 shadow-xs text-amber-600 dark:text-amber-400 font-extrabold' : ''}">
+                  <i class="fas fa-award text-amber-500 text-sm"></i>
+                  <span>Mis Sellos</span>
+                </button>
+                <button id="nav-client-bookings-btn" class="px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${this.currentView === 'my-client-bookings' ? 'bg-white dark:bg-slate-700 shadow-xs text-blue-600 dark:text-blue-400 font-extrabold' : ''}">
                   <i class="fas fa-user-circle text-blue-600 dark:text-blue-400 text-sm"></i>
                   <span class="max-w-[85px] xl:max-w-[110px] truncate">${clientUser.name ? clientUser.name.split(' ')[0] : 'Mi Perfil'}</span>
                   <span class="hidden 2xl:inline text-[10px] text-slate-400">(Mis Reservas)</span>
                 </button>
-                <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg shrink-0" title="Cerrar sesión de cliente">
+                <button id="nav-client-logout-btn" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg shrink-0 cursor-pointer" title="Cerrar sesión de cliente">
                   <i class="fas fa-sign-out-alt text-xs"></i>
                 </button>
               </div>
@@ -1749,6 +1762,7 @@ class App {
     });
 
     // Cliente logueado
+    document.getElementById('nav-client-wallet-btn')?.addEventListener('click', () => this.navigateTo('client-wallet'));
     document.getElementById('nav-client-bookings-btn')?.addEventListener('click', () => this.navigateTo('my-client-bookings'));
     document.getElementById('nav-client-logout-btn')?.addEventListener('click', () => this.handleClientLogout());
     document.getElementById('mobile-top-client-logout-btn')?.addEventListener('click', () => this.handleClientLogout());
@@ -1855,11 +1869,12 @@ class App {
 
     const isDirectory = this.currentView === 'directory' || this.currentView === 'business-detail';
     const isBookings = this.currentView === 'my-client-bookings';
+    const isWallet = this.currentView === 'client-wallet';
     const isOwner = this.currentView === 'owner-dashboard';
     const isDev = this.currentView === 'developer-dashboard';
     const showBizTab = !!bizUser || SHOW_BIZ_SHORTCUTS;
     const showAccountTab = !!clientUser || !!bizUser || !!devUser || SHOW_LOGIN_BUTTON;
-    const colCount = 2 + (showBizTab ? 1 : 0) + (showAccountTab ? 1 : 0);
+    const colCount = bizUser ? 4 : (clientUser ? 4 : (2 + (showBizTab ? 1 : 0) + (showAccountTab ? 1 : 0)));
     const gridColsClass = colCount === 4 ? 'grid-cols-4' : (colCount === 3 ? 'grid-cols-3' : 'grid-cols-2');
 
     navContainer.innerHTML = `
@@ -1874,42 +1889,68 @@ class App {
             <span class="text-[11px] mt-0.5 tracking-tight font-bold">Explorar</span>
           </button>
 
-          <!-- 2. Mis Reservas -->
-          <button id="mobile-nav-bookings-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isBookings ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
-            <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isBookings ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
-              <i class="fas fa-calendar-alt text-base ${isBookings ? 'scale-110' : ''}"></i>
+          <!-- 2. Mis Reservas (para cliente/guest) o Agenda (para comercio) -->
+          <button id="mobile-nav-bookings-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${(isBookings || (bizUser && isOwner && this.activeDashboardTab === 'appointments')) ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+            <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${(isBookings || (bizUser && isOwner && this.activeDashboardTab === 'appointments')) ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
+              <i class="fas fa-calendar-alt text-base ${(isBookings || (bizUser && isOwner && this.activeDashboardTab === 'appointments')) ? 'scale-110' : ''}"></i>
             </div>
-            <span class="text-[11px] mt-0.5 tracking-tight font-bold">Mis Reservas</span>
+            <span class="text-[11px] mt-0.5 tracking-tight font-bold">${bizUser ? 'Agenda' : 'Mis Citas'}</span>
           </button>
 
-          <!-- 3. Mi Negocio (solo visible si hay negocio activo o si los accesos rápidos están habilitados) -->
-          ${showBizTab ? `
-          <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isOwner ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
-            <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isOwner ? 'bg-indigo-100/90 dark:bg-indigo-950/90 text-indigo-600 dark:text-indigo-400 shadow-2xs border border-indigo-200/60 dark:border-indigo-800/60' : 'text-slate-500 dark:text-slate-400'}">
-              <i class="fas fa-store text-base ${isOwner ? 'scale-110' : ''}"></i>
-            </div>
-            <span class="text-[11px] mt-0.5 tracking-tight font-bold">${bizUser ? 'Mi Panel' : 'Soy Negocio'}</span>
-          </button>
-          ` : ''}
+          <!-- 3. Para Negocio: Mi Panel / Para Cliente: Mis Sellos / Para Invitado: Soy Negocio -->
+          ${bizUser ? `
+            <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isOwner && this.activeDashboardTab !== 'appointments' ? 'text-indigo-600 dark:text-indigo-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isOwner && this.activeDashboardTab !== 'appointments' ? 'bg-indigo-100/90 dark:bg-indigo-950/90 text-indigo-600 dark:text-indigo-400 shadow-2xs border border-indigo-200/60 dark:border-indigo-800/60' : 'text-slate-500 dark:text-slate-400'}">
+                <i class="fas fa-chart-line text-base ${isOwner && this.activeDashboardTab !== 'appointments' ? 'scale-110' : ''}"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-bold">Mi Panel</span>
+            </button>
+          ` : (clientUser ? `
+            <button id="mobile-nav-wallet-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isWallet ? 'text-amber-600 dark:text-amber-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isWallet ? 'bg-amber-100/90 dark:bg-amber-950/90 text-amber-600 dark:text-amber-400 shadow-2xs border border-amber-200/60 dark:border-amber-800/60' : 'text-slate-500 dark:text-slate-400'}">
+                <i class="fas fa-award text-base ${isWallet ? 'scale-110' : ''}"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-bold">Mis Sellos</span>
+            </button>
+          ` : (showBizTab ? `
+            <button id="mobile-nav-biz-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all text-slate-500 dark:text-slate-400">
+                <i class="fas fa-store text-base"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-bold">Soy Negocio</span>
+            </button>
+          ` : ''))}
 
-          <!-- 4. Cuenta / Dev (solo si hay sesión iniciada o si SHOW_LOGIN_BUTTON está activo) -->
-          ${showAccountTab ? `
-            ${devUser ? `
-              <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-600 dark:text-amber-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
-                <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isDev ? 'bg-amber-100/90 dark:bg-amber-950/90 text-amber-700 dark:text-amber-400 shadow-2xs border border-amber-200/60 dark:border-amber-800/60' : 'text-slate-500 dark:text-slate-400'}">
-                  <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
-                </div>
-                <span class="text-[11px] mt-0.5 tracking-tight font-bold">Developer</span>
-              </button>
-            ` : `
-              <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${clientUser || bizUser ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
-                <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${clientUser || bizUser ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
-                  <i class="fas fa-user-circle text-base"></i>
-                </div>
-                <span class="text-[11px] mt-0.5 tracking-tight font-bold">${clientUser ? (clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil') : (bizUser ? 'Comercio' : 'Cuenta')}</span>
-              </button>
-            `}
-          ` : ''}
+          <!-- 4. Para Negocio: Botón "Sellar" / Para Dev: "Dev" / Para Cliente: "Perfil" / Para Visitante: "Ingresar" -->
+          ${bizUser ? `
+            <button id="mobile-nav-stamp-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-emerald-700 dark:text-emerald-400 font-black">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-500/25 border border-emerald-400/40">
+                <i class="fas fa-qrcode text-base scale-105"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-black text-emerald-700 dark:text-emerald-400">Sellar</span>
+            </button>
+          ` : (devUser ? `
+            <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-600 dark:text-amber-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isDev ? 'bg-amber-100/90 dark:bg-amber-950/90 text-amber-700 dark:text-amber-400 shadow-2xs border border-amber-200/60 dark:border-amber-800/60' : 'text-slate-500 dark:text-slate-400'}">
+                <i class="fas fa-shield-alt text-base ${isDev ? 'scale-110' : ''}"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-bold">Developer</span>
+            </button>
+          ` : (clientUser ? `
+            <button id="mobile-nav-account-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isBookings ? 'text-blue-600 dark:text-blue-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isBookings ? 'bg-blue-100/90 dark:bg-blue-950/90 text-blue-600 dark:text-blue-400 shadow-2xs border border-blue-200/60 dark:border-blue-800/60' : 'text-slate-500 dark:text-slate-400'}">
+                <i class="fas fa-user-circle text-base"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-bold">${clientUser.name ? clientUser.name.split(' ')[0] : 'Perfil'}</span>
+            </button>
+          ` : (showAccountTab ? `
+            <button id="mobile-nav-login-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl transition-all text-slate-500 dark:text-slate-400">
+                <i class="fas fa-sign-in-alt text-base"></i>
+              </div>
+              <span class="text-[11px] mt-0.5 tracking-tight font-bold">Ingresar</span>
+            </button>
+          ` : '')))}
 
         </div>
       </nav>
@@ -1921,7 +1962,16 @@ class App {
     });
 
     document.getElementById('mobile-nav-bookings-btn')?.addEventListener('click', () => {
-      this.navigateTo('my-client-bookings');
+      if (bizUser) {
+        this.activeDashboardTab = 'appointments';
+        this.navigateTo('owner-dashboard', { tab: 'appointments' });
+      } else {
+        this.navigateTo('my-client-bookings');
+      }
+    });
+
+    document.getElementById('mobile-nav-wallet-btn')?.addEventListener('click', () => {
+      this.navigateTo('client-wallet');
     });
 
     document.getElementById('mobile-nav-biz-btn')?.addEventListener('click', () => {
@@ -1932,6 +1982,10 @@ class App {
       }
     });
 
+    document.getElementById('mobile-nav-stamp-btn')?.addEventListener('click', () => {
+      this.renderStampModal();
+    });
+
     document.getElementById('mobile-nav-dev-btn')?.addEventListener('click', () => {
       this.navigateTo('developer-dashboard');
     });
@@ -1939,11 +1993,13 @@ class App {
     document.getElementById('mobile-nav-account-btn')?.addEventListener('click', () => {
       if (clientUser) {
         this.navigateTo('my-client-bookings');
-      } else if (bizUser) {
-        this.navigateTo('owner-dashboard');
       } else {
         this.renderAuthModal({ mode: 'login', role: 'client' });
       }
+    });
+
+    document.getElementById('mobile-nav-login-btn')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'login', role: 'client' });
     });
   }
 
@@ -1973,6 +2029,9 @@ class App {
         break;
       case 'my-client-bookings':
         this.renderClientBookingsView(main);
+        break;
+      case 'client-wallet':
+        this.renderClientWalletView(main);
         break;
       case 'developer-dashboard':
         this.renderDeveloperDashboardView(main);
@@ -7563,6 +7622,12 @@ class App {
                 ${hasRiskClients ? `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-2xs animate-pulse" title="Hay clientes en riesgo de abandono"></span>` : ''}
               </button>
 
+              <!-- 3.5 Fidelización & Sellos -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'loyalty' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 font-black ring-2 ring-emerald-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="loyalty">
+                <i class="fas fa-stamp text-xs ${this.activeDashboardTab === 'loyalty' ? 'text-white' : 'text-emerald-600'}"></i>
+                <span>Fidelización (Sellos)</span>
+              </button>
+
               <!-- 4. Bloqueos -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="blocked-slots">
                 <i class="fas fa-calendar-times text-xs ${this.activeDashboardTab === 'blocked-slots' ? 'text-white' : 'text-rose-500'}"></i>
@@ -7954,9 +8019,13 @@ class App {
         return this.renderClientsTabContent(currentBiz, appointments);
       }
 
-    if (this.activeDashboardTab === 'manual') {
-      return this.renderManualTabContent(currentBiz);
-    }
+      if (this.activeDashboardTab === 'loyalty') {
+        return this.renderLoyaltyTabContent(currentBiz);
+      }
+
+      if (this.activeDashboardTab === 'manual') {
+        return this.renderManualTabContent(currentBiz);
+      }
 
     if (this.activeDashboardTab === 'integrations') {
       return this.renderIntegrationsTabContent(currentBiz);
@@ -17887,6 +17956,9 @@ Esperamos atenderle pronto de nuevo.`;
     if (this.activeDashboardTab === 'deposits') {
       this.setupDepositSettingsEvents(currentBiz);
     }
+    if (this.activeDashboardTab === 'loyalty') {
+      this.setupLoyaltyTabEvents(currentBiz);
+    }
 
     // Apertura directa garantizada de Manuales para Comercios (PDF y Guía Web)
     document.getElementById('btn-open-manual-pdf')?.addEventListener('click', (e) => {
@@ -25610,6 +25682,998 @@ Esperamos atenderle pronto de nuevo.`;
     };
 
     renderContent();
+  }
+
+  // ==========================================
+  // SISTEMA DE FIDELIZACIÓN (BILLETERA DE SELLOS & RECOMPENSAS)
+  // ==========================================
+
+  playSuccessChime() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      const now = ctx.currentTime;
+      osc.frequency.setValueAtTime(587.33, now); // D5
+      osc.frequency.setValueAtTime(880, now + 0.08); // A5
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+      if (navigator.vibrate) {
+        navigator.vibrate([40, 60, 40]);
+      }
+    } catch (e) {}
+  }
+
+  // --- MODAL DE ESCÁNER Y SELLADO DE CLIENTES (PARA COMERCIOS) ---
+  async renderStampModal(businessId = null) {
+    const bizUser = storage.getBusinessUser();
+    const targetBizId = businessId || (bizUser ? bizUser.id : null);
+    if (!targetBizId) {
+      this.showToast('Debes iniciar sesión con tu cuenta de comercio para estampar sellos.', 'warning');
+      this.renderAuthModal({ mode: 'login', role: 'business' });
+      return;
+    }
+
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    let program = await storage.getLoyaltyProgram(targetBizId);
+    if (!program) {
+      program = { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
+    }
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden max-h-[92vh] flex flex-col">
+          
+          <!-- Encabezado Modal -->
+          <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-700 text-white shrink-0">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white text-base shadow-2xs">
+                <i class="fas fa-qrcode"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-black text-white leading-tight">Sellar Tarjeta de Cliente</h3>
+                <p class="text-[11px] text-emerald-100 font-medium">Meta: ${program.target_stamps} sellos = ${program.reward_description}</p>
+              </div>
+            </div>
+            <button id="close-stamp-modal-btn" class="modal-close-btn w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Pestañas: Cámara vs Teléfono -->
+          <div class="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-1.5 gap-1 shrink-0">
+            <button id="tab-stamp-camera" class="flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 cursor-pointer">
+              <i class="fas fa-camera"></i>
+              <span>Escanear QR</span>
+            </button>
+            <button id="tab-stamp-phone" class="flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer">
+              <i class="fas fa-phone"></i>
+              <span>Por Teléfono</span>
+            </button>
+          </div>
+
+          <!-- Contenedor Dinámico con Scroll -->
+          <div class="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
+
+            <!-- Panel 1: Escáner Cámara -->
+            <div id="stamp-camera-panel" class="space-y-3">
+              <div class="relative w-full aspect-square max-w-[260px] mx-auto rounded-2xl overflow-hidden bg-slate-950 border-2 border-emerald-500 shadow-xl flex items-center justify-center text-white">
+                <div id="loyalty-scanner-viewport" class="w-full h-full"></div>
+                <!-- Animación de láser escáner -->
+                <div class="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_12px_#34d399] animate-scan-laser pointer-events-none z-10"></div>
+                <!-- Esquinas de mira -->
+                <div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-emerald-400 pointer-events-none z-10"></div>
+                <div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-emerald-400 pointer-events-none z-10"></div>
+                <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-emerald-400 pointer-events-none z-10"></div>
+                <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-emerald-400 pointer-events-none z-10"></div>
+              </div>
+
+              <div id="loyalty-scanner-status" class="text-center">
+                <p class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <i class="fas fa-satellite-dish text-emerald-500 animate-pulse mr-1"></i> Apunta al QR que te muestra el cliente
+                </p>
+                <p class="text-[11px] text-slate-400 mt-0.5">El reconocimiento de la tarjeta es automático</p>
+              </div>
+
+              <div id="loyalty-scanner-fallback" class="hidden p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-center space-y-2">
+                <p class="text-xs text-amber-800 dark:text-amber-300 font-medium">¿La cámara no se activó o no diste permisos?</p>
+                <button id="switch-to-phone-fallback-btn" class="px-3.5 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer hover:bg-amber-700 transition-colors">
+                  Sellar ingresando el teléfono
+                </button>
+              </div>
+            </div>
+
+            <!-- Panel 2: Búsqueda Manual por Teléfono -->
+            <div id="stamp-phone-panel" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Número de teléfono del cliente <span class="text-rose-500">*</span>
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">+506</span>
+                  <input type="tel" id="stamp-manual-phone" placeholder="8888-8888" class="w-full pl-14 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Nombre del cliente (opcional si es primera visita)
+                </label>
+                <input type="text" id="stamp-manual-name" placeholder="Ej: Juan Pérez" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+              </div>
+
+              <button id="stamp-manual-search-btn" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer transition-all">
+                <i class="fas fa-search"></i>
+                <span>Buscar Tarjeta</span>
+              </button>
+            </div>
+
+            <!-- Área de Resultados y Tarjeta Detectada -->
+            <div id="stamp-card-result-container" class="hidden space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <!-- Se inyecta dinámicamente en handleStampPreview -->
+            </div>
+
+          </div>
+        </div>
+      </div>
+    `;
+
+    let html5QrCode = null;
+    const startScanner = async () => {
+      try {
+        if (typeof Html5Qrcode === 'undefined') {
+          console.warn('Html5Qrcode no está cargado');
+          document.getElementById('loyalty-scanner-fallback')?.classList.remove('hidden');
+          return;
+        }
+        const viewport = document.getElementById('loyalty-scanner-viewport');
+        if (!viewport) return;
+
+        html5QrCode = new Html5Qrcode("loyalty-scanner-viewport");
+        this._activeQrScanner = html5QrCode;
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          async (decodedText) => {
+            console.log("QR Detectado:", decodedText);
+            this.playSuccessChime();
+            try {
+              await html5QrCode.stop();
+            } catch(e) {}
+            this.handleStampPreview(targetBizId, decodedText, program);
+          },
+          (errorMessage) => {}
+        );
+      } catch (err) {
+        console.warn('Cámara no iniciada:', err);
+        document.getElementById('loyalty-scanner-fallback')?.classList.remove('hidden');
+      }
+    };
+
+    const cleanupModal = () => {
+      if (html5QrCode) {
+        try { html5QrCode.stop(); } catch(e){}
+        html5QrCode = null;
+        this._activeQrScanner = null;
+      }
+      modalContainer.innerHTML = '';
+    };
+
+    document.getElementById('close-stamp-modal-btn')?.addEventListener('click', cleanupModal);
+
+    // Cambio de pestañas
+    const btnTabCam = document.getElementById('tab-stamp-camera');
+    const btnTabPhone = document.getElementById('tab-stamp-phone');
+    const panelCam = document.getElementById('stamp-camera-panel');
+    const panelPhone = document.getElementById('stamp-phone-panel');
+
+    btnTabCam?.addEventListener('click', () => {
+      btnTabCam.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 cursor-pointer';
+      btnTabPhone.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer';
+      panelCam.classList.remove('hidden');
+      panelPhone.classList.add('hidden');
+      startScanner();
+    });
+
+    const switchToPhone = () => {
+      if (html5QrCode) {
+        try { html5QrCode.stop(); } catch(e){}
+      }
+      btnTabPhone.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 cursor-pointer';
+      btnTabCam.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer';
+      panelCam.classList.add('hidden');
+      panelPhone.classList.remove('hidden');
+      setTimeout(() => document.getElementById('stamp-manual-phone')?.focus(), 150);
+    };
+
+    btnTabPhone?.addEventListener('click', switchToPhone);
+    document.getElementById('switch-to-phone-fallback-btn')?.addEventListener('click', switchToPhone);
+
+    document.getElementById('stamp-manual-search-btn')?.addEventListener('click', () => {
+      const phoneInput = document.getElementById('stamp-manual-phone');
+      const nameInput = document.getElementById('stamp-manual-name');
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!phone) {
+        this.showToast('Por favor ingresa el número de teléfono del cliente.', 'warning');
+        phoneInput?.focus();
+        return;
+      }
+      const searchPayload = JSON.stringify({ phone, name });
+      this.handleStampPreview(targetBizId, searchPayload, program);
+    });
+
+    // Iniciar escáner en tab 1
+    startScanner();
+  }
+
+  // --- PREVIEW Y ACCIONES DE SELLADO TRAS ESCANEO O BÚSQUEDA ---
+  async handleStampPreview(businessId, search, program) {
+    const resultContainer = document.getElementById('stamp-card-result-container');
+    if (!resultContainer) return;
+
+    resultContainer.classList.remove('hidden');
+    resultContainer.innerHTML = `
+      <div class="p-4 text-center space-y-2">
+        <i class="fas fa-spinner fa-spin text-emerald-600 text-xl"></i>
+        <p class="text-xs font-bold text-slate-600">Buscando tarjeta de fidelización...</p>
+      </div>
+    `;
+
+    const res = await storage.previewLoyaltyCard(businessId, search);
+    if (!res || !res.clientData) {
+      resultContainer.innerHTML = `
+        <div class="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs text-center">
+          No se pudo consultar la tarjeta del cliente. Por favor intenta de nuevo.
+        </div>
+      `;
+      return;
+    }
+
+    const { card, clientData } = res;
+    const targetStamps = (res.program && res.program.target_stamps) || program.target_stamps || 8;
+    const rewardDescription = (res.program && res.program.reward_description) || program.reward_description || 'Corte o servicio gratis';
+    const currentStamps = card ? card.current_stamps : 0;
+    const isCompleted = currentStamps >= targetStamps;
+
+    // Generar cuadrícula visual de sellos (punch card)
+    let slotsHtml = '';
+    for (let i = 1; i <= targetStamps; i++) {
+      const isStamped = i <= currentStamps;
+      const isTarget = i === targetStamps;
+      if (isStamped) {
+        slotsHtml += `
+          <div class="loyalty-stamp-slot stamped w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-black text-xs shadow-xs animate-stamp-pop">
+            <i class="fas fa-check text-xs"></i>
+          </div>
+        `;
+      } else if (isTarget) {
+        slotsHtml += `
+          <div class="loyalty-stamp-slot reward-slot w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-black text-xs shadow-xs border-2 border-dashed border-amber-300">
+            <i class="fas fa-gift text-xs"></i>
+          </div>
+        `;
+      } else {
+        slotsHtml += `
+          <div class="loyalty-stamp-slot w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-[11px]">
+            ${i}
+          </div>
+        `;
+      }
+    }
+
+    resultContainer.innerHTML = `
+      <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-4 shadow-md space-y-3 animate-fade-in">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-700/80">
+          <div>
+            <span class="text-[10px] font-black uppercase tracking-wider text-emerald-400">Cliente Identificado</span>
+            <h4 class="text-sm font-black text-white">${clientData.name || 'Cliente'}</h4>
+            <p class="text-xs text-slate-300 font-mono"><i class="fas fa-phone-alt text-[10px] text-slate-400 mr-1"></i>${clientData.phone}</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs font-black px-2 py-0.5 rounded-full ${isCompleted ? 'bg-amber-400 text-slate-950 font-black animate-pulse' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
+              ${isCompleted ? '¡Premio Listo!' : `${currentStamps} de ${targetStamps} sellos`}
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Punch Card Grid -->
+        <div class="flex flex-wrap items-center justify-center gap-2 py-1">
+          ${slotsHtml}
+        </div>
+
+        <!-- Meta y Premio -->
+        <div class="bg-slate-800/80 rounded-xl p-2.5 text-center text-xs border border-slate-700/60">
+          <p class="text-slate-300">Premio al completar los ${targetStamps} sellos:</p>
+          <p class="font-black text-amber-300 mt-0.5">🎁 ${rewardDescription}</p>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="pt-1 space-y-2">
+          ${isCompleted ? `
+            <button id="btn-redeem-loyalty-reward" class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/30 cursor-pointer transition-all">
+              <i class="fas fa-gift text-base"></i>
+              <span>Canjear Premio y Reiniciar Tarjeta</span>
+            </button>
+          ` : `
+            <button id="btn-confirm-stamp-action" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 cursor-pointer transition-all">
+              <i class="fas fa-stamp text-base"></i>
+              <span>✓ Estampar Sello (+1)</span>
+            </button>
+          `}
+
+          <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+            <button id="btn-stamp-another-client" class="text-slate-300 hover:text-white underline cursor-pointer">
+              ← Escanear a otro cliente
+            </button>
+            <button id="btn-stamp-done-close" class="text-slate-300 hover:text-white font-bold cursor-pointer">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Listeners de acción
+    document.getElementById('btn-confirm-stamp-action')?.addEventListener('click', async () => {
+      const btn = document.getElementById('btn-confirm-stamp-action');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Estampando...';
+      }
+
+      const stampRes = await storage.stampLoyaltyCard({
+        businessId,
+        clientPhone: clientData.phone,
+        clientName: clientData.name,
+        clientId: clientData.id
+      });
+
+      if (stampRes && stampRes.success) {
+        this.playSuccessChime();
+        this.showToast(stampRes.message || '¡Sello estampado correctamente!', 'success', 5000);
+        this.handleStampPreview(businessId, search, program);
+      } else {
+        this.showToast(stampRes?.error || 'No se pudo estampar el sello.', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-stamp text-base"></i> <span>✓ Estampar Sello (+1)</span>';
+        }
+      }
+    });
+
+    document.getElementById('btn-redeem-loyalty-reward')?.addEventListener('click', async () => {
+      if (!card || !card.id) {
+        this.showToast('No se encontró el registro de la tarjeta para canjear.', 'error');
+        return;
+      }
+      if (confirm(`¿Confirmas que deseas canjear el premio "${rewardDescription}" para ${clientData.name}? La tarjeta se reiniciará para comenzar a coleccionar sellos nuevamente.`)) {
+        const redeemRes = await storage.redeemLoyaltyReward({
+          cardId: card.id,
+          businessId
+        });
+        if (redeemRes && redeemRes.success) {
+          this.playSuccessChime();
+          this.showToast(redeemRes.message || '¡Premio canjeado con éxito!', 'success', 5000);
+          this.handleStampPreview(businessId, search, program);
+        } else {
+          this.showToast(redeemRes?.error || 'No se pudo canjear el premio.', 'error');
+        }
+      }
+    });
+
+    document.getElementById('btn-stamp-another-client')?.addEventListener('click', () => {
+      resultContainer.classList.add('hidden');
+      resultContainer.innerHTML = '';
+      const manualPhoneInput = document.getElementById('stamp-manual-phone');
+      if (manualPhoneInput) manualPhoneInput.value = '';
+      const manualNameInput = document.getElementById('stamp-manual-name');
+      if (manualNameInput) manualNameInput.value = '';
+    });
+
+    document.getElementById('btn-stamp-done-close')?.addEventListener('click', () => {
+      const modalContainer = document.getElementById('modal-container');
+      if (modalContainer) modalContainer.innerHTML = '';
+    });
+  }
+
+  // --- VISTA DE BILLETERA DIGITAL DEL CLIENTE (MULTI-NEGOCIOS) ---
+  async renderClientWalletView(container) {
+    const clientUser = storage.getClientUser();
+    if (!clientUser) {
+      container.innerHTML = `
+        <div class="max-w-xl mx-auto px-4 py-16 text-center space-y-6 animate-fade-in">
+          <div class="w-20 h-20 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto text-3xl shadow-lg border border-amber-200">
+            <i class="fas fa-award"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Billetera Digital de Sellos</h2>
+            <p class="text-slate-500 text-sm mt-2 leading-relaxed">
+              Acumula sellos en tus salones, barberías, spas y comercios favoritos en Costa Rica. Al completar tu tarjeta, ¡ganas servicios y beneficios gratis!
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <button id="wallet-login-btn" class="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all flex items-center justify-center gap-2">
+              <i class="fas fa-sign-in-alt"></i> Iniciar Sesión de Cliente
+            </button>
+            <button id="wallet-register-btn" class="w-full sm:w-auto px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-black shadow-2xs cursor-pointer transition-all flex items-center justify-center gap-2">
+              <i class="fas fa-user-plus text-blue-600"></i> Registrarme Gratis
+            </button>
+          </div>
+        </div>
+      `;
+      document.getElementById('wallet-login-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'login', role: 'client' }));
+      document.getElementById('wallet-register-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'client' }));
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in pb-24">
+        
+        <!-- Encabezado Billetera -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-black uppercase tracking-wider">
+                <i class="fas fa-wallet mr-1"></i> Billetera Digital
+              </span>
+              <span class="text-xs text-slate-400 font-bold">Reservas CR Club</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">Mis Tarjetas & Recompensas</h1>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Presenta tu código QR en tus visitas para recibir sellos y desbloquear servicios gratis.
+            </p>
+          </div>
+          <div>
+            <button id="btn-show-qr-fullscreen" class="px-4 py-2.5 bg-gradient-to-r from-slate-950 to-blue-950 hover:from-slate-900 hover:to-blue-900 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md cursor-pointer transition-all">
+              <i class="fas fa-qrcode text-amber-400"></i>
+              <span>Ampliar mi QR</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tarjeta Principal: Mi Código QR de Cliente -->
+        <div class="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
+          <div class="space-y-3 text-center md:text-left">
+            <span class="text-[11px] font-bold tracking-wider text-amber-400 uppercase flex items-center justify-center md:justify-start gap-1.5">
+              <i class="fas fa-award"></i> Tarjeta de Identificación Digital
+            </span>
+            <h2 class="text-xl sm:text-2xl font-black text-white">${clientUser.name || 'Cliente Reservas CR'}</h2>
+            <p class="text-xs sm:text-sm text-slate-300 font-mono">
+              <i class="fas fa-phone-alt text-amber-400 text-xs mr-1"></i> ${clientUser.phone || 'Sin teléfono asociado'}
+            </p>
+            <p class="text-xs text-slate-400 max-w-sm leading-relaxed">
+              Muestra este código al pagar en el mostrador para que el comercio estampe tu sello automáticamente.
+            </p>
+          </div>
+
+          <div class="flex flex-col items-center gap-2 bg-white p-4 rounded-2xl shadow-2xl shrink-0">
+            <div id="wallet-qr-display" class="w-[180px] h-[180px] flex items-center justify-center">
+              <i class="fas fa-spinner fa-spin text-slate-400 text-2xl"></i>
+            </div>
+            <span class="text-[10px] font-black text-slate-700 tracking-tight">Tu QR de Fidelización</span>
+          </div>
+        </div>
+
+        <!-- Listado de Tarjetas Multi-Comercio -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
+              <i class="fas fa-stamp text-amber-500"></i>
+              <span>Tarjetas en tus Comercios</span>
+            </h3>
+          </div>
+
+          <div id="wallet-cards-list-container" class="space-y-4">
+            <div class="p-8 text-center text-slate-400 space-y-2">
+              <i class="fas fa-spinner fa-spin text-xl text-blue-600"></i>
+              <p class="text-xs">Cargando tus tarjetas de sellos...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    // Generar código QR del cliente
+    const qrPayload = JSON.stringify({
+      type: 'rcr_loyalty',
+      clientId: clientUser.id,
+      phone: clientUser.phone,
+      name: clientUser.name
+    });
+
+    const renderQrCode = () => {
+      const qrContainer = document.getElementById('wallet-qr-display');
+      if (!qrContainer) return;
+      qrContainer.innerHTML = '';
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+          text: qrPayload,
+          width: 180,
+          height: 180,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}" alt="Código QR de Fidelización" class="w-full h-full rounded-lg">`;
+      }
+    };
+
+    setTimeout(renderQrCode, 100);
+
+    // Modal de QR en pantalla completa
+    document.getElementById('btn-show-qr-fullscreen')?.addEventListener('click', () => {
+      const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) return;
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in">
+          <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl relative">
+            <button id="close-qr-fullscreen-btn" class="modal-close-btn absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            <div>
+              <span class="text-[10px] font-black uppercase text-amber-600 tracking-wider">Pase Digital</span>
+              <h3 class="text-lg font-black text-slate-900">${clientUser.name}</h3>
+              <p class="text-xs text-slate-500 font-mono mt-0.5">${clientUser.phone}</p>
+            </div>
+            <div id="qr-fullscreen-canvas" class="w-[220px] h-[220px] mx-auto flex items-center justify-center bg-slate-50 rounded-2xl p-2 border border-slate-100 shadow-inner">
+            </div>
+            <p class="text-[11px] text-slate-500 leading-tight">
+              Aumenta el brillo de tu pantalla si el lector del comercio tiene dificultades para escanear.
+            </p>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        const fullContainer = document.getElementById('qr-fullscreen-canvas');
+        if (fullContainer) {
+          fullContainer.innerHTML = '';
+          if (typeof QRCode !== 'undefined') {
+            new QRCode(fullContainer, {
+              text: qrPayload,
+              width: 210,
+              height: 210,
+              colorDark: "#0f172a",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.M
+            });
+          } else {
+            fullContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(qrPayload)}" alt="QR" class="w-full h-full rounded-lg">`;
+          }
+        }
+      }, 50);
+
+      document.getElementById('close-qr-fullscreen-btn')?.addEventListener('click', () => {
+        modalContainer.innerHTML = '';
+      });
+    });
+
+    // Cargar tarjetas de fidelización del cliente
+    try {
+      const walletRes = await storage.getClientLoyaltyWallet(clientUser.phone, clientUser.id);
+      const cardsListContainer = document.getElementById('wallet-cards-list-container');
+      if (!cardsListContainer) return;
+
+      const cards = walletRes && walletRes.cards ? walletRes.cards : [];
+
+      if (cards.length === 0) {
+        cardsListContainer.innerHTML = `
+          <div class="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 text-center space-y-4 shadow-xs">
+            <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mx-auto text-2xl border border-amber-200/60">
+              <i class="fas fa-stamp"></i>
+            </div>
+            <div class="max-w-md mx-auto">
+              <h4 class="text-base font-black text-slate-900">Aún no tienes tarjetas de sellos acumuladas</h4>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                Cada vez que visites un salón, spa, barbería o comercio participante en Reservas CR, muéstrales tu código QR de arriba para estampar tu primer sello.
+              </p>
+            </div>
+            <button id="wallet-explore-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-md cursor-pointer transition-all">
+              <i class="fas fa-compass mr-1"></i> Explorar Negocios Participantes
+            </button>
+          </div>
+        `;
+        document.getElementById('wallet-explore-btn')?.addEventListener('click', () => this.navigateTo('directory'));
+        return;
+      }
+
+      // Renderizar listado de tarjetas
+      cardsListContainer.innerHTML = cards.map(c => {
+        const target = c.target_stamps || 8;
+        const current = c.current_stamps || 0;
+        const isCompleted = current >= target;
+        const pct = Math.min(100, Math.round((current / target) * 100));
+
+        let slots = '';
+        for (let i = 1; i <= target; i++) {
+          const isStamped = i <= current;
+          const isTarget = i === target;
+          if (isStamped) {
+            slots += `
+              <div class="loyalty-stamp-slot stamped w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-black text-xs shadow-xs">
+                <i class="fas fa-check text-xs"></i>
+              </div>
+            `;
+          } else if (isTarget) {
+            slots += `
+              <div class="loyalty-stamp-slot reward-slot w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center font-black text-xs shadow-xs border-2 border-dashed border-amber-300">
+                <i class="fas fa-gift text-xs"></i>
+              </div>
+            `;
+          } else {
+            slots += `
+              <div class="loyalty-stamp-slot w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-[11px]">
+                ${i}
+              </div>
+            `;
+          }
+        }
+
+        return `
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4 hover:shadow-md transition-shadow">
+            
+            <!-- Encabezado de la Tarjeta del Negocio -->
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                  <img src="${c.business_image || '/src/assets/logo.png'}" alt="${c.business_name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+                </div>
+                <div>
+                  <h4 class="text-base font-black text-slate-900 leading-tight">${c.business_name}</h4>
+                  <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span class="text-[11px] text-slate-500"><i class="fas fa-tag text-[10px] text-slate-400 mr-1"></i>${c.business_category || 'Comercio'}</span>
+                    ${c.business_phone ? `<span class="text-[11px] text-slate-400">• <i class="fas fa-phone text-[9px] mr-0.5"></i>${c.business_phone}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-black ${isCompleted ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'}">
+                  ${isCompleted ? '🎉 ¡Premio Disponible!' : `${current} / ${target} sellos`}
+                </span>
+              </div>
+            </div>
+
+            <!-- Banner de Alerta de Premio si está lista -->
+            ${isCompleted ? `
+              <div class="bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-400/20 border border-amber-300 rounded-2xl p-3 flex items-center gap-2.5 text-amber-950">
+                <i class="fas fa-trophy text-amber-600 text-lg"></i>
+                <div class="text-xs">
+                  <p class="font-black">¡Felicidades! Has completado tu tarjeta de sellos.</p>
+                  <p class="text-amber-900 font-medium">Muestra esta tarjeta en tu próxima visita al comercio para canjear tu premio: <strong>"${c.reward_description}"</strong>.</p>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Ranuras Visuales de Sellos -->
+            <div class="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+                ${slots}
+              </div>
+
+              <!-- Barra de progreso -->
+              <div class="mt-3.5 space-y-1">
+                <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
+                  <span>Progreso de Fidelización</span>
+                  <span class="text-slate-700 font-black">${current} de ${target} sellos (${pct}%)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Tarjeta con Premio y Acción -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-slate-100">
+              <div class="text-xs text-slate-600">
+                <span class="text-slate-400">Recompensa:</span>
+                <span class="font-black text-slate-900 ml-1">🎁 ${c.reward_description}</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button class="wallet-book-biz-btn px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all" data-biz-id="${c.business_id}">
+                  <i class="fas fa-calendar-plus"></i> Agendar Cita
+                </button>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+
+      // Eventos para botones de Agendar Cita
+      document.querySelectorAll('.wallet-book-biz-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const bizId = btn.getAttribute('data-biz-id');
+          if (bizId) {
+            this.navigateTo('business-detail', { businessId: bizId });
+          }
+        });
+      });
+
+    } catch (err) {
+      console.error('Error cargando billetera:', err);
+    }
+  }
+
+  // --- SUB-CONTENIDO: PESTAÑA FIDELIZACIÓN (SELLOS) EN OWNER DASHBOARD ---
+  renderLoyaltyTabContent(currentBiz) {
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 p-4 sm:p-7 shadow-xs space-y-6">
+        
+        <!-- Encabezado con Título y Acciones -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black uppercase tracking-wider">
+                <i class="fas fa-award text-emerald-600 mr-1"></i> Fidelización Digital
+              </span>
+              <span class="text-xs text-slate-400 font-bold">Tarjetas de Sellos (Wallet)</span>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-slate-900 mt-1">Programa de Fidelización de Clientes</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Premia a tus clientes más fieles. Cada vez que vengan, escanea su QR con el botón <strong>"Sellar"</strong> para sumarles una visita.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <button id="dash-open-stamp-scanner-btn" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer transition-all">
+              <i class="fas fa-qrcode text-sm"></i>
+              <span>📷 Abrir Escáner para Sellar</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Formulario de Configuración del Programa -->
+        <div class="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 sm:p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+              <i class="fas fa-sliders-h text-emerald-600"></i>
+              <span>Reglas del Programa de Fidelización</span>
+            </h3>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="loyalty-program-active-toggle" class="sr-only peer" checked>
+              <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+              <span class="ml-2 text-xs font-bold text-slate-700 dark:text-slate-300">Programa Activo</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Meta de Sellos para Ganar Premio
+              </label>
+              <select id="loyalty-target-stamps-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-black text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="6">6 Sellos (Recomendado para servicios frecuentes)</option>
+                <option value="8" selected>8 Sellos (Estándar)</option>
+                <option value="10">10 Sellos</option>
+                <option value="12">12 Sellos</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Descripción del Premio / Recompensa
+              </label>
+              <input type="text" id="loyalty-reward-description-input" placeholder="Ej: Corte de cabello gratis, Lavado o 20% desc." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" value="Corte o servicio gratis">
+            </div>
+          </div>
+
+          <div class="flex justify-end pt-1">
+            <button id="save-loyalty-settings-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer transition-all">
+              <i class="fas fa-save"></i>
+              <span>Guardar Configuración</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Clientes Frecuentes con Tarjeta Activa -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+              <i class="fas fa-users text-blue-600"></i>
+              <span>Clientes Frecuentes con Tarjeta de Sellos</span>
+            </h3>
+            <span id="loyalty-total-cards-count" class="text-xs font-bold text-slate-500">Cargando...</span>
+          </div>
+
+          <div id="loyalty-cards-table-container" class="overflow-x-auto rounded-2xl border border-slate-200">
+            <div class="p-8 text-center text-slate-400 space-y-2">
+              <i class="fas fa-spinner fa-spin text-xl text-emerald-600"></i>
+              <p class="text-xs">Cargando tarjetas de clientes...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }
+
+  // --- EVENTOS DEL PANEL DE FIDELIZACIÓN ---
+  async setupLoyaltyTabEvents(currentBiz) {
+    // 1. Cargar programa existente
+    try {
+      const prog = await storage.getLoyaltyProgram(currentBiz.id);
+      if (prog) {
+        const toggle = document.getElementById('loyalty-program-active-toggle');
+        if (toggle) toggle.checked = prog.is_active !== false;
+
+        const select = document.getElementById('loyalty-target-stamps-select');
+        if (select) select.value = (prog.target_stamps || 8).toString();
+
+        const descInput = document.getElementById('loyalty-reward-description-input');
+        if (descInput) descInput.value = prog.reward_description || 'Corte o servicio gratis';
+      }
+    } catch (e) {
+      console.warn('Error cargando ajustes de fidelización:', e);
+    }
+
+    // 2. Botón abrir escáner
+    document.getElementById('dash-open-stamp-scanner-btn')?.addEventListener('click', () => {
+      this.renderStampModal(currentBiz.id);
+    });
+
+    // 3. Guardar configuración
+    document.getElementById('save-loyalty-settings-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('save-loyalty-settings-btn');
+      const originalHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+      }
+
+      const isActive = document.getElementById('loyalty-program-active-toggle')?.checked ?? true;
+      const targetStamps = parseInt(document.getElementById('loyalty-target-stamps-select')?.value, 10) || 8;
+      const rewardDescription = document.getElementById('loyalty-reward-description-input')?.value.trim() || 'Corte o servicio gratis';
+
+      const res = await storage.updateLoyaltyProgram(currentBiz.id, {
+        isActive,
+        targetStamps,
+        rewardDescription
+      });
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+
+      if (res && res.success) {
+        this.showToast('¡Configuración de fidelización actualizada con éxito!', 'success');
+      } else {
+        this.showToast(res?.error || 'Error al guardar la configuración.', 'error');
+      }
+    });
+
+    // 4. Cargar tabla de tarjetas de clientes frecuentes
+    try {
+      const cards = await storage.getLoyaltyCards(currentBiz.id);
+      const countLabel = document.getElementById('loyalty-total-cards-count');
+      if (countLabel) countLabel.textContent = `${cards.length} clientes con tarjeta`;
+
+      const tableContainer = document.getElementById('loyalty-cards-table-container');
+      if (!tableContainer) return;
+
+      if (!cards || cards.length === 0) {
+        tableContainer.innerHTML = `
+          <div class="p-8 text-center text-slate-500 space-y-2">
+            <i class="fas fa-stamp text-2xl text-slate-300"></i>
+            <p class="text-xs font-bold">Aún no hay tarjetas estampadas en tu comercio.</p>
+            <p class="text-[11px] text-slate-400">Cuando un cliente te muestre su código QR, dale clic a <strong>"Abrir Escáner"</strong> o al botón <strong>"Sellar"</strong> en la app móvil.</p>
+          </div>
+        `;
+        return;
+      }
+
+      tableContainer.innerHTML = `
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[10px] tracking-wider">
+              <th class="py-3 px-3.5">Cliente</th>
+              <th class="py-3 px-3.5">Teléfono</th>
+              <th class="py-3 px-3.5">Progreso de Sellos</th>
+              <th class="py-3 px-3.5">Premios Ganados</th>
+              <th class="py-3 px-3.5">Último Sello</th>
+              <th class="py-3 px-3.5 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+            ${cards.map(c => {
+              const target = c.target_stamps || 8;
+              const current = c.current_stamps || 0;
+              const isCompleted = current >= target;
+              const dateStr = c.last_stamped_at ? new Date(c.last_stamped_at).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Sin sellos';
+
+              return `
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                  <td class="py-3 px-3.5 font-bold text-slate-900">${c.client_name || 'Cliente'}</td>
+                  <td class="py-3 px-3.5 font-mono text-slate-600">${c.client_phone}</td>
+                  <td class="py-3 px-3.5">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded-full font-black text-[11px] ${isCompleted ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse' : 'bg-emerald-100 text-emerald-800'}">
+                        ${current} / ${target}
+                      </span>
+                      ${isCompleted ? `<span class="text-[10px] font-black text-amber-600">¡Listo para canje!</span>` : ''}
+                    </div>
+                  </td>
+                  <td class="py-3 px-3.5">
+                    <span class="text-slate-600 font-bold">${c.total_rewards_earned || 0}</span>
+                    <span class="text-slate-400 text-[10px]">(${c.total_rewards_redeemed || 0} canjeados)</span>
+                  </td>
+                  <td class="py-3 px-3.5 text-slate-500">${dateStr}</td>
+                  <td class="py-3 px-3.5 text-right">
+                    <div class="flex items-center justify-end gap-1.5">
+                      <button class="quick-stamp-btn px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer flex items-center gap-1 transition-all" data-card-phone="${c.client_phone}" data-card-name="${c.client_name || ''}">
+                        <i class="fas fa-plus"></i> Sello
+                      </button>
+                      ${isCompleted ? `
+                        <button class="quick-redeem-btn px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-black shadow-2xs cursor-pointer flex items-center gap-1 transition-all" data-card-id="${c.id}" data-card-name="${c.client_name || ''}">
+                          <i class="fas fa-gift"></i> Canjear
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      // Listeners de la tabla
+      document.querySelectorAll('.quick-stamp-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const phone = btn.getAttribute('data-card-phone');
+          const name = btn.getAttribute('data-card-name');
+          const res = await storage.stampLoyaltyCard({
+            businessId: currentBiz.id,
+            clientPhone: phone,
+            clientName: name
+          });
+          if (res && res.success) {
+            this.playSuccessChime();
+            this.showToast(res.message || 'Sello agregado con éxito.', 'success');
+            this.setupLoyaltyTabEvents(currentBiz);
+          } else {
+            this.showToast(res?.error || 'Error al estampar.', 'error');
+          }
+        });
+      });
+
+      document.querySelectorAll('.quick-redeem-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const cardId = btn.getAttribute('data-card-id');
+          const name = btn.getAttribute('data-card-name');
+          if (confirm(`¿Canjear premio para ${name}? La tarjeta volverá a 0 sellos.`)) {
+            const res = await storage.redeemLoyaltyReward({
+              cardId,
+              businessId: currentBiz.id
+            });
+            if (res && res.success) {
+              this.playSuccessChime();
+              this.showToast(res.message || 'Premio canjeado.', 'success');
+              this.setupLoyaltyTabEvents(currentBiz);
+            } else {
+              this.showToast(res?.error || 'Error al canjear.', 'error');
+            }
+          }
+        });
+      });
+
+    } catch (e) {
+      console.warn('Error cargando tarjetas:', e);
+    }
   }
 }
 

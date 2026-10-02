@@ -466,7 +466,51 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_staff_payouts_biz_staff ON reservas_staff_payouts (business_id, staff_id);
       ALTER TABLE reservas_staff_payouts ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'pending';
       ALTER TABLE reservas_staff_payouts ADD COLUMN IF NOT EXISTS deducted_amount NUMERIC(12,2) DEFAULT 0;
+
+      -- Tablas del Sistema de Fidelización y Billetera Digital de Sellos
+      CREATE TABLE IF NOT EXISTS reservas_loyalty_programs (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        target_stamps INT NOT NULL DEFAULT 8,
+        reward_description VARCHAR(255) NOT NULL DEFAULT 'Corte o servicio gratis',
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT uq_loyalty_program_biz UNIQUE (business_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS reservas_loyalty_cards (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        client_id VARCHAR(50) NULL REFERENCES reservas_clients(id) ON DELETE SET NULL,
+        client_phone VARCHAR(50) NOT NULL,
+        client_name VARCHAR(255) DEFAULT '',
+        current_stamps INT NOT NULL DEFAULT 0,
+        total_rewards_earned INT NOT NULL DEFAULT 0,
+        total_rewards_redeemed INT NOT NULL DEFAULT 0,
+        last_stamped_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT uq_loyalty_card_biz_phone UNIQUE (business_id, client_phone)
+      );
+      CREATE INDEX IF NOT EXISTS idx_loyalty_cards_phone ON reservas_loyalty_cards (client_phone);
+      CREATE INDEX IF NOT EXISTS idx_loyalty_cards_client ON reservas_loyalty_cards (client_id);
+      CREATE INDEX IF NOT EXISTS idx_loyalty_cards_biz ON reservas_loyalty_cards (business_id);
+
+      CREATE TABLE IF NOT EXISTS reservas_loyalty_stamps_log (
+        id VARCHAR(50) PRIMARY KEY,
+        card_id VARCHAR(50) NOT NULL REFERENCES reservas_loyalty_cards(id) ON DELETE CASCADE,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        action VARCHAR(30) NOT NULL, -- 'stamp', 'redeem'
+        stamps_change INT DEFAULT 1,
+        staff_name VARCHAR(255) DEFAULT '',
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_loyalty_log_card ON reservas_loyalty_stamps_log (card_id);
+      CREATE INDEX IF NOT EXISTS idx_loyalty_log_biz ON reservas_loyalty_stamps_log (business_id);
     `);
+
 
 
     // Sembrar cuenta Master Developer si no existe

@@ -3762,6 +3762,391 @@ app.post('/api/businesses/:id/staff-payouts', async (req, res) => {
 });
 
 // ==========================================
+// SISTEMA DE FIDELIZACIÓN (BILLETERA DIGITAL & SELLOS)
+// ==========================================
+
+// 1. Obtener configuración del programa de fidelización del negocio
+app.get('/api/businesses/:id/loyalty/program', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const progRes = await pool.query(
+      'SELECT * FROM reservas_loyalty_programs WHERE business_id = $1',
+      [id]
+    );
+    if (progRes.rows.length === 0) {
+      return res.json({
+        id: `prog-${id}`,
+        business_id: id,
+        target_stamps: 8,
+        reward_description: 'Corte o servicio gratis',
+        is_active: true,
+        created_at: new Date()
+      });
+    }
+    res.json(progRes.rows[0]);
+  } catch (err) {
+    console.error('Error al obtener programa de fidelización:', err);
+    res.status(500).json({ error: 'Error al obtener programa de fidelización.' });
+  }
+});
+
+// 2. Guardar o actualizar configuración del programa
+app.put('/api/businesses/:id/loyalty/program', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetStamps, rewardDescription, isActive } = req.body;
+    const target = Math.max(1, parseInt(targetStamps, 10) || 8);
+    const reward = (rewardDescription || 'Corte o servicio gratis').trim();
+    const active = isActive !== false;
+
+    const progRes = await pool.query(`
+      INSERT INTO reservas_loyalty_programs (id, business_id, target_stamps, reward_description, is_active, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (business_id) DO UPDATE
+      SET target_stamps = EXCLUDED.target_stamps,
+          reward_description = EXCLUDED.reward_description,
+          is_active = EXCLUDED.is_active,
+          updated_at = NOW()
+      RETURNING *
+    `, [`prog-${id}`, id, target, reward, active]);
+
+    res.json({ success: true, program: progRes.rows[0] });
+  } catch (err) {
+    console.error('Error al guardar programa de fidelización:', err);
+    res.status(500).json({ error: 'Error al actualizar programa de fidelización.' });
+  }
+});
+
+// 3. Obtener todas las tarjetas de fidelización de un comercio (para panel del negocio)
+app.get('/api/businesses/:id/loyalty/cards', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cardsRes = await pool.query(`
+      SELECT c.*, 
+        p.target_stamps, p.reward_description,
+        cl.avatar_url, cl.email as client_email
+      FROM reservas_loyalty_cards c
+      LEFT JOIN reservas_loyalty_programs p ON p.business_id = c.business_id
+      LEFT JOIN reservas_clients cl ON cl.id = c.client_id
+      WHERE c.business_id = $1
+      ORDER BY (c.current_stamps >= COALESCE(p.target_stamps, 8)) DESC, c.last_stamped_at DESC NULLS LAST, c.created_at DESC
+    `, [id]);
+    res.json(cardsRes.rows);
+  } catch (err) {
+    console.error('Error al obtener tarjetas del comercio:', err);
+    res.status(500).json({ error: 'Error al obtener tarjetas de clientes.' });
+  }
+});
+
+// 4. Preview / Búsqueda de tarjeta por QR o teléfono
+app.get('/api/loyalty/card-preview', async (req, res) => {
+  try {
+    const { businessId, search } = req.query;
+    if (!businessId || !search) {
+      return res.status(400).json({ error: 'Faltan parámetros requeridos.' });
+    }
+
+    let phone = '';
+    let clientId = null;
+    let clientName = '';
+
+    try {
+      const parsed = JSON.parse(search);
+      phone = parsed.phone || '';
+      clientId = parsed.clientId || null;
+      clientName = parsed.name || '';
+    } catch (e) {
+      if (search.startsWith('rcr_loyalty:')) {
+        const parts = search.split(':');
+        phone = parts[2] || '';
+        clientId = parts[1] === 'client' ? null : parts[1];
+        if (parts[3]) clientName = parts[3];
+      } else {
+        phone = search;
+      }
+    }
+
+    const cleanPhone = phone ? phone.toString().replace(/\D/g, '') : '';
+    const phone8 = cleanPhone.length === 11 && cleanPhone.startsWith('506') ? cleanPhone.substring(3) : cleanPhone;
+
+    const clientUserRes = await pool.query(
+      'SELECT id, name, phone FROM reservas_clients WHERE id = $1 OR phone = $2 OR phone = $3 LIMIT 1',
+      [clientId, cleanPhone, phone8]
+    );
+
+    if (clientUserRes.rows.length > 0) {
+      const cl = clientUserRes.rows[0];
+      clientId = cl.id;
+      if (!clientName) clientName = cl.name;
+      if (!phone) phone = cl.phone;
+    }
+
+    const cardRes = await pool.query(`
+      SELECT c.*, p.target_stamps, p.reward_description, p.is_active
+      FROM reservas_loyalty_cards c
+      LEFT JOIN reservas_loyalty_programs p ON p.business_id = c.business_id
+      WHERE c.business_id = $1 AND (
+        (c.client_phone IS NOT NULL AND (c.client_phone = $2 OR c.client_phone = $3))
+        OR (c.client_id IS NOT NULL AND c.client_id = $4)
+      )
+      LIMIT 1
+    `, [businessId, cleanPhone, phone8, clientId]);
+
+    const progRes = await pool.query('SELECT * FROM reservas_loyalty_programs WHERE business_id = $1', [businessId]);
+    const program = progRes.rows[0] || { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
+
+    res.json({
+      exists: cardRes.rows.length > 0,
+      card: cardRes.rows[0] || null,
+      program,
+      clientData: {
+        id: clientId,
+        name: clientName || 'Cliente',
+        phone: phone8 || cleanPhone
+      }
+    });
+  } catch (err) {
+    console.error('Error en preview de tarjeta:', err);
+    res.status(500).json({ error: 'Error al buscar tarjeta de fidelización.' });
+  }
+});
+
+// 5. Estampar sello (+1)
+app.post('/api/loyalty/stamp', async (req, res) => {
+  try {
+    const { businessId, clientPhone, clientName, clientId, staffName } = req.body;
+    if (!businessId || (!clientPhone && !clientId)) {
+      return res.status(400).json({ error: 'Comercio y teléfono o ID de cliente requeridos.' });
+    }
+
+    const cleanPhone = clientPhone ? clientPhone.toString().replace(/\D/g, '') : '';
+    const phone8 = cleanPhone.length === 11 && cleanPhone.startsWith('506') ? cleanPhone.substring(3) : cleanPhone;
+
+    const progRes = await pool.query('SELECT * FROM reservas_loyalty_programs WHERE business_id = $1', [businessId]);
+    const program = progRes.rows[0] || {
+      id: `prog-${businessId}`,
+      business_id: businessId,
+      target_stamps: 8,
+      reward_description: 'Corte o servicio gratis',
+      is_active: true
+    };
+
+    if (progRes.rows.length === 0) {
+      await pool.query(`
+        INSERT INTO reservas_loyalty_programs (id, business_id, target_stamps, reward_description, is_active)
+        VALUES ($1, $2, $3, $4, true)
+        ON CONFLICT (business_id) DO NOTHING
+      `, [program.id, businessId, program.target_stamps, program.reward_description]);
+    }
+
+    let finalName = (clientName || '').trim();
+    let finalClientId = clientId || null;
+    if (!finalName || !finalClientId) {
+      const clientLookup = await pool.query(
+        'SELECT id, name, phone FROM reservas_clients WHERE id = $1 OR phone = $2 OR phone = $3 LIMIT 1',
+        [finalClientId, cleanPhone, phone8]
+      );
+      if (clientLookup.rows.length > 0) {
+        if (!finalClientId) finalClientId = clientLookup.rows[0].id;
+        if (!finalName) finalName = clientLookup.rows[0].name;
+      }
+    }
+    if (!finalName) finalName = 'Cliente';
+
+    const cardRes = await pool.query(`
+      SELECT * FROM reservas_loyalty_cards
+      WHERE business_id = $1 AND (
+        (client_phone IS NOT NULL AND (client_phone = $2 OR client_phone = $3))
+        OR (client_id IS NOT NULL AND client_id = $4)
+      )
+      LIMIT 1
+    `, [businessId, cleanPhone, phone8, finalClientId]);
+
+    let card;
+    let rewardUnlocked = false;
+
+    if (cardRes.rows.length === 0) {
+      const newCardId = `card-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const insertRes = await pool.query(`
+        INSERT INTO reservas_loyalty_cards (
+          id, business_id, client_id, client_phone, client_name, current_stamps, total_rewards_earned, last_stamped_at, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, 1, 0, NOW(), NOW(), NOW())
+        RETURNING *
+      `, [newCardId, businessId, finalClientId, phone8 || cleanPhone, finalName]);
+      card = insertRes.rows[0];
+      if (card.current_stamps >= program.target_stamps) {
+        rewardUnlocked = true;
+      }
+    } else {
+      card = cardRes.rows[0];
+      if (card.current_stamps >= program.target_stamps) {
+        return res.json({
+          success: true,
+          card,
+          program,
+          alreadyCompleted: true,
+          rewardUnlocked: true,
+          message: `El cliente ya completó su tarjeta (${card.current_stamps}/${program.target_stamps}). Tiene disponible su premio: "${program.reward_description}". Puedes canjearlo directamente.`
+        });
+      }
+
+      const nextStamps = card.current_stamps + 1;
+      let newRewardsEarned = card.total_rewards_earned || 0;
+      if (nextStamps >= program.target_stamps) {
+        rewardUnlocked = true;
+        newRewardsEarned += 1;
+      }
+
+      const updateRes = await pool.query(`
+        UPDATE reservas_loyalty_cards
+        SET current_stamps = $1,
+            total_rewards_earned = $2,
+            client_name = COALESCE(NULLIF($3, ''), client_name),
+            client_id = COALESCE($4, client_id),
+            last_stamped_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $5
+        RETURNING *
+      `, [nextStamps, newRewardsEarned, finalName, finalClientId, card.id]);
+      card = updateRes.rows[0];
+    }
+
+    await pool.query(`
+      INSERT INTO reservas_loyalty_stamps_log (
+        id, card_id, business_id, action, stamps_change, staff_name, notes, created_at
+      ) VALUES ($1, $2, $3, 'stamp', 1, $4, $5, NOW())
+    `, [
+      `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      card.id,
+      businessId,
+      staffName || '',
+      rewardUnlocked ? `Sello otorgado. ¡Completó meta de ${program.target_stamps} sellos!` : 'Sello regular otorgado'
+    ]);
+
+    res.json({
+      success: true,
+      card,
+      program,
+      rewardUnlocked,
+      message: rewardUnlocked 
+        ? `🎉 ¡Felicidades! Se estampó el sello #${card.current_stamps}. ¡El cliente ha desbloqueado su premio (${program.reward_description})!`
+        : `✓ Sello estampado con éxito (${card.current_stamps} de ${program.target_stamps}).`
+    });
+  } catch (err) {
+    console.error('Error al estampar tarjeta:', err);
+    res.status(500).json({ error: 'Error al estampar la tarjeta del cliente.' });
+  }
+});
+
+// 6. Canjear premio de la tarjeta (Redeem)
+app.post('/api/loyalty/redeem', async (req, res) => {
+  try {
+    const { cardId, businessId, staffName } = req.body;
+    if (!cardId || !businessId) {
+      return res.status(400).json({ error: 'ID de tarjeta y comercio requeridos.' });
+    }
+
+    const cardRes = await pool.query('SELECT * FROM reservas_loyalty_cards WHERE id = $1 AND business_id = $2', [cardId, businessId]);
+    if (cardRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Tarjeta no encontrada en este comercio.' });
+    }
+    const card = cardRes.rows[0];
+
+    const progRes = await pool.query('SELECT * FROM reservas_loyalty_programs WHERE business_id = $1', [businessId]);
+    const program = progRes.rows[0] || { target_stamps: 8, reward_description: 'Corte o servicio gratis' };
+
+    if (card.current_stamps < program.target_stamps && card.total_rewards_earned <= card.total_rewards_redeemed) {
+      return res.status(400).json({ error: `La tarjeta aún no ha alcanzado los ${program.target_stamps} sellos requeridos.` });
+    }
+
+    const newRedeemed = (card.total_rewards_redeemed || 0) + 1;
+    const updateRes = await pool.query(`
+      UPDATE reservas_loyalty_cards
+      SET current_stamps = 0,
+          total_rewards_redeemed = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [newRedeemed, card.id]);
+
+    await pool.query(`
+      INSERT INTO reservas_loyalty_stamps_log (
+        id, card_id, business_id, action, stamps_change, staff_name, notes, created_at
+      ) VALUES ($1, $2, $3, 'redeem', 0, $4, $5, NOW())
+    `, [
+      `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      card.id,
+      businessId,
+      staffName || '',
+      `Premio canjeado: ${program.reward_description}. Tarjeta reiniciada a 0 sellos.`
+    ]);
+
+    res.json({
+      success: true,
+      card: updateRes.rows[0],
+      program,
+      message: `🎉 Premio canjeado con éxito ("${program.reward_description}"). La tarjeta ha sido reiniciada para acumular sellos de nuevo.`
+    });
+  } catch (err) {
+    console.error('Error al canjear premio:', err);
+    res.status(500).json({ error: 'Error al procesar el canje de premio.' });
+  }
+});
+
+// 7. Billetera Digital del Cliente (Wallet Multi-Negocio)
+app.get('/api/clients/loyalty/wallet', async (req, res) => {
+  try {
+    const { phone, clientId } = req.query;
+    if (!phone && !clientId) {
+      return res.status(400).json({ error: 'Teléfono o ID de cliente requerido.' });
+    }
+
+    const cleanPhone = phone ? phone.toString().replace(/\D/g, '') : '';
+    const phone8 = cleanPhone.length === 11 && cleanPhone.startsWith('506') ? cleanPhone.substring(3) : cleanPhone;
+
+    const cardsRes = await pool.query(`
+      SELECT 
+        c.id as card_id,
+        c.current_stamps,
+        c.total_rewards_earned,
+        c.total_rewards_redeemed,
+        c.last_stamped_at,
+        c.created_at as card_created_at,
+        b.id as business_id,
+        b.name as business_name,
+        b.slug as business_slug,
+        b.image as business_image,
+        b.category as business_category,
+        b.phone as business_phone,
+        b.city as business_city,
+        b.address as business_address,
+        COALESCE(p.target_stamps, 8) as target_stamps,
+        COALESCE(p.reward_description, 'Corte o servicio gratis') as reward_description,
+        COALESCE(p.is_active, true) as is_active
+      FROM reservas_loyalty_cards c
+      JOIN reservas_businesses b ON b.id = c.business_id
+      LEFT JOIN reservas_loyalty_programs p ON p.business_id = c.business_id
+      WHERE (
+        (c.client_phone IS NOT NULL AND (c.client_phone = $1 OR c.client_phone = $2))
+        OR (c.client_id IS NOT NULL AND c.client_id = $3)
+      )
+      ORDER BY 
+        (c.current_stamps >= COALESCE(p.target_stamps, 8)) DESC,
+        c.last_stamped_at DESC NULLS LAST,
+        c.created_at DESC
+    `, [cleanPhone, phone8, clientId || null]);
+
+    res.json({
+      success: true,
+      cards: cardsRes.rows
+    });
+  } catch (err) {
+    console.error('Error al obtener billetera de cliente:', err);
+    res.status(500).json({ error: 'Error al cargar la billetera de tarjetas.' });
+  }
+});
+
+// ==========================================
 // PORTAL DE COLABORADORES (STAFF)
 // ==========================================
 

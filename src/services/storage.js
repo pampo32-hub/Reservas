@@ -3336,6 +3336,94 @@ class StorageService {
   async disconnectNylas(businessId) {
     return this.disconnectCalendar(businessId);
   }
+
+  // ==========================================
+  // SISTEMA DE FIDELIZACIÓN (BILLETERA & SELLOS)
+  // ==========================================
+  async getLoyaltyProgram(businessId) {
+    try {
+      const res = await this.fetchWithAuth(`/api/businesses/${businessId}/loyalty/program`);
+      return await res.json();
+    } catch (e) {
+      console.error('Error al obtener programa de fidelización:', e);
+      return null;
+    }
+  }
+
+  async updateLoyaltyProgram(businessId, data) {
+    try {
+      const res = await this.fetchWithAuth(`/api/businesses/${businessId}/loyalty/program`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Error al actualizar programa de fidelización:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async getLoyaltyCards(businessId) {
+    try {
+      const res = await this.fetchWithAuth(`/api/businesses/${businessId}/loyalty/cards`);
+      return await res.json();
+    } catch (e) {
+      console.error('Error al obtener tarjetas del comercio:', e);
+      return [];
+    }
+  }
+
+  async previewLoyaltyCard(businessId, search) {
+    try {
+      const res = await this.fetchWithAuth(`/api/loyalty/card-preview?businessId=${encodeURIComponent(businessId)}&search=${encodeURIComponent(search)}`);
+      return await res.json();
+    } catch (e) {
+      console.error('Error en preview de tarjeta:', e);
+      return null;
+    }
+  }
+
+  async stampLoyaltyCard(data) {
+    try {
+      const res = await this.fetchWithAuth('/api/loyalty/stamp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Error al estampar tarjeta:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async redeemLoyaltyReward(data) {
+    try {
+      const res = await this.fetchWithAuth('/api/loyalty/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Error al canjear premio:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async getClientLoyaltyWallet(phone, clientId) {
+    try {
+      const params = new URLSearchParams();
+      if (phone) params.set('phone', phone);
+      if (clientId) params.set('clientId', clientId);
+      const res = await this.fetchWithAuth(`/api/clients/loyalty/wallet?${params.toString()}`);
+      return await res.json();
+    } catch (e) {
+      console.error('Error al obtener billetera de sellos:', e);
+      return { success: false, cards: [] };
+    }
+  }
 }
 
 export const storage = new StorageService();

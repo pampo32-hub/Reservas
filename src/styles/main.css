@@ -864,5 +864,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 4px;
 }
 
+/* ==========================================================================
+   SISTEMA DE FIDELIZACIÓN: ESCÁNER QR & BILLETERA DE SELLOS
+   ========================================================================== */
+@keyframes qr-scan-laser {
+  0% { top: 6%; opacity: 0.8; }
+  50% { top: 92%; opacity: 1; }
+  100% { top: 6%; opacity: 0.8; }
+}
+.animate-scan-laser {
+  animation: qr-scan-laser 2.2s ease-in-out infinite;
+}
+
+@keyframes stamp-pop {
+  0% { transform: scale(0.6) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.animate-stamp-pop {
+  animation: stamp-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.loyalty-stamp-slot {
+  aspect-ratio: 1 / 1;
+  transition: all 0.2s ease;
+}
+.loyalty-stamp-slot.stamped {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+.loyalty-stamp-slot.reward-slot {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+
 
 
