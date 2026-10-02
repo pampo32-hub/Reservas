@@ -472,7 +472,7 @@ export async function initDatabase(customPool = null) {
         id VARCHAR(50) PRIMARY KEY,
         business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
         target_stamps INT NOT NULL DEFAULT 8,
-        reward_description VARCHAR(255) NOT NULL DEFAULT 'Corte o servicio gratis',
+        reward_description VARCHAR(255) NOT NULL DEFAULT '1 Servicio gratis',
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW(),
@@ -510,6 +510,13 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_loyalty_log_card ON reservas_loyalty_stamps_log (card_id);
       CREATE INDEX IF NOT EXISTS idx_loyalty_log_biz ON reservas_loyalty_stamps_log (business_id);
     `);
+
+    // Migración para actualizar textos de fidelización antiguos por defecto a uno universal y claro
+    await client.query(`
+      UPDATE reservas_loyalty_programs
+      SET reward_description = '1 Servicio gratis'
+      WHERE reward_description = 'Corte o servicio gratis';
+    `).catch(e => console.warn('Aviso al actualizar textos de fidelización antiguos:', e.message));
 
 
 

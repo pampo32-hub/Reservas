@@ -1730,7 +1730,7 @@ class App {
           <!-- Caja de Recompensa -->
           <div class="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/60 rounded-2xl p-3.5 space-y-1">
             <span class="text-[10px] uppercase font-mono tracking-widest text-amber-300 block font-semibold">TU BENEFICIO GRATIS:</span>
-            <p class="text-base font-black text-white drop-shadow-sm">"${data.rewardDescription || 'Corte o servicio gratis'}"</p>
+            <p class="text-base font-black text-white drop-shadow-sm">"${data.rewardDescription || '1 Servicio gratis'}"</p>
             ${data.businessName ? `<p class="text-xs text-amber-200/90 font-medium">en <strong>${data.businessName}</strong></p>` : ''}
           </div>
 
@@ -26195,7 +26195,7 @@ Esperamos atenderle pronto de nuevo.`;
       return;
     }
 
-    let program = { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
+    let program = { target_stamps: 8, reward_description: '1 Servicio gratis', is_active: true };
 
     // Cargar programa en segundo plano y actualizar la meta en pantalla si difiere
     storage.getLoyaltyProgram(targetBizId).then(loadedProg => {
@@ -26203,7 +26203,7 @@ Esperamos atenderle pronto de nuevo.`;
         program = loadedProg;
         const metaLabel = document.getElementById('stamp-modal-meta-label');
         if (metaLabel) {
-          metaLabel.textContent = `Meta: ${program.target_stamps || 8} sellos = ${program.reward_description || 'Corte o servicio gratis'}`;
+          metaLabel.textContent = `Meta: ${program.target_stamps || 8} sellos = ${program.reward_description || '1 Servicio gratis'}`;
         }
       }
     }).catch(err => console.warn('Aviso cargando programa de fidelización:', err));
@@ -26466,7 +26466,7 @@ Esperamos atenderle pronto de nuevo.`;
 
     const { card, clientData } = res;
     const targetStamps = (res.program && res.program.target_stamps) || program.target_stamps || 8;
-    const rewardDescription = (res.program && res.program.reward_description) || program.reward_description || 'Corte o servicio gratis';
+    const rewardDescription = (res.program && res.program.reward_description) || program.reward_description || '1 Servicio gratis';
     const currentStamps = card ? card.current_stamps : 0;
     const isCompleted = currentStamps >= targetStamps;
 
@@ -27167,9 +27167,13 @@ Esperamos atenderle pronto de nuevo.`;
             <div class="space-y-2 relative z-10 mt-auto">
               <!-- Barra de Progreso Brillante -->
               <div class="space-y-1">
-                <div class="flex items-center justify-between text-[10px] font-mono font-bold text-white/80">
-                  <span class="uppercase tracking-wider truncate mr-2">🎁 ${c.reward_description}</span>
-                  <span class="shrink-0">${pct}%</span>
+                <div class="flex items-center justify-between text-[11px] font-bold text-white/90">
+                  <span class="truncate mr-2 flex items-center gap-1.5 min-w-0">
+                    <span class="shrink-0 text-xs">🎁</span>
+                    <span class="text-white/70 font-semibold text-[10px] uppercase tracking-wider shrink-0">Premio:</span>
+                    <span class="text-white font-black truncate">${c.reward_description || '1 Servicio gratis'}</span>
+                  </span>
+                  <span class="shrink-0 font-mono text-[10px] text-white/80">${pct}%</span>
                 </div>
                 <div class="w-full h-1.5 rounded-full bg-white/15 overflow-hidden backdrop-blur-xs">
                   <div class="h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-gradient-to-r from-amber-400 to-yellow-300 shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'bg-gradient-to-r from-emerald-400 to-teal-300 shadow-[0_0_8px_rgba(52,211,153,0.8)]'}" style="width: ${pct}%"></div>
@@ -27291,7 +27295,7 @@ Esperamos atenderle pronto de nuevo.`;
               <label class="block text-xs font-bold text-slate-700 mb-1">
                 Descripción del Premio / Recompensa
               </label>
-              <input type="text" id="loyalty-reward-description-input" placeholder="Ej: Corte de cabello gratis, Lavado o 20% desc." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" value="Corte o servicio gratis">
+              <input type="text" id="loyalty-reward-description-input" placeholder="Ej: 1 Limpieza dental gratis, Lavado, 20% desc." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" value="1 Servicio gratis">
             </div>
           </div>
 
@@ -27347,7 +27351,7 @@ Esperamos atenderle pronto de nuevo.`;
         }
 
         const descInput = document.getElementById('loyalty-reward-description-input');
-        if (descInput) descInput.value = prog.reward_description || 'Corte o servicio gratis';
+        if (descInput) descInput.value = prog.reward_description || '1 Servicio gratis';
       }
     } catch (e) {
       console.warn('Error cargando ajustes de fidelización:', e);
@@ -27364,7 +27368,7 @@ Esperamos atenderle pronto de nuevo.`;
 
       const isActive = document.getElementById('loyalty-program-active-toggle')?.checked ?? true;
       const targetStamps = parseInt(document.getElementById('loyalty-target-stamps-select')?.value, 10) || 8;
-      const rewardDescription = document.getElementById('loyalty-reward-description-input')?.value.trim() || 'Corte o servicio gratis';
+      const rewardDescription = document.getElementById('loyalty-reward-description-input')?.value.trim() || '1 Servicio gratis';
 
       const res = await storage.updateLoyaltyProgram(currentBiz.id, {
         isActive,

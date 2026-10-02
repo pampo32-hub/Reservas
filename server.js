@@ -3840,7 +3840,7 @@ app.get('/api/businesses/:id/loyalty/program', async (req, res) => {
         id: `prog-${id}`,
         business_id: id,
         target_stamps: 8,
-        reward_description: 'Corte o servicio gratis',
+        reward_description: '1 Servicio gratis',
         is_active: true,
         created_at: new Date()
       });
@@ -3858,7 +3858,7 @@ app.put('/api/businesses/:id/loyalty/program', async (req, res) => {
     const { id } = req.params;
     const { targetStamps, rewardDescription, isActive } = req.body;
     const target = Math.max(1, parseInt(targetStamps, 10) || 8);
-    const reward = (rewardDescription || 'Corte o servicio gratis').trim();
+    const reward = (rewardDescription || '1 Servicio gratis').trim();
     const active = isActive !== false;
 
     const progRes = await pool.query(`
@@ -3973,7 +3973,7 @@ app.get('/api/loyalty/card-preview', async (req, res) => {
     `, [businessId, cleanPhone, phone8, clientId]);
 
     const progRes = await pool.query('SELECT * FROM reservas_loyalty_programs WHERE business_id = $1', [businessId]);
-    const program = progRes.rows[0] || { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
+    const program = progRes.rows[0] || { target_stamps: 8, reward_description: '1 Servicio gratis', is_active: true };
 
     res.json({
       exists: cardRes.rows.length > 0,
@@ -4007,7 +4007,7 @@ app.post('/api/loyalty/stamp', async (req, res) => {
       id: `prog-${businessId}`,
       business_id: businessId,
       target_stamps: 8,
-      reward_description: 'Corte o servicio gratis',
+      reward_description: '1 Servicio gratis',
       is_active: true
     };
 
@@ -4157,7 +4157,7 @@ app.post('/api/loyalty/redeem', async (req, res) => {
     const card = cardRes.rows[0];
 
     const progRes = await pool.query('SELECT * FROM reservas_loyalty_programs WHERE business_id = $1', [businessId]);
-    const program = progRes.rows[0] || { target_stamps: 8, reward_description: 'Corte o servicio gratis' };
+    const program = progRes.rows[0] || { target_stamps: 8, reward_description: '1 Servicio gratis' };
 
     if (card.current_stamps < program.target_stamps && card.total_rewards_earned <= card.total_rewards_redeemed) {
       return res.status(400).json({ error: `La tarjeta aún no ha alcanzado los ${program.target_stamps} sellos requeridos.` });
@@ -4390,7 +4390,7 @@ app.get('/api/clients/loyalty/wallet', async (req, res) => {
         b.city as business_city,
         b.address as business_address,
         COALESCE(p.target_stamps, 8) as target_stamps,
-        COALESCE(p.reward_description, 'Corte o servicio gratis') as reward_description,
+        COALESCE(p.reward_description, '1 Servicio gratis') as reward_description,
         COALESCE(p.is_active, true) as is_active
       FROM reservas_loyalty_cards c
       JOIN reservas_businesses b ON b.id = c.business_id
