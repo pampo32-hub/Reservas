@@ -16307,11 +16307,30 @@ Esperamos atenderle pronto de nuevo.`;
           </div>
         </div>
 
-        <div class="text-center text-slate-500 text-[11px] py-2">
-          ReservasCR.app • Acceso Seguro para Colaboradores
+        <div class="text-center text-slate-500 text-[11px] py-2 flex items-center justify-center gap-1.5 flex-wrap">
+          <span>ReservasCR.app v3.46.18</span>
+          <span>•</span>
+          <button type="button" id="staff-force-reload-btn" class="text-blue-400 hover:text-blue-300 underline cursor-pointer">
+            <i class="fas fa-arrows-rotate mr-0.5"></i> Actualizar versión
+          </button>
         </div>
       </div>
     `;
+
+    document.getElementById('staff-force-reload-btn')?.addEventListener('click', async () => {
+      this.showToast('Actualizando a la última versión...', 'info');
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) await r.unregister();
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (const k of keys) await caches.delete(k);
+        }
+      } catch (e) {}
+      window.location.reload(true);
+    });
 
     document.getElementById('staff-back-to-home-btn')?.addEventListener('click', () => {
       this.navigateTo('directory');

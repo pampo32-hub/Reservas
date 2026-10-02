@@ -342,8 +342,11 @@ app.get([
   '/unete', '/para-negocios', '/para-comercios', '/registro-negocio', '/negocios', '/hazte-socio',
   '/directorio', '/explorar', '/catalogo', '/buscar', '/comercios',
   '/pruebas', '/planes-prueba', '/test-planes', '/planes-test', '/demo-planes',
-  '/mis-reservas', '/panel-negocio', '/developer'
+  '/mis-reservas', '/panel-negocio', '/developer', '/colaborador', '/portal-colaborador'
 ], (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -8218,6 +8221,9 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Endpoint de API no encontrado' });
   }
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

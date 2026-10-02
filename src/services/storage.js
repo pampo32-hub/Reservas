@@ -3001,8 +3001,47 @@ class StorageService {
   async initServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js?v=3.46.15', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw.js?v=3.46.18', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
+
+        // Forzar chequeo de actualización inmediata en el servidor
+        registration.update().catch(() => {});
+
+        // Si la app pasa a primer plano en el teléfono, chequear actualización
+        if (typeof document !== 'undefined') {
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              registration.update().catch(() => {});
+            }
+          });
+        }
+
+        // Si un nuevo Service Worker toma el control (nueva versión instalada), recargar la página
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            console.log('🔄 Nueva versión de ReservasCR activada. Recargando interfaz...');
+            window.location.reload();
+          }
+        });
+
+        // Si hay un worker esperando, pedirle que tome el control
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+              }
+            });
+          }
+        });
+
         return registration;
       } catch (err) {
         console.warn('⚠️ Error registrando Service Worker:', err);

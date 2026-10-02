@@ -1,5 +1,5 @@
 // Service Worker para Reservas CR (PWA)
-const CACHE_NAME = 'reservascr-pwa-v51';
+const CACHE_NAME = 'reservascr-pwa-v52';
 
 
 const STATIC_ASSETS = [
@@ -15,6 +15,13 @@ const STATIC_ASSETS = [
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
 ];
+
+// Mensajes desde la aplicación principal
+self.addEventListener('message', (event) => {
+  if (event.data && (event.data.type === 'SKIP_WAITING' || event.data === 'skipWaiting')) {
+    self.skipWaiting();
+  }
+});
 
 // Instalación del Service Worker
 self.addEventListener('install', (event) => {
