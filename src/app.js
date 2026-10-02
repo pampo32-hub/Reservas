@@ -1630,6 +1630,9 @@ class App {
       this.showToast(`✓ ¡Nuevo sello acumulado! (${current} de ${target})`, 'success', 4000);
     } else if (data.action === 'remove_stamp') {
       this.showToast(`Sello ajustado. Balance actual: ${current} sellos.`, 'info', 3000);
+    } else if (data.action === 'redeem') {
+      this.playSuccessChime();
+      this.showToast('🎉 ¡Premio canjeado con éxito! Tu tarjeta ha comenzado un nuevo ciclo con 0 sellos.', 'success', 5000);
     }
 
     // 2. Si el modal de la tarjeta está abierto en pantalla, actualizarlo inmediatamente
@@ -1641,7 +1644,8 @@ class App {
         business_image: data.businessImage,
         current_stamps: current,
         target_stamps: target,
-        reward_description: data.rewardDescription
+        reward_description: data.rewardDescription,
+        total_rewards_redeemed: data.totalRewardsRedeemed || (this._currentOpenLoyaltyCard?.total_rewards_redeemed ? this._currentOpenLoyaltyCard.total_rewards_redeemed + 1 : 1)
       };
       if (typeof this._renderLoyaltyModalContentFn === 'function') {
         this._renderLoyaltyModalContentFn(freshCard);
@@ -26887,7 +26891,7 @@ Esperamos atenderle pronto de nuevo.`;
                 </div>
                 <div class="text-xs">
                   <p class="font-black text-amber-900 text-sm">🎉 ¡Tarjeta Completada!</p>
-                  <p class="text-amber-800 font-bold mt-0.5">Premio: <span class="underline">${cardData.reward_description}</span></p>
+                  <p class="text-amber-800 font-bold mt-0.5">Premio Disponible: <span class="underline font-black">${cardData.reward_description}</span></p>
                   <p class="text-amber-700 text-[11px] mt-0.5">Muestra el código QR abajo al personal para canjear tu premio.</p>
                 </div>
               </div>
@@ -26896,16 +26900,30 @@ Esperamos atenderle pronto de nuevo.`;
                 <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm text-sm">
                   <i class="fas fa-gift"></i>
                 </div>
-                <div class="text-xs min-w-0">
+                <div class="text-xs min-w-0 flex-1">
                   <div class="flex items-center justify-between gap-2">
-                    <span class="font-black text-slate-900">Recompensa al completar:</span>
+                    <span class="font-black text-slate-900">${(cardData.total_rewards_redeemed || 0) > 0 ? 'Próxima recompensa al completar:' : 'Recompensa al completar:'}</span>
                     <span class="text-emerald-700 font-black text-[11px] shrink-0">${current}/${target} sellos</span>
                   </div>
-                  <p class="text-slate-600 font-bold mt-0.5 text-xs truncate">"${cardData.reward_description}"</p>
-                  <p class="text-slate-400 text-[11px] mt-0.5">Te faltan <strong>${target - current} sellos</strong> para ganar este beneficio.</p>
+                  <p class="text-slate-700 font-black mt-0.5 text-xs truncate">"${cardData.reward_description}"</p>
+                  <p class="text-slate-500 text-[11px] mt-0.5">Te faltan <strong>${target - current} sellos</strong> para desbloquear este beneficio.</p>
                 </div>
               </div>
             `}
+
+            ${(cardData.total_rewards_redeemed || 0) > 0 ? `
+              <div class="bg-emerald-50 border border-emerald-200/90 rounded-2xl p-3 flex items-start gap-2.5 text-xs text-emerald-900 shadow-2xs">
+                <div class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <i class="fas fa-check-circle text-xs"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="font-black text-emerald-950">¡Premio anterior canjeado con éxito!</p>
+                  <p class="text-[11px] text-emerald-800 leading-snug mt-0.5">
+                    Has canjeado <strong>${cardData.total_rewards_redeemed} ${cardData.total_rewards_redeemed === 1 ? 'premio' : 'premios'}</strong> en este comercio. Tu tarjeta comenzó un nuevo ciclo con 0 sellos para acumular tu siguiente beneficio.
+                  </p>
+                </div>
+              </div>
+            ` : ''}
 
             <!-- Ranuras de Sellos -->
             <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-3">
@@ -26927,11 +26945,13 @@ Esperamos atenderle pronto de nuevo.`;
             <!-- Código QR para Sellar -->
             <div class="bg-gradient-to-b from-slate-900 to-slate-950 text-white p-4 sm:p-5 rounded-2xl text-center space-y-3 shadow-lg border border-slate-800">
               <div>
-                <span class="text-[10px] font-black uppercase tracking-wider text-amber-400">
-                  <i class="fas fa-qrcode mr-1"></i> QR para Sellar o Canjear
+                <span class="text-[10px] font-black uppercase tracking-wider ${isCompleted ? 'text-amber-400' : 'text-emerald-400'}">
+                  <i class="fas fa-qrcode mr-1"></i> ${isCompleted ? 'QR para Canjear tu Premio' : 'QR para Acumular Sellos'}
                 </span>
                 <p class="text-xs text-slate-300 mt-0.5">
-                  Presenta este código en el mostrador de <strong>${cardData.business_name}</strong>
+                  ${isCompleted 
+                    ? `Muestra este código al personal de <strong>${cardData.business_name}</strong> para recibir tu beneficio` 
+                    : `Presenta este código en el mostrador de <strong>${cardData.business_name}</strong> para sumar sellos`}
                 </p>
               </div>
 
@@ -27198,20 +27218,26 @@ Esperamos atenderle pronto de nuevo.`;
         const pct = Math.min(100, Math.round((current / target) * 100));
         const themeClass = CARD_THEMES[index % CARD_THEMES.length];
         const cardNumber = this.formatNumericCardId(c, clientUser);
+        const redeemedCount = c.total_rewards_redeemed || 0;
 
         return `
           <div class="loyalty-credit-card ${themeClass}" data-card-index="${index}" data-card-id="${c.card_id || c.id || index}">
             
             <!-- Parte Superior: Info Negocio & Estado -->
             <div class="flex items-start justify-between gap-3 relative z-10">
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="w-11 h-11 min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-2xl overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 p-0.5 shrink-0 shadow-sm">
                   <img src="${c.business_image || '/src/assets/logo.png'}" alt="${c.business_name}" class="w-full h-full object-cover rounded-xl" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
                 </div>
-                <div>
+                <div class="min-w-0 flex-1">
                   <h4 class="text-sm sm:text-base font-black text-white leading-tight drop-shadow-sm line-clamp-1">${c.business_name}</h4>
-                  <div class="flex items-center gap-2 mt-0.5">
+                  <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span class="text-[10px] text-white/70 font-semibold tracking-wide uppercase">${c.business_category || 'Comercio'}</span>
+                    ${redeemedCount > 0 ? `
+                      <span class="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 flex items-center gap-1 shadow-2xs">
+                        <i class="fas fa-check-circle text-[8px]"></i> ${redeemedCount} canjeado${redeemedCount > 1 ? 's' : ''}
+                      </span>
+                    ` : ''}
                   </div>
                 </div>
               </div>
@@ -27250,9 +27276,15 @@ Esperamos atenderle pronto de nuevo.`;
               <div class="space-y-1">
                 <div class="flex items-center justify-between text-[11px] font-bold text-white/90">
                   <span class="truncate mr-2 flex items-center gap-1.5 min-w-0">
-                    <span class="shrink-0 text-xs">🎁</span>
-                    <span class="text-white/70 font-semibold text-[10px] uppercase tracking-wider shrink-0">Premio:</span>
-                    <span class="text-white font-black truncate">${c.reward_description || '1 Servicio gratis'}</span>
+                    ${isCompleted ? `
+                      <span class="shrink-0 text-xs animate-bounce">🏆</span>
+                      <span class="text-amber-300 font-black text-[10px] uppercase tracking-wider shrink-0">¡PREMIO DISPONIBLE!:</span>
+                      <span class="text-amber-100 font-black truncate">${c.reward_description || '1 Servicio gratis'}</span>
+                    ` : `
+                      <span class="shrink-0 text-xs">🎯</span>
+                      <span class="text-white/70 font-semibold text-[10px] uppercase tracking-wider shrink-0">${redeemedCount > 0 ? 'Próxima meta' : 'Meta al completar'} (${target} sellos):</span>
+                      <span class="text-white font-black truncate">${c.reward_description || '1 Servicio gratis'}</span>
+                    `}
                   </span>
                   <span class="shrink-0 font-mono text-[10px] text-white/80">${pct}%</span>
                 </div>

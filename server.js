@@ -4193,6 +4193,7 @@ app.post('/api/loyalty/redeem', async (req, res) => {
         currentStamps: 0,
         targetStamps: program.target_stamps,
         rewardDescription: program.reward_description,
+        totalRewardsRedeemed: newRedeemed,
         action: 'redeem',
         timestamp: Date.now()
       };
