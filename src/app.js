@@ -15534,50 +15534,61 @@ Esperamos atenderle pronto de nuevo.`;
           </div>
         ` : ''}
 
-        <!-- 4 Tarjetas de Métricas Globales -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+        <!-- 5 Tarjetas de Métricas Globales -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <div class="flex items-center justify-between text-slate-500 mb-1">
-              <span class="text-xs font-semibold">Total Citas / Servicios</span>
+              <span class="text-xs font-semibold">Total Citas</span>
               <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
                 <i class="fas fa-chart-line"></i>
               </div>
             </div>
-            <div class="text-xl font-black text-slate-900">₡${(summary.totalGross || 0).toLocaleString('es-CR')}</div>
-            <span class="text-[11px] text-slate-500">Facturación bruta en citas</span>
+            <div class="text-lg font-black text-slate-900">₡${(summary.totalGross || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[10px] text-slate-500">Facturación bruta en citas</span>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <div class="flex items-center justify-between text-slate-500 mb-1">
-              <span class="text-xs font-semibold">Comisiones Generadas</span>
+              <span class="text-xs font-semibold">Comisiones</span>
               <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">
                 <i class="fas fa-receipt"></i>
               </div>
             </div>
-            <div class="text-xl font-black text-indigo-600">₡${(summary.totalCommissions || 0).toLocaleString('es-CR')}</div>
-            <span class="text-[11px] text-slate-500">Monto total devengado</span>
+            <div class="text-lg font-black text-indigo-600">₡${(summary.totalCommissions || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[10px] text-slate-500">Monto total devengado</span>
           </div>
 
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <div class="flex items-center justify-between text-slate-500 mb-1">
-              <span class="text-xs font-semibold">Vales y Adelantos</span>
-              <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs">
+              <span class="text-xs font-semibold">Vales Aplicados</span>
+              <div class="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs">
+                <i class="fas fa-receipt"></i>
+              </div>
+            </div>
+            <div class="text-lg font-black text-slate-700">₡${(summary.totalAdvancesApplied || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[10px] text-slate-500">Descontados en liquidaciones</span>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200">
+            <div class="flex items-center justify-between text-amber-800 mb-1">
+              <span class="text-xs font-semibold">Vales Pendientes</span>
+              <div class="w-7 h-7 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center text-xs">
                 <i class="fas fa-hand-holding-dollar"></i>
               </div>
             </div>
-            <div class="text-xl font-black text-amber-600">₡${(summary.totalAdvances || 0).toLocaleString('es-CR')}</div>
-            <span class="text-[11px] text-slate-500">Entregados desde caja</span>
+            <div class="text-lg font-black text-amber-700">₡${(summary.totalAdvancesPending || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[10px] text-amber-700 font-medium">Por descontar al equipo</span>
           </div>
 
-          <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+          <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
             <div class="flex items-center justify-between text-emerald-800 mb-1">
               <span class="text-xs font-semibold">Saldo Neto a Pagar</span>
               <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
                 <i class="fas fa-wallet"></i>
               </div>
             </div>
-            <div class="text-xl font-black text-emerald-700">₡${(summary.totalPending || 0).toLocaleString('es-CR')}</div>
-            <span class="text-[11px] text-emerald-600 font-medium">Pendiente de liquidar</span>
+            <div class="text-lg font-black text-emerald-700">₡${(summary.totalPending || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[10px] text-emerald-600 font-medium">Pendiente de liquidar</span>
           </div>
         </div>
 
@@ -15603,6 +15614,7 @@ Esperamos atenderle pronto de nuevo.`;
                   <th class="p-3.5 text-right">Generado</th>
                   <th class="p-3.5 text-right">Comisión</th>
                   <th class="p-3.5 text-right">Vales</th>
+                  <th class="p-3.5 text-right">Vales Pendientes</th>
                   <th class="p-3.5 text-right">Liquidado</th>
                   <th class="p-3.5 text-right font-black text-emerald-700">Saldo Pendiente</th>
                   <th class="p-3.5 text-center">Acciones</th>
@@ -15614,6 +15626,10 @@ Esperamos atenderle pronto de nuevo.`;
                     ? `₡${Number(st.commissionRate || 0).toLocaleString('es-CR')} fijo`
                     : `${st.commissionRate || 50}%`;
                   const hasPending = (st.pendingCommission || 0) > 0;
+                  const hasPendingVales = (st.totalAdvancesPending || 0) > 0;
+                  const unsettledEarned = Math.max(0, (st.totalCommissions || 0) - (st.totalAdvancesApplied || 0) - (st.totalSettled || 0));
+                  const canSettle = hasPending || (hasPendingVales && unsettledEarned > 0);
+                  const isAmortizationOnly = !hasPending && canSettle;
 
                   return `
                     <tr class="hover:bg-slate-50/80 transition-colors">
@@ -15644,8 +15660,17 @@ Esperamos atenderle pronto de nuevo.`;
                       <td class="p-3.5 text-right font-bold text-indigo-700">
                         ₡${(st.totalCommissions || 0).toLocaleString('es-CR')}
                       </td>
-                      <td class="p-3.5 text-right text-amber-700 font-medium">
-                        ₡${(st.totalAdvances || 0).toLocaleString('es-CR')}
+                      <td class="p-3.5 text-right text-slate-600 font-medium">
+                        ₡${(st.totalAdvancesApplied || 0).toLocaleString('es-CR')}
+                      </td>
+                      <td class="p-3.5 text-right">
+                        ${hasPendingVales ? `
+                          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-100 text-amber-800 border border-amber-300 shadow-2xs">
+                            <i class="fas fa-clock text-[9px]"></i> ₡${Number(st.totalAdvancesPending).toLocaleString('es-CR')}
+                          </span>
+                        ` : `
+                          <span class="text-slate-400 font-medium">₡0</span>
+                        `}
                       </td>
                       <td class="p-3.5 text-right text-slate-500 font-medium">
                         ₡${(st.totalSettled || 0).toLocaleString('es-CR')}
@@ -15665,11 +15690,11 @@ Esperamos atenderle pronto de nuevo.`;
                             <i class="fas fa-hand-holding-dollar text-xs"></i>
                           </button>
                           <button 
-                            class="staff-settle-payout-btn p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer ${!hasPending ? 'opacity-50 pointer-events-none' : ''}" 
+                            class="staff-settle-payout-btn p-2 rounded-lg ${isAmortizationOnly ? 'bg-amber-50 hover:bg-amber-100 text-amber-800' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'} transition-colors cursor-pointer ${!canSettle ? 'opacity-50 pointer-events-none' : ''}" 
                             data-staff-id="${st.id || st.staffId}" 
-                            title="Liquidar Comisiones"
+                            title="${isAmortizationOnly ? 'Amortizar Vale Pendiente con Comisiones' : 'Liquidar Comisiones'}"
                           >
-                            <i class="fas fa-money-bill-wave text-xs"></i>
+                            <i class="fas ${isAmortizationOnly ? 'fa-file-invoice-dollar' : 'fa-money-bill-wave'} text-xs"></i>
                           </button>
                           <button 
                             class="staff-whatsapp-report-btn p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors cursor-pointer" 
@@ -15965,23 +15990,33 @@ Esperamos atenderle pronto de nuevo.`;
   }
 
   // --- MODAL: LIQUIDACIÓN DE COMISIONES ---
+  // --- MODAL: LIQUIDACIÓN DE COMISIONES O AMORTIZACIÓN DE VALES ---
   openStaffPayoutModal(staff, currentBiz) {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
     const pending = Math.max(0, staff.pendingCommission || 0);
+    const pendingVales = Math.max(0, staff.totalAdvancesPending || 0);
+    const totalComms = Math.max(0, staff.totalCommissions || 0);
+    const appliedVales = Math.max(0, staff.totalAdvancesApplied || 0);
+    const totalSettled = Math.max(0, staff.totalSettled || 0);
+
+    // Comisiones no liquidadas disponibles para amortizar vales
+    const availableUnsettled = Math.max(0, totalComms - appliedVales - totalSettled);
+    const valeToDeduct = Math.min(availableUnsettled, pendingVales);
+    const isAmortizationOnly = pending === 0 && valeToDeduct > 0;
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-8">
-          <div class="bg-gradient-to-r from-emerald-600 to-teal-700 p-5 text-white flex items-center justify-between">
+          <div class="bg-gradient-to-r ${isAmortizationOnly ? 'from-amber-600 to-amber-700' : 'from-emerald-600 to-teal-700'} p-5 text-white flex items-center justify-between">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-lg">
-                <i class="fas fa-money-bill-wave"></i>
+                <i class="fas ${isAmortizationOnly ? 'fa-hand-holding-dollar' : 'fa-money-bill-wave'}"></i>
               </div>
               <div>
-                <span class="text-xs uppercase tracking-wider text-emerald-200 font-bold">Liquidación de Personal</span>
-                <h3 class="text-lg font-black">Pagar Comisiones</h3>
+                <span class="text-xs uppercase tracking-wider ${isAmortizationOnly ? 'text-amber-200' : 'text-emerald-200'} font-bold">Liquidación de Personal</span>
+                <h3 class="text-lg font-black">${isAmortizationOnly ? 'Amortizar Vale Pendiente' : 'Pagar Comisiones'}</h3>
               </div>
             </div>
             <button id="close-payout-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors">
@@ -15996,45 +16031,76 @@ Esperamos atenderle pronto de nuevo.`;
                 alt="${staff.name}" 
                 class="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0"
               >
-              <div>
-                <strong class="text-slate-900 block font-bold">${staff.name}</strong>
+              <div class="flex-1 min-w-0">
+                <strong class="text-slate-900 block font-bold truncate">${staff.name}</strong>
                 <span class="text-[11px] text-slate-500">${staff.roleTitle || 'Especialista'} • Pendiente neto: <strong class="text-emerald-700">₡${pending.toLocaleString('es-CR')}</strong></span>
               </div>
             </div>
 
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Monto a Liquidar (₡) *</label>
-              <input 
-                type="number" 
-                id="payout-amount" 
-                required 
-                min="1" 
-                step="1" 
-                value="${pending}" 
-                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700 text-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-              >
-              <div class="flex gap-2 mt-1.5">
-                <button type="button" class="set-quick-payout-btn text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer" data-amt="${pending}">
-                  Liquidar Todo el Saldo (₡${pending.toLocaleString('es-CR')})
-                </button>
+            ${pendingVales > 0 ? `
+              <div class="p-3.5 bg-amber-50/90 rounded-2xl border border-amber-200 text-xs text-amber-950 flex items-start gap-3">
+                <div class="w-7 h-7 rounded-lg bg-amber-200 text-amber-800 flex items-center justify-center text-xs shrink-0 mt-0.5 font-black">
+                  <i class="fas fa-hand-holding-dollar"></i>
+                </div>
+                <div class="flex-1">
+                  <strong class="block font-black text-amber-900">Vale activo: ₡${pendingVales.toLocaleString('es-CR')}</strong>
+                  <span class="text-slate-700 text-[11px] block mt-0.5">
+                    ${valeToDeduct > 0 ? `Se descontarán automáticamente <strong class="text-amber-900">₡${valeToDeduct.toLocaleString('es-CR')}</strong> de este vale en esta liquidación.` : 'No hay comisiones devengadas para descontar este vale.'}
+                  </span>
+                  ${(pendingVales - valeToDeduct) > 0 ? `
+                    <span class="inline-block mt-1 px-2 py-0.5 bg-amber-200/70 text-amber-900 rounded font-bold text-[10px]">
+                      Remanente pendiente post-liquidación: ₡${(pendingVales - valeToDeduct).toLocaleString('es-CR')}
+                    </span>
+                  ` : `
+                    <span class="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
+                      ¡El vale quedará cancelado en su totalidad!
+                    </span>
+                  `}
+                </div>
               </div>
-            </div>
+            ` : ''}
 
-            <div>
-              <label class="block font-bold text-slate-700 mb-1">Método de Pago Realizado *</label>
-              <select id="payout-payment-method" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                <option value="sinpe_movil" selected>SINPE Móvil</option>
-                <option value="cash">Efectivo en mano</option>
-                <option value="bank_transfer">Transferencia Bancaria (IBAN)</option>
-              </select>
-            </div>
+            ${isAmortizationOnly ? `
+              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 text-xs">
+                <span class="block font-bold text-slate-800 mb-0.5">Comisión disponible para amortizar: ₡${valeToDeduct.toLocaleString('es-CR')}</span>
+                <span>No se desembolsa efectivo ni SINPE en esta acción. La comisión generada se aplicará directamente a rebajar el vale pendiente.</span>
+                <input type="hidden" id="payout-amount" value="0">
+              </div>
+            ` : `
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Monto a Desembolsar al Especialista (₡) *</label>
+                <input 
+                  type="number" 
+                  id="payout-amount" 
+                  required 
+                  min="0" 
+                  step="1" 
+                  value="${pending}" 
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700 text-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                >
+                <div class="flex gap-2 mt-1.5">
+                  <button type="button" class="set-quick-payout-btn text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer" data-amt="${pending}">
+                    Liquidar Todo el Saldo Neto (₡${pending.toLocaleString('es-CR')})
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Método de Pago Realizado *</label>
+                <select id="payout-payment-method" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                  <option value="sinpe_movil" selected>SINPE Móvil</option>
+                  <option value="cash">Efectivo en mano</option>
+                  <option value="bank_transfer">Transferencia Bancaria (IBAN)</option>
+                </select>
+              </div>
+            `}
 
             <div>
               <label class="block font-bold text-slate-700 mb-1">Comprobante / Notas</label>
               <input 
                 type="text" 
                 id="payout-notes" 
-                placeholder="Ej. Comprobante SINPE #847291 o Liquidación quincena" 
+                placeholder="Ej. Comprobante SINPE #847291 o Liquidación semanal" 
                 class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
               >
             </div>
@@ -16050,10 +16116,10 @@ Esperamos atenderle pronto de nuevo.`;
               <button 
                 type="submit" 
                 id="submit-payout-btn" 
-                class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-md shadow-emerald-500/20 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                class="flex-1 py-3 ${isAmortizationOnly ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'} font-black rounded-xl shadow-md cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
               >
-                <i class="fas fa-check-double"></i>
-                <span>Confirmar Liquidación</span>
+                <i class="fas ${isAmortizationOnly ? 'fa-check' : 'fa-check-double'}"></i>
+                <span>${isAmortizationOnly ? `Amortizar ₡${valeToDeduct.toLocaleString('es-CR')}` : 'Confirmar Liquidación'}</span>
               </button>
             </div>
           </form>
@@ -16081,15 +16147,15 @@ Esperamos atenderle pronto de nuevo.`;
       const paymentMethod = document.getElementById('payout-payment-method')?.value || 'sinpe_movil';
       const notes = document.getElementById('payout-notes')?.value || '';
 
-      if (amount <= 0) {
-        this.showToast('El monto a liquidar debe ser mayor a 0.', 'error');
+      if (amount <= 0 && valeToDeduct <= 0) {
+        this.showToast('El monto a liquidar o a amortizar debe ser mayor a 0.', 'error');
         return;
       }
 
       const submitBtn = document.getElementById('submit-payout-btn');
       if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Liquidando...';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
       }
 
       try {
@@ -16097,10 +16163,15 @@ Esperamos atenderle pronto de nuevo.`;
           staffId: staff.id || staff.staffId,
           amount,
           paymentMethod,
-          notes
+          notes,
+          deductPendingVales: true,
+          deductValeAmount: valeToDeduct
         });
 
-        this.showToast(`¡Liquidación de ₡${amount.toLocaleString('es-CR')} registrada con éxito!`, 'success');
+        const successMsg = amount > 0 
+          ? `¡Liquidación de ₡${amount.toLocaleString('es-CR')} registrada con éxito!`
+          : `¡Amortización de ₡${valeToDeduct.toLocaleString('es-CR')} al vale registrada con éxito!`;
+        this.showToast(successMsg, 'success');
         closeModal();
 
         // Recargar comisiones
@@ -16116,7 +16187,7 @@ Esperamos atenderle pronto de nuevo.`;
         this.showToast(err.message || 'Error al registrar liquidación.', 'error');
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Confirmar Liquidación';
+          submitBtn.innerHTML = `<i class="fas ${isAmortizationOnly ? 'fa-check' : 'fa-check-double'}"></i> ${isAmortizationOnly ? `Amortizar ₡${valeToDeduct.toLocaleString('es-CR')}` : 'Confirmar Liquidación'}`;
         }
       }
     });
@@ -16130,7 +16201,7 @@ Esperamos atenderle pronto de nuevo.`;
       : `${staff.commissionRate || 50}% sobre servicios atendidos`;
 
     const text = [
-      `💈 *Estado de Comisiones - ${currentBiz.name}*`,
+      `💼 *Estado de Comisiones - ${currentBiz.name}*`,
       `👤 *Colaborador:* ${staff.name}`,
       `📅 *Fecha de Corte:* ${today}`,
       `⚙️ *Esquema:* ${schemeText}`,
@@ -16138,7 +16209,8 @@ Esperamos atenderle pronto de nuevo.`;
       `✂️ *Citas Atendidas:* ${staff.completedAppointments || 0}`,
       `💰 *Total Facturado:* ₡${(staff.grossServices || 0).toLocaleString('es-CR')}`,
       `💵 *Comisiones Generadas:* ₡${(staff.totalCommissions || 0).toLocaleString('es-CR')}`,
-      `📉 *Vales / Anticipos:* -₡${(staff.totalAdvances || 0).toLocaleString('es-CR')}`,
+      `🏷️ *Vales Aplicados:* -₡${(staff.totalAdvancesApplied || 0).toLocaleString('es-CR')}`,
+      `⏳ *Vales Pendientes:* ₡${(staff.totalAdvancesPending || 0).toLocaleString('es-CR')}`,
       `✅ *Total Ya Liquidado:* -₡${(staff.totalSettled || 0).toLocaleString('es-CR')}`,
       `----------------------------------------`,
       `👉 *SALDO PENDIENTE DE PAGO:* *₡${(staff.pendingCommission || 0).toLocaleString('es-CR')}*`,
@@ -16696,18 +16768,22 @@ Esperamos atenderle pronto de nuevo.`;
             </div>
 
             <!-- Mini desglose de montos -->
-            <div class="grid grid-cols-3 gap-2 sm:gap-4 pt-4 text-center">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-4 text-center">
               <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
                 <span class="text-[10px] sm:text-xs text-slate-400 block font-medium">Ganadas</span>
                 <span class="text-xs sm:text-sm font-black text-white mt-0.5 block">₡${(earnings.totalEarned || 0).toLocaleString('es-CR')}</span>
               </div>
               <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
-                <span class="text-[10px] sm:text-xs text-amber-400 block font-medium">Vales Recibidos</span>
-                <span class="text-xs sm:text-sm font-black text-amber-400 mt-0.5 block">-₡${(earnings.totalAdvances || 0).toLocaleString('es-CR')}</span>
+                <span class="text-[10px] sm:text-xs text-slate-400 block font-medium">Vales Aplicados</span>
+                <span class="text-xs sm:text-sm font-black text-slate-300 mt-0.5 block">-₡${(earnings.totalAdvancesApplied || 0).toLocaleString('es-CR')}</span>
               </div>
               <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
-                <span class="text-[10px] sm:text-xs text-slate-400 block font-medium">Ya Cobrado</span>
-                <span class="text-xs sm:text-sm font-black text-slate-300 mt-0.5 block">-₡${(earnings.totalPaidOut || 0).toLocaleString('es-CR')}</span>
+                <span class="text-[10px] sm:text-xs text-amber-400 block font-medium">Vales Pendientes</span>
+                <span class="text-xs sm:text-sm font-black text-amber-400 mt-0.5 block">₡${(earnings.totalAdvancesPending || 0).toLocaleString('es-CR')}</span>
+              </div>
+              <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
+                <span class="text-[10px] sm:text-xs text-emerald-400 block font-medium">Ya Liquidado</span>
+                <span class="text-xs sm:text-sm font-black text-emerald-400 mt-0.5 block">-₡${(earnings.totalPaidOut || 0).toLocaleString('es-CR')}</span>
               </div>
             </div>
           </div>

@@ -1563,6 +1563,8 @@ class StorageService {
               completedAppointments: s.completedAppointments !== undefined ? s.completedAppointments : (s.appointmentsCount || 0),
               grossServices: s.grossServices !== undefined ? s.grossServices : (s.totalServiceRevenue || 0),
               totalCommissions: s.totalCommissions !== undefined ? s.totalCommissions : (s.totalCommissionEarned || 0),
+              totalAdvancesApplied: s.totalAdvancesApplied || 0,
+              totalAdvancesPending: s.totalAdvancesPending || 0,
               totalAdvances: s.totalAdvances || 0,
               totalSettled: s.totalSettled !== undefined ? s.totalSettled : (s.totalPaidOut || 0),
               pendingCommission: s.pendingCommission !== undefined ? s.pendingCommission : (s.balanceDue || 0)
@@ -1570,6 +1572,8 @@ class StorageService {
             const summary = {
               totalGross: staff.reduce((acc, s) => acc + (s.grossServices || 0), 0),
               totalCommissions: staff.reduce((acc, s) => acc + (s.totalCommissions || 0), 0),
+              totalAdvancesApplied: staff.reduce((acc, s) => acc + (s.totalAdvancesApplied || 0), 0),
+              totalAdvancesPending: staff.reduce((acc, s) => acc + (s.totalAdvancesPending || 0), 0),
               totalAdvances: staff.reduce((acc, s) => acc + (s.totalAdvances || 0), 0),
               totalPending: staff.reduce((acc, s) => acc + (s.pendingCommission || 0), 0)
             };

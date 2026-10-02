@@ -3419,13 +3419,13 @@ app.post('/api/businesses/:id/pos/expense', async (req, res) => {
       staffName
     ]);
 
-    // Si es vale/adelanto a colaborador, registrar también en tabla de liquidaciones
+    // Si es vale/adelanto a colaborador, registrar también en tabla de liquidaciones con status pending
     if ((category === 'staff_advance' || category === 'vale') && staffId) {
       const payoutId = `pay-${Date.now()}`;
       await pool.query(`
         INSERT INTO reservas_staff_payouts (
-          id, business_id, staff_id, type, amount, notes
-        ) VALUES ($1, $2, $3, 'advance_vale', $4, $5)
+          id, business_id, staff_id, type, amount, status, deducted_amount, notes
+        ) VALUES ($1, $2, $3, 'advance_vale', $4, 'pending', 0, $5)
       `, [payoutId, businessId, staffId, parseFloat(amount), description.trim()]);
     }
 
@@ -3562,15 +3562,24 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
         return sum + (s.commission_type === 'fixed' ? rate : Math.round((price * rate) / 100));
       }, 0);
 
-      const totalAdvances = staffPayouts
+      // Vales aplicados (descontados previamente)
+      const totalAdvancesApplied = staffPayouts
         .filter(p => p.type === 'advance_vale')
-        .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        .reduce((sum, p) => sum + parseFloat(p.deducted_amount || 0), 0);
+
+      // Vales pendientes activos
+      const totalAdvancesPending = staffPayouts
+        .filter(p => p.type === 'advance_vale' && (p.status === 'pending' || p.status === 'partially_settled' || (parseFloat(p.amount || 0) > parseFloat(p.deducted_amount || 0))))
+        .reduce((sum, p) => sum + Math.max(0, parseFloat(p.amount || 0) - parseFloat(p.deducted_amount || 0)), 0);
+
+      // Total acumulado histórico de vales
+      const totalAdvances = totalAdvancesApplied + totalAdvancesPending;
 
       const totalPaidOut = staffPayouts
         .filter(p => p.type === 'commission_payout')
         .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
-      const balanceDue = Math.max(0, totalCommissionEarned - totalAdvances - totalPaidOut);
+      const balanceDue = Math.max(0, totalCommissionEarned - totalAdvancesApplied - totalAdvancesPending - totalPaidOut);
 
       return {
         id: s.id,
@@ -3589,6 +3598,8 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
         grossServices: totalServiceRevenue,
         totalCommissionEarned,
         totalCommissions: totalCommissionEarned,
+        totalAdvancesApplied,
+        totalAdvancesPending,
         totalAdvances,
         totalPaidOut,
         totalSettled: totalPaidOut,
@@ -3598,6 +3609,8 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
           id: p.id,
           type: p.type,
           amount: parseFloat(p.amount),
+          status: p.status || 'settled',
+          deductedAmount: parseFloat(p.deducted_amount || 0),
           notes: p.notes,
           createdAt: p.created_at
         }))
@@ -3607,6 +3620,8 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
     const summary = {
       totalGross: report.reduce((sum, s) => sum + (s.totalServiceRevenue || 0), 0),
       totalCommissions: report.reduce((sum, s) => sum + (s.totalCommissionEarned || 0), 0),
+      totalAdvancesApplied: report.reduce((sum, s) => sum + (s.totalAdvancesApplied || 0), 0),
+      totalAdvancesPending: report.reduce((sum, s) => sum + (s.totalAdvancesPending || 0), 0),
       totalAdvances: report.reduce((sum, s) => sum + (s.totalAdvances || 0), 0),
       totalSettled: report.reduce((sum, s) => sum + (s.totalPaidOut || 0), 0),
       totalPending: report.reduce((sum, s) => sum + (s.balanceDue || 0), 0),
@@ -3632,35 +3647,108 @@ app.post('/api/businesses/:id/staff-payouts', async (req, res) => {
     if (bizCheck.rows.length > 0) {
       businessId = bizCheck.rows[0].id;
     }
-    const { staffId, type = 'commission_payout', amount, notes = '', periodStart = null, periodEnd = null } = req.body;
+    const { 
+      staffId, 
+      type = 'commission_payout', 
+      amount = 0, 
+      notes = '', 
+      periodStart = null, 
+      periodEnd = null,
+      deductPendingVales = true,
+      deductValeAmount = null
+    } = req.body;
 
     if (!staffId) {
       return res.status(400).json({ error: 'staffId es obligatorio.' });
     }
-    if (!amount || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: 'El monto debe ser mayor a 0.' });
+
+    const numAmount = parseFloat(amount || 0);
+
+    if (type === 'advance_vale') {
+      if (numAmount <= 0) {
+        return res.status(400).json({ error: 'El monto del vale debe ser mayor a 0.' });
+      }
+      const payoutId = `pay-${Date.now()}`;
+      await pool.query(`
+        INSERT INTO reservas_staff_payouts (
+          id, business_id, staff_id, type, amount, status, deducted_amount, notes, period_start, period_end
+        ) VALUES ($1, $2, $3, 'advance_vale', $4, 'pending', 0, $5, $6, $7)
+      `, [payoutId, businessId, staffId, numAmount, notes.trim(), periodStart, periodEnd]);
+
+      return res.status(201).json({
+        success: true,
+        message: 'Vale / Adelanto registrado con éxito.',
+        payoutId
+      });
+    }
+
+    // Liquidación de comisiones ('commission_payout'):
+    let totalDeductedFromVales = 0;
+    if (deductPendingVales) {
+      const pendingValesRes = await pool.query(`
+        SELECT id, amount, COALESCE(deducted_amount, 0) as deducted_amount
+        FROM reservas_staff_payouts
+        WHERE business_id = $1 AND staff_id = $2 AND type = 'advance_vale'
+          AND (status IN ('pending', 'partially_settled') OR amount > COALESCE(deducted_amount, 0))
+        ORDER BY created_at ASC
+      `, [businessId, staffId]);
+
+      let maxToDeduct = deductValeAmount !== null ? parseFloat(deductValeAmount) : Infinity;
+
+      for (const v of pendingValesRes.rows) {
+        if (maxToDeduct <= 0) break;
+        const vAmt = parseFloat(v.amount || 0);
+        const vDeducted = parseFloat(v.deducted_amount || 0);
+        const vPending = Math.max(0, vAmt - vDeducted);
+        if (vPending <= 0) continue;
+
+        const deductNow = Math.min(vPending, maxToDeduct);
+        const newDeducted = vDeducted + deductNow;
+        const newStatus = newDeducted >= vAmt ? 'settled' : 'partially_settled';
+
+        await pool.query(`
+          UPDATE reservas_staff_payouts
+          SET deducted_amount = $1, status = $2
+          WHERE id = $3
+        `, [newDeducted, newStatus, v.id]);
+
+        totalDeductedFromVales += deductNow;
+        if (deductValeAmount !== null) {
+          maxToDeduct -= deductNow;
+        }
+      }
+    }
+
+    if (numAmount <= 0 && totalDeductedFromVales <= 0) {
+      return res.status(400).json({ error: 'El monto a liquidar o a descontar de vales debe ser mayor a 0.' });
     }
 
     const payoutId = `pay-${Date.now()}`;
     await pool.query(`
       INSERT INTO reservas_staff_payouts (
-        id, business_id, staff_id, type, amount, notes, period_start, period_end
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        id, business_id, staff_id, type, amount, status, deducted_amount, notes, period_start, period_end
+      ) VALUES ($1, $2, $3, 'commission_payout', $4, 'settled', $4, $5, $6, $7)
     `, [
       payoutId,
       businessId,
       staffId,
-      type,
-      parseFloat(amount),
-      notes.trim(),
+      numAmount,
+      totalDeductedFromVales > 0 && numAmount === 0 
+        ? `Amortización de vales pendientes por ₡${totalDeductedFromVales.toLocaleString('es-CR')}. ${notes.trim()}`.trim()
+        : notes.trim(),
       periodStart,
       periodEnd
     ]);
 
+    const msg = numAmount > 0
+      ? `Liquidación de ₡${numAmount.toLocaleString('es-CR')} registrada con éxito.${totalDeductedFromVales > 0 ? ` Se descontaron ₡${totalDeductedFromVales.toLocaleString('es-CR')} de vales pendientes.` : ''}`
+      : `Se amortizaron ₡${totalDeductedFromVales.toLocaleString('es-CR')} de vales pendientes con éxito.`;
+
     res.status(201).json({
       success: true,
-      message: type === 'advance_vale' ? 'Vale / Adelanto registrado con éxito.' : 'Liquidación registrada con éxito.',
-      payoutId
+      message: msg,
+      payoutId,
+      deductedFromVales: totalDeductedFromVales
     });
   } catch (error) {
     console.error('Error registrando pago a staff:', error);
@@ -3862,15 +3950,23 @@ app.get('/api/staff/me/dashboard', authenticateToken, async (req, res) => {
         return sum + (staff.commission_type === 'fixed' ? rate : Math.round((price * rate) / 100));
       }, 0);
 
-    const totalAdvances = payoutsRes.rows
+    // Vales aplicados (descontados previamente)
+    const totalAdvancesApplied = payoutsRes.rows
       .filter(p => p.type === 'advance_vale')
-      .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+      .reduce((sum, p) => sum + parseFloat(p.deducted_amount || 0), 0);
+
+    // Vales pendientes activos
+    const totalAdvancesPending = payoutsRes.rows
+      .filter(p => p.type === 'advance_vale' && (p.status === 'pending' || p.status === 'partially_settled' || (parseFloat(p.amount || 0) > parseFloat(p.deducted_amount || 0))))
+      .reduce((sum, p) => sum + Math.max(0, parseFloat(p.amount || 0) - parseFloat(p.deducted_amount || 0)), 0);
+
+    const totalAdvances = totalAdvancesApplied + totalAdvancesPending;
 
     const totalPaidOut = payoutsRes.rows
       .filter(p => p.type === 'commission_payout')
       .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
-    const balanceDue = Math.max(0, totalEarned - totalAdvances - totalPaidOut);
+    const balanceDue = Math.max(0, totalEarned - totalAdvancesApplied - totalAdvancesPending - totalPaidOut);
 
     res.json({
       staff: {
@@ -3893,6 +3989,8 @@ app.get('/api/staff/me/dashboard', authenticateToken, async (req, res) => {
       },
       earnings: {
         totalEarned,
+        totalAdvancesApplied,
+        totalAdvancesPending,
         totalAdvances,
         totalPaidOut,
         balanceDue,

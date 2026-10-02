@@ -456,12 +456,16 @@ export async function initDatabase(customPool = null) {
         staff_id VARCHAR(50) NOT NULL REFERENCES reservas_staff(id) ON DELETE CASCADE,
         type VARCHAR(30) NOT NULL, -- 'commission_payout', 'advance_vale', 'bonus', 'penalty'
         amount NUMERIC(12,2) NOT NULL,
+        status VARCHAR(30) DEFAULT 'pending', -- 'pending', 'settled', 'partially_settled'
+        deducted_amount NUMERIC(12,2) DEFAULT 0,
         notes TEXT DEFAULT '',
         period_start DATE NULL,
         period_end DATE NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS idx_staff_payouts_biz_staff ON reservas_staff_payouts (business_id, staff_id);
+      ALTER TABLE reservas_staff_payouts ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'pending';
+      ALTER TABLE reservas_staff_payouts ADD COLUMN IF NOT EXISTS deducted_amount NUMERIC(12,2) DEFAULT 0;
     `);
 
 
