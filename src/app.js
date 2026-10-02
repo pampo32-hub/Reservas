@@ -24589,13 +24589,80 @@ Esperamos atenderle pronto de nuevo.`;
     });
   }
 
+  // --- DETENCIÓN Y LIBERACIÓN TOTAL DE CÁMARA (HARDWARE & SOFTWARE) ---
+  stopActiveCamera() {
+    try {
+      // 1. Apagado inmediato y síncrono de todas las pistas (MediaStreamTracks) en cualquier <video> del DOM
+      const videos = document.querySelectorAll('#loyalty-scanner-viewport video, #modal-container video, video');
+      videos.forEach(video => {
+        try {
+          if (video.srcObject) {
+            const stream = video.srcObject;
+            if (typeof stream.getTracks === 'function') {
+              stream.getTracks().forEach(track => {
+                try {
+                  track.enabled = false;
+                  track.stop();
+                } catch (_) {}
+              });
+            }
+            video.srcObject = null;
+          }
+          video.pause();
+          video.removeAttribute('src');
+          video.load();
+        } catch (_) {}
+      });
+
+      // 2. Apagado de pistas si se guardó referencia directa al stream
+      if (this._activeCameraStream) {
+        try {
+          if (typeof this._activeCameraStream.getTracks === 'function') {
+            this._activeCameraStream.getTracks().forEach(track => {
+              try {
+                track.enabled = false;
+                track.stop();
+              } catch (_) {}
+            });
+          }
+        } catch (_) {}
+        this._activeCameraStream = null;
+      }
+
+      // 3. Detención controlada de la instancia de Html5Qrcode
+      const scanner = this._activeQrScanner;
+      this._activeQrScanner = null;
+
+      if (scanner) {
+        try {
+          const isScanning = scanner.isScanning || (typeof scanner.getState === 'function' && scanner.getState() !== 1);
+          if (isScanning) {
+            scanner.stop().catch(err => console.warn('scanner.stop advertencia:', err));
+          }
+        } catch (e) {
+          console.warn('Fallo deteniendo scanner:', e);
+        }
+
+        try {
+          scanner.clear().catch(err => console.warn('scanner.clear advertencia:', err));
+        } catch (e) {
+          console.warn('Fallo limpiando scanner:', e);
+        }
+      }
+    } catch (err) {
+      console.warn('Error en stopActiveCamera:', err);
+    }
+  }
+
   // --- CIERRE CENTRALIZADO DE MODALES ---
   closeCurrentModal() {
+    this.stopActiveCamera();
     this.closeBookingModal();
     const modalContainer = document.getElementById('modal-container');
     if (modalContainer) modalContainer.innerHTML = '';
     const legalContainer = document.getElementById('legal-modal-container');
     if (legalContainer) legalContainer.innerHTML = '';
+    this.startLoyaltyScanner = null;
   }
 
   // --- EVENTOS GLOBALES ---
@@ -24605,6 +24672,10 @@ Esperamos atenderle pronto de nuevo.`;
 
     // Helper global para apertura infalible del escáner de sellos
     window.openStampScannerModal = (bizId = null) => this.renderStampModal(bizId);
+
+    // Garantizar que la cámara siempre se apague si el usuario cambia de pestaña, minimiza o cierra la app
+    window.addEventListener('pagehide', () => this.stopActiveCamera());
+    window.addEventListener('beforeunload', () => this.stopActiveCamera());
 
     window.addEventListener('keydown', (e) => {
       // Escape para cerrar cualquier modal
@@ -25758,8 +25829,8 @@ Esperamos atenderle pronto de nuevo.`;
     }).catch(err => console.warn('Aviso cargando programa de fidelización:', err));
 
     modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
-        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden max-h-[92vh] flex flex-col">
+      <div id="stamp-modal-backdrop" class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md overflow-hidden max-h-[92vh] flex flex-col" onclick="event.stopPropagation()">
           
           <!-- Encabezado Modal -->
           <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-emerald-600 to-teal-700 text-white shrink-0">
@@ -25772,7 +25843,7 @@ Esperamos atenderle pronto de nuevo.`;
                 <p id="stamp-modal-meta-label" class="text-[11px] text-emerald-100 font-medium">Meta: ${program.target_stamps} sellos = ${program.reward_description}</p>
               </div>
             </div>
-            <button id="close-stamp-modal-btn" class="modal-close-btn w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all cursor-pointer">
+            <button id="close-stamp-modal-btn" class="modal-close-btn w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all cursor-pointer" data-close-modal="true" title="Cerrar escáner">
               <i class="fas fa-times text-sm"></i>
             </button>
           </div>
@@ -25858,6 +25929,8 @@ Esperamos atenderle pronto de nuevo.`;
     let html5QrCode = null;
     const startScanner = async () => {
       try {
+        await this.stopActiveCamera();
+
         const QrClass = typeof Html5Qrcode !== 'undefined' ? Html5Qrcode : window.Html5Qrcode;
         if (!QrClass) {
           console.warn('Html5Qrcode no está cargado');
@@ -25866,6 +25939,7 @@ Esperamos atenderle pronto de nuevo.`;
         }
         const viewport = document.getElementById('loyalty-scanner-viewport');
         if (!viewport) return;
+        viewport.innerHTML = '';
 
         html5QrCode = new QrClass("loyalty-scanner-viewport");
         this._activeQrScanner = html5QrCode;
@@ -25876,13 +25950,43 @@ Esperamos atenderle pronto de nuevo.`;
           async (decodedText) => {
             console.log("QR Detectado:", decodedText);
             this.playSuccessChime();
-            try {
-              await html5QrCode.stop();
-            } catch(e) {}
+
+            // 1. APAGAR Y LIBERAR CÁMARA DE INMEDIATO (apaga el indicador de grabación en el teléfono)
+            this.stopActiveCamera();
+
+            // 2. Feedback visual claro en el visor de cámara
+            const vp = document.getElementById('loyalty-scanner-viewport');
+            if (vp) {
+              vp.innerHTML = `
+                <div class="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-4 text-center animate-fade-in">
+                  <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mb-2 border border-emerald-500/30 shadow-inner">
+                    <i class="fas fa-check"></i>
+                  </div>
+                  <p class="text-xs font-black text-white">¡QR Reconocido!</p>
+                  <p class="text-[10px] text-emerald-400 font-bold mt-0.5">Cámara liberada</p>
+                </div>
+              `;
+            }
+            const statusEl = document.getElementById('loyalty-scanner-status');
+            if (statusEl) {
+              statusEl.innerHTML = `
+                <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <i class="fas fa-check-circle mr-1"></i> Tarjeta identificada correctamente
+                </p>
+              `;
+            }
+
+            // 3. Procesar previsualización de sellos
             this.handleStampPreview(targetBizId, decodedText, program);
           },
           (errorMessage) => {}
         );
+
+        // Guardar referencia al stream activo para garantizar apagado inmediato
+        const activeVid = viewport.querySelector('video');
+        if (activeVid && activeVid.srcObject) {
+          this._activeCameraStream = activeVid.srcObject;
+        }
       } catch (err) {
         console.warn('Cámara no iniciada:', err);
         const statusEl = document.getElementById('loyalty-scanner-status');
@@ -25898,13 +26002,10 @@ Esperamos atenderle pronto de nuevo.`;
       }
     };
 
+    this.startLoyaltyScanner = startScanner;
+
     const cleanupModal = () => {
-      if (html5QrCode) {
-        try { html5QrCode.stop(); } catch(e){}
-        html5QrCode = null;
-        this._activeQrScanner = null;
-      }
-      modalContainer.innerHTML = '';
+      this.closeCurrentModal();
     };
 
     document.getElementById('close-stamp-modal-btn')?.addEventListener('click', cleanupModal);
@@ -25915,18 +26016,16 @@ Esperamos atenderle pronto de nuevo.`;
     const panelCam = document.getElementById('stamp-camera-panel');
     const panelPhone = document.getElementById('stamp-phone-panel');
 
-    btnTabCam?.addEventListener('click', () => {
+    btnTabCam?.addEventListener('click', async () => {
       btnTabCam.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 cursor-pointer';
       btnTabPhone.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer';
       panelCam.classList.remove('hidden');
       panelPhone.classList.add('hidden');
-      startScanner();
+      await startScanner();
     });
 
-    const switchToPhone = () => {
-      if (html5QrCode) {
-        try { html5QrCode.stop(); } catch(e){}
-      }
+    const switchToPhone = async () => {
+      this.stopActiveCamera();
       btnTabPhone.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs border border-slate-200/80 dark:border-slate-700 cursor-pointer';
       btnTabCam.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer';
       panelCam.classList.add('hidden');
@@ -26110,18 +26209,34 @@ Esperamos atenderle pronto de nuevo.`;
       }
     });
 
-    document.getElementById('btn-stamp-another-client')?.addEventListener('click', () => {
+    document.getElementById('btn-stamp-another-client')?.addEventListener('click', async () => {
       resultContainer.classList.add('hidden');
       resultContainer.innerHTML = '';
       const manualPhoneInput = document.getElementById('stamp-manual-phone');
       if (manualPhoneInput) manualPhoneInput.value = '';
       const manualNameInput = document.getElementById('stamp-manual-name');
       if (manualNameInput) manualNameInput.value = '';
+
+      // Si el tab de cámara está visible, reactivar el escáner para el siguiente cliente
+      const panelCam = document.getElementById('stamp-camera-panel');
+      if (panelCam && !panelCam.classList.contains('hidden')) {
+        const statusEl = document.getElementById('loyalty-scanner-status');
+        if (statusEl) {
+          statusEl.innerHTML = `
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-300">
+              <i class="fas fa-satellite-dish text-emerald-500 animate-pulse mr-1"></i> Apunta al QR que te muestra el cliente
+            </p>
+            <p class="text-[11px] text-slate-400 mt-0.5">El reconocimiento de la tarjeta es automático</p>
+          `;
+        }
+        if (typeof this.startLoyaltyScanner === 'function') {
+          await this.startLoyaltyScanner();
+        }
+      }
     });
 
     document.getElementById('btn-stamp-done-close')?.addEventListener('click', () => {
-      const modalContainer = document.getElementById('modal-container');
-      if (modalContainer) modalContainer.innerHTML = '';
+      this.closeCurrentModal();
     });
   }
 
