@@ -12271,7 +12271,12 @@ Esperamos atenderle pronto de nuevo.`;
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const expectedCash = session.expectedCash || 0;
+    const initialCash = Number(session.initialCash) || 0;
+    const cashSales = Number(session.cashSales !== undefined ? session.cashSales : (session.cashIncomes || 0));
+    const cashExpenses = Number(session.cashExpenses !== undefined ? session.cashExpenses : (session.expenses || 0));
+    const expectedCash = (session.expectedCash !== undefined && session.expectedCash !== null)
+      ? Number(session.expectedCash)
+      : (initialCash + cashSales - cashExpenses);
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -12296,15 +12301,15 @@ Esperamos atenderle pronto de nuevo.`;
             <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
               <div class="flex items-center justify-between text-slate-600">
                 <span>Base Inicial de Caja:</span>
-                <span class="font-bold text-slate-900">${this.formatColones(session.initialCash || 0)}</span>
+                <span class="font-bold text-slate-900">${this.formatColones(initialCash)}</span>
               </div>
               <div class="flex items-center justify-between text-emerald-700">
                 <span>(+) Cobros en Efectivo:</span>
-                <span class="font-bold">+${this.formatColones(session.cashSales || 0)}</span>
+                <span class="font-bold">+${this.formatColones(cashSales)}</span>
               </div>
               <div class="flex items-center justify-between text-rose-700">
                 <span>(-) Salidas de Efectivo / Vales:</span>
-                <span class="font-bold">-${this.formatColones(session.cashExpenses || 0)}</span>
+                <span class="font-bold">-${this.formatColones(cashExpenses)}</span>
               </div>
               <div class="pt-2 border-t border-slate-200 flex items-center justify-between font-black text-sm">
                 <span class="text-slate-900">Efectivo Esperado en Gaveta:</span>
@@ -12510,15 +12515,15 @@ Esperamos atenderle pronto de nuevo.`;
                 <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-[11px] text-slate-600">
                   <div>
                     <span class="text-slate-400 block text-[10px]">Base inicial:</span>
-                    <span class="font-bold text-slate-900">${this.formatColones(item.initial_cash || 0)}</span>
+                    <span class="font-bold text-slate-900">${this.formatColones(item.initialCash || item.initial_cash || 0)}</span>
                   </div>
                   <div>
                     <span class="text-slate-400 block text-[10px]">Esperado:</span>
-                    <span class="font-bold text-slate-900">${this.formatColones(item.expected_cash || 0)}</span>
+                    <span class="font-bold text-slate-900">${this.formatColones(item.expectedCash || item.expected_cash || 0)}</span>
                   </div>
                   <div>
                     <span class="text-slate-400 block text-[10px]">Físico Contado:</span>
-                    <span class="font-bold text-slate-900">${this.formatColones(item.final_cash_counted || 0)}</span>
+                    <span class="font-bold text-slate-900">${this.formatColones(item.finalCashCounted !== null && item.finalCashCounted !== undefined ? item.finalCashCounted : (item.final_cash_counted || 0))}</span>
                   </div>
                 </div>
 

@@ -2911,6 +2911,8 @@ app.get('/api/businesses/:id/cash-register/current', async (req, res) => {
         COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'card' THEN amount ELSE 0 END), 0) as card_incomes,
         COALESCE(SUM(CASE WHEN type = 'income' AND payment_method NOT IN ('cash', 'sinpe', 'card') THEN amount ELSE 0 END), 0) as other_incomes,
         COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses,
+        COALESCE(SUM(CASE WHEN type = 'expense' AND payment_method = 'cash' THEN amount ELSE 0 END), 0) as cash_expenses,
+        COALESCE(SUM(CASE WHEN type = 'expense' AND payment_method != 'cash' THEN amount ELSE 0 END), 0) as other_expenses,
         COUNT(*) as total_transactions
       FROM reservas_pos_transactions
       WHERE cash_register_id = $1
@@ -2923,8 +2925,10 @@ app.get('/api/businesses/:id/cash-register/current', async (req, res) => {
     const cardIncomes = parseFloat(stats.card_incomes || 0);
     const otherIncomes = parseFloat(stats.other_incomes || 0);
     const expenses = parseFloat(stats.expenses || 0);
+    const cashExpenses = parseFloat(stats.cash_expenses !== undefined ? stats.cash_expenses : stats.expenses || 0);
+    const otherExpenses = parseFloat(stats.other_expenses || 0);
 
-    const expectedCash = initialCash + cashIncomes - expenses;
+    const expectedCash = initialCash + cashIncomes - cashExpenses;
     const totalSales = cashIncomes + sinpeIncomes + cardIncomes + otherIncomes;
 
     // Obtener los movimientos detallados de este turno para mostrar en vivo
@@ -2961,6 +2965,8 @@ app.get('/api/businesses/:id/cash-register/current', async (req, res) => {
         cardSales: cardIncomes,
         otherSales: otherIncomes,
         expenses,
+        cashExpenses,
+        otherExpenses,
         totalSales,
         totalTransactions: parseInt(stats.total_transactions, 10) || 0,
         notes: reg.notes,
@@ -3053,7 +3059,8 @@ app.post('/api/businesses/:id/cash-register/close', async (req, res) => {
     const txRes = await pool.query(`
       SELECT 
         COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'cash' THEN amount ELSE 0 END), 0) as cash_incomes,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses,
+        COALESCE(SUM(CASE WHEN type = 'expense' AND payment_method = 'cash' THEN amount ELSE 0 END), 0) as cash_expenses
       FROM reservas_pos_transactions
       WHERE cash_register_id = $1
     `, [reg.id]);
@@ -3061,7 +3068,8 @@ app.post('/api/businesses/:id/cash-register/close', async (req, res) => {
     const initialCash = parseFloat(reg.initial_cash || 0);
     const cashIncomes = parseFloat(txRes.rows[0].cash_incomes || 0);
     const expenses = parseFloat(txRes.rows[0].expenses || 0);
-    const expectedCash = initialCash + cashIncomes - expenses;
+    const cashExpenses = parseFloat(txRes.rows[0].cash_expenses !== undefined ? txRes.rows[0].cash_expenses : expenses);
+    const expectedCash = initialCash + cashIncomes - cashExpenses;
 
     const counted = finalCashCounted !== undefined && finalCashCounted !== null ? parseFloat(finalCashCounted) : expectedCash;
     const difference = counted - expectedCash;
@@ -3086,6 +3094,7 @@ app.post('/api/businesses/:id/cash-register/close', async (req, res) => {
         initialCash,
         cashIncomes,
         expenses,
+        cashExpenses,
         expectedCash,
         finalCashCounted: counted,
         difference,
