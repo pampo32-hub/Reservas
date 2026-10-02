@@ -700,11 +700,25 @@ class App {
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('reservas_active_owner_tab', initialRoute.params.tab);
         }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('reservas_active_owner_tab', initialRoute.params.tab);
+        }
       } else if (this.currentView === 'developer-dashboard') {
         this.activeDevTab = initialRoute.params.tab;
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('reservas_active_dev_tab', initialRoute.params.tab);
         }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('reservas_active_dev_tab', initialRoute.params.tab);
+        }
+      }
+    }
+    if (this.currentView === 'owner-dashboard') {
+      const initialSubTab = initialRoute.params.subtab 
+        || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_team_subtab') : null) 
+        || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null);
+      if (initialSubTab) {
+        this.teamSubTab = initialSubTab;
       }
     }
 
@@ -874,8 +888,20 @@ class App {
       case 'staff-portal':
         return '/colaborador';
       case 'owner-dashboard': {
-        const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
-        return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
+        const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+        const subtab = params.subtab || (tab === 'team' ? (this.teamSubTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_team_subtab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null)) : null);
+        let url = '/panel-negocio';
+        const queryParts = [];
+        if (tab && tab !== 'appointments') {
+          queryParts.push(`tab=${encodeURIComponent(tab)}`);
+        }
+        if (tab === 'team' && subtab && subtab !== 'specialists') {
+          queryParts.push(`subtab=${encodeURIComponent(subtab)}`);
+        }
+        if (queryParts.length > 0) {
+          url += `?${queryParts.join('&')}`;
+        }
+        return url;
       }
       case 'developer-dashboard': {
         const tab = params.tab || this.activeDevTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : 'alerts');
@@ -954,9 +980,17 @@ class App {
         return { view: 'my-client-bookings', params: {} };
       }
       if (/^\/?(panel-negocio|panel-negocios|panel|dashboard|owner|mi-negocio|mi-panel)$/i.test(pathname)) {
-        let tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+        let tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
         if (tab === 'config' || tab === 'perfil') tab = 'profile';
-        return { view: 'owner-dashboard', params: { tab } };
+        let subtab = searchParams.get('subtab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_team_subtab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null) || null;
+        if (tab === 'commissions' || tab === 'liquidaciones') {
+          tab = 'team';
+          subtab = 'commissions';
+        } else if (tab === 'specialists' || tab === 'especialistas') {
+          tab = 'team';
+          subtab = 'specialists';
+        }
+        return { view: 'owner-dashboard', params: { tab, subtab } };
       }
       if (/^\/?(colaborador|portal-colaborador|staff|portal-staff)$/i.test(pathname)) {
         return { view: 'staff-portal', params: {} };
@@ -999,7 +1033,9 @@ class App {
         const savedBizId = sessionStorage.getItem('reservas_selected_biz_id');
 
         if (savedView === 'owner-dashboard' && storage.getBusinessUser()) {
-          return { view: 'owner-dashboard', params: { tab: savedOwnerTab } };
+          const savedOwnerTab = sessionStorage.getItem('reservas_active_owner_tab') || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+          const savedTeamSubTab = sessionStorage.getItem('reservas_active_team_subtab') || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null) || 'specialists';
+          return { view: 'owner-dashboard', params: { tab: savedOwnerTab, subtab: savedTeamSubTab } };
         }
         if (savedView === 'staff-portal' && storage.getStaffUser()) {
           return { view: 'staff-portal', params: {} };
@@ -1089,9 +1125,17 @@ class App {
     if (/^#\/?(panel-negocio|panel-negocios|panel|dashboard|owner|mi-negocio|mi-panel)/i.test(cleanHash)) {
       const hashQuery = cleanHash.includes('?') ? cleanHash.split('?')[1] : '';
       const hashParams = new URLSearchParams(hashQuery);
-      let tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
+      let tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
       if (tab === 'config' || tab === 'perfil') tab = 'profile';
-      return { view: 'owner-dashboard', params: { tab } };
+      let subtab = hashParams.get('subtab') || searchParams.get('subtab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_team_subtab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null) || null;
+      if (tab === 'commissions' || tab === 'liquidaciones') {
+        tab = 'team';
+        subtab = 'commissions';
+      } else if (tab === 'specialists' || tab === 'especialistas') {
+        tab = 'team';
+        subtab = 'specialists';
+      }
+      return { view: 'owner-dashboard', params: { tab, subtab } };
     }
 
     // 7.1 Portal de Colaboradores en hash
@@ -1150,11 +1194,26 @@ class App {
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('reservas_active_owner_tab', params.tab);
         }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('reservas_active_owner_tab', params.tab);
+        }
       } else if (view === 'developer-dashboard') {
         this.activeDevTab = params.tab;
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('reservas_active_dev_tab', params.tab);
         }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('reservas_active_dev_tab', params.tab);
+        }
+      }
+    }
+    if (params.subtab && view === 'owner-dashboard') {
+      this.teamSubTab = params.subtab;
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('reservas_active_team_subtab', params.subtab);
+      }
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('reservas_active_team_subtab', params.subtab);
       }
     }
 
@@ -8127,9 +8186,13 @@ class App {
         if (typeof sessionStorage !== 'undefined') {
           sessionStorage.setItem('reservas_active_owner_tab', tab);
         }
-        const newUrl = this.getUrlForView('owner-dashboard', { tab });
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('reservas_active_owner_tab', tab);
+        }
+        const subtabParam = (tab === 'team') ? (this.teamSubTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_team_subtab') : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null)) : null;
+        const newUrl = this.getUrlForView('owner-dashboard', { tab, subtab: subtabParam });
         if (window.history && window.history.replaceState) {
-          window.history.replaceState({ view: 'owner-dashboard', params: { tab } }, '', newUrl);
+          window.history.replaceState({ view: 'owner-dashboard', params: { tab, subtab: subtabParam } }, '', newUrl);
         }
         this.renderCurrentView();
       });
@@ -15598,7 +15661,15 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- SUB-CONTENIDO: GESTIÓN DE EQUIPO Y ESPECIALISTAS ---
   renderTeamTabContent(currentBiz) {
-    this.teamSubTab = this.teamSubTab || 'specialists';
+    if (!this.teamSubTab) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hashQuery = window.location.hash.includes('?') ? window.location.hash.split('?')[1] : '';
+      const hashParams = new URLSearchParams(hashQuery);
+      const subtabFromUrl = urlParams.get('subtab') || hashParams.get('subtab');
+      const subtabFromStorage = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_team_subtab') : null)
+        || (typeof localStorage !== 'undefined' ? localStorage.getItem('reservas_active_team_subtab') : null);
+      this.teamSubTab = this.currentRouteParams?.subtab || subtabFromUrl || subtabFromStorage || 'specialists';
+    }
 
     if (this.teamSubTab === 'commissions') {
       return this.renderCommissionsTabContent(currentBiz);
@@ -16139,6 +16210,16 @@ Esperamos atenderle pronto de nuevo.`;
       btn.addEventListener('click', () => {
         const targetSubTab = btn.getAttribute('data-subtab');
         this.teamSubTab = targetSubTab;
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('reservas_active_team_subtab', targetSubTab);
+        }
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('reservas_active_team_subtab', targetSubTab);
+        }
+        const newUrl = this.getUrlForView('owner-dashboard', { tab: 'team', subtab: targetSubTab });
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({ view: 'owner-dashboard', params: { tab: 'team', subtab: targetSubTab } }, '', newUrl);
+        }
         const tabContent = document.getElementById('dashboard-tab-content');
         if (tabContent) {
           if (this.teamSubTab === 'commissions') {
