@@ -8417,17 +8417,19 @@ app.get('/api/auth/google/callback', async (req, res) => {
           };
           const defaultFeatures = ['Sinpe Móvil', 'Atención Personalizada'];
 
+          const bizSlug = `negocio-${fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}-${Date.now().toString(36).slice(-4)}`;
+
           await pool.query(`
             INSERT INTO reservas_businesses (
-              id, name, category, category_label, rating, reviews_count,
+              id, name, slug, category, category_label, rating, reviews_count,
               price_range, address, city, phone, email, description,
               image, cover_image, schedule, features, is_demo,
               plan, plan_price_usd, monthly_booking_limit,
               auto_confirm_appointments, subscription_status, payment_method,
               nylas_provider, is_email_verified
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
           `, [
-            newBizId, `Negocio de ${fullName}`, 'belleza', 'Salud y Belleza',
+            newBizId, `Negocio de ${fullName}`, bizSlug, 'belleza', 'Salud y Belleza',
             5.0, 0, '₡₡',
             'San José, Costa Rica', 'San José', '', cleanEmail,
             'Servicios profesionales y atención personalizada.',
@@ -8455,7 +8457,8 @@ app.get('/api/auth/google/callback', async (req, res) => {
           sendAdminBusinessRegistrationNotificationEmail({
             business: { id: newBizId, name: `Negocio de ${fullName}`, phone: '', category: 'belleza', categoryLabel: 'Salud y Belleza' },
             ownerName: fullName,
-            email: cleanEmail
+            email: cleanEmail,
+            provider: 'Google'
           }).catch(err => {
             console.error('⚠️ Error no bloqueante notificando registro de negocio por Google al admin:', err.message);
           });
@@ -8901,17 +8904,19 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
           };
           const defaultFeatures = ['Sinpe Móvil', 'Atención Personalizada'];
 
+          const bizSlug = `negocio-${fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}-${Date.now().toString(36).slice(-4)}`;
+
           await pool.query(`
             INSERT INTO reservas_businesses (
-              id, name, category, category_label, rating, reviews_count,
+              id, name, slug, category, category_label, rating, reviews_count,
               price_range, address, city, phone, email, description,
               image, cover_image, schedule, features, is_demo,
               plan, plan_price_usd, monthly_booking_limit,
               auto_confirm_appointments, subscription_status, payment_method,
               nylas_provider, is_email_verified
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
           `, [
-            newBizId, `Negocio de ${fullName}`, 'belleza', 'Salud y Belleza',
+            newBizId, `Negocio de ${fullName}`, bizSlug, 'belleza', 'Salud y Belleza',
             5.0, 0, '₡₡',
             'San José, Costa Rica', 'San José', phoneFromMs || '', cleanEmail,
             'Servicios profesionales y atención personalizada.',
@@ -8939,7 +8944,8 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
           sendAdminBusinessRegistrationNotificationEmail({
             business: { id: newBizId, name: `Negocio de ${fullName}`, phone: phoneFromMs || '', category: 'belleza', categoryLabel: 'Salud y Belleza' },
             ownerName: fullName,
-            email: cleanEmail
+            email: cleanEmail,
+            provider: 'Microsoft'
           }).catch(err => {
             console.error('⚠️ Error no bloqueante notificando registro de negocio por Microsoft al admin:', err.message);
           });

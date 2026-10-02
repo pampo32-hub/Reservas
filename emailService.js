@@ -1378,7 +1378,7 @@ export async function sendAdminBusinessRegistrationNotificationEmail({
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
-        ${cleanPhone ? `
+        ${formattedPhone ? `
         <a href="${waLink}" class="btn btn-wa" target="_blank" style="margin-right: 8px;">
           💬 Escribir por WhatsApp
         </a>` : ''}
@@ -1470,7 +1470,7 @@ export async function sendAdminClientRegistrationNotificationEmail(client = {}) 
         </div>` : ''}
       </div>
 
-      ${cleanPhone ? `
+      ${formattedPhone ? `
       <div style="text-align: center; margin-top: 24px;">
         <a href="${waLink}" style="display: inline-block; background: #22c55e; color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; text-decoration: none;" target="_blank">
           💬 Contactar por WhatsApp
