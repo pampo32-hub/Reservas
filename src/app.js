@@ -13738,31 +13738,38 @@ Esperamos atenderle pronto de nuevo.`;
                   const isSelected = selectedDayIndex === i;
                   const hasSales = d.amount > 0;
                   const heightPct = hasSales 
-                    ? Math.max(18, Math.round((d.amount / maxDayAmount) * 100))
-                    : 14;
+                    ? Math.max(20, Math.round((d.amount / maxDayAmount) * 100))
+                    : 0;
 
                   return `
                     <div 
-                      class="sales-day-bar-btn flex-1 flex flex-col items-center gap-1.5 cursor-pointer group relative py-1 px-0.5 rounded-2xl transition-all ${isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : 'hover:bg-slate-50'}"
+                      class="sales-day-bar-btn flex-1 flex flex-col items-center gap-1.5 cursor-pointer group relative py-1 px-0.5 rounded-2xl transition-all ${isSelected ? 'bg-blue-50/90 ring-2 ring-blue-500 shadow-xs' : 'hover:bg-slate-50'}"
                       data-day-index="${i}"
                     >
                       <!-- Barra vertical completa con track estilo píldora -->
                       <div class="w-full flex items-end justify-center h-24">
                         <div class="w-full max-w-[28px] h-full bg-slate-100/90 rounded-full flex flex-col justify-end p-0.5 border border-slate-200/50 shadow-inner overflow-hidden">
-                          <div 
-                            class="w-full rounded-full transition-all duration-300 ${isSelected || (selectedDayIndex === null && isPeak) ? 'bg-blue-600 shadow-md shadow-blue-500/40' : (hasSales ? 'bg-blue-300 group-hover:bg-blue-400' : 'bg-slate-200/80')}" 
-                            style="height: ${heightPct}%;"
-                          ></div>
+                          ${hasSales ? `
+                            <div 
+                              class="w-full rounded-full transition-all duration-300 ${isSelected ? 'bg-gradient-to-t from-blue-700 to-blue-500 shadow-md shadow-blue-500/50 ring-1 ring-white/50' : (isPeak ? 'bg-gradient-to-t from-blue-600 to-indigo-600 shadow-md shadow-blue-500/30' : 'bg-gradient-to-t from-blue-500 to-sky-400 group-hover:from-blue-600 group-hover:to-sky-500 shadow-xs')}" 
+                              style="height: ${heightPct}%;"
+                            ></div>
+                          ` : isSelected ? `
+                            <!-- Indicador sutil de selección para día sin ventas -->
+                            <div class="w-full h-1.5 bg-blue-500 rounded-full shadow-xs mb-0.5"></div>
+                          ` : `
+                            <!-- Track limpio y vacío para días con ₡0 -->
+                          `}
                         </div>
                       </div>
 
-                      <span class="text-xs font-mono lowercase transition-all ${isSelected || (selectedDayIndex === null && isPeak) ? 'text-blue-600 font-black scale-110' : 'text-slate-500 font-semibold'}">
+                      <span class="text-xs font-mono lowercase transition-all ${isSelected ? 'text-blue-600 font-black scale-110' : (hasSales ? 'text-slate-700 font-bold' : 'text-slate-400 font-medium')}">
                         ${d.label}
                       </span>
 
                       <!-- Tooltip al pasar mouse -->
                       <div class="absolute -top-11 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30 shadow-xl">
-                        <strong>${d.name}:</strong> ₡${d.amount.toLocaleString('es-CR')} (${d.count} citas)
+                        <strong>${d.name}:</strong> ${hasSales ? `₡${d.amount.toLocaleString('es-CR')} (${d.count} ${d.count === 1 ? 'cita' : 'citas'})` : '₡0 (0 citas)'}
                       </div>
                     </div>
                   `;
@@ -13772,10 +13779,10 @@ Esperamos atenderle pronto de nuevo.`;
               ${selectedDayIndex !== null ? `
                 <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-200 text-xs flex items-center justify-between animate-fade-in">
                   <span class="text-blue-900">
-                    <strong class="font-bold">${daysOfWeek[selectedDayIndex].name}:</strong> ₡${daysOfWeek[selectedDayIndex].amount.toLocaleString('es-CR')} (${daysOfWeek[selectedDayIndex].count} citas)
+                    <strong class="font-bold">${daysOfWeek[selectedDayIndex].name}:</strong> ${daysOfWeek[selectedDayIndex].amount > 0 ? `₡${daysOfWeek[selectedDayIndex].amount.toLocaleString('es-CR')} (${daysOfWeek[selectedDayIndex].count} ${daysOfWeek[selectedDayIndex].count === 1 ? 'cita' : 'citas'})` : 'Sin citas en este período (₡0)'}
                   </span>
                   <button type="button" class="sales-clear-day-btn text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
-                    Ver todos
+                    Ver semana completa
                   </button>
                 </div>
               ` : ''}
