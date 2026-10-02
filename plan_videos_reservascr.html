@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Plan de Publicidad en Video - ReservasCR</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@600;700&display=swap');
+
+    @page {
+      size: A4;
+      margin: 14mm 14mm 16mm 14mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1e293b;
+      background-color: #ffffff;
+      margin: 0;
+      padding: 0;
+      font-size: 11pt;
+      line-height: 1.5;
+    }
+
+    .page-break {
+      page-break-before: always;
+      break-before: page;
+    }
+
+    .no-break {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Header Banner */
+    .doc-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #064e3b 100%);
+      color: #ffffff;
+      padding: 26px 28px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
+    }
+
+    .doc-header h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 24pt;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    .doc-header .subtitle {
+      font-size: 12pt;
+      color: #34d399;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+
+    .doc-header .meta-bar {
+      display: flex;
+      gap: 16px;
+      font-size: 9pt;
+      color: #94a3b8;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      padding-top: 10px;
+    }
+
+    .meta-item strong {
+      color: #f1f5f9;
+    }
+
+    /* Section Styling */
+    h2.section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16pt;
+      color: #0f172a;
+      border-bottom: 2px solid #10b981;
+      padding-bottom: 6px;
+      margin-top: 24px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Video Card */
+    .video-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #ffffff;
+      margin-bottom: 22px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .video-card-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .video-number {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 11pt;
+      color: #ffffff;
+      background: #059669;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: inline-block;
+    }
+
+    .video-title {
+      font-size: 13pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .video-card-body {
+      padding: 16px 18px;
+    }
+
+    /* Info Badges Grid */
+    .badges-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+      background: #f1f5f9;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 8.5pt;
+    }
+
+    .badge-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .badge-label {
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+    }
+
+    .badge-val {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    /* Script Timeline Table */
+    .timeline-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5pt;
+      margin-bottom: 14px;
+    }
+
+    .timeline-table th {
+      background: #0f172a;
+      color: #ffffff;
+      text-align: left;
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .timeline-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+    }
+
+    .timeline-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .time-col {
+      width: 65px;
+      font-weight: 800;
+      color: #059669;
+      font-family: monospace;
+      font-size: 9pt;
+      white-space: nowrap;
+    }
+
+    .screen-col {
+      width: 42%;
+      color: #334155;
+    }
+
+    .speech-col {
+      width: 48%;
+      color: #0f172a;
+      font-weight: 500;
+    }
+
+    .highlight-speech {
+      color: #047857;
+      font-weight: 700;
+    }
+
+    /* Boxes */
+    .tip-box {
+      background: #ecfdf5;
+      border-left: 4px solid #10b981;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 8.5pt;
+      color: #065f46;
+      margin-bottom: 8px;
+    }
+
+    .tip-box strong {
+      color: #047857;
+    }
+
+    .copy-box {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 8.5pt;
+      color: #475569;
+      margin-top: 8px;
+    }
+
+    .copy-title {
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Production Guide */
+    .steps-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .step-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .step-num {
+      font-weight: 900;
+      font-size: 14pt;
+      color: #10b981;
+      margin-bottom: 4px;
+    }
+
+    .step-title {
+      font-weight: 800;
+      font-size: 10.5pt;
+      color: #0f172a;
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      font-size: 8.5pt;
+      color: #64748b;
+      line-height: 1.4;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PORTADA / CABECERA -->
+  <div class="doc-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <div class="subtitle">GUÍA TÁCTICA DE MARKETING Y CONTENIDO DIGITAL</div>
+        <h1>Plan de Publicidad en Video para ReservasCR</h1>
+        <p style="margin: 0; opacity: 0.9; font-size: 10.5pt; max-width: 580px;">
+          Estrategia completa de 6 micro-videos virales (Reels, TikTok, Shorts y WhatsApp) explicando cada funcionalidad clave para atraer y convertir negocios costarricenses.
+        </p>
+      </div>
+      <div style="background: rgba(255, 255, 255, 0.15); padding: 8px 14px; border-radius: 10px; text-align: center;">
+        <span style="font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: #a7f3d0; font-weight: 700;">Plataforma</span>
+        <div style="font-size: 13pt; font-weight: 900; color: #ffffff;">reservascr.app</div>
+      </div>
+    </div>
+    <div class="meta-bar">
+      <div class="meta-item">Fecha: <strong>Octubre 2026</strong></div>
+      <div class="meta-item">Formato: <strong>Vertical 9:16 (1080 x 1920)</strong></div>
+      <div class="meta-item">Herramienta sugerida: <strong>CapCut (Gratis)</strong></div>
+      <div class="meta-item">Mercado objetivo: <strong>Pymes y Comercio en Costa Rica</strong></div>
+    </div>
+  </div>
+
+  <!-- GUÍA DE GRABACIÓN EN 4 PASOS -->
+  <div class="no-break" style="margin-bottom: 24px;">
+    <h2 class="section-title">🛠️ Cómo Producir Cada Video en 10 Minutos (Guía Exprés)</h2>
+    <div class="steps-list">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Graba la Pantalla</div>
+        <div class="step-desc">
+          Abre la web en tu celular o en la computadora (con vista móvil en Chrome F12) y sigue las acciones exactas indicadas en la columna <em>"Qué mostrar en pantalla"</em>.
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Graba la Voz o Usa IA</div>
+        <div class="step-desc">
+          Lee el guión con energía y tono costarricense, o pega el texto en <strong>ElevenLabs</strong> para generar una voz profesional limpia en segundos.
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">Subtítulos con CapCut</div>
+        <div class="step-desc">
+          Abre CapCut (PC o celular), importa el video y dale a <strong>Texto > Subtítulos Automáticos</strong>. Elige una plantilla con palabras animadas en color verde/amarillo.
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-title">Publica Multicanal</div>
+        <div class="step-desc">
+          Sube el mismo video a <strong>TikTok, Instagram Reels, Facebook Reels, YouTube Shorts y Estados de WhatsApp</strong> con el copy y los hashtags proporcionados.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIDEO 1 ==================== -->
+  <div class="video-card no-break">
+    <div class="video-card-header">
+      <div>
+        <span class="video-number">VIDEO 1</span>
+        <h3 class="video-title" style="display: inline-block; margin-left: 8px;">Agenda Inteligente 24/7 (Enlace en Bio)</h3>
+      </div>
+      <span style="font-size: 8.5pt; color: #64748b; font-weight: 700;">Duración: ~35 seg</span>
+    </div>
+    <div class="video-card-body">
+      <div class="badges-grid">
+        <div class="badge-item"><span class="badge-label">Dolor Resuelto</span><span class="badge-val">Mensajes a deshoras por WhatsApp</span></div>
+        <div class="badge-item"><span class="badge-label">Nicho Ideal</span><span class="badge-val">Barberías, Salones, Spas, Tatuajes</span></div>
+        <div class="badge-item"><span class="badge-label">Pantalla Clave</span><span class="badge-val">Perfil Público (/barberia-vintage)</span></div>
+        <div class="badge-item"><span class="badge-label">Música Fondo</span><span class="badge-val">Upbeat Lofi o Pop Rítmico</span></div>
+      </div>
+
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th class="time-col">Tiempo</th>
+            <th class="screen-col">Qué mostrar en pantalla (Visual)</th>
+            <th class="speech-col">Guión de voz (Qué decir)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">0s - 4s</td>
+            <td>Texto grande en pantalla: <em>"¿Aún agendas citas a mano a las 11 PM?"</em>. Muestra un chat simulado de WhatsApp lleno de preguntas.</td>
+            <td><span class="highlight-speech">"Si tienes un negocio en Costa Rica y sigues respondiendo mensajes a las 11 de la noche para agendar citas... mira esto."</span></td>
+          </tr>
+          <tr>
+            <td class="time-col">4s - 14s</td>
+            <td>Entra al perfil del negocio en ReservasCR desde el celular. Se ven las fotos, calificación con 5 estrellas y el botón <strong>"Reservar Cita"</strong>.</td>
+            <td>"Con ReservasCR le das un enlace directo a tus clientes. Ellos entran a tu perfil, eligen el servicio que quieren y seleccionan a su especialista favorito."</td>
+          </tr>
+          <tr>
+            <td class="time-col">14s - 24s</td>
+            <td>Se muestra el calendario dinámico: se toca un día, se ven los horarios libres en verde (sin traslapes) y se presiona <strong>Confirmar Reserva</strong>.</td>
+            <td>"El sistema solo les muestra tus horas verdaderamente disponibles. Eligen fecha, hora, ¡y listo! La cita queda confirmada en tiempo real sin enredos ni dobles reservas."</td>
+          </tr>
+          <tr>
+            <td class="time-col">24s - 35s</td>
+            <td>Se ve la pantalla de confirmación con código de reserva y el logo de ReservasCR.</td>
+            <td><span class="highlight-speech">"Empieza hoy mismo completamente gratis en reservascr.app y automatiza tu negocio."</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip-box">
+        <strong>💡 Tip de Grabación:</strong> Realiza una reserva rápida de prueba en vivo para mostrar la fluidez y velocidad del calendario.
+      </div>
+
+      <div class="copy-box">
+        <div class="copy-title">📲 Copy para Publicar:</div>
+        Deja de perder clientes por tardar en contestar en WhatsApp ⏰. Con ReservasCR tu agenda trabaja para ti las 24 horas del día. Crea tu perfil gratis en el enlace de nuestra biografía 🇨🇷✨.<br>
+        <strong>Hashtags:</strong> #reservascr #emprendedorescr #barberiascr #salonescr #costarica #pymescr
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== VIDEO 2 ==================== -->
+  <div class="video-card no-break">
+    <div class="video-card-header">
+      <div>
+        <span class="video-number">VIDEO 2</span>
+        <h3 class="video-title" style="display: inline-block; margin-left: 8px;">Validación Automática de SINPE Móvil</h3>
+      </div>
+      <span style="font-size: 8.5pt; color: #64748b; font-weight: 700;">Duración: ~40 seg</span>
+    </div>
+    <div class="video-card-body">
+      <div class="badges-grid">
+        <div class="badge-item"><span class="badge-label">Dolor Resuelto</span><span class="badge-val">Citas falsas y comprobantes editados</span></div>
+        <div class="badge-item"><span class="badge-label">Nicho Ideal</span><span class="badge-val">Tatuajes, Uñas, Clínicas, Talleres</span></div>
+        <div class="badge-item"><span class="badge-label">Pantalla Clave</span><span class="badge-val">Checkout con seña SINPE</span></div>
+        <div class="badge-item"><span class="badge-label">Música Fondo</span><span class="badge-val">Tech Dinámico / Beat moderno</span></div>
+      </div>
+
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th class="time-col">Tiempo</th>
+            <th class="screen-col">Qué mostrar en pantalla (Visual)</th>
+            <th class="speech-col">Guión de voz (Qué decir)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">0s - 4s</td>
+            <td>Texto en pantalla: <em>"¿Clientes que apartan cita y NUNCA llegan?"</em>. Alerta roja animada.</td>
+            <td><span class="highlight-speech">"¿Cuánta plata pierdes al mes cuando un cliente aparta espacio y te deja plantado a última hora?"</span></td>
+          </tr>
+          <tr>
+            <td class="time-col">4s - 15s</td>
+            <td>En la pantalla de reserva de ReservasCR, al seleccionar el servicio, se activa la opción de <strong>Depósito Previo (SINPE Móvil)</strong>. Muestra el número de teléfono y nombre del comercio.</td>
+            <td>"En ReservasCR puedes pedir un adelanto o seña automática por SINPE Móvil para asegurar cada cita antes de apartar tu tiempo."</td>
+          </tr>
+          <tr>
+            <td class="time-col">15s - 28s</td>
+            <td>El cliente ingresa el número de referencia del comprobante SINPE. Se muestra la animación de verificación y aprobación instantánea.</td>
+            <td>"El cliente hace el SINPE, ingresa su comprobante y la plataforma lo valida al instante. Cero comprobantes falsos, cero traslapes y tu dinero seguro en tu cuenta."</td>
+          </tr>
+          <tr>
+            <td class="time-col">28s - 40s</td>
+            <td>Se ve el panel del negocio con la cita marcada como <em>"Depósito Verificado ₡5.000"</em>.</td>
+            <td><span class="highlight-speech">"Protege tu tiempo y asegura tus ingresos. Regístrate gratis en reservascr.app y cobra tus señas con SINPE hoy mismo."</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip-box">
+        <strong>💡 Tip de Grabación:</strong> Haz zoom en la insignia verde de <em>"Depósito Confirmado"</em> para transmitir máxima seguridad y confianza financiera.
+      </div>
+
+      <div class="copy-box">
+        <div class="copy-title">📲 Copy para Publicar:</div>
+        Dile adiós a las cancelaciones de último momento 🙅‍♂️. Pide adelantos por SINPE Móvil de forma 100% automatizada y garantiza que cada cita en tu agenda sea dinero real. Regístrate gratis en reservascr.app 🇨🇷.<br>
+        <strong>Hashtags:</strong> #sinpemovil #negocioscr #citascr #tatuajescr #esteticacr #costarica
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIDEO 3 ==================== -->
+  <div class="video-card no-break">
+    <div class="video-card-header">
+      <div>
+        <span class="video-number">VIDEO 3</span>
+        <h3 class="video-title" style="display: inline-block; margin-left: 8px;">Nueva Vitrina Digital de Productos</h3>
+      </div>
+      <span style="font-size: 8.5pt; color: #64748b; font-weight: 700;">Duración: ~35 seg</span>
+    </div>
+    <div class="video-card-body">
+      <div class="badges-grid">
+        <div class="badge-item"><span class="badge-label">Dolor Resuelto</span><span class="badge-val">Productos en repisa que no se venden</span></div>
+        <div class="badge-item"><span class="badge-label">Nicho Ideal</span><span class="badge-val">Barberías, Salones, Spas, Tiendas</span></div>
+        <div class="badge-item"><span class="badge-label">Pantalla Clave</span><span class="badge-val">Pestaña "Vitrina" en perfil</span></div>
+        <div class="badge-item"><span class="badge-label">Música Fondo</span><span class="badge-val">Trendy R&B o Funk chill</span></div>
+      </div>
+
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th class="time-col">Tiempo</th>
+            <th class="screen-col">Qué mostrar en pantalla (Visual)</th>
+            <th class="speech-col">Guión de voz (Qué decir)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">0s - 4s</td>
+            <td>Texto en pantalla: <em>"¡No solo vendas citas, vende tus productos!"</em>. Muestra productos en una estantería física.</td>
+            <td><span class="highlight-speech">"Si en tu salón o barbería tienes shampoos, cremas o ceras guardadas en la repisa... estás perdiendo plata."</span></td>
+          </tr>
+          <tr>
+            <td class="time-col">4s - 15s</td>
+            <td>En el perfil de ReservasCR, se toca la nueva pestaña <strong>"Vitrina"</strong>. Se despliegan las tarjetas de productos con fotos limpias y precios en Colones (₡).</td>
+            <td>"Acabamos de lanzar la Vitrina Digital en ReservasCR. Ahora tus clientes pueden ver tu catálogo de productos físicos directamente en tu perfil."</td>
+          </tr>
+          <tr>
+            <td class="time-col">15s - 25s</td>
+            <td>Se presiona el botón verde <strong>"Pedir por WhatsApp"</strong> y se abre automáticamente el chat de WhatsApp con el mensaje pre-redactado: <em>"Hola, deseo comprar Pomada Mate..."</em></td>
+            <td>"Con un solo clic le dan a 'Pedir por WhatsApp' y te llega la orden lista para entregar en su próxima cita o enviar por encomienda."</td>
+          </tr>
+          <tr>
+            <td class="time-col">25s - 35s</td>
+            <td>Panel del negocio mostrando lo fácil que es subir una foto y poner el precio de un nuevo artículo en la Vitrina.</td>
+            <td><span class="highlight-speech">"Sube tus productos en 2 minutos y multiplica tus ingresos sin pagar comisiones. Activa tu Vitrina gratis en reservascr.app."</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip-box">
+        <strong>💡 Tip de Grabación:</strong> Muestra el salto instantáneo de la web al chat de WhatsApp para resaltar lo fácil que es para el cliente comprar.
+      </div>
+
+      <div class="copy-box">
+        <div class="copy-title">📲 Copy para Publicar:</div>
+        ¡NUEVA FUNCIÓN! 🚀 Ahora tu negocio tiene Vitrina Digital en ReservasCR. Exhibe tus productos, recibe pedidos directos por WhatsApp y aumenta el ticket promedio de cada cliente 💈🛍️. Pruébalo hoy en reservascr.app.<br>
+        <strong>Hashtags:</strong> #vitrinadigital #ventascr #barberiacr #bellezacr #costaricacool
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== VIDEO 4 ==================== -->
+  <div class="video-card no-break">
+    <div class="video-card-header">
+      <div>
+        <span class="video-number">VIDEO 4</span>
+        <h3 class="video-title" style="display: inline-block; margin-left: 8px;">Programa de Fidelización y Sellos QR</h3>
+      </div>
+      <span style="font-size: 8.5pt; color: #64748b; font-weight: 700;">Duración: ~40 seg</span>
+    </div>
+    <div class="video-card-body">
+      <div class="badges-grid">
+        <div class="badge-item"><span class="badge-label">Dolor Resuelto</span><span class="badge-val">Clientes que vienen una vez y no vuelven</span></div>
+        <div class="badge-item"><span class="badge-label">Nicho Ideal</span><span class="badge-val">Lavados, Uñas, Barberías, Cafeterías</span></div>
+        <div class="badge-item"><span class="badge-label">Pantalla Clave</span><span class="badge-val">Tarjeta de Sellos Digital + Escáner QR</span></div>
+        <div class="badge-item"><span class="badge-label">Música Fondo</span><span class="badge-val">Electro Pop / Videojuego retro alegre</span></div>
+      </div>
+
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th class="time-col">Tiempo</th>
+            <th class="screen-col">Qué mostrar en pantalla (Visual)</th>
+            <th class="speech-col">Guión de voz (Qué decir)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">0s - 4s</td>
+            <td>Texto en pantalla: <em>"Bota las tarjetas de cartón a la basura"</em>. Imagen de tarjeta de papel doblada o rota.</td>
+            <td><span class="highlight-speech">"Las tarjetas de sellos de cartón ya no sirven: a tus clientes se les pierden, se les lavan en el pantalón o las botan."</span></td>
+          </tr>
+          <tr>
+            <td class="time-col">4s - 16s</td>
+            <td>El cliente abre ReservasCR en su celular y muestra su <strong>Tarjeta Digital de Fidelización</strong> con su código QR personal.</td>
+            <td>"Con ReservasCR tienes un sistema de fidelización digital moderno. Tu cliente abre su perfil y te muestra su código QR personal de cliente frecuente."</td>
+          </tr>
+          <tr>
+            <td class="time-col">16s - 28s</td>
+            <td>El dueño del negocio escanea el QR desde su propio teléfono y se escucha/ve la animación con confetti: <em>"¡Sello 4 de 5 asignado!"</em>.</td>
+            <td>"Lo escaneas en un segundo desde tu teléfono y el sistema le suma sus sellos automáticamente. Al quinto sello, le regalas su premio o descuento."</td>
+          </tr>
+          <tr>
+            <td class="time-col">28s - 40s</td>
+            <td>El cliente sonriendo al ver que desbloqueó su recompensa en la pantalla de su teléfono.</td>
+            <td><span class="highlight-speech">"Fideliza a tus clientes como las grandes franquicias, pero gratis y 100% tico. Actívalo en tu perfil de reservascr.app."</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip-box">
+        <strong>💡 Tip de Grabación:</strong> Graba a dos celulares interactuando (uno mostrando el código QR y el otro escaneando) para un efecto ultra dinámico.
+      </div>
+
+      <div class="copy-box">
+        <div class="copy-title">📲 Copy para Publicar:</div>
+        ¿Sabías que retener un cliente es 5 veces más barato que conseguir uno nuevo? 🎯 Convierte a tus clientes casuales en clientes fieles con nuestras Tarjetas de Sellos QR 100% digitales. Pruébalo gratis en reservascr.app 📲🇨🇷.<br>
+        <strong>Hashtags:</strong> #fidelizacion #marketingcr #pymescostarica #innovacioncr #reservascr
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== VIDEO 5 ==================== -->
+  <div class="video-card no-break">
+    <div class="video-card-header">
+      <div>
+        <span class="video-number">VIDEO 5</span>
+        <h3 class="video-title" style="display: inline-block; margin-left: 8px;">Recordatorios Automáticos por WhatsApp</h3>
+      </div>
+      <span style="font-size: 8.5pt; color: #64748b; font-weight: 700;">Duración: ~35 seg</span>
+    </div>
+    <div class="video-card-body">
+      <div class="badges-grid">
+        <div class="badge-item"><span class="badge-label">Dolor Resuelto</span><span class="badge-val">Horas perdidas escribiendo '¿vienes hoy?'</span></div>
+        <div class="badge-item"><span class="badge-label">Nicho Ideal</span><span class="badge-val">Dentistas, Psicólogos, Consultorios</span></div>
+        <div class="badge-item"><span class="badge-label">Pantalla Clave</span><span class="badge-val">Mensaje oficial de WhatsApp en el cel</span></div>
+        <div class="badge-item"><span class="badge-label">Música Fondo</span><span class="badge-val">Chillhop relajante / Profesional</span></div>
+      </div>
+
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th class="time-col">Tiempo</th>
+            <th class="screen-col">Qué mostrar en pantalla (Visual)</th>
+            <th class="speech-col">Guión de voz (Qué decir)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">0s - 4s</td>
+            <td>Texto en pantalla: <em>"¿Cuánto tiempo pierdes recordando citas a mano?"</em>. Persona cansada escribiendo en el teclado.</td>
+            <td><span class="highlight-speech">"Pasar todas las mañanas escribiendo mensajes manuales para ver si tus clientes van a llegar... es cosa del pasado."</span></td>
+          </tr>
+          <tr>
+            <td class="time-col">4s - 15s</td>
+            <td>Llega la notificación oficial de WhatsApp al teléfono del cliente con el logo del negocio, fecha, hora, especialista y enlace de ubicación.</td>
+            <td>"En ReservasCR, apenas un cliente agenda, la plataforma le envía su confirmación automática por WhatsApp y correo electrónico."</td>
+          </tr>
+          <tr>
+            <td class="time-col">15s - 25s</td>
+            <td>Se ve el recordatorio horas antes de la cita con el botón para confirmar asistencia.</td>
+            <td>"Y horas antes de la cita, le manda un recordatorio automático para que no se le olvide. Reduciendo las ausencias en más de un 80%."</td>
+          </tr>
+          <tr>
+            <td class="time-col">25s - 35s</td>
+            <td>El dueño del negocio atendiendo tranquilamente a un cliente sin tocar el celular.</td>
+            <td><span class="highlight-speech">"Ahorra tiempo valioso y atiende más clientes. Configura tus alertas automáticas gratis en reservascr.app."</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip-box">
+        <strong>💡 Tip de Grabación:</strong> Muestra la notificación de WhatsApp entrando en la barra superior del celular en tiempo real para generar impacto.
+      </div>
+
+      <div class="copy-box">
+        <div class="copy-title">📲 Copy para Publicar:</div>
+        Automatiza tus recordatorios por WhatsApp y deja de mandar mensajes uno a uno 💬✨. Menos citas olvidadas, más puntualidad y clientes felices. Crea tu cuenta gratis en reservascr.app 🇨🇷.<br>
+        <strong>Hashtags:</strong> #whatsappmarketing #automatizacion #costaricaemprende #citasmedicascr
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- ==================== VIDEO 6 ==================== -->
+  <div class="video-card no-break">
+    <div class="video-card-header">
+      <div>
+        <span class="video-number">VIDEO 6</span>
+        <h3 class="video-title" style="display: inline-block; margin-left: 8px;">Punto de Venta POS y Control de Caja</h3>
+      </div>
+      <span style="font-size: 8.5pt; color: #64748b; font-weight: 700;">Duración: ~35 seg</span>
+    </div>
+    <div class="video-card-body">
+      <div class="badges-grid">
+        <div class="badge-item"><span class="badge-label">Dolor Resuelto</span><span class="badge-val">Cuadernos rayados y cuentas descuadradas</span></div>
+        <div class="badge-item"><span class="badge-label">Nicho Ideal</span><span class="badge-val">Todo negocio con cobro en mostrador</span></div>
+        <div class="badge-item"><span class="badge-label">Pantalla Clave</span><span class="badge-val">Panel de Negocio > Módulo POS</span></div>
+        <div class="badge-item"><span class="badge-label">Música Fondo</span><span class="badge-val">Upbeat Corporativo / Dinámico</span></div>
+      </div>
+
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th class="time-col">Tiempo</th>
+            <th class="screen-col">Qué mostrar en pantalla (Visual)</th>
+            <th class="speech-col">Guión de voz (Qué decir)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="time-col">0s - 4s</td>
+            <td>Texto en pantalla: <em>"¿Tu cierre de caja sigue siendo un cuaderno de papel?"</em>. Se muestra una libreta llena de tachones.</td>
+            <td><span class="highlight-speech">"Llegar al final del día intentando cuadrar qué entró en efectivo, qué por tarjeta y qué por SINPE es un dolor de cabeza."</span></td>
+          </tr>
+          <tr>
+            <td class="time-col">4s - 15s</td>
+            <td>En el panel de ReservasCR, se entra a la pestaña <strong>Punto de Venta (POS)</strong>. Se presiona un servicio y un producto, calculando el total automáticamente en Colones.</td>
+            <td>"Con el Punto de Venta integrado de ReservasCR cobras citas y productos en segundos directamente desde tu tablet, celular o computadora."</td>
+          </tr>
+          <tr>
+            <td class="time-col">15s - 25s</td>
+            <td>Se presiona <em>Efectivo / Tarjeta / SINPE</em>, se marca completado y se ve el resumen de caja del día actualizado en vivo.</td>
+            <td>"Seleccionas el método de pago, calculas el vuelto al instante y tienes el total exacto de ventas del día al centavo."</td>
+          </tr>
+          <tr>
+            <td class="time-col">25s - 35s</td>
+            <td>Pantalla de inicio con el logo de ReservasCR y el botón de registro.</td>
+            <td><span class="highlight-speech">"Todo el control de tu negocio en una sola herramienta costarricense. Pruébalo gratis en reservascr.app."</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="tip-box">
+        <strong>💡 Tip de Grabación:</strong> Muestra la rapidez con la que se añade un ítem y se genera el cobro en el POS sin salir de la misma pantalla.
+      </div>
+
+      <div class="copy-box">
+        <div class="copy-title">📲 Copy para Publicar:</div>
+        Lleva el control total de tu caja sin complicaciones 💵📊. Registra cobros en efectivo, tarjeta o SINPE Móvil con el Punto de Venta de ReservasCR. ¡Empieza gratis hoy mismo! 👉 reservascr.app.<br>
+        <strong>Hashtags:</strong> #puntodeventa #poscostarica #contabilidadpymes #finanzascr #reservascr
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTRATEGIA DE PUBLICACIÓN -->
+  <div class="no-break" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-top: 14px;">
+    <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 13pt; margin: 0 0 10px 0; color: #0f172a;">
+      📅 Calendario Sugerido de Lanzamiento (2 Semanas)
+    </h3>
+    <table style="width: 100%; border-collapse: collapse; font-size: 8.5pt;">
+      <thead>
+        <tr style="background: #e2e8f0; text-align: left;">
+          <th style="padding: 6px 10px;">Día</th>
+          <th style="padding: 6px 10px;">Video a Publicar</th>
+          <th style="padding: 6px 10px;">Canal Principal</th>
+          <th style="padding: 6px 10px;">Objetivo de Conversión</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding: 6px 10px; font-weight: 700;">Lunes (Semana 1)</td><td style="padding: 6px 10px;">Video 1: Agenda 24/7</td><td style="padding: 6px 10px;">TikTok + Instagram Reels</td><td style="padding: 6px 10px;">Registros de nuevos comercios</td></tr>
+        <tr style="background: #ffffff;"><td style="padding: 6px 10px; font-weight: 700;">Miércoles (Semana 1)</td><td style="padding: 6px 10px;">Video 2: Validación SINPE</td><td style="padding: 6px 10px;">Instagram Reels + Facebook</td><td style="padding: 6px 10px;">Confianza financiera y cero cancelaciones</td></tr>
+        <tr><td style="padding: 6px 10px; font-weight: 700;">Viernes (Semana 1)</td><td style="padding: 6px 10px;">Video 3: Vitrina Digital</td><td style="padding: 6px 10px;">TikTok + Estados WhatsApp</td><td style="padding: 6px 10px;">Atraer comercios que venden productos</td></tr>
+        <tr style="background: #ffffff;"><td style="padding: 6px 10px; font-weight: 700;">Lunes (Semana 2)</td><td style="padding: 6px 10px;">Video 4: Fidelización QR</td><td style="padding: 6px 10px;">Instagram Reels + Shorts</td><td style="padding: 6px 10px;">Innovación y retención de clientes</td></tr>
+        <tr><td style="padding: 6px 10px; font-weight: 700;">Miércoles (Semana 2)</td><td style="padding: 6px 10px;">Video 5: Alertas WhatsApp</td><td style="padding: 6px 10px;">TikTok + Facebook Reels</td><td style="padding: 6px 10px;">Ahorro de tiempo para el dueño</td></tr>
+        <tr style="background: #ffffff;"><td style="padding: 6px 10px; font-weight: 700;">Viernes (Semana 2)</td><td style="padding: 6px 10px;">Video 6: Punto de Venta POS</td><td style="padding: 6px 10px;">Todas las redes</td><td style="padding: 6px 10px;">Cierre integral de ventas</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">
+    ReservasCR © 2026 • Diseñado exclusivamente para el crecimiento de negocios en Costa Rica • Visita <a href="https://reservascr.app" style="color: #059669; font-weight: 700;">reservascr.app</a>
+  </div>
+
+</body>
+</html>
