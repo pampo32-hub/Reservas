@@ -13175,6 +13175,29 @@ Esperamos atenderle pronto de nuevo.`;
     `;
   }
 
+  // --- SUB-MÓDULO: PARSEO DE HORA Y FECHA LOCAL DE COSTA RICA ---
+  parseAppointmentHour(timeStr) {
+    if (!timeStr) return 10;
+    const clean = String(timeStr).trim();
+    const parts = clean.split(' ');
+    const timeParts = parts[0].split(':');
+    let h = parseInt(timeParts[0], 10) || 0;
+    const modifier = parts[1] ? parts[1].toUpperCase() : '';
+    if (modifier === 'PM' && h < 12) h += 12;
+    if (modifier === 'AM' && h === 12) h = 0;
+    return h;
+  }
+
+  getLocalDateString(isoOrDateStr) {
+    if (!isoOrDateStr) return '';
+    const str = String(isoOrDateStr).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return str.slice(0, 10);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
   // --- SUB-MÓDULO: RANGOS DE FECHA PARA EL DASHBOARD DE VENTAS ---
   getSalesReportDateRange(filterKey, customStart, customEnd) {
     const now = new Date();
@@ -13194,6 +13217,11 @@ Esperamos atenderle pronto de nuevo.`;
       sunday.setDate(monday.getDate() + 6);
       return { key: 'this_week', start: formatYMD(monday), end: formatYMD(sunday), label: 'Esta Semana' };
     }
+    if (filterKey === 'last_30_days') {
+      const past30 = new Date(now);
+      past30.setDate(now.getDate() - 30);
+      return { key: 'last_30_days', start: formatYMD(past30), end: formatYMD(now), label: 'Últimos 30 Días' };
+    }
     if (filterKey === 'last_month') {
       const firstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastDay = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -13211,6 +13239,14 @@ Esperamos atenderle pronto de nuevo.`;
         start: `${now.getFullYear()}-01-01`, 
         end: `${now.getFullYear()}-12-31`, 
         label: `Año ${now.getFullYear()}` 
+      };
+    }
+    if (filterKey === 'all') {
+      return { 
+        key: 'all', 
+        start: '2020-01-01', 
+        end: '2030-12-31', 
+        label: 'Histórico Completo' 
       };
     }
     if (filterKey === 'custom' && customStart && customEnd) {
@@ -13247,24 +13283,33 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- CONTENIDO: DASHBOARD DE VENTAS Y RENDIMIENTO CONTABLE (PARTE INFERIOR) ---
   renderSalesAnalyticsDashboardContent(currentBiz, appointments = []) {
-    const filterKey = this.salesReportFilter || 'this_month';
+    // Si aún no se ha definido el filtro, verificar si el mes actual tiene citas o abrir últimos 30 días
+    if (!this.salesReportFilter) {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const curMonthPrefix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
+      const hasCurrentMonthData = (appointments || []).some(a => (a.date || '').startsWith(curMonthPrefix));
+      this.salesReportFilter = hasCurrentMonthData ? 'this_month' : 'last_30_days';
+    }
+
+    const filterKey = this.salesReportFilter || 'last_30_days';
     const range = this.getSalesReportDateRange(filterKey, this.salesReportCustomStart, this.salesReportCustomEnd);
 
     // 1. Filtrar Citas en el rango de fechas
     const filteredAppointments = (appointments || []).filter(a => {
       if (a.status === 'cancelled') return false;
-      const d = a.date || '';
+      const d = (a.date || (a.paidAt ? this.getLocalDateString(a.paidAt) : '') || '').slice(0, 10);
       return d >= range.start && d <= range.end;
     });
 
     // 2. Filtrar Transacciones POS en el rango
     const posTxs = (this.cachedReportsPosTransactions || []).filter(t => {
-      const d = (t.createdAt || t.created_at || '').slice(0, 10);
+      const d = this.getLocalDateString(t.createdAt || t.created_at);
       if (!d) return true;
       return d >= range.start && d <= range.end;
     });
 
-    // 3. Cálculos Financieros
+    // 3. Cálculos Financieros Generales
     const totalServices = filteredAppointments.reduce((sum, a) => {
       return sum + parseFloat(a.servicePrice || a.service_price || a.price || 0);
     }, 0);
@@ -13290,18 +13335,19 @@ Esperamos atenderle pronto de nuevo.`;
 
     // 4. DÍAS DE LA SEMANA (l m m j v s d)
     const daysOfWeek = [
-      { key: 'l', label: 'l', name: 'Lunes', amount: 0, count: 0 },
-      { key: 'm', label: 'm', name: 'Martes', amount: 0, count: 0 },
-      { key: 'x', label: 'm', name: 'Miércoles', amount: 0, count: 0 },
-      { key: 'j', label: 'j', name: 'Jueves', amount: 0, count: 0 },
-      { key: 'v', label: 'v', name: 'Viernes', amount: 0, count: 0 },
-      { key: 's', label: 's', name: 'Sábado', amount: 0, count: 0 },
-      { key: 'd', label: 'd', name: 'Domingo', amount: 0, count: 0 }
+      { key: 'l', label: 'l', name: 'Lunes', amount: 0, count: 0, appointments: [] },
+      { key: 'm', label: 'm', name: 'Martes', amount: 0, count: 0, appointments: [] },
+      { key: 'x', label: 'm', name: 'Miércoles', amount: 0, count: 0, appointments: [] },
+      { key: 'j', label: 'j', name: 'Jueves', amount: 0, count: 0, appointments: [] },
+      { key: 'v', label: 'v', name: 'Viernes', amount: 0, count: 0, appointments: [] },
+      { key: 's', label: 's', name: 'Sábado', amount: 0, count: 0, appointments: [] },
+      { key: 'd', label: 'd', name: 'Domingo', amount: 0, count: 0, appointments: [] }
     ];
 
     filteredAppointments.forEach(a => {
-      if (!a.date) return;
-      const parts = a.date.split('-');
+      const dateStr = a.date || (a.paidAt ? this.getLocalDateString(a.paidAt) : '');
+      if (!dateStr) return;
+      const parts = dateStr.slice(0, 10).split('-');
       if (parts.length !== 3) return;
       const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
       const dayIndex = (d.getDay() + 6) % 7; // 0=Lunes, 6=Domingo
@@ -13309,11 +13355,12 @@ Esperamos atenderle pronto de nuevo.`;
         const p = parseFloat(a.servicePrice || a.service_price || a.price || 0);
         daysOfWeek[dayIndex].amount += p;
         daysOfWeek[dayIndex].count += 1;
+        daysOfWeek[dayIndex].appointments.push(a);
       }
     });
 
     posTxs.filter(t => t.type === 'income' && (t.category === 'product_sale' || t.category === 'product')).forEach(t => {
-      const dStr = (t.createdAt || t.created_at || '').slice(0, 10);
+      const dStr = this.getLocalDateString(t.createdAt || t.created_at);
       if (!dStr) return;
       const parts = dStr.split('-');
       if (parts.length !== 3) return;
@@ -13329,21 +13376,26 @@ Esperamos atenderle pronto de nuevo.`;
       ? daysOfWeek.findIndex(d => d.amount === maxDayAmount)
       : -1;
 
-    // 5. ANÁLISIS POR HORA (Curva de Onda Continua)
+    const selectedDayIndex = (this.salesReportSelectedDay !== null && this.salesReportSelectedDay !== undefined)
+      ? this.salesReportSelectedDay
+      : null;
+
+    // 5. ANÁLISIS POR HORA (Curva de Onda Continua - Deslizable & Interactiva)
     const hourlyBuckets = [
-      { label: '8 a.m.', minHour: 7, maxHour: 10, amount: 0, count: 0 },
-      { label: '11 a.m.', minHour: 10, maxHour: 13, amount: 0, count: 0 },
-      { label: '2 p.m.', minHour: 13, maxHour: 16, amount: 0, count: 0 },
-      { label: '5 p.m.', minHour: 16, maxHour: 19, amount: 0, count: 0 },
-      { label: '8 p.m.', minHour: 19, maxHour: 23, amount: 0, count: 0 }
+      { label: '8 a.m.', fullLabel: '8:00 a.m. - 10:00 a.m.', minHour: 7, maxHour: 10, amount: 0, count: 0 },
+      { label: '10 a.m.', fullLabel: '10:00 a.m. - 12:00 m.', minHour: 10, maxHour: 12, amount: 0, count: 0 },
+      { label: '12 p.m.', fullLabel: '12:00 m. - 2:00 p.m.', minHour: 12, maxHour: 14, amount: 0, count: 0 },
+      { label: '2 p.m.', fullLabel: '2:00 p.m. - 4:00 p.m.', minHour: 14, maxHour: 16, amount: 0, count: 0 },
+      { label: '4 p.m.', fullLabel: '4:00 p.m. - 6:00 p.m.', minHour: 16, maxHour: 18, amount: 0, count: 0 },
+      { label: '6 p.m.', fullLabel: '6:00 p.m. - 8:00 p.m.', minHour: 18, maxHour: 20, amount: 0, count: 0 },
+      { label: '8 p.m.', fullLabel: '8:00 p.m. - 10:00 p.m.', minHour: 20, maxHour: 23, amount: 0, count: 0 }
     ];
 
     filteredAppointments.forEach(a => {
-      const timeStr = a.time || '10:00';
-      const hour = parseInt(timeStr.split(':')[0], 10);
+      const h = this.parseAppointmentHour(a.time);
       const p = parseFloat(a.servicePrice || a.service_price || a.price || 0);
       for (const b of hourlyBuckets) {
-        if (hour >= b.minHour && hour < b.maxHour) {
+        if (h >= b.minHour && h < b.maxHour) {
           b.amount += p;
           b.count += 1;
           break;
@@ -13351,12 +13403,24 @@ Esperamos atenderle pronto de nuevo.`;
       }
     });
 
+    posTxs.filter(t => t.type === 'income' && (t.category === 'product_sale' || t.category === 'product')).forEach(t => {
+      const d = new Date(t.createdAt || t.created_at);
+      if (isNaN(d.getTime())) return;
+      const h = d.getHours();
+      for (const b of hourlyBuckets) {
+        if (h >= b.minHour && h < b.maxHour) {
+          b.amount += parseFloat(t.amount || 0);
+          break;
+        }
+      }
+    });
+
     const maxHourAmount = Math.max(...hourlyBuckets.map(b => b.amount), 0);
-    const xCoords = [24, 82, 140, 198, 256];
+    const xCoords = [40, 115, 190, 265, 340, 415, 480];
     const yCoords = hourlyBuckets.map(b => {
       if (maxHourAmount <= 0) return 55;
       const ratio = b.amount / maxHourAmount;
-      return Math.round(58 - (ratio * 44));
+      return Math.round(62 - (ratio * 44));
     });
 
     let pathD = `M ${xCoords[0]} ${yCoords[0]}`;
@@ -13369,15 +13433,30 @@ Esperamos atenderle pronto de nuevo.`;
       const cpX2 = x1 + (x2 - x1) / 2;
       pathD += ` C ${cpX1} ${y1}, ${cpX2} ${y2}, ${x2} ${y2}`;
     }
-    const areaPathD = `${pathD} L ${xCoords[xCoords.length - 1]} 68 L ${xCoords[0]} 68 Z`;
+    const areaPathD = `${pathD} L ${xCoords[xCoords.length - 1]} 78 L ${xCoords[0]} 78 Z`;
+
+    const selectedHourIndex = (this.salesReportSelectedHour !== null && this.salesReportSelectedHour !== undefined)
+      ? this.salesReportSelectedHour
+      : null;
 
     const circlesHtml = xCoords.map((x, i) => {
       const b = hourlyBuckets[i];
       const isPeak = maxHourAmount > 0 && b.amount === maxHourAmount;
+      const isSelected = selectedHourIndex === i;
+
       return `
-        <g class="cursor-pointer group">
-          <circle cx="${x}" cy="${yCoords[i]}" r="${isPeak ? 4.5 : 3}" fill="${isPeak ? '#2563eb' : '#3b82f6'}" stroke="#ffffff" stroke-width="2" />
-          <title>${b.label}: ₡${b.amount.toLocaleString('es-CR')} (${b.count} citas)</title>
+        <g class="sales-hour-node cursor-pointer group" data-hour-index="${i}">
+          <circle cx="${x}" cy="${yCoords[i]}" r="14" fill="transparent" class="cursor-pointer" />
+          ${isSelected ? `<line x1="${x}" y1="10" x2="${x}" y2="75" stroke="#2563eb" stroke-width="2" stroke-dasharray="3,3" />` : ''}
+          <circle 
+            cx="${x}" 
+            cy="${yCoords[i]}" 
+            r="${isSelected ? 6 : (isPeak ? 5 : 3.5)}" 
+            fill="${isSelected || isPeak ? '#2563eb' : '#3b82f6'}" 
+            stroke="#ffffff" 
+            stroke-width="${isSelected ? 2.5 : 2}" 
+            class="transition-all duration-200 shadow-sm"
+          />
         </g>
       `;
     }).join('');
@@ -13469,6 +13548,22 @@ Esperamos atenderle pronto de nuevo.`;
       .filter(s => s.revenue > 0 || s.servicesCount > 0)
       .sort((a, b) => b.revenue - a.revenue || b.servicesCount - a.servicesCount);
 
+    // Cálculos específicos para el ticket si un día fue seleccionado
+    let displayGross = grossSales;
+    let displayServices = totalServices;
+    let displayDiscounts = totalDiscounts;
+    let displayNet = netSales;
+    let ticketTitle = 'Ventas:';
+
+    if (selectedDayIndex !== null && daysOfWeek[selectedDayIndex]) {
+      const selDay = daysOfWeek[selectedDayIndex];
+      ticketTitle = `Ventas del ${selDay.name}:`;
+      displayServices = selDay.amount;
+      displayGross = selDay.amount;
+      displayDiscounts = selDay.appointments.reduce((sum, a) => sum + parseFloat(a.discountAmount || a.discount || 0), 0);
+      displayNet = Math.max(0, displayGross - displayDiscounts);
+    }
+
     return `
       <!-- Encabezado del Nuevo Dashboard Inferior -->
       <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
@@ -13487,7 +13582,7 @@ Esperamos atenderle pronto de nuevo.`;
 
           <!-- Rango Actual Badge -->
           <div class="flex items-center gap-2">
-            <span class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold flex items-center gap-1.5">
+            <span class="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
               <i class="fas fa-calendar-alt text-blue-600"></i>
               <span>${range.label}</span>
               <span class="text-[11px] text-blue-600/80 font-normal">(${this.formatDateDMY(range.start)} - ${this.formatDateDMY(range.end)})</span>
@@ -13502,11 +13597,13 @@ Esperamos atenderle pronto de nuevo.`;
               <i class="fas fa-filter text-slate-400"></i> Período:
             </span>
             ${[
+              { key: 'last_30_days', label: 'Últimos 30 Días' },
               { key: 'today', label: 'Hoy' },
               { key: 'this_week', label: 'Esta Semana' },
               { key: 'this_month', label: 'Este Mes' },
               { key: 'last_month', label: 'Mes Anterior' },
-              { key: 'this_year', label: 'Este Año' }
+              { key: 'this_year', label: 'Este Año' },
+              { key: 'all', label: 'Todo' }
             ].map(f => `
               <button 
                 type="button" 
@@ -13613,105 +13710,168 @@ Esperamos atenderle pronto de nuevo.`;
 
         <!-- Columna Izquierda: Tarjeta 'Resumen de ventas' idéntica a la imagen (7 Cols) -->
         <div class="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-6">
-          <h3 class="text-lg font-bold text-slate-900">Resumen de ventas</h3>
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-900">Resumen de ventas</h3>
+            ${selectedDayIndex !== null ? `
+              <button type="button" class="sales-clear-day-btn text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+                <i class="fas fa-rotate-left text-[10px]"></i> Ver semana
+              </button>
+            ` : ''}
+          </div>
 
           <!-- Mini gráficos: DÍAS DE LA SEMANA y ANÁLISIS POR HORA -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-slate-100">
             
             <!-- Gráfico 1: DÍAS DE LA SEMANA -->
             <div class="space-y-3">
-              <div class="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
-                DÍAS DE LA SEMANA
+              <div class="flex items-center justify-between">
+                <div class="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+                  DÍAS DE LA SEMANA
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">Toca para filtrar</span>
               </div>
-              <div class="h-28 flex items-end justify-between gap-1.5 pt-2">
+
+              <!-- Contenedor de las 7 barras con altura fija y track estilo píldora -->
+              <div class="h-32 flex items-end justify-between gap-1.5 pt-2">
                 ${daysOfWeek.map((d, i) => {
                   const isPeak = i === peakDayIndex && maxDayAmount > 0;
-                  const heightPct = maxDayAmount > 0 
-                    ? Math.max(12, Math.round((d.amount / maxDayAmount) * 100))
-                    : 12;
+                  const isSelected = selectedDayIndex === i;
+                  const hasSales = d.amount > 0;
+                  const heightPct = hasSales 
+                    ? Math.max(18, Math.round((d.amount / maxDayAmount) * 100))
+                    : 14;
 
                   return `
-                    <div class="flex-1 flex flex-col items-center gap-1.5 group relative">
-                      <div class="w-full flex items-end justify-center h-20">
-                        <div 
-                          class="w-full max-w-[26px] rounded-t-md transition-all duration-300 ${isPeak ? 'bg-blue-600 shadow-sm shadow-blue-500/30' : 'bg-blue-100/90 group-hover:bg-blue-200'}" 
-                          style="height: ${heightPct}%;"
-                        ></div>
+                    <div 
+                      class="sales-day-bar-btn flex-1 flex flex-col items-center gap-1.5 cursor-pointer group relative py-1 px-0.5 rounded-2xl transition-all ${isSelected ? 'bg-blue-50 ring-2 ring-blue-500' : 'hover:bg-slate-50'}"
+                      data-day-index="${i}"
+                    >
+                      <!-- Barra vertical completa con track estilo píldora -->
+                      <div class="w-full flex items-end justify-center h-24">
+                        <div class="w-full max-w-[28px] h-full bg-slate-100/90 rounded-full flex flex-col justify-end p-0.5 border border-slate-200/50 shadow-inner overflow-hidden">
+                          <div 
+                            class="w-full rounded-full transition-all duration-300 ${isSelected || (selectedDayIndex === null && isPeak) ? 'bg-blue-600 shadow-md shadow-blue-500/40' : (hasSales ? 'bg-blue-300 group-hover:bg-blue-400' : 'bg-slate-200/80')}" 
+                            style="height: ${heightPct}%;"
+                          ></div>
+                        </div>
                       </div>
-                      <span class="text-xs font-semibold ${isPeak ? 'text-blue-600 font-black' : 'text-slate-500'} font-mono lowercase">
+
+                      <span class="text-xs font-mono lowercase transition-all ${isSelected || (selectedDayIndex === null && isPeak) ? 'text-blue-600 font-black scale-110' : 'text-slate-500 font-semibold'}">
                         ${d.label}
                       </span>
+
                       <!-- Tooltip al pasar mouse -->
-                      <div class="absolute -top-10 bg-slate-900 text-white text-[10px] py-1 px-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 shadow-md">
+                      <div class="absolute -top-11 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2.5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30 shadow-xl">
                         <strong>${d.name}:</strong> ₡${d.amount.toLocaleString('es-CR')} (${d.count} citas)
                       </div>
                     </div>
                   `;
                 }).join('')}
               </div>
+
+              ${selectedDayIndex !== null ? `
+                <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-200 text-xs flex items-center justify-between animate-fade-in">
+                  <span class="text-blue-900">
+                    <strong class="font-bold">${daysOfWeek[selectedDayIndex].name}:</strong> ₡${daysOfWeek[selectedDayIndex].amount.toLocaleString('es-CR')} (${daysOfWeek[selectedDayIndex].count} citas)
+                  </span>
+                  <button type="button" class="sales-clear-day-btn text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
+                    Ver todos
+                  </button>
+                </div>
+              ` : ''}
             </div>
 
-            <!-- Gráfico 2: ANÁLISIS POR HORA -->
+            <!-- Gráfico 2: ANÁLISIS POR HORA (Deslizable horizontalmente e interactivo) -->
             <div class="space-y-3">
-              <div class="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
-                ANÁLISIS POR HORA
-              </div>
-              <div class="h-28 flex flex-col justify-between pt-1">
-                <svg viewBox="0 0 280 75" class="w-full h-18 overflow-visible">
-                  <defs>
-                    <linearGradient id="hourWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3" />
-                      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  <path d="${areaPathD}" fill="url(#hourWaveGrad)" />
-                  <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                  ${circlesHtml}
-                </svg>
-                <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono text-center px-1">
-                  <span>8<br>a.m.</span>
-                  <span>11<br>a.m.</span>
-                  <span>2<br>p.m.</span>
-                  <span>5<br>p.m.</span>
-                  <span>8<br>p.m.</span>
+              <div class="flex items-center justify-between">
+                <div class="text-[10px] font-mono font-bold tracking-widest text-slate-400 uppercase">
+                  ANÁLISIS POR HORA
+                </div>
+                <div class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                  <i class="fas fa-arrows-left-right text-[9px]"></i> Deslizar
                 </div>
               </div>
+
+              <!-- Contenedor Deslizable Horizontalmente -->
+              <div 
+                id="sales-hourly-scroll-container" 
+                class="overflow-x-auto scroll-smooth pb-2 pt-1 cursor-grab select-none border border-slate-100 rounded-2xl bg-slate-50/50 p-2"
+                style="scrollbar-width: thin;"
+              >
+                <div style="min-width: 500px;">
+                  <svg viewBox="0 0 520 85" class="w-full h-20 overflow-visible">
+                    <defs>
+                      <linearGradient id="hourWaveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35" />
+                        <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="${areaPathD}" fill="url(#hourWaveGrad)" />
+                    <path d="${pathD}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    ${circlesHtml}
+                  </svg>
+                  <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono text-center px-4 pt-1">
+                    ${hourlyBuckets.map((b, i) => `
+                      <span class="w-14 cursor-pointer hover:text-blue-600 transition-colors ${selectedHourIndex === i ? 'text-blue-600 font-black' : ''}" data-hour-index="${i}">
+                        ${b.label.replace(' ', '<br>')}
+                      </span>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Banner de Franja Horaria Seleccionada -->
+              ${selectedHourIndex !== null && hourlyBuckets[selectedHourIndex] ? `
+                <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-200 text-xs flex items-center justify-between animate-fade-in">
+                  <span class="text-blue-900">
+                    <strong class="font-bold">${hourlyBuckets[selectedHourIndex].fullLabel}:</strong> ₡${hourlyBuckets[selectedHourIndex].amount.toLocaleString('es-CR')} (${hourlyBuckets[selectedHourIndex].count} citas)
+                  </span>
+                  <button type="button" class="sales-clear-hour-btn text-[11px] font-bold text-blue-600 hover:underline cursor-pointer">
+                    Limpiar
+                  </button>
+                </div>
+              ` : `
+                <div class="text-[10px] text-slate-400 flex items-center justify-between px-1">
+                  <span><i class="fas fa-hand-pointer mr-1"></i> Toca o desliza en cualquier franja para ver el flujo.</span>
+                  <span class="font-semibold text-slate-500">${maxHourAmount > 0 ? `Pico: ${hourlyBuckets.find(b => b.amount === maxHourAmount)?.label || ''}` : ''}</span>
+                </div>
+              `}
             </div>
 
           </div>
 
           <!-- Desglose Contable Tipo Ticket (Exacto a la imagen) -->
           <div class="space-y-2.5 pt-1">
-            <h4 class="text-sm font-bold text-slate-900 mb-2">Ventas:</h4>
+            <h4 class="text-sm font-bold text-slate-900 mb-2">${ticketTitle}</h4>
 
             <div class="flex items-center justify-between text-xs py-1">
               <span class="text-slate-500 font-medium">Ventas brutas</span>
-              <strong class="text-slate-900 font-black text-sm">₡${grossSales.toLocaleString('es-CR')}</strong>
+              <strong class="text-slate-900 font-black text-sm">₡${displayGross.toLocaleString('es-CR')}</strong>
             </div>
 
             <div class="flex items-center justify-between text-xs py-1">
               <span class="text-slate-500 font-medium">Total servicios</span>
-              <strong class="text-slate-900 font-bold">₡${totalServices.toLocaleString('es-CR')}</strong>
+              <strong class="text-slate-900 font-bold">₡${displayServices.toLocaleString('es-CR')}</strong>
             </div>
 
             <div class="flex items-center justify-between text-xs py-1">
               <span class="text-slate-500 font-medium">Total productos</span>
-              <strong class="text-slate-900 font-bold">₡${totalProducts.toLocaleString('es-CR')}</strong>
+              <strong class="text-slate-900 font-bold">₡${(selectedDayIndex === null ? totalProducts : 0).toLocaleString('es-CR')}</strong>
             </div>
 
             <div class="flex items-center justify-between text-xs py-1">
               <span class="text-slate-500 font-medium">Descuentos</span>
-              <strong class="text-slate-900 font-bold">₡${totalDiscounts.toLocaleString('es-CR')}</strong>
+              <strong class="text-slate-900 font-bold">₡${displayDiscounts.toLocaleString('es-CR')}</strong>
             </div>
 
-            ${totalAdvances > 0 ? `
+            ${selectedDayIndex === null && totalAdvances > 0 ? `
               <div class="flex items-center justify-between text-xs py-1">
                 <span class="text-amber-800 font-semibold">Vales de colaboradores</span>
                 <strong class="text-amber-800 font-bold">-₡${totalAdvances.toLocaleString('es-CR')}</strong>
               </div>
             ` : ''}
 
-            ${totalExpenses > 0 ? `
+            ${selectedDayIndex === null && totalExpenses > 0 ? `
               <div class="flex items-center justify-between text-xs py-1">
                 <span class="text-rose-600 font-semibold">Gastos de caja chica</span>
                 <strong class="text-rose-600 font-bold">-₡${totalExpenses.toLocaleString('es-CR')}</strong>
@@ -13727,7 +13887,7 @@ Esperamos atenderle pronto de nuevo.`;
 
             <div class="flex items-center justify-between pt-1">
               <span class="text-base font-black text-slate-900">Total</span>
-              <span class="text-xl font-black text-slate-900">₡${netSales.toLocaleString('es-CR')}</span>
+              <span class="text-xl font-black text-slate-900">₡${displayNet.toLocaleString('es-CR')}</span>
             </div>
           </div>
 
@@ -13836,6 +13996,8 @@ Esperamos atenderle pronto de nuevo.`;
       btn.addEventListener('click', () => {
         const filter = btn.getAttribute('data-sales-filter');
         this.salesReportFilter = filter;
+        this.salesReportSelectedDay = null;
+        this.salesReportSelectedHour = null;
         const container = document.getElementById('reports-sales-dashboard-container');
         if (container) {
           container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
@@ -13856,6 +14018,8 @@ Esperamos atenderle pronto de nuevo.`;
         this.salesReportFilter = 'custom';
         this.salesReportCustomStart = startInput.value;
         this.salesReportCustomEnd = endInput.value;
+        this.salesReportSelectedDay = null;
+        this.salesReportSelectedHour = null;
         const container = document.getElementById('reports-sales-dashboard-container');
         if (container) {
           container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
@@ -13865,6 +14029,89 @@ Esperamos atenderle pronto de nuevo.`;
         this.showToast('Por favor selecciona ambas fechas (Desde y Hasta).', 'info');
       }
     });
+
+    // 3. Clic / Selección de barras de día
+    document.querySelectorAll('.sales-day-bar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.getAttribute('data-day-index'), 10);
+        this.salesReportSelectedDay = (this.salesReportSelectedDay === idx) ? null : idx;
+        const container = document.getElementById('reports-sales-dashboard-container');
+        if (container) {
+          container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+          this.setupSalesReportEvents(currentBiz, appointments);
+        }
+      });
+    });
+
+    // 4. Botón limpiar filtro de día
+    document.querySelectorAll('.sales-clear-day-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.salesReportSelectedDay = null;
+        const container = document.getElementById('reports-sales-dashboard-container');
+        if (container) {
+          container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+          this.setupSalesReportEvents(currentBiz, appointments);
+        }
+      });
+    });
+
+    // 5. Clic / Selección de franjas horarias
+    document.querySelectorAll('.sales-hour-node, span[data-hour-index]').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.getAttribute('data-hour-index'), 10);
+        this.salesReportSelectedHour = (this.salesReportSelectedHour === idx) ? null : idx;
+        const container = document.getElementById('reports-sales-dashboard-container');
+        if (container) {
+          container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+          this.setupSalesReportEvents(currentBiz, appointments);
+        }
+      });
+    });
+
+    // 6. Botón limpiar filtro de hora
+    document.querySelectorAll('.sales-clear-hour-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.salesReportSelectedHour = null;
+        const container = document.getElementById('reports-sales-dashboard-container');
+        if (container) {
+          container.innerHTML = this.renderSalesAnalyticsDashboardContent(currentBiz, appointments);
+          this.setupSalesReportEvents(currentBiz, appointments);
+        }
+      });
+    });
+
+    // 7. Desplazamiento horizontal por arrastre (Drag to Scroll) con el ratón o táctil
+    const scrollContainer = document.getElementById('sales-hourly-scroll-container');
+    if (scrollContainer) {
+      let isDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+
+      scrollContainer.addEventListener('mousedown', (e) => {
+        isDown = true;
+        scrollContainer.classList.add('cursor-grabbing');
+        startX = e.pageX - scrollContainer.offsetLeft;
+        scrollLeft = scrollContainer.scrollLeft;
+      });
+
+      scrollContainer.addEventListener('mouseleave', () => {
+        isDown = false;
+        scrollContainer.classList.remove('cursor-grabbing');
+      });
+
+      scrollContainer.addEventListener('mouseup', () => {
+        isDown = false;
+        scrollContainer.classList.remove('cursor-grabbing');
+      });
+
+      scrollContainer.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - scrollContainer.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        scrollContainer.scrollLeft = scrollLeft - walk;
+      });
+    }
   }
 
   // --- SUB-CONTENIDO: SINCRONIZACIÓN DE CALENDARIOS (GOOGLE & OUTLOOK DIRECTO) ---
