@@ -11962,20 +11962,26 @@ class App {
     };
     const methodName = methodLabels[paymentMethod] || paymentMethod;
 
-    // Generar texto para WhatsApp
+    // Generar texto para WhatsApp (Estilo Ticket Ejecutivo)
     const waText = 
-`🧾 *COMPROBANTE DE PAGO - ${currentBiz.name}*
-━━━━━━━━━━━━━━━━━━━━━
-👤 *Cliente:* ${apt.clientName}
-✂️ *Servicio:* ${apt.serviceName}
-💈 *Especialista:* ${staffName}
-📅 *Fecha:* ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}
-━━━━━━━━━━━━━━━━━━━━━
-💰 *Total Servicio:* ${this.formatColones(totalPrice)}
-${depositAmount > 0 ? `🛡️ *Adelanto SINPE:* -${this.formatColones(depositAmount)}\n` : ''}💵 *Monto Cancelado:* ${this.formatColones(amountPaid)}
-💳 *Método de Pago:* ${methodName}
-${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ? `🪙 *Vuelto:* ${this.formatColones(change)}\n` : ''}━━━━━━━━━━━━━━━━━━━━━
-¡Muchas gracias por tu visita! Esperamos atenderte pronto.`;
+`━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*COMPROBANTE DE PAGO*
+*${currentBiz.name}*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• *Cliente:* ${apt.clientName}
+• *Servicio:* ${apt.serviceName}
+• *Especialista:* ${staffName}
+• *Fecha:* ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}
+
+────────────────────────────
+• *Total Servicio:* ${this.formatColones(totalPrice)}
+${depositAmount > 0 ? `• *Adelanto SINPE:* -${this.formatColones(depositAmount)}\n` : ''}• *Monto Cancelado:* ${this.formatColones(amountPaid)}
+• *Método de Pago:* ${methodName}
+${sinpeReference ? `• *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ? `• *Vuelto:* ${this.formatColones(change)}\n` : ''}────────────────────────────
+
+¡Muchas gracias por su confianza y preferencia!
+Esperamos atenderle pronto de nuevo.`;
 
     const waUrl = this.getWhatsAppUrl(apt.clientPhone, waText);
 
