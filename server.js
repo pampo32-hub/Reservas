@@ -3579,7 +3579,11 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
         .filter(p => p.type === 'commission_payout')
         .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
-      const balanceDue = Math.max(0, totalCommissionEarned - totalAdvancesApplied - totalAdvancesPending - totalPaidOut);
+      // Saldo pendiente de comisión devengada (sin descontar aún los vales pendientes)
+      const pendingCommission = Math.max(0, totalCommissionEarned - totalAdvancesApplied - totalPaidOut);
+      // Saldo neto tras amortizar vales pendientes
+      const netBalanceDue = Math.max(0, pendingCommission - totalAdvancesPending);
+      const balanceDue = pendingCommission;
 
       return {
         id: s.id,
@@ -3604,7 +3608,8 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
         totalPaidOut,
         totalSettled: totalPaidOut,
         balanceDue,
-        pendingCommission: balanceDue,
+        pendingCommission,
+        netBalanceDue,
         payoutsHistory: staffPayouts.map(p => ({
           id: p.id,
           type: p.type,
@@ -3966,7 +3971,10 @@ app.get('/api/staff/me/dashboard', authenticateToken, async (req, res) => {
       .filter(p => p.type === 'commission_payout')
       .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
-    const balanceDue = Math.max(0, totalEarned - totalAdvancesApplied - totalAdvancesPending - totalPaidOut);
+    // Saldo pendiente de comisión devengada (sin restar aún los vales pendientes)
+    const pendingCommission = Math.max(0, totalEarned - totalAdvancesApplied - totalPaidOut);
+    const netBalanceDue = Math.max(0, pendingCommission - totalAdvancesPending);
+    const balanceDue = pendingCommission;
 
     res.json({
       staff: {
@@ -3994,6 +4002,8 @@ app.get('/api/staff/me/dashboard', authenticateToken, async (req, res) => {
         totalAdvances,
         totalPaidOut,
         balanceDue,
+        pendingCommission,
+        netBalanceDue,
         completedServices: aptRes.rows.filter(a => a.status === 'completed' || a.payment_status === 'paid').length
       },
       appointments: aptRes.rows.map(a => ({

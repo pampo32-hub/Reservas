@@ -15582,13 +15582,13 @@ Esperamos atenderle pronto de nuevo.`;
 
           <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
             <div class="flex items-center justify-between text-emerald-800 mb-1">
-              <span class="text-xs font-semibold">Saldo Neto a Pagar</span>
+              <span class="text-xs font-semibold">Saldo Pendiente</span>
               <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
                 <i class="fas fa-wallet"></i>
               </div>
             </div>
             <div class="text-lg font-black text-emerald-700">₡${(summary.totalPending || 0).toLocaleString('es-CR')}</div>
-            <span class="text-[10px] text-emerald-600 font-medium">Pendiente de liquidar</span>
+            <span class="text-[10px] text-emerald-600 font-medium">Comisiones por liquidar</span>
           </div>
         </div>
 
@@ -15997,14 +15997,9 @@ Esperamos atenderle pronto de nuevo.`;
 
     const pending = Math.max(0, staff.pendingCommission || 0);
     const pendingVales = Math.max(0, staff.totalAdvancesPending || 0);
-    const totalComms = Math.max(0, staff.totalCommissions || 0);
-    const appliedVales = Math.max(0, staff.totalAdvancesApplied || 0);
-    const totalSettled = Math.max(0, staff.totalSettled || 0);
-
-    // Comisiones no liquidadas disponibles para amortizar vales
-    const availableUnsettled = Math.max(0, totalComms - appliedVales - totalSettled);
-    const valeToDeduct = Math.min(availableUnsettled, pendingVales);
-    const isAmortizationOnly = pending === 0 && valeToDeduct > 0;
+    const valeToDeduct = Math.min(pending, pendingVales);
+    const netPayout = Math.max(0, pending - valeToDeduct);
+    const isAmortizationOnly = pending > 0 && netPayout === 0 && valeToDeduct > 0;
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -16033,7 +16028,7 @@ Esperamos atenderle pronto de nuevo.`;
               >
               <div class="flex-1 min-w-0">
                 <strong class="text-slate-900 block font-bold truncate">${staff.name}</strong>
-                <span class="text-[11px] text-slate-500">${staff.roleTitle || 'Especialista'} • Pendiente neto: <strong class="text-emerald-700">₡${pending.toLocaleString('es-CR')}</strong></span>
+                <span class="text-[11px] text-slate-500">${staff.roleTitle || 'Especialista'} • Comisión pendiente: <strong class="text-indigo-700">₡${pending.toLocaleString('es-CR')}</strong>${pendingVales > 0 ? ` • Saldo neto a pagar: <strong class="text-emerald-700">₡${netPayout.toLocaleString('es-CR')}</strong>` : ''}</span>
               </div>
             </div>
 
@@ -16049,7 +16044,7 @@ Esperamos atenderle pronto de nuevo.`;
                   </span>
                   ${(pendingVales - valeToDeduct) > 0 ? `
                     <span class="inline-block mt-1 px-2 py-0.5 bg-amber-200/70 text-amber-900 rounded font-bold text-[10px]">
-                      Remanente pendiente post-liquidación: ₡${(pendingVales - valeToDeduct).toLocaleString('es-CR')}
+                      Remanente del vale post-liquidación: ₡${(pendingVales - valeToDeduct).toLocaleString('es-CR')}
                     </span>
                   ` : `
                     <span class="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px]">
@@ -16062,7 +16057,7 @@ Esperamos atenderle pronto de nuevo.`;
 
             ${isAmortizationOnly ? `
               <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 text-xs">
-                <span class="block font-bold text-slate-800 mb-0.5">Comisión disponible para amortizar: ₡${valeToDeduct.toLocaleString('es-CR')}</span>
+                <span class="block font-bold text-slate-800 mb-0.5">Comisión a amortizar al vale: ₡${valeToDeduct.toLocaleString('es-CR')}</span>
                 <span>No se desembolsa efectivo ni SINPE en esta acción. La comisión generada se aplicará directamente a rebajar el vale pendiente.</span>
                 <input type="hidden" id="payout-amount" value="0">
               </div>
@@ -16075,12 +16070,12 @@ Esperamos atenderle pronto de nuevo.`;
                   required 
                   min="0" 
                   step="1" 
-                  value="${pending}" 
+                  value="${netPayout}" 
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700 text-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                 >
                 <div class="flex gap-2 mt-1.5">
-                  <button type="button" class="set-quick-payout-btn text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer" data-amt="${pending}">
-                    Liquidar Todo el Saldo Neto (₡${pending.toLocaleString('es-CR')})
+                  <button type="button" class="set-quick-payout-btn text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer" data-amt="${netPayout}">
+                    Liquidar Saldo Neto (₡${netPayout.toLocaleString('es-CR')})
                   </button>
                 </div>
               </div>
@@ -16755,7 +16750,7 @@ Esperamos atenderle pronto de nuevo.`;
                   ₡${(earnings.balanceDue || 0).toLocaleString('es-CR')}
                 </h2>
                 <span class="text-xs text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
-                  <i class="fas fa-circle-check text-[10px]"></i> Saldo pendiente neto a cobrar
+                  <i class="fas fa-circle-check text-[10px]"></i> Saldo pendiente a cobrar (Menos los vales)
                 </span>
               </div>
 

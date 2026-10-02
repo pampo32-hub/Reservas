@@ -1567,7 +1567,8 @@ class StorageService {
               totalAdvancesPending: s.totalAdvancesPending || 0,
               totalAdvances: s.totalAdvances || 0,
               totalSettled: s.totalSettled !== undefined ? s.totalSettled : (s.totalPaidOut || 0),
-              pendingCommission: s.pendingCommission !== undefined ? s.pendingCommission : (s.balanceDue || 0)
+              pendingCommission: s.pendingCommission !== undefined ? s.pendingCommission : (s.balanceDue || 0),
+              netBalanceDue: s.netBalanceDue !== undefined ? s.netBalanceDue : Math.max(0, (s.pendingCommission || s.balanceDue || 0) - (s.totalAdvancesPending || 0))
             }));
             const summary = {
               totalGross: staff.reduce((acc, s) => acc + (s.grossServices || 0), 0),
