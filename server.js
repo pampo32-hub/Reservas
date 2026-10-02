@@ -3858,9 +3858,15 @@ app.get('/api/loyalty/card-preview', async (req, res) => {
     } catch (e) {
       if (search.startsWith('rcr_loyalty:')) {
         const parts = search.split(':');
-        phone = parts[2] || '';
         clientId = parts[1] === 'client' ? null : parts[1];
-        if (parts[3]) clientName = parts[3];
+        phone = parts[2] || '';
+        if (parts[3]) {
+          try {
+            clientName = decodeURIComponent(parts[3]);
+          } catch (_) {
+            clientName = parts[3];
+          }
+        }
       } else {
         phone = search;
       }

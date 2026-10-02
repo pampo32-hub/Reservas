@@ -26185,33 +26185,64 @@ Esperamos atenderle pronto de nuevo.`;
       </div>
     `;
 
-    // Generar código QR del cliente
-    const qrPayload = JSON.stringify({
-      type: 'rcr_loyalty',
-      clientId: clientUser.id,
-      phone: clientUser.phone,
-      name: clientUser.name
-    });
+    // Generar código QR del cliente (formato compacto token para máxima legibilidad y compatibilidad)
+    const cleanPhone = (clientUser.phone || '').toString().replace(/\s+/g, '');
+    const clientSafeName = encodeURIComponent(clientUser.name || 'Cliente');
+    const qrPayload = `rcr_loyalty:${clientUser.id || 'client'}:${cleanPhone}:${clientSafeName}`;
 
-    const renderQrCode = () => {
-      const qrContainer = document.getElementById('wallet-qr-display');
+    const renderWalletQrElement = (qrContainer, payload, size = 180) => {
       if (!qrContainer) return;
       qrContainer.innerHTML = '';
+      let rendered = false;
+
       if (typeof QRCode !== 'undefined') {
-        new QRCode(qrContainer, {
-          text: qrPayload,
-          width: 180,
-          height: 180,
-          colorDark: "#0f172a",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
-      } else {
-        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrPayload)}" alt="Código QR de Fidelización" class="w-full h-full rounded-lg">`;
+        try {
+          new QRCode(qrContainer, {
+            text: payload,
+            width: size,
+            height: size,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+
+          const canvas = qrContainer.querySelector('canvas');
+          const img = qrContainer.querySelector('img');
+          if (canvas) {
+            canvas.style.display = 'block';
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            canvas.classList.add('rounded-xl', 'shadow-xs', 'mx-auto');
+          }
+          if (img) {
+            img.style.maxWidth = '100%';
+            img.style.height = 'auto';
+            img.classList.add('rounded-xl', 'shadow-xs', 'mx-auto');
+          }
+          rendered = true;
+        } catch (err) {
+          console.warn('QRCode local falló, activando fallback visual:', err);
+        }
+      }
+
+      // Si QRCode no está presente o arrojó excepción, usar imagen de alta definición con fallback doble
+      if (!rendered || !qrContainer.firstElementChild) {
+        const encoded = encodeURIComponent(payload);
+        qrContainer.innerHTML = `
+          <img 
+            src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}&margin=2" 
+            alt="Código QR de Fidelización" 
+            class="w-[${size}px] h-[${size}px] max-w-full rounded-xl shadow-xs mx-auto object-contain bg-white"
+            loading="eager"
+            onerror="this.onerror=null; this.src='https://quickchart.io/qr?text=${encoded}&size=${size}&margin=2';"
+          />
+        `;
       }
     };
 
-    setTimeout(renderQrCode, 100);
+    setTimeout(() => {
+      renderWalletQrElement(document.getElementById('wallet-qr-display'), qrPayload, 180);
+    }, 50);
 
     // Modal de QR en pantalla completa
     document.getElementById('btn-show-qr-fullscreen')?.addEventListener('click', () => {
@@ -26228,7 +26259,7 @@ Esperamos atenderle pronto de nuevo.`;
               <h3 class="text-lg font-black text-slate-900">${clientUser.name}</h3>
               <p class="text-xs text-slate-500 font-mono mt-0.5">${clientUser.phone}</p>
             </div>
-            <div id="qr-fullscreen-canvas" class="w-[220px] h-[220px] mx-auto flex items-center justify-center bg-slate-50 rounded-2xl p-2 border border-slate-100 shadow-inner">
+            <div id="qr-fullscreen-canvas" class="w-[220px] h-[220px] mx-auto flex items-center justify-center bg-white rounded-2xl p-2 border border-slate-100 shadow-inner overflow-hidden">
             </div>
             <p class="text-[11px] text-slate-500 leading-tight">
               Aumenta el brillo de tu pantalla si el lector del comercio tiene dificultades para escanear.
@@ -26238,22 +26269,7 @@ Esperamos atenderle pronto de nuevo.`;
       `;
 
       setTimeout(() => {
-        const fullContainer = document.getElementById('qr-fullscreen-canvas');
-        if (fullContainer) {
-          fullContainer.innerHTML = '';
-          if (typeof QRCode !== 'undefined') {
-            new QRCode(fullContainer, {
-              text: qrPayload,
-              width: 210,
-              height: 210,
-              colorDark: "#0f172a",
-              colorLight: "#ffffff",
-              correctLevel: QRCode.CorrectLevel.M
-            });
-          } else {
-            fullContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=210x210&data=${encodeURIComponent(qrPayload)}" alt="QR" class="w-full h-full rounded-lg">`;
-          }
-        }
+        renderWalletQrElement(document.getElementById('qr-fullscreen-canvas'), qrPayload, 210);
       }, 50);
 
       document.getElementById('close-qr-fullscreen-btn')?.addEventListener('click', () => {
