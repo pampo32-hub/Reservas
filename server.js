@@ -5359,7 +5359,7 @@ app.get('/api/developer/export/appointments-excel', async (req, res) => {
       'Teléfono Comercio': r.business_phone || 'N/A',
       'Nombre Cliente': r.client_name,
       'Teléfono Cliente': r.client_phone,
-      'WhatsApp Enlace': r.client_phone ? `https://wa.me/${r.client_phone.replace(/[^0-9]/g, '')}` : '',
+      'WhatsApp Enlace': r.client_phone && formatMetaPhone(r.client_phone) ? `https://wa.me/${formatMetaPhone(r.client_phone)}` : '',
       'Correo Cliente': r.client_email || 'Sin correo',
       'Servicio': r.service_name || 'Servicio General',
       'Duración (min)': r.service_duration || 30,

@@ -99,6 +99,11 @@ export function formatMetaPhone(phone) {
   let digits = String(phone).replace(/\D/g, '').trim();
   if (!digits) return null;
 
+  // Si por error previo ya tiene doble 506 (ej: 50650662297240), limpiar la duplicación
+  while (digits.startsWith('506506')) {
+    digits = digits.slice(3);
+  }
+
   // Si son 8 dígitos de Costa Rica, anteponer el código de país 506
   if (digits.length === 8) {
     digits = `506${digits}`;

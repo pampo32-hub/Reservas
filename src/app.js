@@ -276,6 +276,38 @@ class App {
     return '₡' + num.toLocaleString('es-CR', { maximumFractionDigits: 0 });
   }
 
+  formatWhatsAppPhone(phone) {
+    if (!phone) return '';
+    let digits = String(phone).replace(/\D/g, '');
+    if (!digits) return '';
+
+    // Si por error previo ya tiene doble 506 (ej: 50650662297240), limpiar la duplicación
+    while (digits.startsWith('506506')) {
+      digits = digits.slice(3);
+    }
+
+    // Si ya empieza con 506 y tiene al menos 11 dígitos (código 506 + 8 dígitos de CR), dejarlo
+    if (digits.startsWith('506') && digits.length >= 11) {
+      return digits;
+    }
+
+    // Si tiene exactamente 8 dígitos (formato estándar de Costa Rica), agregar el prefijo 506
+    if (digits.length === 8) {
+      return '506' + digits;
+    }
+
+    return digits;
+  }
+
+  getWhatsAppUrl(phone, text = '') {
+    const formattedPhone = this.formatWhatsAppPhone(phone);
+    const encodedText = text ? encodeURIComponent(text) : '';
+    if (formattedPhone) {
+      return `https://wa.me/${formattedPhone}${encodedText ? `?text=${encodedText}` : ''}`;
+    }
+    return encodedText ? `https://wa.me/?text=${encodedText}` : 'https://wa.me/';
+  }
+
   formatTime(timeStr) {
     return this.formatTime12h(timeStr);
   }
@@ -4580,7 +4612,7 @@ class App {
 
               ${biz.phone ? `
                 <div class="pt-3 border-t border-slate-100">
-                  <a href="https://wa.me/${biz.phone.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-xs">
+                  <a href="${this.getWhatsAppUrl(biz.phone)}" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shadow-xs">
                     <i class="fab fa-whatsapp text-sm"></i> Chatear por WhatsApp
                   </a>
                 </div>
@@ -8229,7 +8261,8 @@ class App {
                     <!-- Enlaces de WhatsApp y Sincronización Calendario en Móvil -->
                     <div class="flex items-center justify-between pt-1 text-xs">
                       ${apt.clientPhone ? `
-                        <a href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                        <a href="${this.getWhatsAppUrl(
+                          apt.clientPhone,
                           (apt.depositRequired || apt.deposit_required) && !apt.depositPaid
                             ? `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}. Vemos tu solicitud de turno por ${this.formatColones(apt.servicePrice)}. Por favor indícanos o confírmanos el comprobante SINPE del adelanto (${this.formatColones(apt.depositAmount || 0)}) para confirmarte la cita.`
                             : `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`
@@ -8353,7 +8386,8 @@ class App {
                             <!-- Contacto Directo WhatsApp -->
                             ${apt.clientPhone ? `
                               <a 
-                                href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(
+                                href="${this.getWhatsAppUrl(
+                                  apt.clientPhone,
                                   (apt.depositRequired || apt.deposit_required) && !apt.depositPaid
                                     ? `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}. Vemos tu solicitud de turno por ${this.formatColones(apt.servicePrice)}. Por favor indícanos o confírmanos el comprobante SINPE del adelanto (${this.formatColones(apt.depositAmount || 0)}) para confirmarte la cita.`
                                     : `Hola ${apt.clientName}, te escribimos de ${currentBiz.name} sobre tu cita del ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`
@@ -9517,7 +9551,7 @@ class App {
 
                         ${cleanPhone ? `
                           <a 
-                            href="https://wa.me/506${cleanPhone}?text=${encodeURIComponent(`¡Hola ${apt.clientName}! Te saludamos de ${currentBiz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" 
+                            href="${this.getWhatsAppUrl(apt.clientPhone, `¡Hola ${apt.clientName}! Te saludamos de ${currentBiz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             class="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs"
@@ -9717,7 +9751,7 @@ class App {
                   <p class="text-xs text-slate-500">${this.escapeHtml(apt.clientPhone || 'Sin teléfono')}</p>
                 </div>
                 ${cleanPhone ? `
-                  <a href="https://wa.me/506${cleanPhone}?text=${encodeURIComponent(`¡Hola ${apt.clientName}! Te saludamos de ${biz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
+                  <a href="${this.getWhatsAppUrl(apt.clientPhone, `¡Hola ${apt.clientName}! Te saludamos de ${biz.name} respecto a tu cita de ${apt.serviceName} el ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}.`)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
                     <i class="fab fa-whatsapp text-sm"></i>
                     <span>WhatsApp</span>
                   </a>
@@ -11478,7 +11512,7 @@ class App {
 
                         <div class="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-2">
                           ${apt.clientPhone ? `
-                            <a href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}" target="_blank" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+                            <a href="${this.getWhatsAppUrl(apt.clientPhone)}" target="_blank" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
                               <i class="fab fa-whatsapp"></i> WhatsApp
                             </a>
                           ` : '<span></span>'}
@@ -11943,10 +11977,7 @@ ${depositAmount > 0 ? `🛡️ *Adelanto SINPE:* -${this.formatColones(depositAm
 ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ? `🪙 *Vuelto:* ${this.formatColones(change)}\n` : ''}━━━━━━━━━━━━━━━━━━━━━
 ¡Muchas gracias por tu visita! Esperamos atenderte pronto.`;
 
-    const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '');
-    const waUrl = cleanPhone.length >= 8 
-      ? `https://wa.me/506${cleanPhone}?text=${encodeURIComponent(waText)}` 
-      : `https://wa.me/?text=${encodeURIComponent(waText)}`;
+    const waUrl = this.getWhatsAppUrl(apt.clientPhone, waText);
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
@@ -12479,8 +12510,8 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
     if (!modalContainer) return;
 
     const displayName = client.customName || client.clientName || 'estimado(a) cliente';
-    const cleanDigits = (client.rawPhone || client.clientPhone || '').replace(/\D/g, '');
-    const fullWaPhone = cleanDigits.length === 8 ? `506${cleanDigits}` : cleanDigits;
+    const fullWaPhone = this.formatWhatsAppPhone(client.rawPhone || client.clientPhone);
+    const cleanDigits = fullWaPhone ? fullWaPhone.slice(-8) : '';
 
     const bizSlug = currentBiz.slug || storage.slugify(currentBiz.name || currentBiz.id);
     const origin = (typeof window !== 'undefined' && window.location.origin) ? window.location.origin : 'https://reservascr.app';
@@ -12609,7 +12640,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
         return;
       }
       const message = textarea?.value || '';
-      const waUrl = `https://wa.me/${fullWaPhone}?text=${encodeURIComponent(message)}`;
+      const waUrl = this.getWhatsAppUrl(fullWaPhone, message);
       window.open(waUrl, '_blank');
       closeModal();
       this.showToast('Abriendo conversación de WhatsApp...', 'success');
@@ -12653,7 +12684,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
       '#': i + 1,
       'Nombre del Cliente': c.customName || c.clientName || 'Cliente',
       'Teléfono': c.clientPhone || '',
-      'WhatsApp Directo': c.rawPhone ? `https://wa.me/506${c.rawPhone}` : '',
+      'WhatsApp Directo': (c.rawPhone || c.clientPhone) ? this.getWhatsAppUrl(c.rawPhone || c.clientPhone) : '',
       'Correo Electrónico': c.clientEmail || 'Sin correo',
       'Nivel de Fidelidad': c.tier === 'vip' ? 'VIP Platino' : (c.tier === 'frequent' ? 'Recurrente' : 'Nuevo'),
       'Estado de Retención': retentionLabels[c.retentionStatus] || c.retentionStatus,
@@ -12966,7 +12997,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
                         <td class="py-3 px-3 text-right">
                           ${c.phone ? `
                             <a 
-                              href="https://wa.me/506${c.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola ${c.name}, te saludamos de ${currentBiz.name}. ¡Agradecemos tu preferencia como cliente frecuente!`)}" 
+                              href="${this.getWhatsAppUrl(c.phone, `Hola ${c.name}, te saludamos de ${currentBiz.name}. ¡Agradecemos tu preferencia como cliente frecuente!`)}" 
                               target="_blank" 
                               class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-[11px] font-bold transition-all border border-emerald-200"
                               title="Enviar mensaje por WhatsApp"
@@ -13306,7 +13337,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
       'Comercio': currentBiz.name || 'N/A',
       'Nombre Cliente': a.clientName || 'Cliente',
       'Teléfono Cliente': a.clientPhone || '',
-      'WhatsApp Enlace': a.clientPhone ? `https://wa.me/506${a.clientPhone.replace(/[^0-9]/g, '')}` : '',
+      'WhatsApp Enlace': a.clientPhone ? this.getWhatsAppUrl(a.clientPhone) : '',
       'Correo Cliente': a.clientEmail || 'Sin correo',
       'Servicio': a.serviceName || 'Servicio General',
       'Especialista': a.staffName || 'Sin asignar / General',
@@ -13352,7 +13383,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
       'Ranking': i + 1,
       'Nombre del Cliente': c.name,
       'Teléfono / WhatsApp': c.phone || 'Sin número',
-      'WhatsApp Enlace': c.phone ? `https://wa.me/506${c.phone.replace(/[^0-9]/g, '')}` : '',
+      'WhatsApp Enlace': c.phone ? this.getWhatsAppUrl(c.phone) : '',
       'Total Reservas': c.totalBookings,
       'Citas Completadas': c.completedBookings,
       'Citas Canceladas': c.cancelledBookings,
@@ -15016,11 +15047,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
       phone = phone.replace(/\D/g, '');
     }
 
-    if (!phone.startsWith('506') && phone.length === 8) {
-      phone = '506' + phone;
-    }
-
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    const url = this.getWhatsAppUrl(phone, text);
     window.open(url, '_blank');
   }
 
@@ -15362,9 +15389,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
                   const isPaid = a.paymentStatus === 'paid';
                   const estCommission = Number(a.commissionAmount) || (staff.commissionType === 'fixed' ? staff.commissionRate : Math.round(Number(a.servicePrice || 0) * (staff.commissionRate || 50) / 100));
 
-                  const clientPhone = (a.clientPhone || '').replace(/\D/g, '');
-                  const waPhone = clientPhone.startsWith('506') ? clientPhone : ('506' + clientPhone);
-                  const waMsg = encodeURIComponent(`Hola ${a.clientName || 'Cliente'}, te saluda ${staff.name} de ${business.name}. Te contacto sobre tu cita para ${a.serviceName} el ${a.date} a las ${a.time}.`);
+                  const waUrl = this.getWhatsAppUrl(a.clientPhone, `Hola ${a.clientName || 'Cliente'}, te saluda ${staff.name} de ${business.name}. Te contacto sobre tu cita para ${a.serviceName} el ${a.date} a las ${a.time}.`);
 
                   return `
                     <div class="p-4 sm:p-5 rounded-2xl bg-slate-800/80 border ${isCompleted ? 'border-emerald-500/30' : (isCancelled ? 'border-rose-500/30 opacity-60' : 'border-slate-700/80')} space-y-3 transition-all">
@@ -15417,9 +15442,9 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
                         </div>
 
                         <div class="flex items-center gap-2">
-                          ${clientPhone ? `
+                          ${a.clientPhone ? `
                             <a 
-                              href="https://wa.me/${waPhone}?text=${waMsg}" 
+                              href="${waUrl}" 
                               target="_blank" 
                               class="px-2.5 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
                               title="Chat WhatsApp con Cliente"
@@ -17669,11 +17694,9 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredPreRegs.map(pr => {
-                            const waClean = (pr.phone || '').replace(/\D/g, '');
-                            const waUrl = `https://wa.me/506${waClean}?text=${encodeURIComponent('Hola ' + (pr.contactName || '') + ', te saludamos de Reservas CR respecto al pre-registro de tu negocio ' + (pr.businessName || '') + '.')}`;
+                            const waUrl = this.getWhatsAppUrl(pr.phone, 'Hola ' + (pr.contactName || '') + ', te saludamos de Reservas CR respecto al pre-registro de tu negocio ' + (pr.businessName || '') + '.');
                             const isPrBlocked = Boolean(pr.isBlocked);
                             return `
-                              <tr class="hover:bg-slate-50/80 transition-colors">
                               <tr class="hover:bg-slate-50/80 transition-colors ${isPrBlocked ? 'bg-rose-50/30' : ''}">
                                 <td class="p-3">
                                   <strong class="text-slate-900 block font-bold text-sm">${this.escapeHtml(pr.businessName)}</strong>
@@ -17803,8 +17826,7 @@ ${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ?
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                           ${filteredSinpeBusinesses.map(biz => {
-                            const waClean = (biz.phone || '').replace(/\D/g, '');
-                            const waUrl = `https://wa.me/506${waClean}?text=${encodeURIComponent('Hola ' + (biz.name || '') + ', te contactamos de Reservas CR para confirmar la activación de tu plan por SINPE Móvil.')}`;
+                            const waUrl = this.getWhatsAppUrl(biz.phone, 'Hola ' + (biz.name || '') + ', te contactamos de Reservas CR para confirmar la activación de tu plan por SINPE Móvil.');
                             const currentPlan = biz.plan || 'basic';
                             return `
                               <tr class="hover:bg-slate-50/80 transition-colors bg-amber-50/20">

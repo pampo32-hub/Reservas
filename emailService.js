@@ -130,6 +130,29 @@ function formatDateDMY(dateStr) {
 }
 
 /**
+ * Normaliza y formatea un teléfono para enlaces directos de WhatsApp
+ */
+export function formatWhatsAppPhone(phone) {
+  if (!phone) return '';
+  let digits = String(phone).replace(/\D/g, '').trim();
+  if (!digits) return '';
+
+  while (digits.startsWith('506506')) {
+    digits = digits.slice(3);
+  }
+
+  if (digits.startsWith('506') && digits.length >= 11) {
+    return digits;
+  }
+
+  if (digits.length === 8) {
+    return '506' + digits;
+  }
+
+  return digits;
+}
+
+/**
  * Envía correo de confirmación de reserva al cliente
  */
 export async function sendBookingConfirmationEmail(appointment, business) {
@@ -1143,8 +1166,8 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
     return { success: false, reason: 'no_email_service' };
   }
 
-  const cleanPhone = (lead.phone || '').replace(/\D/g, '');
-  const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+  const formattedPhone = formatWhatsAppPhone(lead.phone);
+  const waLink = formattedPhone ? `https://wa.me/${formattedPhone}` : '#';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -1256,8 +1279,8 @@ export async function sendAdminBusinessRegistrationNotificationEmail({
   if (!brevoApiKey && !resend) return { success: false, reason: 'no_email_service' };
 
   const bizName = business?.name || 'Comercio en Registro';
-  const cleanPhone = (business?.phone || '').replace(/\D/g, '');
-  const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+  const formattedPhone = formatWhatsAppPhone(business?.phone);
+  const waLink = formattedPhone ? `https://wa.me/${formattedPhone}` : '#';
 
   const badgeStyle = isVerified 
     ? 'display: inline-block; background: #ffffff; color: #065f46; font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 9999px; text-transform: uppercase; margin-bottom: 8px;'
@@ -1395,8 +1418,8 @@ export async function sendAdminBusinessRegistrationNotificationEmail({
 export async function sendAdminClientRegistrationNotificationEmail(client = {}) {
   if (!brevoApiKey && !resend) return { success: false, reason: 'no_email_service' };
 
-  const cleanPhone = (client.phone || '').replace(/\D/g, '');
-  const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('506') ? cleanPhone : '506' + cleanPhone}` : '#';
+  const formattedPhone = formatWhatsAppPhone(client.phone);
+  const waLink = formattedPhone ? `https://wa.me/${formattedPhone}` : '#';
   const displayPhone = client.phone ? client.phone : (client.oauth_provider ? `Pendiente (Registro con ${client.oauth_provider})` : 'No especificado');
   const contactInfo = client.phone || client.email || 'Nuevo';
 
