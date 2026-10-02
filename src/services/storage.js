@@ -1185,29 +1185,44 @@ class StorageService {
   // GESTIÓN DE EQUIPO / ESPECIALISTAS (STAFF)
   // ==========================================
   async getBusinessStaff(businessId) {
+    if (!businessId) return [];
+    const biz = this.getBusinessById(businessId);
+    const canonicalId = biz ? biz.id : businessId;
+
     if (this.isOnlineApi) {
       try {
-        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff`);
+        const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${canonicalId}/staff`);
         if (res.ok) {
           const staff = await res.json();
           this.staffCache = this.staffCache || {};
+          this.staffCache[canonicalId] = staff;
           this.staffCache[businessId] = staff;
-          localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
+          try {
+            localStorage.setItem(`directorio_staff_${canonicalId}`, JSON.stringify(staff));
+            if (canonicalId !== businessId) {
+              localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
+            }
+          } catch (e) {}
           return staff;
         }
       } catch (e) {
         console.warn('Fallback local para staff:', e);
       }
     }
-    const local = localStorage.getItem(`directorio_staff_${businessId}`);
+    const local = localStorage.getItem(`directorio_staff_${canonicalId}`) || localStorage.getItem(`directorio_staff_${businessId}`);
     return local ? JSON.parse(local) : [];
   }
 
   getBusinessStaffSync(businessId) {
-    if (this.staffCache && this.staffCache[businessId]) {
-      return this.staffCache[businessId];
+    if (!businessId) return [];
+    const biz = this.getBusinessById(businessId);
+    const canonicalId = biz ? biz.id : businessId;
+
+    if (this.staffCache) {
+      if (this.staffCache[canonicalId]) return this.staffCache[canonicalId];
+      if (this.staffCache[businessId]) return this.staffCache[businessId];
     }
-    const local = localStorage.getItem(`directorio_staff_${businessId}`);
+    const local = localStorage.getItem(`directorio_staff_${canonicalId}`) || localStorage.getItem(`directorio_staff_${businessId}`);
     return local ? JSON.parse(local) : [];
   }
 

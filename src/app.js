@@ -5101,10 +5101,12 @@ class App {
   // MODAL DE RESERVA EN TIEMPO REAL (FLUJO CLIENTE)
   // ==========================================
   openBookingModal(businessId, serviceId, initialDate = null) {
+    const biz = storage.getBusinessById(businessId);
+    const canonicalBizId = biz ? biz.id : businessId;
     const selectedDate = initialDate || this.getTodayDateString();
     this.bookingState = {
       isOpen: true,
-      businessId,
+      businessId: canonicalBizId,
       serviceId,
       staffId: 'any',
       selectedDate: selectedDate,
@@ -5113,10 +5115,10 @@ class App {
 
     // Asegurar carga fresca de especialistas y citas de este comercio
     Promise.all([
-      storage.getBusinessStaff(businessId),
-      storage.getAppointmentsByBusinessAsync(businessId)
+      storage.getBusinessStaff(canonicalBizId),
+      storage.getAppointmentsByBusinessAsync(canonicalBizId)
     ]).then(() => {
-      if (this.bookingState.isOpen && this.bookingState.businessId === businessId) {
+      if (this.bookingState.isOpen && this.bookingState.businessId === canonicalBizId) {
         this.renderBookingModal();
       }
     }).catch(() => {});
@@ -5145,8 +5147,18 @@ class App {
       return st.services.includes(service.id);
     });
 
+    const hasStaff = qualifiedStaff.length >= 1;
     const hasMultipleStaff = qualifiedStaff.length >= 2;
-    const selectedStaffId = this.bookingState.staffId || 'any';
+
+    // Si solo hay 1 especialista calificado, asignarlo por defecto de inmediato
+    if (qualifiedStaff.length === 1) {
+      this.bookingState.staffId = qualifiedStaff[0].id;
+    } else if (this.bookingState.staffId && this.bookingState.staffId !== 'any') {
+      if (!qualifiedStaff.some(s => s.id === this.bookingState.staffId)) {
+        this.bookingState.staffId = 'any';
+      }
+    }
+    const selectedStaffId = this.bookingState.staffId || (qualifiedStaff.length === 1 ? qualifiedStaff[0].id : 'any');
 
     const availability = storage.getAvailableSlots(
       biz.id, 
@@ -5224,8 +5236,37 @@ class App {
               </div>
             </div>
 
-            <!-- Paso 1: Seleccionar Especialista (si hay 2 o más especialistas calificados) -->
-            ${hasMultipleStaff ? `
+            <!-- Paso 1: Especialista (si hay al menos 1 especialista calificado) -->
+            ${qualifiedStaff.length === 1 ? `
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    1. Especialista Asignado
+                  </label>
+                  <span class="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    <i class="fas fa-check-circle text-emerald-600"></i> Profesional Oficial
+                  </span>
+                </div>
+                <div class="p-3 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200 rounded-2xl flex items-center justify-between shadow-2xs">
+                  <div class="flex items-center gap-3">
+                    ${qualifiedStaff[0].avatarUrl ? `
+                      <img src="${qualifiedStaff[0].avatarUrl}" alt="${this.escapeHtml(qualifiedStaff[0].name)}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-xs">
+                    ` : `
+                      <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black text-sm shadow-xs">
+                        ${qualifiedStaff[0].name.charAt(0).toUpperCase()}
+                      </div>
+                    `}
+                    <div>
+                      <h5 class="text-sm font-bold text-slate-900 leading-tight">${this.escapeHtml(qualifiedStaff[0].name)}</h5>
+                      <span class="text-xs text-slate-500 font-medium">${this.escapeHtml(qualifiedStaff[0].roleTitle || 'Especialista')}</span>
+                    </div>
+                  </div>
+                  <span class="text-[11px] font-bold text-blue-700 bg-white/90 border border-blue-200 px-2.5 py-1 rounded-xl shadow-2xs">
+                    <i class="fas fa-user-check text-blue-600 mr-1"></i> Asignado
+                  </span>
+                </div>
+              </div>
+            ` : hasMultipleStaff ? `
               <div>
                 <div class="flex items-center justify-between mb-2">
                   <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -5276,7 +5317,7 @@ class App {
             <!-- Paso 2: Seleccionar Fecha -->
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                ${hasMultipleStaff ? '2. Selecciona la Fecha' : '1. Selecciona la Fecha'}
+                ${hasStaff ? '2. Selecciona la Fecha' : '1. Selecciona la Fecha'}
               </label>
               <input 
                 type="date" 
@@ -5292,7 +5333,7 @@ class App {
             <div id="booking-slots-section">
               <div class="flex items-center justify-between mb-2">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  ${hasMultipleStaff ? '3. Horario Disponible' : '2. Horario Disponible'} <span id="booking-slots-count-label" class="font-normal text-slate-500">(${availability.slots ? availability.slots.length : 0} libres)</span>
+                  ${hasStaff ? '3. Horario Disponible' : '2. Horario Disponible'} <span id="booking-slots-count-label" class="font-normal text-slate-500">(${availability.slots ? availability.slots.length : 0} libres)</span>
                 </label>
                 <div id="booking-selected-time-badge">
                   ${this.bookingState.selectedTime ? `
@@ -5334,7 +5375,7 @@ class App {
             <form id="booking-form" class="space-y-3 pt-3 border-t border-slate-100">
               <div class="flex items-center justify-between">
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  ${hasMultipleStaff ? '4. Tus Datos para la Reserva' : '3. Tus Datos para la Reserva'}
+                  ${hasStaff ? '4. Tus Datos para la Reserva' : '3. Tus Datos para la Reserva'}
                 </label>
                 ${clientUser ? `
                   <span class="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded">
@@ -5598,7 +5639,7 @@ class App {
 
     // Actualización de slots disponibles al cambiar fecha o especialista (sin flasheo del modal)
     const updateSlotsView = () => {
-      const currentSelectedStaff = this.bookingState.staffId || 'any';
+      const currentSelectedStaff = this.bookingState.staffId || (qualifiedStaff.length === 1 ? qualifiedStaff[0].id : 'any');
       const curAvailability = storage.getAvailableSlots(
         biz.id,
         this.bookingState.selectedDate,
@@ -5775,8 +5816,24 @@ class App {
       const isAutoConfirm = biz.autoConfirmAppointments !== false;
       const initialStatus = isAutoConfirm ? 'confirmed' : 'pending';
 
-      const assignedStaffId = this.bookingState.staffId && this.bookingState.staffId !== 'any' ? this.bookingState.staffId : null;
-      const assignedStaffObj = assignedStaffId ? qualifiedStaff.find(s => s.id === assignedStaffId) : null;
+      let assignedStaffId = this.bookingState.staffId && this.bookingState.staffId !== 'any' ? this.bookingState.staffId : null;
+      if (!assignedStaffId && qualifiedStaff.length === 1) {
+        assignedStaffId = qualifiedStaff[0].id;
+      }
+      let assignedStaffObj = assignedStaffId ? (qualifiedStaff.find(s => s.id === assignedStaffId) || allStaff.find(s => s.id === assignedStaffId)) : null;
+
+      // Si el cliente seleccionó "Cualquiera" y hay especialistas calificados disponibles a esa hora, asignar el primero libre
+      if (!assignedStaffId && qualifiedStaff.length > 0) {
+        const freeSt = qualifiedStaff.find(st => {
+          const avail = storage.getAvailableSlots(biz.id, this.bookingState.selectedDate, service.duration, null, st.id, service.id);
+          return avail.slots && avail.slots.includes(this.bookingState.selectedTime);
+        });
+        if (freeSt) {
+          assignedStaffId = freeSt.id;
+          assignedStaffObj = freeSt;
+        }
+      }
+
       const assignedStaffName = assignedStaffObj ? `${assignedStaffObj.name}${assignedStaffObj.roleTitle ? ' (' + assignedStaffObj.roleTitle + ')' : ''}` : null;
 
       try {
@@ -7175,6 +7232,9 @@ class App {
     if (!this.posDataLoadedBizId || this.posDataLoadedBizId !== currentBiz.id) {
       this.loadPosData(currentBiz);
     }
+
+    // 4. Sincronizar especialistas activos en segundo plano
+    storage.getBusinessStaff(currentBiz.id).catch(() => {});
 
     const todayStr = this.getTodayDateString();
     const todayAppointments = appointments.filter(a => a.date === todayStr && a.status !== 'cancelled');

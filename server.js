@@ -2725,7 +2725,12 @@ app.delete('/api/services/:id', async (req, res) => {
 app.get('/api/businesses/:id/staff', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY created_at ASC', [id]);
+    let actualBizId = id;
+    const bizCheck = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [id]);
+    if (bizCheck.rows.length > 0) {
+      actualBizId = bizCheck.rows[0].id;
+    }
+    const result = await pool.query('SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY created_at ASC', [actualBizId]);
     const staff = result.rows.map(s => ({
       id: s.id,
       businessId: s.business_id,
@@ -2752,17 +2757,18 @@ app.get('/api/businesses/:id/staff', async (req, res) => {
 // Agregar especialista al negocio (Validando límites de plan)
 app.post('/api/businesses/:id/staff', async (req, res) => {
   try {
-    const { id: businessId } = req.params;
+    const { id: rawBusinessId } = req.params;
     const s = req.body;
     if (!s.name || !s.name.trim()) {
       return res.status(400).json({ error: 'El nombre del especialista es obligatorio.' });
     }
 
-    // Validar plan del comercio
-    const bizRes = await pool.query('SELECT plan FROM reservas_businesses WHERE id = $1', [businessId]);
+    // Validar plan del comercio (resolviendo por id o slug)
+    const bizRes = await pool.query('SELECT id, plan FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
     if (bizRes.rows.length === 0) {
       return res.status(404).json({ error: 'Comercio no encontrado.' });
     }
+    const businessId = bizRes.rows[0].id;
     const plan = bizRes.rows[0].plan || 'basic';
     if (plan === 'basic') {
       return res.status(403).json({ 
@@ -2829,7 +2835,12 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
 // Actualizar especialista
 app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
   try {
-    const { id: businessId, staffId } = req.params;
+    const { id: rawBusinessId, staffId } = req.params;
+    let businessId = rawBusinessId;
+    const bizRes = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
+    if (bizRes.rows.length > 0) {
+      businessId = bizRes.rows[0].id;
+    }
     const s = req.body;
     const cleanUpdateAvatar = s.avatarUrl !== undefined ? (s.avatarUrl ? processAndSaveImage(s.avatarUrl, `comercios/${businessId}/equipo`, `staff_${staffId}`) : '') : null;
 
@@ -2873,7 +2884,12 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
 // Eliminar especialista
 app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
   try {
-    const { id: businessId, staffId } = req.params;
+    const { id: rawBusinessId, staffId } = req.params;
+    let businessId = rawBusinessId;
+    const bizRes = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
+    if (bizRes.rows.length > 0) {
+      businessId = bizRes.rows[0].id;
+    }
     await pool.query('DELETE FROM reservas_staff WHERE id = $1 AND business_id = $2', [staffId, businessId]);
     res.json({ success: true, message: 'Especialista eliminado con éxito.' });
   } catch (error) {
@@ -4006,7 +4022,7 @@ app.post('/api/appointments', async (req, res) => {
 
     // 1. Validar comercio con bloqueo de fila para evitar condiciones de carrera (Race Conditions)
     const bizCheck = await client.query(
-      'SELECT name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments, require_deposit, deposit_percentage, sinpe_phone, sinpe_holder_name, deposit_instructions, cancellation_policies_preset, cancellation_policies_custom FROM reservas_businesses WHERE id = $1 FOR UPDATE',
+      'SELECT id, name, is_blocked, block_reason, plan, monthly_booking_limit, auto_confirm_appointments, require_deposit, deposit_percentage, sinpe_phone, sinpe_holder_name, deposit_instructions, cancellation_policies_preset, cancellation_policies_custom FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) FOR UPDATE',
       [a.businessId]
     );
 
@@ -4017,6 +4033,7 @@ app.post('/api/appointments', async (req, res) => {
     }
 
     const bizData = bizCheck.rows[0];
+    a.businessId = bizData.id;
     if (bizData.is_blocked) {
       await client.query('ROLLBACK');
       client.release();
