@@ -16191,7 +16191,8 @@ Esperamos atenderle pronto de nuevo.`;
         console.warn('Error cargando comercios para portal colaborador:', e);
       }
     }
-    const preselectedBiz = this.selectedBusinessId || storage.getActiveBusinessId();
+    const savedStaffBiz = (typeof localStorage !== 'undefined' ? localStorage.getItem('reservascr_last_staff_biz') : null) || storage.getStaffUser()?.businessId;
+    const preselectedBiz = this.selectedBusinessId || savedStaffBiz || '';
 
     container.innerHTML = `
       <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 flex flex-col justify-between p-4 sm:p-6 text-white">
@@ -16217,10 +16218,13 @@ Esperamos atenderle pronto de nuevo.`;
 
           <form id="staff-pin-login-form" class="space-y-4">
             <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">Tu Negocio / Comercio *</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-300">Tu Negocio / Comercio *</label>
+                <span class="text-[11px] text-slate-400">¿Dónde trabajas?</span>
+              </div>
               ${allBusinesses.length > 0 ? `
                 <select id="staff-login-biz" required class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-medium text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
-                  <option value="">Selecciona tu negocio...</option>
+                  <option value="" ${!preselectedBiz ? 'selected disabled' : ''}>-- Selecciona tu negocio / sucursal --</option>
                   ${allBusinesses.map(b => {
                     const isSel = preselectedBiz && (b.id === preselectedBiz || b.slug === preselectedBiz);
                     return `<option value="${b.slug || b.id}" ${isSel ? 'selected' : ''}>${this.escapeHtml(b.name)}</option>`;
@@ -16308,7 +16312,7 @@ Esperamos atenderle pronto de nuevo.`;
         </div>
 
         <div class="text-center text-slate-500 text-[11px] py-2 flex items-center justify-center gap-1.5 flex-wrap">
-          <span>ReservasCR.app v3.46.18</span>
+          <span>ReservasCR.app v3.46.19</span>
           <span>•</span>
           <button type="button" id="staff-force-reload-btn" class="text-blue-400 hover:text-blue-300 underline cursor-pointer">
             <i class="fas fa-arrows-rotate mr-0.5"></i> Actualizar versión
@@ -16355,11 +16359,30 @@ Esperamos atenderle pronto de nuevo.`;
       const pinCode = pinInput?.value.trim();
       const rememberMe = rememberInput ? rememberInput.checked : true;
 
-      if (!businessIdentifier || !staffCode || !pinCode || pinCode.length !== 6 || !/^\d{6}$/.test(pinCode)) {
+      if (!businessIdentifier) {
         if (errBox) {
           errBox.classList.remove('hidden');
-          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Ingresa tu comercio, tu código de colaborador y tu PIN de 6 dígitos numéricos.</span>';
+          errBox.innerHTML = '<i class="fas fa-building text-amber-400"></i><span>Por favor selecciona tu comercio o sucursal de la lista.</span>';
         }
+        bizSelect?.focus();
+        return;
+      }
+
+      if (!staffCode) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-user-tag text-amber-400"></i><span>Por favor ingresa tu código de colaborador.</span>';
+        }
+        codeInput?.focus();
+        return;
+      }
+
+      if (!pinCode || pinCode.length !== 6 || !/^\d{6}$/.test(pinCode)) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-key text-amber-400"></i><span>Tu PIN de acceso debe tener exactamente 6 dígitos numéricos.</span>';
+        }
+        pinInput?.focus();
         return;
       }
 
@@ -16371,6 +16394,10 @@ Esperamos atenderle pronto de nuevo.`;
 
       try {
         const res = await storage.loginStaff(businessIdentifier, staffCode, pinCode, rememberMe);
+        try {
+          localStorage.setItem('reservascr_last_staff_biz', businessIdentifier);
+        } catch (e) {}
+
         if (res.mustChangePin || res.staff?.mustChangePin) {
           this.showToast(`¡Hola, ${res.staff?.name || 'Especialista'}! Por seguridad debes definir tu nuevo PIN personal.`, 'info');
           this.renderStaffChangePinView(container, res.staff, rememberMe);

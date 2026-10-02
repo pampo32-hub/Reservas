@@ -165,14 +165,15 @@ app.use(['/directorio/src', '*/src'], express.static(path.join(__dirname, 'src')
 // Archivos estáticos de raíz permitidos expresamente
 const ALLOWED_ROOT_STATIC_FILES = [
   'favicon.ico', 'favicon.png', 'favicon.jpg', 'favicon.svg',
-  'manifest.json', 'sw.js', 'robots.txt', 'sitemap.xml',
+  'manifest.json', 'sw.js', 'sw-active.js', 'robots.txt', 'sitemap.xml',
   'promo-ad-anim.html', 'manual_usuario_comercios.html'
 ];
 ALLOWED_ROOT_STATIC_FILES.forEach(file => {
   app.get(`/${file}`, (req, res) => {
-    const filePath = path.join(__dirname, file);
+    const realFile = (file === 'sw-active.js') ? 'sw.js' : file;
+    const filePath = path.join(__dirname, realFile);
     if (fs.existsSync(filePath)) {
-      if (file === 'sw.js') {
+      if (file === 'sw.js' || file === 'sw-active.js') {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
@@ -3704,13 +3705,17 @@ app.post('/api/auth/staff/login', async (req, res) => {
     );
 
     if (staffRes.rows.length === 0) {
-      return res.status(401).json({ error: 'No se encontró ningún colaborador activo con ese código en este negocio.' });
+      return res.status(401).json({ 
+        error: `No se encontró ningún colaborador con el código "${staffCode.toString().trim()}" en el comercio "${business.name}". Verifica haber seleccionado tu negocio correcto en la lista.` 
+      });
     }
 
     const staff = staffRes.rows[0];
 
     if (staff.pin_code !== cleanPin) {
-      return res.status(401).json({ error: 'PIN incorrecto. Verifica e inténtalo de nuevo.' });
+      return res.status(401).json({ 
+        error: `El PIN de 6 dígitos ingresado es incorrecto para el colaborador "${staff.name}" en "${business.name}".` 
+      });
     }
 
     const token = generateToken({

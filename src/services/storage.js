@@ -3001,7 +3001,18 @@ class StorageService {
   async initServiceWorker() {
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js?v=3.46.18', { scope: '/' });
+        // Desregistrar workers antiguos congelados en caché de Cloudflare
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) {
+            if (r.active && r.active.scriptURL && !r.active.scriptURL.includes('sw-active.js')) {
+              console.log('🧹 Desregistrando SW antiguo congelado:', r.active.scriptURL);
+              await r.unregister();
+            }
+          }
+        } catch (cleanErr) {}
+
+        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.19', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
 
         // Forzar chequeo de actualización inmediata en el servidor
