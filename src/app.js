@@ -821,6 +821,8 @@ class App {
         return '/pruebas';
       case 'my-client-bookings':
         return '/mis-reservas';
+      case 'staff-portal':
+        return '/colaborador';
       case 'owner-dashboard': {
         const tab = params.tab || this.activeDashboardTab || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : 'appointments');
         return (tab && tab !== 'appointments') ? `/panel-negocio?tab=${encodeURIComponent(tab)}` : '/panel-negocio';
@@ -849,6 +851,7 @@ class App {
       'unete', 'para-negocios', 'para-comercios', 'negocios', 'empresas', 'hazte-socio', 'registro-negocio', 'planes', 'precios',
       'mis-reservas', 'cliente', 'panel-usuario', 'panel-cliente', 'usuario', 'mi-cuenta', 'perfil', 'mis-citas',
       'panel-negocio', 'panel-negocios', 'panel', 'dashboard', 'owner', 'mi-negocio', 'mi-panel',
+      'colaborador', 'portal-colaborador', 'staff', 'portal-staff',
       'developer', 'developer-dashboard', 'admin',
       'login', 'acceso', 'entrar', 'soy-negocio',
       'privacidad', 'privacy', 'politica-de-privacidad', 'terminos', 'terms', 'terminos-y-condiciones',
@@ -901,6 +904,9 @@ class App {
         if (tab === 'config' || tab === 'perfil') tab = 'profile';
         return { view: 'owner-dashboard', params: { tab } };
       }
+      if (/^\/?(colaborador|portal-colaborador|staff|portal-staff)$/i.test(pathname)) {
+        return { view: 'staff-portal', params: {} };
+      }
       if (/^\/?(developer|developer-dashboard|admin)$/i.test(pathname)) {
         const tab = searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_dev_tab') : null) || 'alerts';
         return { view: 'developer-dashboard', params: { tab } };
@@ -940,6 +946,9 @@ class App {
 
         if (savedView === 'owner-dashboard' && storage.getBusinessUser()) {
           return { view: 'owner-dashboard', params: { tab: savedOwnerTab } };
+        }
+        if (savedView === 'staff-portal' && storage.getStaffUser()) {
+          return { view: 'staff-portal', params: {} };
         }
         if (savedView === 'developer-dashboard' && storage.getDeveloperUser()) {
           return { view: 'developer-dashboard', params: { tab: savedDevTab } };
@@ -1026,6 +1035,11 @@ class App {
       let tab = hashParams.get('tab') || searchParams.get('tab') || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('reservas_active_owner_tab') : null) || 'appointments';
       if (tab === 'config' || tab === 'perfil') tab = 'profile';
       return { view: 'owner-dashboard', params: { tab } };
+    }
+
+    // 7.1 Portal de Colaboradores en hash
+    if (/^#\/?(colaborador|portal-colaborador|staff|portal-staff)/i.test(cleanHash)) {
+      return { view: 'staff-portal', params: {} };
     }
 
     // 8. Developer en hash
@@ -1766,6 +1780,11 @@ class App {
           <button type="button" class="open-terms-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Términos y Condiciones</button>
           <span class="text-slate-300">•</span>
           <button type="button" class="open-privacy-modal hover:text-blue-600 transition-colors cursor-pointer py-1">Privacidad</button>
+          <span class="text-slate-300">•</span>
+          <a href="/colaborador" class="hover:text-indigo-600 transition-colors py-1 inline-flex items-center gap-1 font-semibold text-slate-600" title="Acceso con PIN para especialistas y colaboradores">
+            <i class="fas fa-id-badge text-indigo-500"></i>
+            <span>Portal Colaborador</span>
+          </a>
           ${devUser ? `
             <span class="text-slate-300">•</span>
             <button type="button" id="footer-test-plans-btn" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 font-bold border border-emerald-500/30 transition-all cursor-pointer text-[11px] flex items-center gap-1 animate-fade-in" title="Entorno de pruebas SINPE Móvil (₡5 y ₡10) - Modo Developer">
@@ -1925,6 +1944,9 @@ class App {
         break;
       case 'developer-dashboard':
         this.renderDeveloperDashboardView(main);
+        break;
+      case 'staff-portal':
+        this.renderStaffPortalView(main);
         break;
       default:
         this.renderDirectoryView(main);
@@ -7430,26 +7452,33 @@ class App {
                 <span>Agenda (${appointments.length})</span>
               </button>
 
-              <!-- 2. Clientes CRM (Fidelización) -->
+              <!-- 2. Caja & POS -->
+              <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'pos' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/25 font-black ring-2 ring-emerald-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-emerald-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="pos">
+                <i class="fas fa-cash-register text-xs ${this.activeDashboardTab === 'pos' ? 'text-white' : 'text-emerald-600'}"></i>
+                <span>Caja & POS</span>
+                <span class="w-2 h-2 rounded-full ${this.activeCashRegisterSession?.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'} inline-block shadow-2xs"></span>
+              </button>
+
+              <!-- 3. Clientes CRM (Fidelización) -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'clients' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="clients">
                 <i class="fas fa-user-friends text-xs ${this.activeDashboardTab === 'clients' ? 'text-white' : 'text-emerald-600'}"></i>
                 <span>Clientes CRM (${businessClients.length})</span>
                 ${hasRiskClients ? `<span class="w-2 h-2 rounded-full bg-rose-500 inline-block shadow-2xs animate-pulse" title="Hay clientes en riesgo de abandono"></span>` : ''}
               </button>
 
-              <!-- 3. Bloqueos -->
+              <!-- 4. Bloqueos -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'blocked-slots' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="blocked-slots">
                 <i class="fas fa-calendar-times text-xs ${this.activeDashboardTab === 'blocked-slots' ? 'text-white' : 'text-rose-500'}"></i>
                 <span>Bloqueos</span>
               </button>
 
-              <!-- 3. Horarios -->
+              <!-- 5. Horarios -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'schedule' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="schedule">
                 <i class="fas fa-clock text-xs ${this.activeDashboardTab === 'schedule' ? 'text-white' : 'text-sky-600'}"></i>
                 <span>Horarios</span>
               </button>
 
-              <!-- 4. Google / Outlook -->
+              <!-- 6. Google / Outlook -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'integrations' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="integrations">
                 <i class="fas fa-calendar-check text-xs ${this.activeDashboardTab === 'integrations' ? 'text-white' : 'text-blue-600'}"></i>
                 <span>Google / Outlook</span>
@@ -7467,10 +7496,10 @@ class App {
               <div class="h-px bg-slate-200/80 flex-1"></div>
             </div>
             <div class="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1.5 sm:pb-0 scroll-smooth no-scrollbar flex-nowrap sm:flex-wrap">
-              <!-- 5. Equipo -->
+              <!-- 7. Equipo & Comisiones -->
               <button class="dash-tab-btn flex-shrink-0 whitespace-nowrap px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all cursor-pointer flex items-center gap-2 ${this.activeDashboardTab === 'team' ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 font-black ring-2 ring-blue-400/40' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-blue-700 border border-slate-200/80 shadow-2xs font-bold'}" data-tab="team">
                 <i class="fas fa-users-cog text-xs ${this.activeDashboardTab === 'team' ? 'text-white' : 'text-indigo-500'}"></i>
-                <span>Equipo</span>
+                <span>Equipo & Comisiones</span>
               </button>
 
               <!-- 6. Servicios -->
@@ -7816,6 +7845,10 @@ class App {
   // --- SUB-CONTENIDOS DEL DASHBOARD ---
   renderDashboardTabContent(currentBiz, appointments) {
     try {
+      if (this.activeDashboardTab === 'pos') {
+        return this.renderPosTabContent(currentBiz, appointments);
+      }
+
       if (this.activeDashboardTab === 'clients') {
         return this.renderClientsTabContent(currentBiz, appointments);
       }
@@ -8086,9 +8119,20 @@ class App {
 
                     <!-- Datos Cliente y Servicio -->
                     <div class="space-y-1.5 pt-2 border-t border-slate-200/80">
-                      <div class="flex items-center justify-between">
+                      <div class="flex items-start justify-between gap-2">
                         <span class="font-extrabold text-sm text-slate-900">${this.escapeHtml(apt.clientName)}</span>
-                        <span class="font-black text-sm text-emerald-600">${this.formatColones(apt.servicePrice)}</span>
+                        <div class="text-right flex-shrink-0">
+                          <span class="font-black text-sm text-emerald-600 block">${this.formatColones(apt.servicePrice)}</span>
+                          ${apt.paymentStatus === 'paid' ? `
+                            <span class="inline-flex items-center gap-1 text-[9.5px] font-black text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
+                              <i class="fas fa-check-circle text-emerald-600 text-[8px]"></i> Pagado (${apt.paymentMethod === 'cash' ? 'Efectivo' : apt.paymentMethod === 'sinpe' ? 'SINPE' : apt.paymentMethod === 'card' ? 'Tarjeta' : 'Otro'})
+                            </span>
+                          ` : (apt.status !== 'cancelled') ? `
+                            <span class="inline-flex items-center gap-1 text-[9.5px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                              <i class="fas fa-cash-register text-amber-600 text-[8px]"></i> Por Cobrar
+                            </span>
+                          ` : ''}
+                        </div>
                       </div>
                       <div class="text-xs text-slate-700 font-medium">
                         <strong>Servicio:</strong> ${this.escapeHtml(apt.serviceName)} (${apt.serviceDuration}m)
@@ -8141,6 +8185,16 @@ class App {
 
                     <!-- Acciones en Celular (Botones Grandes y Accesibles) -->
                     <div class="pt-2 border-t border-slate-200/80 grid grid-cols-2 gap-2">
+                      ${(apt.paymentStatus !== 'paid' && apt.status !== 'cancelled') ? `
+                        <button class="pos-charge-apt-btn col-span-2 py-2.5 px-3 text-emerald-950 bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 hover:from-emerald-400 hover:to-teal-400 border border-emerald-500 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer shadow-sm active:scale-95" data-apt-id="${apt.id}">
+                          <i class="fas fa-cash-register text-sm"></i> Cobrar Cita en Caja / POS
+                        </button>
+                      ` : (apt.paymentStatus === 'paid') ? `
+                        <button class="pos-receipt-apt-btn col-span-2 py-2 px-3 text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs" data-apt-id="${apt.id}">
+                          <i class="fas fa-receipt text-emerald-600"></i> Ver Recibo / Enviar Comprobante WhatsApp
+                        </button>
+                      ` : ''}
+
                       ${((apt.depositRequired || apt.deposit_required) && !apt.depositPaid && apt.status === 'pending') ? `
                         <button class="status-change-btn col-span-2 py-3 px-4 text-emerald-950 bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 hover:from-emerald-400 hover:to-teal-400 border border-emerald-500 rounded-xl text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95 animate-pulse" data-apt-id="${apt.id}" data-status="confirmed">
                           <i class="fas fa-check-double text-sm"></i> Validar SINPE y Confirmar Cita
@@ -8249,6 +8303,19 @@ class App {
                         </td>
                         <td class="py-3.5 px-4">
                           <div class="font-extrabold text-slate-900">${this.formatColones(apt.servicePrice)}</div>
+                          ${apt.paymentStatus === 'paid' ? `
+                            <div class="mt-1">
+                              <span class="inline-flex items-center gap-1 text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 shadow-2xs">
+                                <i class="fas fa-check-circle text-emerald-600 text-[9px]"></i> Pagado (${apt.paymentMethod === 'cash' ? 'Efectivo' : apt.paymentMethod === 'sinpe' ? 'SINPE' : apt.paymentMethod === 'card' ? 'Tarjeta' : 'Otro'})
+                              </span>
+                            </div>
+                          ` : (apt.status !== 'cancelled') ? `
+                            <div class="mt-1">
+                              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                <i class="fas fa-cash-register text-amber-600 text-[9px]"></i> Por Cobrar
+                              </span>
+                            </div>
+                          ` : ''}
                           ${(apt.depositRequired || apt.deposit_required) ? `
                             <div class="mt-1 space-y-1">
                               <div class="text-[10.5px] font-black text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-flex items-center gap-1">
@@ -8318,6 +8385,17 @@ class App {
                             >
                               <i class="fas fa-calendar-plus text-xs"></i>
                             </button>
+
+                            <!-- Cobro en POS / Ver Recibo -->
+                            ${(apt.paymentStatus !== 'paid' && apt.status !== 'cancelled') ? `
+                              <button class="pos-charge-apt-btn px-2.5 py-1.5 text-emerald-950 bg-gradient-to-r from-emerald-300 via-teal-300 to-emerald-400 hover:from-emerald-400 hover:to-teal-400 border border-emerald-500 rounded-lg text-xs font-black transition-all inline-flex items-center gap-1 cursor-pointer shadow-sm whitespace-nowrap active:scale-95" data-apt-id="${apt.id}" title="Cobrar cita en Punto de Venta">
+                                <i class="fas fa-cash-register text-xs"></i> Cobrar
+                              </button>
+                            ` : (apt.paymentStatus === 'paid') ? `
+                              <button class="pos-receipt-apt-btn p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200 rounded-lg text-xs font-bold transition-all inline-flex items-center justify-center cursor-pointer shadow-2xs" data-apt-id="${apt.id}" title="Ver recibo y enviar comprobante por WhatsApp">
+                                <i class="fas fa-receipt text-xs text-emerald-600"></i>
+                              </button>
+                            ` : ''}
 
                             <!-- Aceptar / Confirmar / Validar SINPE -->
                             ${((apt.depositRequired || apt.deposit_required) && !apt.depositPaid && apt.status === 'pending') ? `
@@ -11129,6 +11207,1273 @@ class App {
     });
   }
 
+  // =========================================================================
+  // --- MÓDULO DE PUNTO DE VENTA (POS) Y CUADRE DE CAJA (FASE 2) ---
+  // =========================================================================
+
+  async loadPosData(currentBiz) {
+    try {
+      const res = await storage.getCurrentCashRegister(currentBiz.id);
+      this.cachedPosSession = (res && res.isOpen) ? res.session : null;
+      this.posDataLoadedBizId = currentBiz.id;
+      if (this.activeDashboardTab === 'pos') {
+        const tabContent = document.getElementById('dashboard-tab-content');
+        if (tabContent) {
+          const apts = storage.getAppointmentsByBusiness(currentBiz.id) || [];
+          tabContent.innerHTML = this.renderPosTabContent(currentBiz, apts);
+          this.setupPosTabEvents(currentBiz, apts);
+        }
+      }
+    } catch (e) {
+      console.warn('Error cargando estado de caja:', e);
+      this.cachedPosSession = null;
+      this.posDataLoadedBizId = currentBiz.id;
+    }
+  }
+
+  renderPosTabContent(currentBiz, appointments = []) {
+    // Si aún no hemos cargado la sesión de caja para este negocio, iniciar carga
+    if (!this.posDataLoadedBizId || this.posDataLoadedBizId !== currentBiz.id) {
+      this.loadPosData(currentBiz);
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-xs animate-pulse">
+          <div class="w-16 h-16 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-4">
+            <i class="fas fa-cash-register fa-bounce"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">Cargando Caja y Punto de Venta...</h3>
+          <p class="text-xs text-slate-500 mt-1">Sincronizando estado de gaveta y movimientos en vivo.</p>
+        </div>
+      `;
+    }
+
+    const session = this.cachedPosSession;
+    const isOpen = Boolean(session && session.status === 'open');
+
+    // 1. ESTADO: CAJA CERRADA
+    if (!isOpen) {
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-10 shadow-xs animate-fade-in">
+          <div class="max-w-xl mx-auto text-center py-4">
+            <div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+              <i class="fas fa-cash-register"></i>
+            </div>
+            <span class="text-xs uppercase font-extrabold text-emerald-600 tracking-wider">Punto de Venta & Caja Diaria</span>
+            <h2 class="text-2xl font-black text-slate-900 mt-1">Caja Cerrada - Abrir Turno</h2>
+            <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+              Inicia una nueva jornada para cobrar citas, calcular vueltos, emitir recibos por WhatsApp y controlar las entradas y salidas de efectivo en tu gaveta.
+            </p>
+
+            <!-- Formulario de Apertura -->
+            <div class="mt-8 p-6 bg-slate-50/90 rounded-3xl border border-slate-200/90 text-left space-y-4 shadow-2xs">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Fondo Inicial / Sencillo en Gaveta *
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 font-bold text-base">₡</span>
+                  <input 
+                    type="number" 
+                    id="pos-open-initial-cash" 
+                    value="10000" 
+                    step="1000" 
+                    min="0"
+                    class="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-2xl text-lg font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    placeholder="10000"
+                  />
+                </div>
+              </div>
+
+              <!-- Accesos Rápidos de Monto Base -->
+              <div class="grid grid-cols-4 gap-2">
+                <button type="button" class="pos-quick-base-btn py-2 px-2 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer text-center" data-amount="5000">₡5.000</button>
+                <button type="button" class="pos-quick-base-btn py-2 px-2 bg-emerald-50 text-emerald-700 border border-emerald-300 rounded-xl text-xs font-bold transition-all cursor-pointer ring-1 ring-emerald-400/40 text-center" data-amount="10000">₡10.000</button>
+                <button type="button" class="pos-quick-base-btn py-2 px-2 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer text-center" data-amount="20000">₡20.000</button>
+                <button type="button" class="pos-quick-base-btn py-2 px-2 bg-white hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer text-center" data-amount="50000">₡50.000</button>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Notas de Apertura (Opcional)
+                </label>
+                <input 
+                  type="text" 
+                  id="pos-open-notes" 
+                  placeholder="Ej: Turno Mañana / Sencillo en monedas y billetes"
+                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+
+              <div class="pt-2">
+                <button 
+                  id="pos-submit-open-btn" 
+                  class="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl text-sm font-black shadow-lg shadow-emerald-500/25 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+                >
+                  <i class="fas fa-door-open"></i> Abrir Caja e Iniciar Turno
+                </button>
+              </div>
+            </div>
+
+            <!-- Botón Historial de Cuadres Anteriores -->
+            <div class="mt-6">
+              <button id="pos-btn-view-history" class="text-xs text-slate-500 hover:text-blue-600 font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer py-1.5 px-3 rounded-xl hover:bg-slate-100">
+                <i class="fas fa-history text-slate-400"></i> Ver Historial de Arqueos y Cuadres Anteriores
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. ESTADO: CAJA ABIERTA (EN TURNO)
+    const openedTime = session.openedAt ? new Date(session.openedAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }) : '';
+    const today = this.getTodayDateString();
+
+    // Citas pendientes de cobro para hoy
+    const pendingAppointmentsToday = appointments.filter(a => {
+      const isTodayOrPast = a.date <= today;
+      const isNotCancelled = a.status !== 'cancelled';
+      const isNotPaid = a.paymentStatus !== 'paid';
+      return isTodayOrPast && isNotCancelled && isNotPaid;
+    });
+
+    const transactions = session.transactions || [];
+
+    return `
+      <div class="space-y-6 animate-fade-in">
+        <!-- Top Status & Action Bar -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl shrink-0 shadow-md shadow-emerald-500/20">
+              <i class="fas fa-cash-register"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Turno Activo
+                </span>
+                <span class="text-xs font-bold text-slate-500">Abierta a las ${openedTime}</span>
+              </div>
+              <h2 class="text-lg font-black text-slate-900 mt-0.5">Control de Caja & Punto de Venta</h2>
+              <span class="text-xs text-slate-500">Base inicial: <strong>${this.formatColones(session.initialCash || 0)}</strong> • Responsable: ${this.escapeHtml(session.openedBy || 'Administrador')}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="pos-btn-view-history" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+              <i class="fas fa-history text-slate-500"></i> Historial
+            </button>
+            <button id="pos-open-expense-btn" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs">
+              <i class="fas fa-minus-circle text-rose-600"></i> Registrar Gasto / Vale
+            </button>
+            <button id="pos-open-close-btn" class="px-4 py-2.5 bg-gradient-to-r from-slate-900 to-slate-800 hover:from-black hover:to-slate-900 text-white rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer shadow-md shadow-slate-900/20 active:scale-95">
+              <i class="fas fa-lock text-amber-400"></i> Cerrar Caja & Arqueo
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- 1. Efectivo en Gaveta -->
+          <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white shadow-md shadow-emerald-500/20">
+            <div class="flex items-center justify-between opacity-90 text-xs font-bold uppercase tracking-wider mb-1">
+              <span>Efectivo en Gaveta</span>
+              <i class="fas fa-wallet text-sm opacity-80"></i>
+            </div>
+            <div class="text-2xl sm:text-3xl font-black mt-1">
+              ${this.formatColones(session.expectedCash || session.initialCash || 0)}
+            </div>
+            <span class="text-[11px] opacity-80 block mt-1">Base + Ventas Efectivo - Egresos</span>
+          </div>
+
+          <!-- 2. Ventas SINPE Móvil -->
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+              <span>SINPE Móvil</span>
+              <div class="w-7 h-7 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xs">
+                <i class="fas fa-mobile-screen"></i>
+              </div>
+            </div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+              ${this.formatColones(session.sinpeSales || 0)}
+            </div>
+            <span class="text-[11px] text-slate-400 block mt-1">Directo a cuenta bancaria</span>
+          </div>
+
+          <!-- 3. Ventas Tarjeta / Otros -->
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+              <span>Tarjeta / Datáfono</span>
+              <div class="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xs">
+                <i class="fas fa-credit-card"></i>
+              </div>
+            </div>
+            <div class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">
+              ${this.formatColones((session.cardSales || 0) + (session.otherSales || 0))}
+            </div>
+            <span class="text-[11px] text-slate-400 block mt-1">Cobrado por terminal POS</span>
+          </div>
+
+          <!-- 4. Total Cobrado en Turno -->
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
+            <div class="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+              <span>Total Ventas Turno</span>
+              <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">
+                <i class="fas fa-chart-line"></i>
+              </div>
+            </div>
+            <div class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">
+              ${this.formatColones(session.totalSales || 0)}
+            </div>
+            <span class="text-[11px] text-slate-400 block mt-1">${transactions.filter(t => t.type === 'income').length} cobro(s) registrados</span>
+          </div>
+        </div>
+
+        <!-- Layout 2 Columnas: Citas Pendientes de Cobro y Movimientos del Turno -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Columna 1: Citas por Cobrar (5 cols) -->
+          <div class="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base font-bold text-slate-900">Citas Pendientes de Cobro</h3>
+                  <span class="px-2 py-0.5 rounded-full text-xs font-black ${pendingAppointmentsToday.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${pendingAppointmentsToday.length}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-slate-400">Hoy y pendientes</span>
+              </div>
+
+              ${pendingAppointmentsToday.length === 0 ? `
+                <div class="text-center py-10 px-4 bg-slate-50/70 border border-dashed border-slate-200 rounded-2xl">
+                  <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg mx-auto mb-2">
+                    <i class="fas fa-check-double"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-800">¡Al día con los cobros!</h4>
+                  <p class="text-[11px] text-slate-500 mt-0.5">No hay citas pendientes de cobro para hoy.</p>
+                </div>
+              ` : `
+                <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                  ${pendingAppointmentsToday.map(apt => {
+                    const depositPaid = Boolean(apt.depositPaid);
+                    const depositAmount = depositPaid ? (apt.depositAmount || 0) : 0;
+                    const balanceDue = Math.max(0, (apt.servicePrice || 0) - depositAmount);
+
+                    return `
+                      <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/80 hover:bg-slate-50 transition-all space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <span class="text-xs font-black text-slate-900 block">${this.escapeHtml(apt.clientName)}</span>
+                            <span class="text-[11px] text-blue-600 font-semibold">${this.escapeHtml(apt.serviceName)}</span>
+                            <div class="text-[10px] text-slate-400 mt-0.5">
+                              <i class="far fa-clock mr-1"></i>${this.formatTime12h(apt.time)} • ${this.escapeHtml(apt.staffName || 'General')}
+                            </div>
+                          </div>
+                          <div class="text-right">
+                            <span class="text-sm font-black text-slate-900 block">${this.formatColones(balanceDue)}</span>
+                            ${depositPaid ? `
+                              <span class="text-[9.5px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded block mt-0.5">Adelanto ₡${this.formatColones(depositAmount)} pago</span>
+                            ` : ''}
+                          </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200/70 flex items-center justify-between gap-2">
+                          ${apt.clientPhone ? `
+                            <a href="https://wa.me/506${apt.clientPhone.replace(/\D/g, '')}" target="_blank" class="text-xs text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1">
+                              <i class="fab fa-whatsapp"></i> WhatsApp
+                            </a>
+                          ` : '<span></span>'}
+                          <button 
+                            class="pos-charge-apt-btn px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black shadow-sm cursor-pointer flex items-center gap-1.5 active:scale-95" 
+                            data-apt-id="${apt.id}"
+                          >
+                            <i class="fas fa-cash-register text-xs"></i> Cobrar ${this.formatColones(balanceDue)}
+                          </button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+
+          <!-- Columna 2: Movimientos del Turno (7 cols) -->
+          <div class="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base font-bold text-slate-900">Movimientos del Turno</h3>
+                  <span class="px-2 py-0.5 rounded-full text-xs font-black bg-slate-100 text-slate-700">
+                    ${transactions.length}
+                  </span>
+                </div>
+                <span class="text-[11px] font-bold text-slate-400">Entradas y Salidas</span>
+              </div>
+
+              ${transactions.length === 0 ? `
+                <div class="text-center py-12 px-4 bg-slate-50/70 border border-dashed border-slate-200 rounded-2xl">
+                  <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-lg mx-auto mb-2">
+                    <i class="fas fa-receipt"></i>
+                  </div>
+                  <h4 class="text-xs font-bold text-slate-700">Aún no hay movimientos en este turno</h4>
+                  <p class="text-[11px] text-slate-500 mt-0.5">Al cobrar citas o registrar gastos, aparecerán detallados aquí.</p>
+                </div>
+              ` : `
+                <div class="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
+                  ${transactions.map(t => {
+                    const isIncome = t.type === 'income';
+                    const timeStr = t.createdAt ? new Date(t.createdAt).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }) : '';
+                    const methodLabels = {
+                      cash: 'Efectivo',
+                      sinpe: 'SINPE Móvil',
+                      card: 'Tarjeta',
+                      transfer: 'Transferencia',
+                      other: 'Otro'
+                    };
+
+                    return `
+                      <div class="p-3 rounded-2xl border border-slate-200/90 bg-white hover:bg-slate-50/80 transition-all flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 ${isIncome ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">
+                            <i class="fas ${isIncome ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-xs font-bold text-slate-900">${this.escapeHtml(t.description || 'Movimiento')}</span>
+                              <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${isIncome ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-800'}">
+                                ${methodLabels[t.paymentMethod] || t.paymentMethod}
+                              </span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
+                              <span><i class="far fa-clock mr-1"></i>${timeStr}</span>
+                              ${t.staffName ? `<span>• Especialista: ${this.escapeHtml(t.staffName)}</span>` : ''}
+                              ${t.sinpeReference ? `<span class="font-mono text-purple-600 font-bold">• Ref: ${this.escapeHtml(t.sinpeReference)}</span>` : ''}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="text-right flex items-center gap-2">
+                          <span class="text-sm font-black ${isIncome ? 'text-emerald-600' : 'text-rose-600'}">
+                            ${isIncome ? '+' : '-'}${this.formatColones(t.amount || 0)}
+                          </span>
+                          ${t.appointmentId ? `
+                            <button 
+                              class="pos-receipt-apt-btn p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer shadow-2xs border border-slate-200"
+                              data-apt-id="${t.appointmentId}"
+                              title="Ver / Reenviar Recibo por WhatsApp"
+                            >
+                              <i class="fas fa-receipt text-xs"></i>
+                            </button>
+                          ` : ''}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  setupPosTabEvents(currentBiz, appointments = []) {
+    const apts = appointments || storage.getAppointmentsByBusiness(currentBiz.id) || [];
+
+    // Botones rápidos de monto base al abrir caja
+    document.querySelectorAll('.pos-quick-base-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.getAttribute('data-amount');
+        const input = document.getElementById('pos-open-initial-cash');
+        if (input) input.value = val;
+        document.querySelectorAll('.pos-quick-base-btn').forEach(b => {
+          b.classList.remove('bg-emerald-50', 'text-emerald-700', 'border-emerald-300', 'ring-1');
+          b.classList.add('bg-white', 'text-slate-700');
+        });
+        btn.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-300', 'ring-1');
+      });
+    });
+
+    // Abrir Caja
+    document.getElementById('pos-submit-open-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('pos-submit-open-btn');
+      const initialCash = parseFloat(document.getElementById('pos-open-initial-cash')?.value) || 0;
+      const notes = document.getElementById('pos-open-notes')?.value?.trim() || '';
+      const bizUser = storage.getBusinessUser();
+      const openedBy = bizUser ? (bizUser.name || bizUser.email) : 'Administrador';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Abriendo Caja...';
+      }
+
+      try {
+        const res = await storage.openCashRegister(currentBiz.id, initialCash, notes, openedBy);
+        this.cachedPosSession = res.session;
+        this.showToast('¡Caja abierta con éxito! Ya puedes registrar cobros y movimientos.', 'success');
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al abrir la caja.', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-door-open mr-1"></i> Abrir Caja e Iniciar Turno';
+        }
+      }
+    });
+
+    // Registrar Gasto / Vale
+    document.getElementById('pos-open-expense-btn')?.addEventListener('click', () => {
+      this.openRecordExpenseModal(currentBiz);
+    });
+
+    // Cerrar Caja & Arqueo
+    document.getElementById('pos-open-close-btn')?.addEventListener('click', () => {
+      if (this.cachedPosSession) {
+        this.openCloseRegisterModal(currentBiz, this.cachedPosSession);
+      }
+    });
+
+    // Ver Historial de Arqueos
+    document.querySelectorAll('#pos-btn-view-history').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.openCashRegisterHistoryModal(currentBiz);
+      });
+    });
+  }
+
+  // --- MODAL: COBRAR CITA EN CAJA / POS ---
+  openChargeAppointmentModal(apt, currentBiz) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const staffList = storage.getBusinessStaffSync(currentBiz.id) || [];
+    const totalPrice = Number(apt.servicePrice) || 0;
+    const depositPaid = Boolean(apt.depositPaid);
+    const depositAmount = depositPaid ? (Number(apt.depositAmount) || 0) : 0;
+    const balanceDue = Math.max(0, totalPrice - depositAmount);
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
+          <!-- Header -->
+          <div class="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-5 sm:p-6 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg shadow-sm">
+                <i class="fas fa-cash-register"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-emerald-200 font-bold">Punto de Venta</span>
+                <h3 class="text-xl font-black">Cobrar Cita</h3>
+              </div>
+            </div>
+            <button id="pos-close-charge-modal-btn" class="modal-close-btn w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <!-- Body -->
+          <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <!-- Resumen Cita y Cliente -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-sm font-extrabold text-slate-900">${this.escapeHtml(apt.clientName)}</h4>
+                  <span class="text-xs text-blue-600 font-semibold">${this.escapeHtml(apt.serviceName)} (${apt.serviceDuration}m)</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs text-slate-400 line-through ${depositPaid ? 'block' : 'hidden'}">${this.formatColones(totalPrice)}</span>
+                  <span class="text-xl font-black text-slate-900">${this.formatColones(balanceDue)}</span>
+                </div>
+              </div>
+              ${depositPaid ? `
+                <div class="pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-emerald-700 font-bold">
+                  <span><i class="fas fa-check-circle mr-1"></i> Adelanto SINPE ya cancelado:</span>
+                  <span>- ${this.formatColones(depositAmount)}</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Selección de Especialista (para Comisión) -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Especialista que atendió el servicio *
+              </label>
+              <select id="pos-charge-staff-select" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="">Sin especialista asignado / General</option>
+                ${staffList.map(st => `
+                  <option value="${st.id}" ${st.id === apt.staffId ? 'selected' : ''}>
+                    ${st.name} (${st.commissionType === 'fixed' ? `₡${this.formatColones(st.commissionRate)} fija` : `${st.commissionRate || 50}% comisión`})
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Método de Pago -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Método de Pago *
+              </label>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="pos-pay-method-pill p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50/70 text-emerald-950 flex flex-col items-center justify-center gap-1 cursor-pointer font-bold text-xs transition-all shadow-xs" data-method="cash">
+                  <input type="radio" name="pos-payment-method" value="cash" checked class="hidden">
+                  <i class="fas fa-money-bill-wave text-base text-emerald-600"></i>
+                  <span>Efectivo</span>
+                </label>
+                <label class="pos-pay-method-pill p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer font-bold text-xs transition-all" data-method="sinpe">
+                  <input type="radio" name="pos-payment-method" value="sinpe" class="hidden">
+                  <i class="fas fa-mobile-screen text-base text-purple-600"></i>
+                  <span>SINPE Móvil</span>
+                </label>
+                <label class="pos-pay-method-pill p-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 flex flex-col items-center justify-center gap-1 cursor-pointer font-bold text-xs transition-all" data-method="card">
+                  <input type="radio" name="pos-payment-method" value="card" class="hidden">
+                  <i class="fas fa-credit-card text-base text-blue-600"></i>
+                  <span>Tarjeta</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Calculadora de Vuelto para Efectivo -->
+            <div id="pos-cash-calculator-box" class="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-emerald-900 mb-1">
+                  Efectivo Recibido del Cliente
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-700 font-bold text-sm">₡</span>
+                  <input 
+                    type="number" 
+                    id="pos-cash-received" 
+                    value="${balanceDue}" 
+                    step="500" 
+                    min="${balanceDue}"
+                    class="w-full pl-9 pr-4 py-2.5 bg-white border border-emerald-300 rounded-xl text-base font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <!-- Botones Rápidos de Dinero -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button type="button" class="pos-quick-received-btn px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer" data-val="${balanceDue}">Exacto</button>
+                <button type="button" class="pos-quick-received-btn px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer" data-val="5000">₡5.000</button>
+                <button type="button" class="pos-quick-received-btn px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer" data-val="10000">₡10.000</button>
+                <button type="button" class="pos-quick-received-btn px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer" data-val="20000">₡20.000</button>
+                <button type="button" class="pos-quick-received-btn px-2.5 py-1 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition-all cursor-pointer" data-val="50000">₡50.000</button>
+              </div>
+
+              <!-- Resultado del Vuelto -->
+              <div class="pt-2 border-t border-emerald-200 flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-900 uppercase">Vuelto a entregar:</span>
+                <span id="pos-cash-change-display" class="text-lg font-black text-emerald-800">₡0</span>
+              </div>
+            </div>
+
+            <!-- Campo de Referencia SINPE (Oculto si no es SINPE) -->
+            <div id="pos-sinpe-ref-box" class="hidden space-y-1.5">
+              <label class="block text-xs font-bold text-slate-700 mb-1">
+                Número de Comprobante / Referencia SINPE (Opcional)
+              </label>
+              <input 
+                type="text" 
+                id="pos-sinpe-reference-input" 
+                placeholder="Ej: 123456 / Banco Nacional" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              />
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="pt-2 flex items-center justify-end gap-2">
+              <button type="button" id="pos-cancel-charge-btn" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                id="pos-confirm-charge-submit-btn" 
+                class="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-500/25 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+              >
+                <i class="fas fa-check-circle"></i> Confirmar Pago de ${this.formatColones(balanceDue)}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('pos-close-charge-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('pos-cancel-charge-btn')?.addEventListener('click', closeModal);
+
+    // Manejo de cambio de método de pago
+    const cashBox = document.getElementById('pos-cash-calculator-box');
+    const sinpeBox = document.getElementById('pos-sinpe-ref-box');
+    let selectedMethod = 'cash';
+
+    document.querySelectorAll('.pos-pay-method-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        selectedMethod = pill.getAttribute('data-method');
+        document.querySelectorAll('.pos-pay-method-pill').forEach(p => {
+          p.classList.remove('border-2', 'border-emerald-500', 'bg-emerald-50/70', 'text-emerald-950', 'shadow-xs');
+          p.classList.add('border', 'border-slate-200', 'bg-white', 'text-slate-700');
+        });
+        pill.classList.remove('border', 'border-slate-200', 'bg-white', 'text-slate-700');
+        pill.classList.add('border-2', 'border-emerald-500', 'bg-emerald-50/70', 'text-emerald-950', 'shadow-xs');
+
+        if (selectedMethod === 'cash') {
+          cashBox?.classList.remove('hidden');
+          sinpeBox?.classList.add('hidden');
+        } else if (selectedMethod === 'sinpe') {
+          cashBox?.classList.add('hidden');
+          sinpeBox?.classList.remove('hidden');
+        } else {
+          cashBox?.classList.add('hidden');
+          sinpeBox?.classList.add('hidden');
+        }
+      });
+    });
+
+    // Calculadora de Vuelto
+    const cashInput = document.getElementById('pos-cash-received');
+    const changeDisplay = document.getElementById('pos-cash-change-display');
+
+    const updateChange = () => {
+      const received = parseFloat(cashInput?.value) || 0;
+      const change = Math.max(0, received - balanceDue);
+      if (changeDisplay) changeDisplay.textContent = this.formatColones(change);
+    };
+
+    cashInput?.addEventListener('input', updateChange);
+    document.querySelectorAll('.pos-quick-received-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const val = parseFloat(b.getAttribute('data-val'));
+        if (cashInput) cashInput.value = val;
+        updateChange();
+      });
+    });
+
+    // Confirmar Cobro
+    document.getElementById('pos-confirm-charge-submit-btn')?.addEventListener('click', async () => {
+      const submitBtn = document.getElementById('pos-confirm-charge-submit-btn');
+      const staffId = document.getElementById('pos-charge-staff-select')?.value || null;
+      const sinpeReference = document.getElementById('pos-sinpe-reference-input')?.value?.trim() || null;
+      const received = parseFloat(cashInput?.value) || balanceDue;
+      const change = Math.max(0, received - balanceDue);
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Procesando Cobro...';
+      }
+
+      try {
+        await storage.chargeAppointment(currentBiz.id, {
+          appointmentId: apt.id,
+          paymentMethod: selectedMethod,
+          amountPaid: balanceDue,
+          staffId,
+          sinpeReference
+        });
+
+        // Actualizar datos de cita en memoria local
+        apt.paymentStatus = 'paid';
+        apt.paymentMethod = selectedMethod;
+        apt.paidAmount = balanceDue;
+        apt.paidAt = new Date().toISOString();
+        if (staffId) {
+          const st = staffList.find(s => s.id === staffId);
+          if (st) apt.staffName = st.name;
+        }
+
+        this.showToast('¡Cobro registrado con éxito!', 'success');
+        closeModal();
+
+        // Recargar datos de la caja
+        await this.loadPosData(currentBiz);
+        this.renderCurrentView();
+
+        // Abrir Recibo Digital con 1 clic para enviar por WhatsApp
+        this.openReceiptModal(apt, currentBiz, {
+          paymentMethod: selectedMethod,
+          amountPaid: balanceDue,
+          change,
+          sinpeReference
+        });
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrar el cobro.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Confirmar Pago';
+        }
+      }
+    });
+  }
+
+  // --- MODAL: RECIBO DIGITAL Y COMPROBANTE WHATSAPP ---
+  openReceiptModal(apt, currentBiz, paymentInfo = null) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const totalPrice = Number(apt.servicePrice) || 0;
+    const depositAmount = apt.depositPaid ? (Number(apt.depositAmount) || 0) : 0;
+    const amountPaid = paymentInfo ? paymentInfo.amountPaid : (Number(apt.paidAmount) || (totalPrice - depositAmount));
+    const paymentMethod = paymentInfo ? paymentInfo.paymentMethod : (apt.paymentMethod || 'cash');
+    const change = paymentInfo ? (paymentInfo.change || 0) : 0;
+    const sinpeReference = paymentInfo ? paymentInfo.sinpeReference : (apt.depositReference || '');
+    const staffName = apt.staffName || 'General';
+
+    const methodLabels = {
+      cash: 'Efectivo',
+      sinpe: 'SINPE Móvil',
+      card: 'Tarjeta / Datáfono',
+      transfer: 'Transferencia',
+      other: 'Otro'
+    };
+    const methodName = methodLabels[paymentMethod] || paymentMethod;
+
+    // Generar texto para WhatsApp
+    const waText = 
+`🧾 *COMPROBANTE DE PAGO - ${currentBiz.name}*
+━━━━━━━━━━━━━━━━━━━━━
+👤 *Cliente:* ${apt.clientName}
+✂️ *Servicio:* ${apt.serviceName}
+💈 *Especialista:* ${staffName}
+📅 *Fecha:* ${this.formatDateDMY(apt.date)} a las ${this.formatTime12h(apt.time)}
+━━━━━━━━━━━━━━━━━━━━━
+💰 *Total Servicio:* ${this.formatColones(totalPrice)}
+${depositAmount > 0 ? `🛡️ *Adelanto SINPE:* -${this.formatColones(depositAmount)}\n` : ''}💵 *Monto Cancelado:* ${this.formatColones(amountPaid)}
+💳 *Método de Pago:* ${methodName}
+${sinpeReference ? `🔢 *Comprobante:* ${sinpeReference}\n` : ''}${change > 0 ? `🪙 *Vuelto:* ${this.formatColones(change)}\n` : ''}━━━━━━━━━━━━━━━━━━━━━
+¡Muchas gracias por tu visita! Esperamos atenderte pronto.`;
+
+    const cleanPhone = (apt.clientPhone || '').replace(/\D/g, '');
+    const waUrl = cleanPhone.length >= 8 
+      ? `https://wa.me/506${cleanPhone}?text=${encodeURIComponent(waText)}` 
+      : `https://wa.me/?text=${encodeURIComponent(waText)}`;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden border border-slate-200 my-8">
+          <!-- Ticket Header -->
+          <div class="p-6 text-center bg-slate-900 text-white relative">
+            <button id="pos-close-receipt-btn" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer transition-colors">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-xl mx-auto mb-2 shadow-md">
+              <i class="fas fa-receipt"></i>
+            </div>
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 block">Comprobante de Pago</span>
+            <h3 class="text-lg font-black text-white mt-0.5">${this.escapeHtml(currentBiz.name)}</h3>
+            <span class="text-xs text-slate-400">${this.formatDateDMY(apt.date)} • ${this.formatTime12h(apt.time)}</span>
+          </div>
+
+          <!-- Ticket Body -->
+          <div class="p-6 space-y-4 text-xs text-slate-700 bg-slate-50/50">
+            <div class="space-y-1.5 pb-3 border-b border-dashed border-slate-200">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Cliente:</span>
+                <span class="font-bold text-slate-900">${this.escapeHtml(apt.clientName)}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Especialista:</span>
+                <span class="font-bold text-slate-900">${this.escapeHtml(staffName)}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Servicio:</span>
+                <span class="font-bold text-slate-900">${this.escapeHtml(apt.serviceName)}</span>
+              </div>
+            </div>
+
+            <div class="space-y-1.5 pb-3 border-b border-dashed border-slate-200">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-400">Total Servicio:</span>
+                <span class="font-bold text-slate-900">${this.formatColones(totalPrice)}</span>
+              </div>
+              ${depositAmount > 0 ? `
+                <div class="flex items-center justify-between text-emerald-700">
+                  <span>Adelanto SINPE:</span>
+                  <span>-${this.formatColones(depositAmount)}</span>
+                </div>
+              ` : ''}
+              <div class="flex items-center justify-between pt-1">
+                <span class="font-black text-slate-900 text-sm">Cancelado en Caja:</span>
+                <span class="font-black text-emerald-600 text-base">${this.formatColones(amountPaid)}</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-500">
+                <span>Método de pago:</span>
+                <span class="font-bold">${methodName}</span>
+              </div>
+              ${sinpeReference ? `
+                <div class="flex items-center justify-between text-[11px] text-purple-700 font-mono">
+                  <span>Referencia SINPE:</span>
+                  <span class="font-bold">${this.escapeHtml(sinpeReference)}</span>
+                </div>
+              ` : ''}
+              ${change > 0 ? `
+                <div class="flex items-center justify-between text-[11px] text-slate-600">
+                  <span>Vuelto entregado:</span>
+                  <span class="font-bold">${this.formatColones(change)}</span>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Botones -->
+            <div class="space-y-2 pt-2">
+              <a 
+                href="${waUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fab fa-whatsapp text-sm"></i> Enviar Recibo por WhatsApp
+              </a>
+              <button 
+                type="button" 
+                id="pos-copy-receipt-btn" 
+                class="w-full py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <i class="far fa-copy"></i> Copiar Texto del Recibo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('pos-close-receipt-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    document.getElementById('pos-copy-receipt-btn')?.addEventListener('click', () => {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(waText).then(() => {
+          this.showToast('¡Comprobante copiado al portapapeles!', 'success');
+        });
+      }
+    });
+  }
+
+  // --- MODAL: REGISTRAR GASTO O VALE / ADELANTO ---
+  openRecordExpenseModal(currentBiz) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const staffList = storage.getBusinessStaffSync(currentBiz.id) || [];
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-8">
+          <div class="bg-gradient-to-r from-rose-600 to-amber-600 p-5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-lg">
+                <i class="fas fa-hand-holding-dollar"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-rose-200 font-bold">Salida de Caja</span>
+                <h3 class="text-xl font-black">Registrar Gasto o Vale</h3>
+              </div>
+            </div>
+            <button id="pos-close-expense-modal-btn" class="modal-close-btn w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <form id="pos-expense-form" class="p-6 space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Tipo de Egreso *
+              </label>
+              <select id="pos-expense-category" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                <option value="staff_advance">Vale / Adelanto a Especialista</option>
+                <option value="petty_cash" selected>Gasto Menor / Caja Chica</option>
+                <option value="supplies">Compra de Insumos o Productos</option>
+                <option value="services">Pago de Servicios (Luz/Agua/Internet)</option>
+                <option value="other">Otro Egreso</option>
+              </select>
+            </div>
+
+            <!-- Selector de Especialista si es Vale -->
+            <div id="pos-expense-staff-wrapper" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Especialista que recibe el Vale *
+              </label>
+              <select id="pos-expense-staff-id" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                <option value="">Selecciona especialista...</option>
+                ${staffList.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Monto del Egreso (₡) *
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 font-bold text-sm">₡</span>
+                <input 
+                  type="number" 
+                  id="pos-expense-amount" 
+                  required 
+                  step="500" 
+                  min="100" 
+                  placeholder="Ej: 5000" 
+                  class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-black text-slate-900 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Descripción o Justificación *
+              </label>
+              <input 
+                type="text" 
+                id="pos-expense-desc" 
+                required 
+                placeholder="Ej: Vale Bryan para almuerzo / Compra café y azúcar" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Origen de los Fondos
+              </label>
+              <select id="pos-expense-method" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-rose-500 focus:outline-none">
+                <option value="cash" selected>Efectivo de la Gaveta (Resta del arqueo)</option>
+                <option value="sinpe">Transferencia SINPE (No resta de gaveta)</option>
+              </select>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-2">
+              <button type="button" id="pos-cancel-expense-btn" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button type="submit" id="pos-save-expense-btn" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20 transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                <i class="fas fa-check"></i> Registrar Salida
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('pos-close-expense-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('pos-cancel-expense-btn')?.addEventListener('click', closeModal);
+
+    const catSelect = document.getElementById('pos-expense-category');
+    const staffWrapper = document.getElementById('pos-expense-staff-wrapper');
+    catSelect?.addEventListener('change', (e) => {
+      if (e.target.value === 'staff_advance') {
+        staffWrapper?.classList.remove('hidden');
+      } else {
+        staffWrapper?.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('pos-expense-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const category = catSelect?.value;
+      const staffId = document.getElementById('pos-expense-staff-id')?.value || null;
+      const amount = parseFloat(document.getElementById('pos-expense-amount')?.value) || 0;
+      const description = document.getElementById('pos-expense-desc')?.value?.trim();
+      const paymentMethod = document.getElementById('pos-expense-method')?.value || 'cash';
+
+      if (category === 'staff_advance' && !staffId) {
+        this.showToast('Por favor selecciona el especialista al que se entrega el vale.', 'error');
+        return;
+      }
+
+      try {
+        await storage.recordExpense(currentBiz.id, {
+          category,
+          amount,
+          description,
+          paymentMethod,
+          staffId
+        });
+
+        this.showToast('Salida registrada correctamente.', 'success');
+        closeModal();
+        await this.loadPosData(currentBiz);
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrar egreso.', 'error');
+      }
+    });
+  }
+
+  // --- MODAL: CERRAR CAJA Y ARQUEO DIARIO ---
+  openCloseRegisterModal(currentBiz, session) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const expectedCash = session.expectedCash || 0;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 my-8">
+          <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-5 sm:p-6 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30">
+                <i class="fas fa-lock"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-bold">Fin de Jornada</span>
+                <h3 class="text-xl font-black">Cierre de Caja & Arqueo</h3>
+              </div>
+            </div>
+            <button id="pos-close-reconcile-modal-btn" class="modal-close-btn w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <div class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+            <!-- Desglose de Operación del Turno -->
+            <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
+              <div class="flex items-center justify-between text-slate-600">
+                <span>Base Inicial de Caja:</span>
+                <span class="font-bold text-slate-900">${this.formatColones(session.initialCash || 0)}</span>
+              </div>
+              <div class="flex items-center justify-between text-emerald-700">
+                <span>(+) Cobros en Efectivo:</span>
+                <span class="font-bold">+${this.formatColones(session.cashSales || 0)}</span>
+              </div>
+              <div class="flex items-center justify-between text-rose-700">
+                <span>(-) Salidas de Efectivo / Vales:</span>
+                <span class="font-bold">-${this.formatColones(session.cashExpenses || 0)}</span>
+              </div>
+              <div class="pt-2 border-t border-slate-200 flex items-center justify-between font-black text-sm">
+                <span class="text-slate-900">Efectivo Esperado en Gaveta:</span>
+                <span class="text-emerald-700 text-base">${this.formatColones(expectedCash)}</span>
+              </div>
+            </div>
+
+            <!-- Formulario de Conteo Físico -->
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Efectivo Físico Contado en Gaveta (₡) *
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 font-bold text-base">₡</span>
+                  <input 
+                    type="number" 
+                    id="pos-counted-cash-input" 
+                    value="${expectedCash}" 
+                    step="100" 
+                    min="0"
+                    class="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-2xl text-lg font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <!-- Indicador de Diferencia en Vivo -->
+              <div id="pos-difference-indicator" class="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-black flex items-center gap-2">
+                <i class="fas fa-check-circle text-emerald-600 text-sm"></i>
+                <span>Cuadre exacto (₡0 de diferencia)</span>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">
+                  Notas u Observaciones del Cierre
+                </label>
+                <textarea 
+                  id="pos-close-notes-input" 
+                  rows="2" 
+                  placeholder="Ej: Todo cuadrado sin novedades / Se guardó el sencillo para mañana"
+                  class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="pt-2 flex items-center justify-end gap-2">
+              <button type="button" id="pos-cancel-close-btn" class="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer">
+                Cancelar
+              </button>
+              <button 
+                type="button" 
+                id="pos-submit-close-register-btn" 
+                class="flex-1 py-3 bg-gradient-to-r from-slate-900 to-black hover:from-black hover:to-slate-900 text-white rounded-xl text-xs font-black shadow-md shadow-slate-900/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+              >
+                <i class="fas fa-lock text-amber-400"></i> Confirmar Arqueo y Cerrar Caja
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    document.getElementById('pos-close-reconcile-modal-btn')?.addEventListener('click', closeModal);
+    document.getElementById('pos-cancel-close-btn')?.addEventListener('click', closeModal);
+
+    const countedInput = document.getElementById('pos-counted-cash-input');
+    const diffIndicator = document.getElementById('pos-difference-indicator');
+
+    const updateDiff = () => {
+      const counted = parseFloat(countedInput?.value) || 0;
+      const diff = counted - expectedCash;
+      if (!diffIndicator) return;
+
+      if (diff === 0) {
+        diffIndicator.className = 'p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-black flex items-center gap-2';
+        diffIndicator.innerHTML = '<i class="fas fa-check-circle text-emerald-600 text-sm"></i> <span>Cuadre exacto (₡0 de diferencia)</span>';
+      } else if (diff > 0) {
+        diffIndicator.className = 'p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-black flex items-center gap-2';
+        diffIndicator.innerHTML = `<i class="fas fa-exclamation-triangle text-amber-600 text-sm"></i> <span>Sobrante en caja de +${this.formatColones(diff)}</span>`;
+      } else {
+        diffIndicator.className = 'p-3 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs font-black flex items-center gap-2';
+        diffIndicator.innerHTML = `<i class="fas fa-circle-exclamation text-rose-600 text-sm"></i> <span>Faltante en caja de -${this.formatColones(Math.abs(diff))}</span>`;
+      }
+    };
+
+    countedInput?.addEventListener('input', updateDiff);
+
+    document.getElementById('pos-submit-close-register-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('pos-submit-close-register-btn');
+      const counted = parseFloat(countedInput?.value) || 0;
+      const notes = document.getElementById('pos-close-notes-input')?.value?.trim() || '';
+      const bizUser = storage.getBusinessUser();
+      const closedBy = bizUser ? (bizUser.name || bizUser.email) : 'Administrador';
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Cerrando Caja...';
+      }
+
+      try {
+        await storage.closeCashRegister(currentBiz.id, counted, notes, closedBy);
+        this.cachedPosSession = null;
+        this.showToast('¡Caja cerrada y arqueo completado con éxito!', 'success');
+        closeModal();
+        await this.loadPosData(currentBiz);
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al cerrar la caja.', 'error');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-lock mr-1"></i> Confirmar Arqueo y Cerrar Caja';
+        }
+      }
+    });
+  }
+
+  // --- MODAL: HISTORIAL DE ARQUEOS Y CUADRES ANTERIORES ---
+  async openCashRegisterHistoryModal(currentBiz) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 my-8">
+          <div class="bg-gradient-to-r from-slate-900 to-slate-800 p-5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-lg">
+                <i class="fas fa-history text-slate-300"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-slate-400 font-bold">Auditoría Diaria</span>
+                <h3 class="text-xl font-black">Historial de Cuadres de Caja</h3>
+              </div>
+            </div>
+            <button id="pos-close-history-modal-btn" class="modal-close-btn w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all cursor-pointer">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <div class="p-6 max-h-[75vh] overflow-y-auto" id="pos-history-modal-body">
+            <div class="text-center py-8 text-slate-400 text-xs">
+              <i class="fas fa-spinner fa-spin text-lg mb-2"></i>
+              <p>Cargando registros históricos...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('pos-close-history-modal-btn')?.addEventListener('click', () => {
+      modalContainer.innerHTML = '';
+    });
+
+    try {
+      const history = await storage.getCashRegisterHistory(currentBiz.id);
+      const body = document.getElementById('pos-history-modal-body');
+      if (!body) return;
+
+      if (!history || history.length === 0) {
+        body.innerHTML = `
+          <div class="text-center py-10">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center text-lg mx-auto mb-2">
+              <i class="fas fa-inbox"></i>
+            </div>
+            <h4 class="text-xs font-bold text-slate-700">No hay arqueos cerrados aún</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Los arqueos aparecerán aquí cada vez que cierres una jornada de caja.</p>
+          </div>
+        `;
+        return;
+      }
+
+      body.innerHTML = `
+        <div class="space-y-3">
+          ${history.map(item => {
+            const openDate = item.opened_at ? new Date(item.opened_at).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            const closeDate = item.closed_at ? new Date(item.closed_at).toLocaleDateString('es-CR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Abierta';
+            const diff = parseFloat(item.difference || 0);
+
+            return `
+              <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition-all space-y-2 text-xs">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="font-extrabold text-slate-900">${closeDate}</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-bold ${item.status === 'open' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}">
+                      ${item.status === 'open' ? 'En Curso' : 'Cerrada'}
+                    </span>
+                  </div>
+                  <div class="text-right">
+                    ${diff === 0 ? `
+                      <span class="text-[10px] font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">Exacto ₡0</span>
+                    ` : diff > 0 ? `
+                      <span class="text-[10px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">Sobrante +${this.formatColones(diff)}</span>
+                    ` : `
+                      <span class="text-[10px] font-black text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md">Faltante -${this.formatColones(Math.abs(diff))}</span>
+                    `}
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 text-[11px] text-slate-600">
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Base inicial:</span>
+                    <span class="font-bold text-slate-900">${this.formatColones(item.initial_cash || 0)}</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Esperado:</span>
+                    <span class="font-bold text-slate-900">${this.formatColones(item.expected_cash || 0)}</span>
+                  </div>
+                  <div>
+                    <span class="text-slate-400 block text-[10px]">Físico Contado:</span>
+                    <span class="font-bold text-slate-900">${this.formatColones(item.final_cash_counted || 0)}</span>
+                  </div>
+                </div>
+
+                ${item.notes ? `
+                  <div class="pt-1 text-[11px] text-slate-500 italic">
+                    "${this.escapeHtml(item.notes)}"
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    } catch (e) {
+      console.error('Error cargando historial de caja:', e);
+    }
+  }
+
+  // =========================================================================
+  // --- FIN MÓDULO DE CAJA Y PUNTO DE VENTA (POS) ---
+  // =========================================================================
+
+
   renderWhatsAppClientModal(client, currentBiz, initialTemplate = 'thanks') {
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
@@ -12724,6 +14069,12 @@ class App {
 
   // --- SUB-CONTENIDO: GESTIÓN DE EQUIPO Y ESPECIALISTAS ---
   renderTeamTabContent(currentBiz) {
+    this.teamSubTab = this.teamSubTab || 'specialists';
+
+    if (this.teamSubTab === 'commissions') {
+      return this.renderCommissionsTabContent(currentBiz);
+    }
+
     const plan = currentBiz.plan || 'free';
     const isFree = plan === 'free';
     const isBasic = plan === 'basic';
@@ -12733,6 +14084,7 @@ class App {
     if (isFree || isBasic) {
       return `
         <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+          ${this.renderTeamSubNav('specialists')}
           <div class="max-w-3xl mx-auto text-center py-6">
             <div class="w-16 h-16 rounded-3xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
               <i class="fas fa-lock"></i>
@@ -12788,6 +14140,7 @@ class App {
 
     return `
       <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
+        ${this.renderTeamSubNav('specialists')}
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div class="flex items-center gap-2 flex-wrap">
@@ -12921,6 +14274,1249 @@ class App {
         `}
       </div>
     `;
+  }
+
+  // --- SUB-NAVEGACIÓN DE EQUIPO: ESPECIALISTAS VS COMISIONES ---
+  renderTeamSubNav(activeSubTab = 'specialists') {
+    return `
+      <div class="flex items-center gap-2 border-b border-slate-200 pb-3 mb-6 overflow-x-auto">
+        <button 
+          class="team-subnav-btn px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${activeSubTab === 'specialists' ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}"
+          data-subtab="specialists"
+        >
+          <i class="fas fa-users-cog"></i>
+          <span>Especialistas & Horarios</span>
+        </button>
+        <button 
+          class="team-subnav-btn px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${activeSubTab === 'commissions' ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'}"
+          data-subtab="commissions"
+        >
+          <i class="fas fa-hand-holding-dollar"></i>
+          <span>Comisiones & Liquidaciones</span>
+        </button>
+      </div>
+    `;
+  }
+
+  // --- CARGAR DATOS DE COMISIONES EN SEGUNDO PLANO ---
+  async loadCommissionsData(currentBiz) {
+    try {
+      const data = await storage.getStaffCommissions(currentBiz.id, {
+        startDate: this.commissionsFilterStartDate || '',
+        endDate: this.commissionsFilterEndDate || ''
+      });
+      this.cachedCommissionsData = data;
+      this.commissionsDataLoadedBizId = currentBiz.id;
+      if (this.activeDashboardTab === 'team' && this.teamSubTab === 'commissions') {
+        const tabContent = document.getElementById('dashboard-tab-content');
+        if (tabContent) {
+          tabContent.innerHTML = this.renderCommissionsTabContent(currentBiz);
+          this.setupTeamTabEvents(currentBiz);
+        }
+      }
+    } catch (e) {
+      console.warn('Error cargando datos de comisiones:', e);
+      this.cachedCommissionsData = { summary: {}, staff: [] };
+      this.commissionsDataLoadedBizId = currentBiz.id;
+    }
+  }
+
+  // --- SUB-CONTENIDO: COMISIONES Y LIQUIDACIONES ---
+  renderCommissionsTabContent(currentBiz) {
+    if (!this.commissionsDataLoadedBizId || this.commissionsDataLoadedBizId !== currentBiz.id) {
+      this.loadCommissionsData(currentBiz);
+      return `
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-5">
+          ${this.renderTeamSubNav('commissions')}
+          <div class="p-12 text-center animate-pulse">
+            <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-4">
+              <i class="fas fa-hand-holding-dollar fa-bounce"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">Calculando Comisiones y Saldos...</h3>
+            <p class="text-xs text-slate-500 mt-1">Sincronizando servicios completados, vales entregados y liquidaciones pendientes.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    const data = this.cachedCommissionsData || { summary: {}, staff: [] };
+    const summary = data.summary || {};
+    const staffList = data.staff || [];
+    const isProOrPremium = currentBiz.plan === 'pro' || currentBiz.plan === 'unlimited';
+
+    return `
+      <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-6">
+        ${this.renderTeamSubNav('commissions')}
+
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-lg font-bold text-slate-900">Módulo de Comisiones y Liquidaciones</h2>
+              <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                ${staffList.length} Especialistas con Esquema
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Cálculo automático por citas cobradas, deducción de vales o anticipos de caja y liquidaciones.</p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button 
+              id="commissions-add-vale-btn" 
+              class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+            >
+              <i class="fas fa-hand-holding-dollar"></i>
+              <span>Dar Vale / Adelanto</span>
+            </button>
+            <a 
+              href="/colaborador" 
+              class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition-all shadow-md shadow-indigo-500/20 cursor-pointer"
+              target="_blank"
+            >
+              <i class="fas fa-id-badge"></i>
+              <span>Portal Colaborador</span>
+            </a>
+          </div>
+        </div>
+
+        ${!isProOrPremium ? `
+          <div class="p-4 bg-gradient-to-r from-amber-50 via-amber-100/50 to-purple-50 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950 shadow-2xs">
+            <div class="flex items-start sm:items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center text-base font-black flex-shrink-0">
+                <i class="fas fa-crown"></i>
+              </div>
+              <div>
+                <strong class="font-extrabold block text-slate-900 text-sm">Prueba de Comisiones Activa</strong>
+                <span class="text-slate-600">Sube a Plan Pro ($18/mes) o Premium ($35/mes) para que cada colaborador pueda iniciar sesión con su PIN en su propio teléfono.</span>
+              </div>
+            </div>
+            <button id="commissions-upgrade-btn" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl font-black text-xs shadow-xs transition-all flex-shrink-0 cursor-pointer flex items-center justify-center gap-1.5 self-start sm:self-auto active:scale-95">
+              <i class="fas fa-arrow-up"></i>
+              <span>Actualizar Plan</span>
+            </button>
+          </div>
+        ` : ''}
+
+        <!-- 4 Tarjetas de Métricas Globales -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+              <span class="text-xs font-semibold">Total Citas / Servicios</span>
+              <div class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
+                <i class="fas fa-chart-line"></i>
+              </div>
+            </div>
+            <div class="text-xl font-black text-slate-900">₡${(summary.totalGross || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[11px] text-slate-500">Facturación bruta en citas</span>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+              <span class="text-xs font-semibold">Comisiones Generadas</span>
+              <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs">
+                <i class="fas fa-receipt"></i>
+              </div>
+            </div>
+            <div class="text-xl font-black text-indigo-600">₡${(summary.totalCommissions || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[11px] text-slate-500">Monto total devengado</span>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <div class="flex items-center justify-between text-slate-500 mb-1">
+              <span class="text-xs font-semibold">Vales y Adelantos</span>
+              <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs">
+                <i class="fas fa-hand-holding-dollar"></i>
+              </div>
+            </div>
+            <div class="text-xl font-black text-amber-600">₡${(summary.totalAdvances || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[11px] text-slate-500">Entregados desde caja</span>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+            <div class="flex items-center justify-between text-emerald-800 mb-1">
+              <span class="text-xs font-semibold">Saldo Neto a Pagar</span>
+              <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                <i class="fas fa-wallet"></i>
+              </div>
+            </div>
+            <div class="text-xl font-black text-emerald-700">₡${(summary.totalPending || 0).toLocaleString('es-CR')}</div>
+            <span class="text-[11px] text-emerald-600 font-medium">Pendiente de liquidar</span>
+          </div>
+        </div>
+
+        <!-- Tabla / Listado de Especialistas y Comisiones -->
+        ${staffList.length === 0 ? `
+          <div class="text-center py-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+            <div class="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl mx-auto mb-3">
+              <i class="fas fa-users-slash"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">No hay especialistas registrados o activos</h3>
+            <p class="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              Ve a la sub-pestaña <strong>"Especialistas & Horarios"</strong> para registrar a tu equipo y asignarles su porcentaje o monto fijo de comisión por servicio.
+            </p>
+          </div>
+        ` : `
+          <div class="overflow-x-auto rounded-2xl border border-slate-200">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 uppercase text-[10px] tracking-wider border-b border-slate-200 font-black">
+                <tr>
+                  <th class="p-3.5">Especialista</th>
+                  <th class="p-3.5 text-center">Esquema</th>
+                  <th class="p-3.5 text-center">Citas</th>
+                  <th class="p-3.5 text-right">Generado</th>
+                  <th class="p-3.5 text-right">Comisión</th>
+                  <th class="p-3.5 text-right">Vales</th>
+                  <th class="p-3.5 text-right">Liquidado</th>
+                  <th class="p-3.5 text-right font-black text-emerald-700">Saldo Pendiente</th>
+                  <th class="p-3.5 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${staffList.map(st => {
+                  const schemeText = st.commissionType === 'fixed'
+                    ? `₡${Number(st.commissionRate || 0).toLocaleString('es-CR')} fijo`
+                    : `${st.commissionRate || 50}%`;
+                  const hasPending = (st.pendingCommission || 0) > 0;
+
+                  return `
+                    <tr class="hover:bg-slate-50/80 transition-colors">
+                      <td class="p-3.5">
+                        <div class="flex items-center gap-3">
+                          <img 
+                            src="${st.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'}" 
+                            alt="${st.name}" 
+                            class="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
+                          >
+                          <div>
+                            <strong class="font-bold text-slate-900 block">${st.name}</strong>
+                            <span class="text-[11px] text-slate-500">${st.roleTitle || 'Especialista'} ${st.pinCode ? `• PIN: ${st.pinCode}` : ''}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="p-3.5 text-center">
+                        <span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-bold text-[11px] border border-blue-200">
+                          ${schemeText}
+                        </span>
+                      </td>
+                      <td class="p-3.5 text-center font-bold text-slate-700">
+                        ${st.completedAppointments || 0}
+                      </td>
+                      <td class="p-3.5 text-right text-slate-600 font-medium">
+                        ₡${(st.grossServices || 0).toLocaleString('es-CR')}
+                      </td>
+                      <td class="p-3.5 text-right font-bold text-indigo-700">
+                        ₡${(st.totalCommissions || 0).toLocaleString('es-CR')}
+                      </td>
+                      <td class="p-3.5 text-right text-amber-700 font-medium">
+                        ₡${(st.totalAdvances || 0).toLocaleString('es-CR')}
+                      </td>
+                      <td class="p-3.5 text-right text-slate-500 font-medium">
+                        ₡${(st.totalSettled || 0).toLocaleString('es-CR')}
+                      </td>
+                      <td class="p-3.5 text-right">
+                        <span class="font-black text-sm ${hasPending ? 'text-emerald-700' : 'text-slate-400'}">
+                          ₡${(st.pendingCommission || 0).toLocaleString('es-CR')}
+                        </span>
+                      </td>
+                      <td class="p-3.5 text-center">
+                        <div class="flex items-center justify-center gap-1.5">
+                          <button 
+                            class="staff-give-vale-btn p-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer" 
+                            data-staff-id="${st.id}" 
+                            title="Entregar Vale / Anticipo"
+                          >
+                            <i class="fas fa-hand-holding-dollar text-xs"></i>
+                          </button>
+                          <button 
+                            class="staff-settle-payout-btn p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer ${!hasPending ? 'opacity-50 pointer-events-none' : ''}" 
+                            data-staff-id="${st.id}" 
+                            title="Liquidar Comisiones"
+                          >
+                            <i class="fas fa-money-bill-wave text-xs"></i>
+                          </button>
+                          <button 
+                            class="staff-whatsapp-report-btn p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors cursor-pointer" 
+                            data-staff-id="${st.id}" 
+                            title="Enviar Estado de Cuenta por WhatsApp"
+                          >
+                            <i class="fab fa-whatsapp text-xs"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  // --- LISTENERS DE EQUIPO Y COMISIONES ---
+  setupTeamTabEvents(currentBiz) {
+    // 1. Sub-nav switcher
+    document.querySelectorAll('.team-subnav-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetSubTab = btn.getAttribute('data-subtab');
+        this.teamSubTab = targetSubTab;
+        const tabContent = document.getElementById('dashboard-tab-content');
+        if (tabContent) {
+          if (this.teamSubTab === 'commissions') {
+            tabContent.innerHTML = this.renderCommissionsTabContent(currentBiz);
+          } else {
+            tabContent.innerHTML = this.renderTeamTabContent(currentBiz);
+          }
+          this.setupTeamTabEvents(currentBiz);
+        }
+      });
+    });
+
+    // 2. Eventos de la pestaña Especialistas (si estamos en specialists)
+    document.getElementById('add-new-staff-btn')?.addEventListener('click', () => {
+      this.renderStaffModal(currentBiz);
+    });
+    document.getElementById('add-first-staff-btn')?.addEventListener('click', () => {
+      this.renderStaffModal(currentBiz);
+    });
+    document.querySelectorAll('.open-add-staff-modal-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.renderStaffModal(currentBiz);
+      });
+    });
+
+    document.querySelectorAll('.edit-staff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffList = storage.getBusinessStaffSync(currentBiz.id);
+        const member = staffList.find(s => s.id === staffId);
+        if (member) {
+          this.renderStaffModal(currentBiz, member);
+        }
+      });
+    });
+
+    document.querySelectorAll('.delete-staff-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffName = btn.getAttribute('data-staff-name') || 'este especialista';
+        if (confirm(`¿Estás seguro de que deseas eliminar a ${staffName}? Sus citas históricas se mantendrán registradas.`)) {
+          try {
+            await storage.deleteStaffMember(currentBiz.id, staffId);
+            this.showToast('Especialista eliminado correctamente.', 'success');
+            this.renderCurrentView();
+          } catch (err) {
+            this.showToast(err.message || 'Error al eliminar especialista.', 'error');
+          }
+        }
+      });
+    });
+
+    document.querySelectorAll('.toggle-staff-status-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const currentActive = btn.getAttribute('data-active') === 'true';
+        try {
+          await storage.updateStaffMember(currentBiz.id, staffId, { isActive: !currentActive });
+          this.showToast(!currentActive ? 'Especialista activado.' : 'Especialista pausado.', 'info');
+          this.renderCurrentView();
+        } catch (err) {
+          this.showToast(err.message || 'Error al cambiar estado.', 'error');
+        }
+      });
+    });
+
+    // 3. Upgrade CTA buttons
+    document.getElementById('commissions-upgrade-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+    });
+    document.getElementById('banner-upgrade-unlimited-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'pro' });
+    });
+    document.getElementById('dash-upgrade-team-pro-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+    });
+    document.getElementById('dash-upgrade-team-unlimited-btn')?.addEventListener('click', () => {
+      this.renderPlansModal({ businessId: currentBiz.id, currentPlanId: currentBiz.plan || 'basic' });
+    });
+
+    // 4. Eventos de la pestaña Comisiones
+    document.getElementById('commissions-add-vale-btn')?.addEventListener('click', () => {
+      this.openStaffValeModal(null, currentBiz);
+    });
+
+    document.querySelectorAll('.staff-give-vale-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || storage.getBusinessStaffSync(currentBiz.id);
+        const st = staffList.find(s => s.id === staffId);
+        this.openStaffValeModal(st, currentBiz);
+      });
+    });
+
+    document.querySelectorAll('.staff-settle-payout-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || [];
+        const st = staffList.find(s => s.id === staffId);
+        if (st) {
+          this.openStaffPayoutModal(st, currentBiz);
+        }
+      });
+    });
+
+    document.querySelectorAll('.staff-whatsapp-report-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const staffId = btn.getAttribute('data-staff-id');
+        const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || [];
+        const st = staffList.find(s => s.id === staffId);
+        if (st) {
+          this.sendStaffCommissionWhatsApp(st, currentBiz);
+        }
+      });
+    });
+  }
+
+  // --- MODAL: ENTREGAR VALE / ANTICIPO A COLABORADOR ---
+  openStaffValeModal(staff = null, currentBiz) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const allStaff = storage.getBusinessStaffSync(currentBiz.id) || [];
+    const isRegisterOpen = Boolean(this.cachedPosSession && this.cachedPosSession.status === 'open');
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-8">
+          <div class="bg-gradient-to-r from-amber-600 to-amber-700 p-5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-lg">
+                <i class="fas fa-hand-holding-dollar"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-amber-200 font-bold">Gestión de Personal</span>
+                <h3 class="text-lg font-black">Entregar Vale / Adelanto</h3>
+              </div>
+            </div>
+            <button id="close-vale-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <form id="staff-vale-form" class="p-6 space-y-4 text-xs sm:text-sm">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Colaborador / Especialista *</label>
+              <select id="vale-staff-id" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                <option value="">Selecciona un colaborador...</option>
+                ${allStaff.map(s => `
+                  <option value="${s.id}" ${staff && staff.id === s.id ? 'selected' : ''}>${s.name} (${s.roleTitle || 'Especialista'})</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Monto del Adelanto (₡) *</label>
+              <input 
+                type="number" 
+                id="vale-amount" 
+                required 
+                min="100" 
+                step="100" 
+                placeholder="Ej. 5000" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 text-base focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              >
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Motivo / Descripción</label>
+              <input 
+                type="text" 
+                id="vale-description" 
+                placeholder="Ej. Almuerzo, adelanto de quincena, transporte..." 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              >
+            </div>
+
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-3">
+              <input 
+                type="checkbox" 
+                id="vale-paid-from-register" 
+                ${isRegisterOpen ? 'checked' : 'disabled'} 
+                class="mt-1 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+              >
+              <label for="vale-paid-from-register" class="text-xs text-slate-700 cursor-pointer">
+                <strong class="block text-slate-900">Descontar en efectivo de la gaveta de caja</strong>
+                <span class="text-[11px] text-slate-500">
+                  ${isRegisterOpen ? 'El monto saldrá del saldo en caja del turno actual (arqueo).' : 'La caja actual está cerrada. El vale se registrará contablemente en comisiones pero no afectará arqueo.'}
+                </span>
+              </label>
+            </div>
+
+            <div class="pt-2 flex gap-3">
+              <button 
+                type="button" 
+                id="cancel-vale-modal-btn" 
+                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                id="submit-vale-btn" 
+                class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl shadow-md shadow-amber-500/20 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <i class="fas fa-check-circle"></i>
+                <span>Registrar Vale</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const closeBtn = document.getElementById('close-vale-modal-btn');
+    const cancelBtn = document.getElementById('cancel-vale-modal-btn');
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+
+    const form = document.getElementById('staff-vale-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const staffId = document.getElementById('vale-staff-id')?.value;
+      const amount = parseFloat(document.getElementById('vale-amount')?.value || '0');
+      const description = document.getElementById('vale-description')?.value || 'Adelanto / Vale de colaborador';
+      const paidFromRegister = Boolean(document.getElementById('vale-paid-from-register')?.checked);
+
+      if (!staffId || amount <= 0) {
+        this.showToast('Ingresa un colaborador y un monto válido.', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-vale-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+      }
+
+      try {
+        await storage.recordExpense(currentBiz.id, {
+          amount,
+          category: 'vale',
+          description,
+          staffId,
+          paidFromRegister
+        });
+
+        this.showToast(`¡Vale de ₡${amount.toLocaleString('es-CR')} registrado correctamente!`, 'success');
+        closeModal();
+
+        // Recargar comisiones y caja
+        this.commissionsDataLoadedBizId = null;
+        await this.loadCommissionsData(currentBiz);
+        await this.loadPosData(currentBiz);
+        this.renderCurrentView();
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrar vale.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Registrar Vale';
+        }
+      }
+    });
+  }
+
+  // --- MODAL: LIQUIDACIÓN DE COMISIONES ---
+  openStaffPayoutModal(staff, currentBiz) {
+    const modalContainer = document.getElementById('modal-container');
+    if (!modalContainer) return;
+
+    const pending = Math.max(0, staff.pendingCommission || 0);
+
+    modalContainer.innerHTML = `
+      <div class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200 my-8">
+          <div class="bg-gradient-to-r from-emerald-600 to-teal-700 p-5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-lg">
+                <i class="fas fa-money-bill-wave"></i>
+              </div>
+              <div>
+                <span class="text-xs uppercase tracking-wider text-emerald-200 font-bold">Liquidación de Personal</span>
+                <h3 class="text-lg font-black">Pagar Comisiones</h3>
+              </div>
+            </div>
+            <button id="close-payout-modal-btn" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer transition-colors">
+              <i class="fas fa-times text-sm"></i>
+            </button>
+          </div>
+
+          <form id="staff-payout-form" class="p-6 space-y-4 text-xs sm:text-sm">
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3">
+              <img 
+                src="${staff.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'}" 
+                alt="${staff.name}" 
+                class="w-11 h-11 rounded-xl object-cover border border-slate-200 shrink-0"
+              >
+              <div>
+                <strong class="text-slate-900 block font-bold">${staff.name}</strong>
+                <span class="text-[11px] text-slate-500">${staff.roleTitle || 'Especialista'} • Pendiente neto: <strong class="text-emerald-700">₡${pending.toLocaleString('es-CR')}</strong></span>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Monto a Liquidar (₡) *</label>
+              <input 
+                type="number" 
+                id="payout-amount" 
+                required 
+                min="1" 
+                step="1" 
+                value="${pending}" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-emerald-700 text-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              >
+              <div class="flex gap-2 mt-1.5">
+                <button type="button" class="set-quick-payout-btn text-[11px] font-bold text-blue-600 hover:text-blue-800 cursor-pointer" data-amt="${pending}">
+                  Liquidar Todo el Saldo (₡${pending.toLocaleString('es-CR')})
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Método de Pago Realizado *</label>
+              <select id="payout-payment-method" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="sinpe_movil" selected>SINPE Móvil</option>
+                <option value="cash">Efectivo en mano</option>
+                <option value="bank_transfer">Transferencia Bancaria (IBAN)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Comprobante / Notas</label>
+              <input 
+                type="text" 
+                id="payout-notes" 
+                placeholder="Ej. Comprobante SINPE #847291 o Liquidación quincena" 
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+              >
+            </div>
+
+            <div class="pt-2 flex gap-3">
+              <button 
+                type="button" 
+                id="cancel-payout-modal-btn" 
+                class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                id="submit-payout-btn" 
+                class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-md shadow-emerald-500/20 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <i class="fas fa-check-double"></i>
+                <span>Confirmar Liquidación</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const closeBtn = document.getElementById('close-payout-modal-btn');
+    const cancelBtn = document.getElementById('cancel-payout-modal-btn');
+    const closeModal = () => { modalContainer.innerHTML = ''; };
+    closeBtn?.addEventListener('click', closeModal);
+    cancelBtn?.addEventListener('click', closeModal);
+
+    document.querySelectorAll('.set-quick-payout-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amtInput = document.getElementById('payout-amount');
+        if (amtInput) amtInput.value = btn.getAttribute('data-amt');
+      });
+    });
+
+    const form = document.getElementById('staff-payout-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('payout-amount')?.value || '0');
+      const paymentMethod = document.getElementById('payout-payment-method')?.value || 'sinpe_movil';
+      const notes = document.getElementById('payout-notes')?.value || '';
+
+      if (amount <= 0) {
+        this.showToast('El monto a liquidar debe ser mayor a 0.', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-payout-btn');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Liquidando...';
+      }
+
+      try {
+        await storage.recordStaffPayout(currentBiz.id, {
+          staffId: staff.id,
+          amount,
+          paymentMethod,
+          notes
+        });
+
+        this.showToast(`¡Liquidación de ₡${amount.toLocaleString('es-CR')} registrada con éxito!`, 'success');
+        closeModal();
+
+        // Recargar comisiones
+        this.commissionsDataLoadedBizId = null;
+        await this.loadCommissionsData(currentBiz);
+        this.renderCurrentView();
+
+        // Preguntar si desea enviar comprobante por WhatsApp
+        if (confirm(`¿Deseas enviar el comprobante de liquidación a ${staff.name} por WhatsApp?`)) {
+          this.sendStaffCommissionWhatsApp(staff, currentBiz);
+        }
+      } catch (err) {
+        this.showToast(err.message || 'Error al registrar liquidación.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-check-double"></i> Confirmar Liquidación';
+        }
+      }
+    });
+  }
+
+  // --- REPORTE DE COMISIONES POR WHATSAPP ---
+  sendStaffCommissionWhatsApp(staff, currentBiz) {
+    const today = new Date().toLocaleDateString('es-CR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const schemeText = staff.commissionType === 'fixed'
+      ? `₡${Number(staff.commissionRate || 0).toLocaleString('es-CR')} fijo por servicio`
+      : `${staff.commissionRate || 50}% sobre servicios atendidos`;
+
+    const text = [
+      `💈 *Estado de Comisiones - ${currentBiz.name}*`,
+      `👤 *Colaborador:* ${staff.name}`,
+      `📅 *Fecha de Corte:* ${today}`,
+      `⚙️ *Esquema:* ${schemeText}`,
+      `----------------------------------------`,
+      `✂️ *Citas Atendidas:* ${staff.completedAppointments || 0}`,
+      `💰 *Total Facturado:* ₡${(staff.grossServices || 0).toLocaleString('es-CR')}`,
+      `💵 *Comisiones Generadas:* ₡${(staff.totalCommissions || 0).toLocaleString('es-CR')}`,
+      `📉 *Vales / Anticipos:* -₡${(staff.totalAdvances || 0).toLocaleString('es-CR')}`,
+      `✅ *Total Ya Liquidado:* -₡${(staff.totalSettled || 0).toLocaleString('es-CR')}`,
+      `----------------------------------------`,
+      `👉 *SALDO PENDIENTE DE PAGO:* *₡${(staff.pendingCommission || 0).toLocaleString('es-CR')}*`,
+      `----------------------------------------`,
+      `¡Gracias por tu dedicación y excelente servicio! 🙌`
+    ].join('\n');
+
+    let phone = (staff.phone || '').replace(/\D/g, '');
+    if (!phone) {
+      phone = prompt('Ingresa el número de WhatsApp del colaborador (ej. 88887777):');
+      if (!phone) return;
+      phone = phone.replace(/\D/g, '');
+    }
+
+    if (!phone.startsWith('506') && phone.length === 8) {
+      phone = '506' + phone;
+    }
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
+
+  // ==========================================
+  // VISTA: PORTAL PRIVADO PARA COLABORADORES
+  // ==========================================
+  async renderStaffPortalView(container) {
+    if (!container) return;
+    const staffUser = storage.getStaffUser();
+
+    if (staffUser) {
+      // Mostrar pantalla de carga rápida
+      container.innerHTML = `
+        <div class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+          <div class="text-center text-white space-y-4">
+            <div class="w-16 h-16 rounded-3xl bg-blue-600/30 text-blue-400 flex items-center justify-center text-2xl mx-auto border border-blue-500/30">
+              <i class="fas fa-id-badge fa-bounce"></i>
+            </div>
+            <h3 class="text-lg font-bold">Cargando tu espacio de trabajo...</h3>
+            <p class="text-xs text-slate-400">Sincronizando agenda y comisiones con tu comercio.</p>
+          </div>
+        </div>
+      `;
+
+      try {
+        const data = await storage.getStaffDashboard();
+        this.renderStaffPortalDashboard(container, data);
+      } catch (err) {
+        console.error('Error cargando dashboard de colaborador:', err);
+        this.showToast('Tu sesión expiró o es inválida. Por favor ingresa tu PIN nuevamente.', 'info');
+        await storage.logoutStaff();
+        this.renderStaffPortalView(container);
+      }
+      return;
+    }
+
+    // Pantalla de Login de Colaborador con PIN (Mobile First)
+    const allBusinesses = storage.getBusinessesSync() || [];
+
+    container.innerHTML = `
+      <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 flex flex-col justify-between p-4 sm:p-6 text-white">
+        <!-- Barra superior simplificada -->
+        <div class="max-w-md mx-auto w-full flex items-center justify-between py-2">
+          <button id="staff-back-to-home-btn" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer">
+            <i class="fas fa-arrow-left"></i> Volver a ReservasCR
+          </button>
+          <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold uppercase tracking-wider">
+            Portal Especialistas
+          </span>
+        </div>
+
+        <!-- Tarjeta Principal de Login -->
+        <div class="max-w-md mx-auto w-full bg-slate-800/90 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-md my-auto">
+          <div class="text-center mb-6">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg shadow-blue-500/25">
+              <i class="fas fa-id-badge"></i>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">Acceso para Especialistas</h2>
+            <p class="text-xs text-slate-400 mt-1.5">Ingresa al portal privado de tu negocio para ver tu agenda de citas y comisiones.</p>
+          </div>
+
+          <form id="staff-pin-login-form" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Tu Negocio / Comercio *</label>
+              ${allBusinesses.length > 0 ? `
+                <select id="staff-login-biz" required class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-medium text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                  <option value="">Selecciona tu negocio...</option>
+                  ${allBusinesses.map(b => `<option value="${b.slug || b.id}">${b.name}</option>`).join('')}
+                </select>
+              ` : `
+                <input 
+                  type="text" 
+                  id="staff-login-biz" 
+                  required 
+                  placeholder="Nombre o enlace de tu negocio (slug)" 
+                  class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-medium text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                >
+              `}
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-300">Tu PIN de Acceso (4 dígitos) *</label>
+                <span class="text-[11px] text-slate-400">Asignado por el dueño</span>
+              </div>
+              <input 
+                type="password" 
+                inputmode="numeric" 
+                pattern="[0-9]{4}" 
+                maxlength="4" 
+                id="staff-login-pin" 
+                required 
+                placeholder="••••" 
+                class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-black tracking-widest text-center text-xl focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              >
+            </div>
+
+            <div id="staff-login-error" class="hidden p-3 bg-rose-500/20 border border-rose-500/40 rounded-xl text-rose-300 text-xs flex items-center gap-2"></div>
+
+            <button 
+              type="submit" 
+              id="staff-login-submit-btn" 
+              class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm rounded-xl shadow-lg shadow-blue-500/25 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <i class="fas fa-arrow-right-to-bracket"></i>
+              <span>Ingresar a Mi Portal</span>
+            </button>
+          </form>
+
+          <div class="mt-6 pt-5 border-t border-slate-700/60 text-center">
+            <span class="text-xs text-slate-400">¿Eres el dueño del negocio?</span>
+            <button id="staff-go-biz-login-btn" class="block mx-auto mt-1 text-xs font-bold text-blue-400 hover:text-blue-300 underline transition-colors cursor-pointer">
+              Iniciar sesión como Administrador
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center text-slate-500 text-[11px] py-2">
+          ReservasCR.app • Acceso Seguro para Colaboradores
+        </div>
+      </div>
+    `;
+
+    document.getElementById('staff-back-to-home-btn')?.addEventListener('click', () => {
+      this.navigateTo('directory');
+    });
+
+    document.getElementById('staff-go-biz-login-btn')?.addEventListener('click', () => {
+      this.renderAuthModal({ mode: 'login', role: 'business', lockRole: 'business' });
+    });
+
+    const form = document.getElementById('staff-pin-login-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const bizSelect = document.getElementById('staff-login-biz');
+      const pinInput = document.getElementById('staff-login-pin');
+      const errBox = document.getElementById('staff-login-error');
+      const submitBtn = document.getElementById('staff-login-submit-btn');
+
+      const businessIdentifier = bizSelect?.value.trim();
+      const pinCode = pinInput?.value.trim();
+
+      if (!businessIdentifier || !pinCode || pinCode.length !== 4) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Ingresa tu comercio y tu PIN de 4 dígitos.</span>';
+        }
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando PIN...';
+      }
+      if (errBox) errBox.classList.add('hidden');
+
+      try {
+        const res = await storage.loginStaff(businessIdentifier, pinCode);
+        this.showToast(`¡Bienvenido(a), ${res.staff?.name || 'Especialista'}!`, 'success');
+        this.renderStaffPortalView(container);
+      } catch (err) {
+        if (errBox) {
+          errBox.classList.remove('hidden');
+          errBox.innerHTML = `<i class="fas fa-circle-exclamation"></i><span>${err.message || 'PIN incorrecto o comercio no encontrado.'}</span>`;
+        } else {
+          this.showToast(err.message || 'Error de autenticación.', 'error');
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i><span>Ingresar a Mi Portal</span>';
+        }
+      }
+    });
+  }
+
+  // --- DASHBOARD PRIVADO DEL COLABORADOR ---
+  renderStaffPortalDashboard(container, data) {
+    const staff = data.staff || {};
+    const business = data.business || {};
+    const earnings = data.earnings || {};
+    const allAppointments = data.appointments || [];
+    const payouts = data.payouts || [];
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    this.staffPortalFilter = this.staffPortalFilter || 'today';
+
+    const getFilteredAppointments = () => {
+      if (this.staffPortalFilter === 'today') {
+        return allAppointments.filter(a => a.date === todayStr);
+      }
+      if (this.staffPortalFilter === 'upcoming') {
+        return allAppointments.filter(a => a.date >= todayStr && a.status !== 'completed' && a.status !== 'cancelled');
+      }
+      if (this.staffPortalFilter === 'completed') {
+        return allAppointments.filter(a => a.status === 'completed');
+      }
+      return allAppointments;
+    };
+
+    const filteredApts = getFilteredAppointments();
+
+    container.innerHTML = `
+      <div class="min-h-screen bg-slate-900 text-white flex flex-col">
+        <!-- Top App Bar (Mobile First) -->
+        <header class="bg-slate-850 border-b border-slate-800 sticky top-0 z-30 px-4 py-3 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <img 
+              src="${staff.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'}" 
+              alt="${staff.name}" 
+              class="w-10 h-10 rounded-full object-cover border-2 border-blue-500 shadow-sm"
+            >
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h1 class="text-sm font-black text-white leading-tight">${staff.name}</h1>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                  ${staff.roleTitle || 'Especialista'}
+                </span>
+              </div>
+              <span class="text-xs text-slate-400 flex items-center gap-1">
+                <i class="fas fa-store text-[10px]"></i> ${business.name || 'Mi Comercio'}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button 
+              id="staff-portal-refresh-btn" 
+              class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors cursor-pointer" 
+              title="Refrescar datos"
+            >
+              <i class="fas fa-rotate-right text-xs"></i>
+            </button>
+            <button 
+              id="staff-portal-logout-btn" 
+              class="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5" 
+              title="Cerrar sesión"
+            >
+              <i class="fas fa-sign-out-alt"></i>
+              <span class="hidden sm:inline">Salir</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Main Body -->
+        <main class="flex-1 max-w-4xl mx-auto w-full p-4 sm:p-6 space-y-6">
+          <!-- Tarjeta Destacada de Finanzas y Saldo a Cobrar -->
+          <div class="bg-gradient-to-br from-slate-800 to-slate-850 border border-slate-700/80 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-4">
+              <div>
+                <span class="text-xs uppercase font-extrabold text-blue-400 tracking-wider">Tu Rendimiento & Comisiones</span>
+                <h2 class="text-2xl sm:text-3xl font-black text-white mt-0.5">
+                  ₡${(earnings.balanceDue || 0).toLocaleString('es-CR')}
+                </h2>
+                <span class="text-xs text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                  <i class="fas fa-circle-check text-[10px]"></i> Saldo pendiente neto a cobrar
+                </span>
+              </div>
+
+              <div class="text-left sm:text-right">
+                <span class="text-[11px] text-slate-400 block">Tu Esquema Acordado:</span>
+                <span class="inline-block mt-1 px-3 py-1 bg-blue-500/20 border border-blue-500/40 text-blue-300 rounded-xl font-bold text-xs">
+                  ${staff.commissionType === 'fixed' ? `₡${Number(staff.commissionRate || 0).toLocaleString('es-CR')} por servicio` : `${staff.commissionRate || 50}% sobre servicios cobrados`}
+                </span>
+              </div>
+            </div>
+
+            <!-- Mini desglose de montos -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 pt-4 text-center">
+              <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
+                <span class="text-[10px] sm:text-xs text-slate-400 block font-medium">Ganadas</span>
+                <span class="text-xs sm:text-sm font-black text-white mt-0.5 block">₡${(earnings.totalEarned || 0).toLocaleString('es-CR')}</span>
+              </div>
+              <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
+                <span class="text-[10px] sm:text-xs text-amber-400 block font-medium">Vales Recibidos</span>
+                <span class="text-xs sm:text-sm font-black text-amber-400 mt-0.5 block">-₡${(earnings.totalAdvances || 0).toLocaleString('es-CR')}</span>
+              </div>
+              <div class="p-2 sm:p-3 bg-slate-900/60 rounded-2xl border border-slate-800">
+                <span class="text-[10px] sm:text-xs text-slate-400 block font-medium">Ya Cobrado</span>
+                <span class="text-xs sm:text-sm font-black text-slate-300 mt-0.5 block">-₡${(earnings.totalPaidOut || 0).toLocaleString('es-CR')}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pestañas de Filtro de Agenda -->
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-black text-white flex items-center gap-2">
+                <i class="fas fa-calendar-days text-blue-400"></i> Tu Agenda Asignada
+              </h3>
+              <span class="text-xs text-slate-400 font-medium">
+                ${filteredApts.length} ${filteredApts.length === 1 ? 'cita' : 'citas'}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-1.5 p-1 bg-slate-800/80 rounded-2xl border border-slate-700/80 overflow-x-auto">
+              <button 
+                class="staff-filter-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${this.staffPortalFilter === 'today' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}" 
+                data-filter="today"
+              >
+                <span>Hoy</span>
+              </button>
+              <button 
+                class="staff-filter-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${this.staffPortalFilter === 'upcoming' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}" 
+                data-filter="upcoming"
+              >
+                <span>Próximas</span>
+              </button>
+              <button 
+                class="staff-filter-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${this.staffPortalFilter === 'completed' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}" 
+                data-filter="completed"
+              >
+                <span>Atendidas</span>
+              </button>
+              <button 
+                class="staff-filter-btn flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 ${this.staffPortalFilter === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}" 
+                data-filter="all"
+              >
+                <span>Todas</span>
+              </button>
+            </div>
+
+            <!-- Listado de Citas -->
+            ${filteredApts.length === 0 ? `
+              <div class="text-center py-12 px-4 rounded-3xl bg-slate-850 border border-slate-800">
+                <div class="w-14 h-14 rounded-2xl bg-slate-800 text-slate-500 flex items-center justify-center text-xl mx-auto mb-3">
+                  <i class="fas fa-calendar-xmark"></i>
+                </div>
+                <h4 class="text-sm font-bold text-slate-300">No hay citas en este filtro</h4>
+                <p class="text-xs text-slate-500 mt-1">Cuando los clientes reserven contigo aparecerán en tu agenda en tiempo real.</p>
+              </div>
+            ` : `
+              <div class="space-y-3">
+                ${filteredApts.map(a => {
+                  const isCompleted = a.status === 'completed';
+                  const isCancelled = a.status === 'cancelled';
+                  const isPaid = a.paymentStatus === 'paid';
+                  const estCommission = Number(a.commissionAmount) || (staff.commissionType === 'fixed' ? staff.commissionRate : Math.round(Number(a.servicePrice || 0) * (staff.commissionRate || 50) / 100));
+
+                  const clientPhone = (a.clientPhone || '').replace(/\D/g, '');
+                  const waPhone = clientPhone.startsWith('506') ? clientPhone : ('506' + clientPhone);
+                  const waMsg = encodeURIComponent(`Hola ${a.clientName || 'Cliente'}, te saluda ${staff.name} de ${business.name}. Te contacto sobre tu cita para ${a.serviceName} el ${a.date} a las ${a.time}.`);
+
+                  return `
+                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-800/80 border ${isCompleted ? 'border-emerald-500/30' : (isCancelled ? 'border-rose-500/30 opacity-60' : 'border-slate-700/80')} space-y-3 transition-all">
+                      <div class="flex items-start justify-between gap-3">
+                        <div>
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm sm:text-base font-black text-white">${a.clientName}</span>
+                            ${isCompleted ? `
+                              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                                <i class="fas fa-check"></i> Atendida
+                              </span>
+                            ` : isCancelled ? `
+                              <span class="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold">
+                                Cancelada
+                              </span>
+                            ` : `
+                              <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold">
+                                Programada
+                              </span>
+                            `}
+                            ${isPaid ? `
+                              <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-bold">
+                                <i class="fas fa-circle-check text-[9px]"></i> Pagada en Caja
+                              </span>
+                            ` : `
+                              <span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-bold">
+                                <i class="fas fa-clock text-[9px]"></i> Cobro pendiente
+                              </span>
+                            `}
+                          </div>
+                          <span class="text-xs text-blue-300 font-bold block mt-1">
+                            ${a.serviceName} ${a.serviceDuration ? `• ${a.serviceDuration} min` : ''}
+                          </span>
+                        </div>
+
+                        <div class="text-right shrink-0">
+                          <span class="text-xs text-slate-400 block font-medium">Tu comisión:</span>
+                          <span class="text-sm font-black text-emerald-400">₡${estCommission.toLocaleString('es-CR')}</span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center justify-between text-xs text-slate-400 border-t border-slate-700/60 pt-3">
+                        <div class="flex items-center gap-3">
+                          <span class="flex items-center gap-1.5 text-slate-300 font-bold">
+                            <i class="far fa-calendar text-blue-400"></i> ${a.date}
+                          </span>
+                          <span class="flex items-center gap-1.5 text-slate-300 font-bold">
+                            <i class="far fa-clock text-blue-400"></i> ${a.time}
+                          </span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                          ${clientPhone ? `
+                            <a 
+                              href="https://wa.me/${waPhone}?text=${waMsg}" 
+                              target="_blank" 
+                              class="px-2.5 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Chat WhatsApp con Cliente"
+                            >
+                              <i class="fab fa-whatsapp"></i>
+                              <span class="hidden sm:inline">WhatsApp</span>
+                            </a>
+                          ` : ''}
+
+                          ${!isCompleted && !isCancelled ? `
+                            <button 
+                              class="staff-mark-complete-btn px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm shadow-emerald-500/20"
+                              data-apt-id="${a.id}"
+                            >
+                              <i class="fas fa-check"></i>
+                              <span>Atendida</span>
+                            </button>
+                          ` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Historial de Liquidaciones y Vales -->
+          ${payouts.length > 0 ? `
+            <div class="bg-slate-850 border border-slate-800 rounded-3xl p-5 space-y-3">
+              <h3 class="text-sm font-black text-white flex items-center gap-2">
+                <i class="fas fa-receipt text-indigo-400"></i> Últimos Vales y Liquidaciones
+              </h3>
+              <div class="divide-y divide-slate-800 text-xs">
+                ${payouts.slice(0, 5).map(p => `
+                  <div class="py-2.5 flex items-center justify-between gap-3">
+                    <div>
+                      <strong class="text-white block font-bold">
+                        ${p.type === 'advance_vale' ? 'Vale / Adelanto Recibido' : 'Liquidación de Comisiones'}
+                      </strong>
+                      <span class="text-slate-400 text-[11px]">${p.notes || (p.type === 'advance_vale' ? 'Adelanto en efectivo' : 'Pago de comisiones')} • ${new Date(p.createdAt).toLocaleDateString('es-CR')}</span>
+                    </div>
+                    <span class="font-black text-sm ${p.type === 'advance_vale' ? 'text-amber-400' : 'text-emerald-400'}">
+                      ${p.type === 'advance_vale' ? '-' : '+'}₡${parseFloat(p.amount || 0).toLocaleString('es-CR')}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </main>
+      </div>
+    `;
+
+    // Event listeners
+    document.getElementById('staff-portal-refresh-btn')?.addEventListener('click', async () => {
+      try {
+        const refreshed = await storage.getStaffDashboard();
+        this.renderStaffPortalDashboard(container, refreshed);
+        this.showToast('Datos actualizados en vivo.', 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Error al refrescar.', 'error');
+      }
+    });
+
+    document.getElementById('staff-portal-logout-btn')?.addEventListener('click', async () => {
+      if (confirm('¿Deseas cerrar tu sesión de colaborador?')) {
+        await storage.logoutStaff();
+        this.showToast('Sesión cerrada correctamente.', 'info');
+        this.renderStaffPortalView(container);
+      }
+    });
+
+    document.querySelectorAll('.staff-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.staffPortalFilter = btn.getAttribute('data-filter');
+        this.renderStaffPortalDashboard(container, data);
+      });
+    });
+
+    document.querySelectorAll('.staff-mark-complete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        try {
+          await storage.updateStaffAppointmentStatus(aptId, 'completed');
+          this.showToast('¡Cita marcada como atendida y comisión registrada!', 'success');
+          const refreshed = await storage.getStaffDashboard();
+          this.renderStaffPortalDashboard(container, refreshed);
+        } catch (err) {
+          this.showToast(err.message || 'Error al actualizar cita.', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check"></i> Atendida';
+        }
+      });
+    });
   }
 
   // --- MODAL: AGREGAR / EDITAR ESPECIALISTA ---
@@ -13058,6 +15654,74 @@ class App {
                       class="w-full px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-medium text-slate-700 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Esquema de Comisiones y Portal de Colaborador -->
+            <div class="pt-2 border-t border-slate-100 space-y-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-900 uppercase tracking-wider">Comisiones & Portal Privado</span>
+                <span class="text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">Automático</span>
+              </div>
+
+              <!-- Tipo de Comisión y Monto/Porcentaje -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    Tipo de Comisión
+                  </label>
+                  <select 
+                    id="staff-commission-type" 
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  >
+                    <option value="percentage" ${(staffMember?.commissionType || 'percentage') === 'percentage' ? 'selected' : ''}>% Porcentaje por Servicio</option>
+                    <option value="fixed" ${staffMember?.commissionType === 'fixed' ? 'selected' : ''}>₡ Monto Fijo por Servicio</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1" id="staff-comm-rate-label">
+                    ${(staffMember?.commissionType === 'fixed') ? 'Monto Fijo en Colones (₡)' : 'Porcentaje de Comisión (%)'}
+                  </label>
+                  <input 
+                    type="number" 
+                    id="staff-commission-rate" 
+                    value="${staffMember?.commissionRate !== undefined && staffMember?.commissionRate !== null ? staffMember.commissionRate : 50}" 
+                    min="0"
+                    step="${(staffMember?.commissionType === 'fixed') ? '500' : '1'}"
+                    class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <!-- PIN de 4 dígitos y Correo Opcional -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    PIN de Acceso al Portal (4 Dígitos)
+                  </label>
+                  <input 
+                    type="password" 
+                    id="staff-pin-code" 
+                    value="${staffMember?.pinCode || ''}" 
+                    placeholder="Ej: 1234" 
+                    maxlength="4" 
+                    inputmode="numeric" 
+                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none text-center tracking-widest"
+                  />
+                  <span class="text-[10px] text-slate-400 mt-0.5 block">Para ingresar en /colaborador y ver su agenda y ganancias.</span>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-700 uppercase mb-1">
+                    Correo del Especialista (Opcional)
+                  </label>
+                  <input 
+                    type="email" 
+                    id="staff-email-input" 
+                    value="${staffMember?.email || ''}" 
+                    placeholder="colaborador@correo.com" 
+                    class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -13221,12 +15885,32 @@ class App {
       });
     });
 
+    document.getElementById('staff-commission-type')?.addEventListener('change', (e) => {
+      const isFixed = e.target.value === 'fixed';
+      const label = document.getElementById('staff-comm-rate-label');
+      const input = document.getElementById('staff-commission-rate');
+      if (label) label.textContent = isFixed ? 'Monto Fijo en Colones (₡)' : 'Porcentaje de Comisión (%)';
+      if (input) {
+        input.step = isFixed ? '500' : '1';
+        if (isFixed && (!input.value || parseFloat(input.value) <= 100)) {
+          input.value = '2500';
+        } else if (!isFixed && parseFloat(input.value) > 100) {
+          input.value = '50';
+        }
+      }
+    });
+
     document.getElementById('staff-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('staff-name-input').value.trim();
       const roleTitle = document.getElementById('staff-role-input').value.trim();
       const phone = document.getElementById('staff-phone-input').value.trim();
       const avatarUrl = document.getElementById('staff-avatar-input')?.value?.trim() || '';
+      const email = document.getElementById('staff-email-input')?.value?.trim() || null;
+      const commissionType = document.getElementById('staff-commission-type')?.value || 'percentage';
+      const commissionRate = parseFloat(document.getElementById('staff-commission-rate')?.value) || 0;
+      const pinCode = document.getElementById('staff-pin-code')?.value?.trim() || null;
+
       const isAll = document.getElementById('staff-all-services-checkbox')?.checked ?? true;
       let selectedServices = ['all'];
       if (!isAll) {
@@ -13255,7 +15939,11 @@ class App {
         name,
         roleTitle,
         phone,
+        email,
         avatarUrl,
+        commissionType,
+        commissionRate,
+        pinCode,
         services: selectedServices,
         schedule: customSchedule,
         isActive: staffMember ? staffMember.isActive : true
@@ -13688,6 +16376,12 @@ class App {
     if (this.activeDashboardTab === 'clients') {
       this.setupClientsTabEvents(currentBiz, apts);
     }
+    if (this.activeDashboardTab === 'pos') {
+      this.setupPosTabEvents(currentBiz, apts);
+    }
+    if (this.activeDashboardTab === 'team') {
+      this.setupTeamTabEvents(currentBiz);
+    }
     if (this.activeDashboardTab === 'deposits') {
       this.setupDepositSettingsEvents(currentBiz);
     }
@@ -13785,6 +16479,30 @@ class App {
         const apt = appointments.find(a => a.id === aptId);
         if (apt) {
           this.renderRescheduleModal(apt, true);
+        }
+      });
+    });
+
+    // Cobrar Cita en Caja / POS
+    document.querySelectorAll('.pos-charge-apt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const appointments = storage.getAppointmentsByBusiness(currentBiz.id) || [];
+        const apt = appointments.find(a => String(a.id) === String(aptId));
+        if (apt) {
+          this.openChargeAppointmentModal(apt, currentBiz);
+        }
+      });
+    });
+
+    // Ver Recibo / Enviar Comprobante Digital por WhatsApp
+    document.querySelectorAll('.pos-receipt-apt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const aptId = btn.getAttribute('data-apt-id');
+        const appointments = storage.getAppointmentsByBusiness(currentBiz.id) || [];
+        const apt = appointments.find(a => String(a.id) === String(aptId));
+        if (apt) {
+          this.openReceiptModal(apt, currentBiz);
         }
       });
     });
@@ -17022,6 +19740,13 @@ class App {
                   </button>
                 </div>
                 ` : ''}
+
+                <div class="pt-2 text-center text-xs text-slate-500 flex flex-col items-center">
+                  <button type="button" class="auth-switch-to-staff font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-id-badge text-indigo-500"></i>
+                    <span>¿Eres especialista / colaborador? Ingresa con PIN aquí</span>
+                  </button>
+                </div>
               </form>
             ` : ''}
 
@@ -17338,6 +20063,13 @@ class App {
     document.querySelectorAll('.auth-switch-to-login').forEach(btn => {
       btn.addEventListener('click', () => {
         this.renderAuthModal({ mode: 'login' });
+      });
+    });
+    document.querySelectorAll('.auth-switch-to-staff').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const modalContainer = document.getElementById('modal-container');
+        if (modalContainer) modalContainer.innerHTML = '';
+        this.navigateTo('staff-portal');
       });
     });
 

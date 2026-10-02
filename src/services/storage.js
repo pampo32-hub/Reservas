@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
   BIZ_USER: 'directorio_biz_user_session',
   CLIENT_USER: 'directorio_client_user_session',
   DEV_USER: 'directorio_dev_user_session',
+  STAFF_USER: 'directorio_staff_user_session',
   BLOCKED_SLOTS: 'directorio_blocked_slots_v1',
   AUTH_TOKEN: 'reservas_auth_token_v1'
 };
@@ -1290,6 +1291,154 @@ class StorageService {
     this.staffCache[businessId] = staff;
     localStorage.setItem(`directorio_staff_${businessId}`, JSON.stringify(staff));
     return { success: true };
+  }
+
+  // --- GESTIÓN DE COLABORADORES / STAFF SESIÓN ---
+  getStaffUser() {
+    const data = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.STAFF_USER) : null;
+    return data ? JSON.parse(data) : null;
+  }
+
+  setStaffUser(staffUser) {
+    if (typeof localStorage !== 'undefined') {
+      if (staffUser) {
+        localStorage.setItem(STORAGE_KEYS.STAFF_USER, JSON.stringify(staffUser));
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.STAFF_USER);
+      }
+    }
+  }
+
+  async logoutStaff() {
+    this.setStaffUser(null);
+    this.clearAuthToken();
+  }
+
+  async loginStaff(businessIdentifier, pinCode) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/auth/staff/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessIdentifier, pinCode })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión como colaborador.');
+    if (data.token) this.setAuthToken(data.token);
+    this.setStaffUser(data.staff);
+    return data;
+  }
+
+  async getStaffDashboard() {
+    const res = await this.fetchWithAuth(`${this.apiBase}/staff/me/dashboard`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cargar panel de colaborador.');
+    return data;
+  }
+
+  async updateStaffAppointmentStatus(aptId, status) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/staff/me/appointments/${aptId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al actualizar estado de la cita.');
+    return data;
+  }
+
+  // --- MÓDULO DE CAJA Y PUNTO DE VENTA (POS) ---
+  async getCurrentCashRegister(businessId) {
+    if (!this.isOnlineApi) return { isOpen: false, session: null };
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/cash-register/current`);
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('Error consultando estado de caja:', e);
+    }
+    return { isOpen: false, session: null };
+  }
+
+  async openCashRegister(businessId, initialCash = 0, notes = '', openedBy = 'Administrador') {
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/cash-register/open`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initialCash, notes, openedBy })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al abrir la caja.');
+    return data;
+  }
+
+  async closeCashRegister(businessId, finalCashCounted, notes = '', closedBy = 'Administrador') {
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/cash-register/close`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ finalCashCounted, notes, closedBy })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cerrar la caja.');
+    return data;
+  }
+
+  async getCashRegisterHistory(businessId) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/cash-register/history`);
+    if (!res.ok) return [];
+    return await res.json();
+  }
+
+  async chargeAppointment(businessId, chargeData) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/pos/charge-appointment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chargeData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cobrar cita.');
+    await this.getAppointmentsByBusinessAsync(businessId);
+    return data;
+  }
+
+  async recordExpense(businessId, expenseData) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/pos/expense`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(expenseData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al registrar egreso.');
+    return data;
+  }
+
+  async getPosTransactions(businessId, registerId = null) {
+    const url = registerId 
+      ? `${this.apiBase}/businesses/${businessId}/pos/transactions?registerId=${registerId}`
+      : `${this.apiBase}/businesses/${businessId}/pos/transactions`;
+    const res = await this.fetchWithAuth(url);
+    if (!res.ok) return [];
+    return await res.json();
+  }
+
+  // --- MÓDULO DE COMISIONES Y LIQUIDACIONES ---
+  async getStaffCommissions(businessId, startDate = null, endDate = null) {
+    let url = `${this.apiBase}/businesses/${businessId}/staff-commissions`;
+    const params = [];
+    if (startDate) params.push(`startDate=${startDate}`);
+    if (endDate) params.push(`endDate=${endDate}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+
+    const res = await this.fetchWithAuth(url);
+    if (!res.ok) return [];
+    return await res.json();
+  }
+
+  async recordStaffPayout(businessId, payoutData) {
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff-payouts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payoutData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al registrar pago a especialista.');
+    return data;
   }
 
   // --- RESERVAS / CITAS ---

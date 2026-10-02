@@ -389,6 +389,78 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_biz_client_notes ON reservas_business_client_notes (business_id, client_phone);
     `);
 
+    // 15. Módulo de Punto de Venta (POS), Cuadre de Caja y Comisiones de Colaboradores
+    await client.query(`
+      -- Columnas de comisiones y acceso PIN para especialistas
+      ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS commission_type VARCHAR(20) DEFAULT 'percentage';
+      ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS commission_rate NUMERIC(10,2) DEFAULT 50.00;
+      ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS pin_code VARCHAR(10) DEFAULT NULL;
+      ALTER TABLE reservas_staff ADD COLUMN IF NOT EXISTS email VARCHAR(150) DEFAULT NULL;
+
+      -- Columnas de cobro y liquidación en citas
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) DEFAULT 'pending';
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(12,2) DEFAULT 0;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS paid_at TIMESTAMP DEFAULT NULL;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS commission_amount NUMERIC(12,2) DEFAULT 0;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS commission_settled BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_appointments ADD COLUMN IF NOT EXISTS cash_register_id VARCHAR(50) DEFAULT NULL;
+
+      -- Tabla de Sesiones de Caja Diaria (Arqueo y Cuadre de Caja)
+      CREATE TABLE IF NOT EXISTS reservas_cash_registers (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        opened_at TIMESTAMP DEFAULT NOW(),
+        closed_at TIMESTAMP NULL,
+        status VARCHAR(20) DEFAULT 'open',
+        opened_by VARCHAR(255) DEFAULT 'Administrador',
+        closed_by VARCHAR(255) DEFAULT NULL,
+        initial_cash NUMERIC(12,2) DEFAULT 0,
+        final_cash_counted NUMERIC(12,2) DEFAULT NULL,
+        expected_cash NUMERIC(12,2) DEFAULT 0,
+        difference NUMERIC(12,2) DEFAULT 0,
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_cash_reg_biz_status ON reservas_cash_registers (business_id, status);
+
+      -- Tabla de Movimientos y Transacciones del POS (Ingresos por Citas y Egresos de Caja Chica)
+      CREATE TABLE IF NOT EXISTS reservas_pos_transactions (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        cash_register_id VARCHAR(50) REFERENCES reservas_cash_registers(id) ON DELETE SET NULL,
+        appointment_id VARCHAR(50) REFERENCES reservas_appointments(id) ON DELETE SET NULL,
+        type VARCHAR(20) NOT NULL, -- 'income', 'expense'
+        category VARCHAR(50) NOT NULL, -- 'appointment_payment', 'petty_cash', 'staff_advance', 'supply_purchase', 'tip', 'other'
+        description TEXT NOT NULL,
+        amount NUMERIC(12,2) NOT NULL,
+        payment_method VARCHAR(50) NOT NULL, -- 'cash', 'sinpe', 'card', 'transfer', 'other'
+        sinpe_reference VARCHAR(100) DEFAULT NULL,
+        staff_id VARCHAR(50) DEFAULT NULL,
+        staff_name VARCHAR(255) DEFAULT NULL,
+        client_name VARCHAR(255) DEFAULT NULL,
+        client_phone VARCHAR(50) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_pos_tx_biz_reg ON reservas_pos_transactions (business_id, cash_register_id);
+      CREATE INDEX IF NOT EXISTS idx_pos_tx_date ON reservas_pos_transactions (business_id, created_at);
+
+      -- Tabla de Liquidaciones y Vales/Adelantos de Colaboradores
+      CREATE TABLE IF NOT EXISTS reservas_staff_payouts (
+        id VARCHAR(50) PRIMARY KEY,
+        business_id VARCHAR(50) NOT NULL REFERENCES reservas_businesses(id) ON DELETE CASCADE,
+        staff_id VARCHAR(50) NOT NULL REFERENCES reservas_staff(id) ON DELETE CASCADE,
+        type VARCHAR(30) NOT NULL, -- 'commission_payout', 'advance_vale', 'bonus', 'penalty'
+        amount NUMERIC(12,2) NOT NULL,
+        notes TEXT DEFAULT '',
+        period_start DATE NULL,
+        period_end DATE NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_staff_payouts_biz_staff ON reservas_staff_payouts (business_id, staff_id);
+    `);
+
+
     // Sembrar cuenta Master Developer si no existe
     const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';

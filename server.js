@@ -2733,8 +2733,12 @@ app.get('/api/businesses/:id/staff', async (req, res) => {
       roleTitle: s.role_title || 'Especialista',
       avatarUrl: s.avatar_url || '',
       phone: s.phone || '',
+      email: s.email || '',
       services: s.services || ['all'],
       schedule: s.schedule || null,
+      commissionType: s.commission_type || 'percentage',
+      commissionRate: s.commission_rate !== null ? parseFloat(s.commission_rate) : 50.0,
+      pinCode: s.pin_code || '',
       isActive: s.is_active !== false,
       createdAt: s.created_at
     }));
@@ -2780,8 +2784,11 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
     const newStaffId = `staff-${Date.now()}`;
     const cleanAvatar = s.avatarUrl ? processAndSaveImage(s.avatarUrl, `comercios/${businessId}/equipo`, `staff_${newStaffId}`) : '';
     await pool.query(`
-      INSERT INTO reservas_staff (id, business_id, name, role_title, avatar_url, phone, services, schedule, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO reservas_staff (
+        id, business_id, name, role_title, avatar_url, phone, email, 
+        services, schedule, commission_type, commission_rate, pin_code, is_active
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     `, [
       newStaffId, 
       businessId, 
@@ -2789,8 +2796,12 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       s.roleTitle?.trim() || 'Especialista', 
       cleanAvatar, 
       s.phone?.trim() || '', 
+      s.email?.trim() || '', 
       JSON.stringify(s.services || ['all']), 
-      s.schedule ? JSON.stringify(s.schedule) : null, 
+      s.schedule ? JSON.stringify(s.schedule) : null,
+      s.commissionType || 'percentage',
+      s.commissionRate !== undefined && s.commissionRate !== null ? parseFloat(s.commissionRate) : 50.0,
+      s.pinCode ? s.pinCode.trim() : null,
       s.isActive !== false
     ]);
 
@@ -2801,8 +2812,12 @@ app.post('/api/businesses/:id/staff', async (req, res) => {
       roleTitle: s.roleTitle?.trim() || 'Especialista',
       avatarUrl: cleanAvatar,
       phone: s.phone?.trim() || '',
+      email: s.email?.trim() || '',
       services: s.services || ['all'],
       schedule: s.schedule || null,
+      commissionType: s.commissionType || 'percentage',
+      commissionRate: s.commissionRate !== undefined ? parseFloat(s.commissionRate) : 50.0,
+      pinCode: s.pinCode || '',
       isActive: s.isActive !== false
     });
   } catch (error) {
@@ -2824,17 +2839,25 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
         role_title = COALESCE($2, role_title),
         avatar_url = COALESCE($3, avatar_url),
         phone = COALESCE($4, phone),
-        services = COALESCE($5, services),
-        schedule = $6,
-        is_active = COALESCE($7, is_active)
-      WHERE id = $8 AND business_id = $9
+        email = COALESCE($5, email),
+        services = COALESCE($6, services),
+        schedule = $7,
+        commission_type = COALESCE($8, commission_type),
+        commission_rate = COALESCE($9, commission_rate),
+        pin_code = COALESCE($10, pin_code),
+        is_active = COALESCE($11, is_active)
+      WHERE id = $12 AND business_id = $13
     `, [
       s.name ? s.name.trim() : null,
       s.roleTitle ? s.roleTitle.trim() : null,
       cleanUpdateAvatar,
       s.phone !== undefined ? s.phone.trim() : null,
+      s.email !== undefined ? s.email.trim() : null,
       s.services ? JSON.stringify(s.services) : null,
       s.schedule ? JSON.stringify(s.schedule) : null,
+      s.commissionType !== undefined ? s.commissionType : null,
+      s.commissionRate !== undefined ? parseFloat(s.commissionRate) : null,
+      s.pinCode !== undefined ? (s.pinCode ? s.pinCode.trim() : null) : null,
       s.isActive !== undefined ? s.isActive : null,
       staffId,
       businessId
@@ -2858,6 +2881,806 @@ app.delete('/api/businesses/:id/staff/:staffId', async (req, res) => {
     res.status(500).json({ error: 'Error al eliminar especialista.' });
   }
 });
+
+// ==========================================
+// MÓDULO DE CAJA (POS) Y CUADRE DIARIO
+// ==========================================
+
+// 1. Obtener la sesión de caja actual activa para un comercio
+app.get('/api/businesses/:id/cash-register/current', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const regRes = await pool.query(`
+      SELECT * FROM reservas_cash_registers
+      WHERE business_id = $1 AND status = 'open'
+      ORDER BY opened_at DESC
+      LIMIT 1
+    `, [businessId]);
+
+    if (regRes.rows.length === 0) {
+      return res.json({ isOpen: false, session: null });
+    }
+
+    const reg = regRes.rows[0];
+
+    // Calcular totales de movimientos del turno en vivo
+    const txRes = await pool.query(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'cash' THEN amount ELSE 0 END), 0) as cash_incomes,
+        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'sinpe' THEN amount ELSE 0 END), 0) as sinpe_incomes,
+        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'card' THEN amount ELSE 0 END), 0) as card_incomes,
+        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method NOT IN ('cash', 'sinpe', 'card') THEN amount ELSE 0 END), 0) as other_incomes,
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses,
+        COUNT(*) as total_transactions
+      FROM reservas_pos_transactions
+      WHERE cash_register_id = $1
+    `, [reg.id]);
+
+    const stats = txRes.rows[0];
+    const initialCash = parseFloat(reg.initial_cash || 0);
+    const cashIncomes = parseFloat(stats.cash_incomes || 0);
+    const sinpeIncomes = parseFloat(stats.sinpe_incomes || 0);
+    const cardIncomes = parseFloat(stats.card_incomes || 0);
+    const otherIncomes = parseFloat(stats.other_incomes || 0);
+    const expenses = parseFloat(stats.expenses || 0);
+
+    const expectedCash = initialCash + cashIncomes - expenses;
+    const totalSales = cashIncomes + sinpeIncomes + cardIncomes + otherIncomes;
+
+    res.json({
+      isOpen: true,
+      session: {
+        id: reg.id,
+        businessId: reg.business_id,
+        openedAt: reg.opened_at,
+        openedBy: reg.opened_by,
+        initialCash,
+        expectedCash,
+        cashIncomes,
+        sinpeIncomes,
+        cardIncomes,
+        otherIncomes,
+        expenses,
+        totalSales,
+        totalTransactions: parseInt(stats.total_transactions, 10) || 0,
+        notes: reg.notes
+      }
+    });
+  } catch (error) {
+    console.error('Error obteniendo estado de caja:', error);
+    res.status(500).json({ error: 'Error al consultar estado de caja.' });
+  }
+});
+
+// 2. Abrir caja del día
+app.post('/api/businesses/:id/cash-register/open', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { initialCash = 0, notes = '', openedBy = 'Administrador' } = req.body;
+
+    // Verificar si ya existe una caja abierta
+    const existing = await pool.query(
+      "SELECT id FROM reservas_cash_registers WHERE business_id = $1 AND status = 'open'",
+      [businessId]
+    );
+
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ 
+        error: 'Ya existe una caja abierta para este comercio. Debe cerrarla antes de abrir una nueva.',
+        existingRegisterId: existing.rows[0].id
+      });
+    }
+
+    const regId = `reg-${Date.now()}`;
+    await pool.query(`
+      INSERT INTO reservas_cash_registers (
+        id, business_id, status, initial_cash, opened_by, notes, opened_at
+      ) VALUES ($1, $2, 'open', $3, $4, $5, NOW())
+    `, [regId, businessId, parseFloat(initialCash) || 0, openedBy.trim(), notes.trim()]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Caja abierta con éxito.',
+      registerId: regId
+    });
+  } catch (error) {
+    console.error('Error abriendo caja:', error);
+    res.status(500).json({ error: 'Error al abrir la caja.' });
+  }
+});
+
+// 3. Cerrar caja del día (Arqueo y Cuadre)
+app.post('/api/businesses/:id/cash-register/close', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { finalCashCounted, notes = '', closedBy = 'Administrador' } = req.body;
+
+    const regRes = await pool.query(
+      "SELECT * FROM reservas_cash_registers WHERE business_id = $1 AND status = 'open' ORDER BY opened_at DESC LIMIT 1",
+      [businessId]
+    );
+
+    if (regRes.rows.length === 0) {
+      return res.status(404).json({ error: 'No hay ninguna caja abierta actualmente para cerrar.' });
+    }
+
+    const reg = regRes.rows[0];
+
+    // Totales de movimientos
+    const txRes = await pool.query(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN type = 'income' AND payment_method = 'cash' THEN amount ELSE 0 END), 0) as cash_incomes,
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses
+      FROM reservas_pos_transactions
+      WHERE cash_register_id = $1
+    `, [reg.id]);
+
+    const initialCash = parseFloat(reg.initial_cash || 0);
+    const cashIncomes = parseFloat(txRes.rows[0].cash_incomes || 0);
+    const expenses = parseFloat(txRes.rows[0].expenses || 0);
+    const expectedCash = initialCash + cashIncomes - expenses;
+
+    const counted = finalCashCounted !== undefined && finalCashCounted !== null ? parseFloat(finalCashCounted) : expectedCash;
+    const difference = counted - expectedCash;
+
+    await pool.query(`
+      UPDATE reservas_cash_registers SET
+        status = 'closed',
+        closed_at = NOW(),
+        closed_by = $1,
+        final_cash_counted = $2,
+        expected_cash = $3,
+        difference = $4,
+        notes = CASE WHEN $5 != '' THEN notes || ' | ' || $5 ELSE notes END
+      WHERE id = $6
+    `, [closedBy.trim(), counted, expectedCash, difference, notes.trim(), reg.id]);
+
+    res.json({
+      success: true,
+      message: 'Caja cerrada con éxito.',
+      summary: {
+        registerId: reg.id,
+        initialCash,
+        cashIncomes,
+        expenses,
+        expectedCash,
+        finalCashCounted: counted,
+        difference,
+        status: difference === 0 ? 'exact' : (difference > 0 ? 'surplus' : 'shortage')
+      }
+    });
+  } catch (error) {
+    console.error('Error cerrando caja:', error);
+    res.status(500).json({ error: 'Error al cerrar la caja.' });
+  }
+});
+
+// 4. Historial de sesiones de caja
+app.get('/api/businesses/:id/cash-register/history', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const result = await pool.query(`
+      SELECT * FROM reservas_cash_registers
+      WHERE business_id = $1
+      ORDER BY opened_at DESC
+      LIMIT 30
+    `, [businessId]);
+
+    const history = result.rows.map(r => ({
+      id: r.id,
+      businessId: r.business_id,
+      openedAt: r.opened_at,
+      closedAt: r.closed_at,
+      status: r.status,
+      openedBy: r.opened_by,
+      closedBy: r.closed_by,
+      initialCash: parseFloat(r.initial_cash || 0),
+      finalCashCounted: r.final_cash_counted !== null ? parseFloat(r.final_cash_counted) : null,
+      expectedCash: parseFloat(r.expected_cash || 0),
+      difference: parseFloat(r.difference || 0),
+      notes: r.notes
+    }));
+
+    res.json(history);
+  } catch (error) {
+    console.error('Error en historial de caja:', error);
+    res.status(500).json({ error: 'Error al obtener historial de caja.' });
+  }
+});
+
+// 5. Cobrar Cita (POS Checkout)
+app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { 
+      appointmentId, 
+      paymentMethod = 'cash', 
+      amountPaid, 
+      sinpeReference = '', 
+      staffId = null,
+      markCompleted = true,
+      notes = '' 
+    } = req.body;
+
+    if (!appointmentId) {
+      return res.status(400).json({ error: 'appointmentId es requerido.' });
+    }
+
+    const aptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1 AND business_id = $2', [appointmentId, businessId]);
+    if (aptRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Cita no encontrada.' });
+    }
+
+    const apt = aptRes.rows[0];
+    const finalAmount = amountPaid !== undefined ? parseFloat(amountPaid) : parseFloat(apt.service_price || 0);
+    const assignedStaffId = staffId || apt.staff_id;
+
+    // Calcular comisión si hay especialista asignado
+    let commissionAmount = 0;
+    let staffName = apt.staff_name || '';
+
+    if (assignedStaffId) {
+      const staffRes = await pool.query('SELECT * FROM reservas_staff WHERE id = $1', [assignedStaffId]);
+      if (staffRes.rows.length > 0) {
+        const staffObj = staffRes.rows[0];
+        staffName = staffObj.name;
+        const rate = parseFloat(staffObj.commission_rate || 50.0);
+        if (staffObj.commission_type === 'fixed') {
+          commissionAmount = rate;
+        } else {
+          // percentage
+          commissionAmount = Math.round((finalAmount * rate) / 100);
+        }
+      }
+    }
+
+    // Verificar si hay una sesión de caja abierta
+    const openRegRes = await pool.query(
+      "SELECT id FROM reservas_cash_registers WHERE business_id = $1 AND status = 'open' LIMIT 1",
+      [businessId]
+    );
+    const activeRegisterId = openRegRes.rows.length > 0 ? openRegRes.rows[0].id : null;
+
+    // 1. Actualizar la cita
+    await pool.query(`
+      UPDATE reservas_appointments SET
+        payment_status = 'paid',
+        payment_method = $1,
+        paid_amount = $2,
+        paid_at = NOW(),
+        status = CASE WHEN $3 = TRUE THEN 'completed' ELSE status END,
+        staff_id = COALESCE($4, staff_id),
+        staff_name = COALESCE($5, staff_name),
+        commission_amount = $6,
+        cash_register_id = $7
+      WHERE id = $8
+    `, [
+      paymentMethod, 
+      finalAmount, 
+      markCompleted, 
+      assignedStaffId, 
+      staffName, 
+      commissionAmount, 
+      activeRegisterId,
+      appointmentId
+    ]);
+
+    // 2. Registrar la transacción en el POS
+    const txId = `tx-${Date.now()}`;
+    await pool.query(`
+      INSERT INTO reservas_pos_transactions (
+        id, business_id, cash_register_id, appointment_id, type, category,
+        description, amount, payment_method, sinpe_reference,
+        staff_id, staff_name, client_name, client_phone
+      ) VALUES ($1, $2, $3, $4, 'income', 'appointment_payment', $5, $6, $7, $8, $9, $10, $11, $12)
+    `, [
+      txId,
+      businessId,
+      activeRegisterId,
+      appointmentId,
+      `Pago de servicio: ${apt.service_name} (${apt.client_name})`,
+      finalAmount,
+      paymentMethod,
+      sinpeReference.trim(),
+      assignedStaffId,
+      staffName,
+      apt.client_name,
+      apt.client_phone
+    ]);
+
+    // Emitir por SSE actualización de cita y de caja
+    broadcastBusinessSSE(businessId, 'pos_transaction', {
+      type: 'income',
+      appointmentId,
+      amount: finalAmount,
+      paymentMethod,
+      message: `¡Cita de ${apt.client_name} cobrada con éxito (${paymentMethod})!`
+    });
+
+    res.json({
+      success: true,
+      message: 'Cita cobrada con éxito.',
+      transactionId: txId,
+      paidAmount: finalAmount,
+      paymentMethod,
+      commissionAmount,
+      cashRegisterId: activeRegisterId
+    });
+  } catch (error) {
+    console.error('Error cobrando cita en POS:', error);
+    res.status(500).json({ error: 'Error al registrar el cobro de la cita.' });
+  }
+});
+
+// 6. Registrar Gasto / Egreso de Caja Chica / Adelanto de Staff
+app.post('/api/businesses/:id/pos/expense', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { 
+      amount, 
+      category = 'petty_cash', 
+      description, 
+      paymentMethod = 'cash', 
+      staffId = null 
+    } = req.body;
+
+    if (!amount || parseFloat(amount) <= 0) {
+      return res.status(400).json({ error: 'El monto del gasto debe ser mayor a 0.' });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'La descripción del gasto es obligatoria.' });
+    }
+
+    const openRegRes = await pool.query(
+      "SELECT id FROM reservas_cash_registers WHERE business_id = $1 AND status = 'open' LIMIT 1",
+      [businessId]
+    );
+    const activeRegisterId = openRegRes.rows.length > 0 ? openRegRes.rows[0].id : null;
+
+    let staffName = null;
+    if (staffId) {
+      const staffRes = await pool.query('SELECT name FROM reservas_staff WHERE id = $1', [staffId]);
+      if (staffRes.rows.length > 0) staffName = staffRes.rows[0].name;
+    }
+
+    const txId = `tx-${Date.now()}`;
+    await pool.query(`
+      INSERT INTO reservas_pos_transactions (
+        id, business_id, cash_register_id, type, category,
+        description, amount, payment_method, staff_id, staff_name
+      ) VALUES ($1, $2, $3, 'expense', $4, $5, $6, $7, $8, $9)
+    `, [
+      txId,
+      businessId,
+      activeRegisterId,
+      category,
+      description.trim(),
+      parseFloat(amount),
+      paymentMethod,
+      staffId,
+      staffName
+    ]);
+
+    // Si es vale/adelanto a colaborador, registrar también en tabla de liquidaciones
+    if (category === 'staff_advance' && staffId) {
+      const payoutId = `pay-${Date.now()}`;
+      await pool.query(`
+        INSERT INTO reservas_staff_payouts (
+          id, business_id, staff_id, type, amount, notes
+        ) VALUES ($1, $2, $3, 'advance_vale', $4, $5)
+      `, [payoutId, businessId, staffId, parseFloat(amount), description.trim()]);
+    }
+
+    broadcastBusinessSSE(businessId, 'pos_transaction', {
+      type: 'expense',
+      amount: parseFloat(amount),
+      category,
+      message: `Egreso registrado: ${description.trim()}`
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Egreso registrado con éxito.',
+      transactionId: txId
+    });
+  } catch (error) {
+    console.error('Error registrando gasto:', error);
+    res.status(500).json({ error: 'Error al registrar el egreso.' });
+  }
+});
+
+// 7. Listar transacciones POS de una sesión de caja o generales
+app.get('/api/businesses/:id/pos/transactions', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { registerId, limit = 50 } = req.query;
+
+    let query = 'SELECT * FROM reservas_pos_transactions WHERE business_id = $1';
+    const params = [businessId];
+
+    if (registerId) {
+      params.push(registerId);
+      query += ` AND cash_register_id = $${params.length}`;
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT ' + (parseInt(limit, 10) || 50);
+
+    const result = await pool.query(query, params);
+    const transactions = result.rows.map(t => ({
+      id: t.id,
+      businessId: t.business_id,
+      cashRegisterId: t.cash_register_id,
+      appointmentId: t.appointment_id,
+      type: t.type,
+      category: t.category,
+      description: t.description,
+      amount: parseFloat(t.amount),
+      paymentMethod: t.payment_method,
+      sinpeReference: t.sinpe_reference,
+      staffId: t.staff_id,
+      staffName: t.staff_name,
+      clientName: t.client_name,
+      clientPhone: t.client_phone,
+      createdAt: t.created_at
+    }));
+
+    res.json(transactions);
+  } catch (error) {
+    console.error('Error obteniendo transacciones POS:', error);
+    res.status(500).json({ error: 'Error al consultar transacciones POS.' });
+  }
+});
+
+// ==========================================
+// MÓDULO DE COMISIONES Y LIQUIDACIONES
+// ==========================================
+
+// 8. Resumen consolidado de comisiones por especialista
+app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    // Obtener todos los especialistas
+    const staffRes = await pool.query(
+      'SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY name ASC',
+      [businessId]
+    );
+
+    // Obtener citas cobradas/completadas
+    let aptQuery = `
+      SELECT * FROM reservas_appointments 
+      WHERE business_id = $1 AND (payment_status = 'paid' OR status = 'completed')
+    `;
+    const aptParams = [businessId];
+    if (startDate) {
+      aptParams.push(startDate);
+      aptQuery += ` AND date >= $${aptParams.length}`;
+    }
+    if (endDate) {
+      aptParams.push(endDate);
+      aptQuery += ` AND date <= $${aptParams.length}`;
+    }
+
+    const aptRes = await pool.query(aptQuery, aptParams);
+
+    // Obtener liquidaciones y vales históricos
+    const payoutsRes = await pool.query(
+      'SELECT * FROM reservas_staff_payouts WHERE business_id = $1 ORDER BY created_at DESC',
+      [businessId]
+    );
+
+    const report = staffRes.rows.map(s => {
+      const staffApts = aptRes.rows.filter(a => a.staff_id === s.id);
+      const staffPayouts = payoutsRes.rows.filter(p => p.staff_id === s.id);
+
+      const totalServiceRevenue = staffApts.reduce((sum, a) => sum + parseFloat(a.service_price || 0), 0);
+      
+      // Calcular comisión acumulada
+      const totalCommissionEarned = staffApts.reduce((sum, a) => {
+        if (a.commission_amount && parseFloat(a.commission_amount) > 0) {
+          return sum + parseFloat(a.commission_amount);
+        }
+        const price = parseFloat(a.service_price || 0);
+        const rate = parseFloat(s.commission_rate || 50.0);
+        return sum + (s.commission_type === 'fixed' ? rate : Math.round((price * rate) / 100));
+      }, 0);
+
+      const totalAdvances = staffPayouts
+        .filter(p => p.type === 'advance_vale')
+        .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+      const totalPaidOut = staffPayouts
+        .filter(p => p.type === 'commission_payout')
+        .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+      const balanceDue = Math.max(0, totalCommissionEarned - totalAdvances - totalPaidOut);
+
+      return {
+        staffId: s.id,
+        name: s.name,
+        roleTitle: s.role_title,
+        avatarUrl: s.avatar_url,
+        phone: s.phone,
+        email: s.email,
+        commissionType: s.commission_type || 'percentage',
+        commissionRate: parseFloat(s.commission_rate || 50.0),
+        pinCode: s.pin_code || '',
+        appointmentsCount: staffApts.length,
+        totalServiceRevenue,
+        totalCommissionEarned,
+        totalAdvances,
+        totalPaidOut,
+        balanceDue,
+        payoutsHistory: staffPayouts.map(p => ({
+          id: p.id,
+          type: p.type,
+          amount: parseFloat(p.amount),
+          notes: p.notes,
+          createdAt: p.created_at
+        }))
+      };
+    });
+
+    res.json(report);
+  } catch (error) {
+    console.error('Error calculando comisiones:', error);
+    res.status(500).json({ error: 'Error al generar reporte de comisiones.' });
+  }
+});
+
+// 9. Registrar liquidación de comisión o vale/adelanto
+app.post('/api/businesses/:id/staff-payouts', async (req, res) => {
+  try {
+    const { id: businessId } = req.params;
+    const { staffId, type = 'commission_payout', amount, notes = '', periodStart = null, periodEnd = null } = req.body;
+
+    if (!staffId) {
+      return res.status(400).json({ error: 'staffId es obligatorio.' });
+    }
+    if (!amount || parseFloat(amount) <= 0) {
+      return res.status(400).json({ error: 'El monto debe ser mayor a 0.' });
+    }
+
+    const payoutId = `pay-${Date.now()}`;
+    await pool.query(`
+      INSERT INTO reservas_staff_payouts (
+        id, business_id, staff_id, type, amount, notes, period_start, period_end
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `, [
+      payoutId,
+      businessId,
+      staffId,
+      type,
+      parseFloat(amount),
+      notes.trim(),
+      periodStart,
+      periodEnd
+    ]);
+
+    res.status(201).json({
+      success: true,
+      message: type === 'advance_vale' ? 'Vale / Adelanto registrado con éxito.' : 'Liquidación registrada con éxito.',
+      payoutId
+    });
+  } catch (error) {
+    console.error('Error registrando pago a staff:', error);
+    res.status(500).json({ error: 'Error al registrar el pago al colaborador.' });
+  }
+});
+
+// ==========================================
+// PORTAL DE COLABORADORES (STAFF)
+// ==========================================
+
+// 10. Login de Colaborador por PIN y Comercio
+app.post('/api/auth/staff/login', async (req, res) => {
+  try {
+    const { businessIdentifier, pinCode } = req.body;
+
+    if (!businessIdentifier || !pinCode) {
+      return res.status(400).json({ error: 'Debes ingresar el identificador del comercio y tu PIN de 4 dígitos.' });
+    }
+
+    // Buscar negocio por slug o id
+    const bizRes = await pool.query(
+      'SELECT id, name, slug, image FROM reservas_businesses WHERE LOWER(slug) = LOWER($1) OR id = $1',
+      [businessIdentifier.trim()]
+    );
+
+    if (bizRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Comercio no encontrado con ese identificador.' });
+    }
+
+    const business = bizRes.rows[0];
+
+    // Buscar especialista con ese PIN en ese comercio
+    const staffRes = await pool.query(
+      'SELECT * FROM reservas_staff WHERE business_id = $1 AND pin_code = $2 AND is_active = TRUE',
+      [business.id, pinCode.trim()]
+    );
+
+    if (staffRes.rows.length === 0) {
+      return res.status(401).json({ error: 'PIN incorrecto o especialista no activo en este negocio.' });
+    }
+
+    const staff = staffRes.rows[0];
+
+    const token = generateToken({
+      role: 'staff',
+      staffId: staff.id,
+      businessId: business.id,
+      name: staff.name
+    });
+
+    res.json({
+      success: true,
+      token,
+      staff: {
+        id: staff.id,
+        name: staff.name,
+        roleTitle: staff.role_title || 'Especialista',
+        avatarUrl: staff.avatar_url,
+        phone: staff.phone,
+        commissionType: staff.commission_type || 'percentage',
+        commissionRate: parseFloat(staff.commission_rate || 50),
+        businessId: business.id,
+        businessName: business.name,
+        businessSlug: business.slug,
+        businessImage: business.image
+      }
+    });
+  } catch (error) {
+    console.error('Error en login de colaborador:', error);
+    res.status(500).json({ error: 'Error al iniciar sesión de colaborador.' });
+  }
+});
+
+// 11. Dashboard privado para el colaborador autenticado
+app.get('/api/staff/me/dashboard', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'staff' && req.user.role !== 'developer') {
+      return res.status(403).json({ error: 'Acceso exclusivo para colaboradores autorizados.' });
+    }
+
+    const staffId = req.user.staffId || req.query.staffId;
+    const businessId = req.user.businessId || req.query.businessId;
+
+    if (!staffId || !businessId) {
+      return res.status(400).json({ error: 'Parámetros de colaborador incompletos.' });
+    }
+
+    const staffRes = await pool.query('SELECT * FROM reservas_staff WHERE id = $1 AND business_id = $2', [staffId, businessId]);
+    if (staffRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Colaborador no encontrado.' });
+    }
+    const staff = staffRes.rows[0];
+
+    const bizRes = await pool.query('SELECT id, name, slug, phone, image FROM reservas_businesses WHERE id = $1', [businessId]);
+    const business = bizRes.rows[0] || {};
+
+    // Obtener SOLO las citas asignadas a este colaborador
+    const aptRes = await pool.query(`
+      SELECT * FROM reservas_appointments
+      WHERE business_id = $1 AND staff_id = $2
+      ORDER BY date ASC, time ASC
+    `, [businessId, staffId]);
+
+    // Obtener liquidaciones y vales de este colaborador
+    const payoutsRes = await pool.query(`
+      SELECT * FROM reservas_staff_payouts
+      WHERE business_id = $1 AND staff_id = $2
+      ORDER BY created_at DESC
+    `, [businessId, staffId]);
+
+    const totalEarned = aptRes.rows
+      .filter(a => a.payment_status === 'paid' || a.status === 'completed')
+      .reduce((sum, a) => {
+        if (a.commission_amount && parseFloat(a.commission_amount) > 0) return sum + parseFloat(a.commission_amount);
+        const price = parseFloat(a.service_price || 0);
+        const rate = parseFloat(staff.commission_rate || 50.0);
+        return sum + (staff.commission_type === 'fixed' ? rate : Math.round((price * rate) / 100));
+      }, 0);
+
+    const totalAdvances = payoutsRes.rows
+      .filter(p => p.type === 'advance_vale')
+      .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+    const totalPaidOut = payoutsRes.rows
+      .filter(p => p.type === 'commission_payout')
+      .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+    const balanceDue = Math.max(0, totalEarned - totalAdvances - totalPaidOut);
+
+    res.json({
+      staff: {
+        id: staff.id,
+        name: staff.name,
+        roleTitle: staff.role_title,
+        avatarUrl: staff.avatar_url,
+        phone: staff.phone,
+        commissionType: staff.commission_type || 'percentage',
+        commissionRate: parseFloat(staff.commission_rate || 50)
+      },
+      business: {
+        id: business.id,
+        name: business.name,
+        slug: business.slug,
+        phone: business.phone,
+        image: business.image
+      },
+      earnings: {
+        totalEarned,
+        totalAdvances,
+        totalPaidOut,
+        balanceDue,
+        completedServices: aptRes.rows.filter(a => a.status === 'completed' || a.payment_status === 'paid').length
+      },
+      appointments: aptRes.rows.map(a => ({
+        id: a.id,
+        serviceName: a.service_name,
+        servicePrice: parseFloat(a.service_price || 0),
+        serviceDuration: a.service_duration,
+        date: a.date,
+        time: a.time,
+        clientName: a.client_name,
+        clientPhone: a.client_phone,
+        clientEmail: a.client_email,
+        notes: a.notes,
+        status: a.status,
+        paymentStatus: a.payment_status || 'pending',
+        paidAmount: parseFloat(a.paid_amount || 0),
+        commissionAmount: parseFloat(a.commission_amount || 0)
+      })),
+      payouts: payoutsRes.rows.map(p => ({
+        id: p.id,
+        type: p.type,
+        amount: parseFloat(p.amount),
+        notes: p.notes,
+        createdAt: p.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('Error en dashboard de colaborador:', error);
+    res.status(500).json({ error: 'Error al cargar panel de colaborador.' });
+  }
+});
+
+// 12. Actualizar estado de cita por el propio colaborador
+app.put('/api/staff/me/appointments/:aptId/status', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'staff' && req.user.role !== 'developer') {
+      return res.status(403).json({ error: 'Acceso no autorizado.' });
+    }
+
+    const { aptId } = req.params;
+    const { status } = req.body;
+    const staffId = req.user.staffId;
+
+    if (!['confirmed', 'completed', 'cancelled'].includes(status)) {
+      return res.status(400).json({ error: 'Estado inválido.' });
+    }
+
+    const aptRes = await pool.query('SELECT * FROM reservas_appointments WHERE id = $1 AND staff_id = $2', [aptId, staffId]);
+    if (aptRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Cita no encontrada o no asignada a este especialista.' });
+    }
+
+    await pool.query('UPDATE reservas_appointments SET status = $1 WHERE id = $2', [status, aptId]);
+
+    broadcastBusinessSSE(aptRes.rows[0].business_id, 'appointment_updated', {
+      appointmentId: aptId,
+      status,
+      message: `El especialista ${req.user.name} actualizó la cita a ${status}.`
+    });
+
+    res.json({ success: true, message: `Cita actualizada a ${status}.` });
+  } catch (error) {
+    console.error('Error actualizando estado por staff:', error);
+    res.status(500).json({ error: 'Error al actualizar estado de la cita.' });
+  }
+});
+
 
 // Endpoint general para subida directa de imágenes al disco del VPS
 app.post('/api/upload', (req, res) => {
@@ -2912,6 +3735,13 @@ app.get('/api/businesses/:id/appointments', async (req, res) => {
       whatsappOptIn: a.whatsapp_opt_in !== false,
       staffId: a.staff_id || null,
       staffName: a.staff_name || '',
+      paymentStatus: a.payment_status || 'pending',
+      paymentMethod: a.payment_method || null,
+      paidAmount: parseFloat(a.paid_amount || 0),
+      paidAt: a.paid_at || null,
+      commissionAmount: parseFloat(a.commission_amount || 0),
+      commissionSettled: Boolean(a.commission_settled),
+      cashRegisterId: a.cash_register_id || null,
       depositRequired: Boolean(a.deposit_required),
       depositAmount: parseFloat(a.deposit_amount || 0),
       depositPercentage: parseInt(a.deposit_percentage || 0, 10),
