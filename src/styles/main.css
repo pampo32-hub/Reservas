@@ -900,6 +900,22 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
 }
 
+/* Escáner QR de Fidelización: Ocultar encuadre interno blanco y dejar únicamente el encuadre exterior */
+#loyalty-scanner-viewport #qr-shaded-region,
+#loyalty-scanner-viewport div[id*="qr-shaded-region"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+#loyalty-scanner-viewport video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0.875rem !important;
+}
+
 
 
 

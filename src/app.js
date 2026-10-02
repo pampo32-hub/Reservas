@@ -1,6 +1,21 @@
 // Controlador principal de la aplicación (Reservas CR - Directorio & Reservas)
 import storage from './services/storage.js?v=3.46.15';
 
+// --- RASTREO Y CONTROL TOTAL DE HARDWARE DE CÁMARA (GLOBAL) ---
+if (typeof window !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  if (!window._activeCameraStreams) {
+    window._activeCameraStreams = new Set();
+    const _origGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async function(...args) {
+      const stream = await _origGetUserMedia(...args);
+      if (stream && window._activeCameraStreams) {
+        window._activeCameraStreams.add(stream);
+      }
+      return stream;
+    };
+  }
+}
+
 // FLAGS DE LA PLATAFORMA: Registro, login, banners y modo de reservas
 const REGISTRATION_ENABLED = true;
 const SHOW_BIZ_SHORTCUTS = false;
@@ -1923,7 +1938,7 @@ class App {
 
           <!-- 4. Para Negocio: Botón "Sellar" / Para Dev: "Dev" / Para Cliente: "Perfil" / Para Visitante: "Ingresar" -->
           ${bizUser ? `
-            <button id="mobile-nav-stamp-btn" onclick="window.openStampScannerModal && window.openStampScannerModal()" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-emerald-700 dark:text-emerald-400 font-black">
+            <button id="mobile-nav-stamp-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-emerald-700 dark:text-emerald-400 font-black">
               <div class="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-500/25 border border-emerald-400/40 pointer-events-none">
                 <i class="fas fa-qrcode text-base scale-105 pointer-events-none"></i>
               </div>
@@ -1980,10 +1995,6 @@ class App {
       } else {
         this.renderAuthModal({ mode: 'login', role: 'business' });
       }
-    });
-
-    document.getElementById('mobile-nav-stamp-btn')?.addEventListener('click', () => {
-      this.renderStampModal();
     });
 
     document.getElementById('mobile-nav-dev-btn')?.addEventListener('click', () => {
@@ -24592,6 +24603,23 @@ Esperamos atenderle pronto de nuevo.`;
   // --- DETENCIÓN Y LIBERACIÓN TOTAL DE CÁMARA (HARDWARE & SOFTWARE) ---
   stopActiveCamera() {
     try {
+      // 0. Apagado inmediato de TODOS los streams rastreados a nivel de navigator.mediaDevices
+      if (typeof window !== 'undefined' && window._activeCameraStreams) {
+        window._activeCameraStreams.forEach(stream => {
+          try {
+            if (stream && typeof stream.getTracks === 'function') {
+              stream.getTracks().forEach(track => {
+                try {
+                  track.enabled = false;
+                  track.stop();
+                } catch (_) {}
+              });
+            }
+          } catch (_) {}
+        });
+        window._activeCameraStreams.clear();
+      }
+
       // 1. Apagado inmediato y síncrono de todas las pistas (MediaStreamTracks) en cualquier <video> del DOM
       const videos = document.querySelectorAll('#loyalty-scanner-viewport video, #modal-container video, video');
       videos.forEach(video => {
@@ -24656,6 +24684,7 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- CIERRE CENTRALIZADO DE MODALES ---
   closeCurrentModal() {
+    this._isStampModalOpening = false;
     this.stopActiveCamera();
     this.closeBookingModal();
     const modalContainer = document.getElementById('modal-container');
@@ -25796,6 +25825,12 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- MODAL DE ESCÁNER Y SELLADO DE CLIENTES (PARA COMERCIOS) ---
   async renderStampModal(businessId = null) {
+    if (this._isStampModalOpening || document.getElementById('stamp-modal-backdrop')) {
+      console.log('El escáner de sellos ya se encuentra activo o inicializándose.');
+      return;
+    }
+    this._isStampModalOpening = true;
+
     const bizUser = storage.getBusinessUser();
     const staffUser = storage.getStaffUser ? storage.getStaffUser() : null;
     const devUser = storage.getDeveloperUser ? storage.getDeveloperUser() : null;
@@ -25807,13 +25842,17 @@ Esperamos atenderle pronto de nuevo.`;
       || storage.getActiveBusinessId();
 
     if (!targetBizId) {
+      this._isStampModalOpening = false;
       this.showToast('Debes iniciar sesión con tu cuenta de comercio para estampar sellos.', 'warning');
       this.renderAuthModal({ mode: 'login', role: 'business' });
       return;
     }
 
     const modalContainer = document.getElementById('modal-container');
-    if (!modalContainer) return;
+    if (!modalContainer) {
+      this._isStampModalOpening = false;
+      return;
+    }
 
     let program = { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
 
@@ -25863,17 +25902,17 @@ Esperamos atenderle pronto de nuevo.`;
           <!-- Contenedor Dinámico con Scroll -->
           <div class="p-4 sm:p-5 overflow-y-auto flex-1 space-y-4">
 
-            <!-- Panel 1: Escáner Cámara -->
+            <!-- Panel 1: Escáner Cámara (Encuadre exterior grande azul con esquinas verdes) -->
             <div id="stamp-camera-panel" class="space-y-3">
-              <div class="relative w-full aspect-square max-w-[260px] mx-auto rounded-2xl overflow-hidden bg-slate-950 border-2 border-emerald-500 shadow-xl flex items-center justify-center text-white">
-                <div id="loyalty-scanner-viewport" class="w-full h-full"></div>
+              <div class="relative w-full aspect-square max-w-[260px] mx-auto rounded-2xl overflow-hidden bg-slate-950 border-2 border-blue-500 shadow-xl flex items-center justify-center text-white">
+                <div id="loyalty-scanner-viewport" class="w-full h-full overflow-hidden"></div>
                 <!-- Animación de láser escáner -->
                 <div class="absolute inset-x-0 h-0.5 bg-emerald-400 shadow-[0_0_12px_#34d399] animate-scan-laser pointer-events-none z-10"></div>
-                <!-- Esquinas de mira -->
-                <div class="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-emerald-400 pointer-events-none z-10"></div>
-                <div class="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-emerald-400 pointer-events-none z-10"></div>
-                <div class="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-emerald-400 pointer-events-none z-10"></div>
-                <div class="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-emerald-400 pointer-events-none z-10"></div>
+                <!-- Esquinas de mira verdes -->
+                <div class="absolute top-2 left-2 w-5 h-5 border-t-[3px] border-l-[3px] border-emerald-400 pointer-events-none z-10"></div>
+                <div class="absolute top-2 right-2 w-5 h-5 border-t-[3px] border-r-[3px] border-emerald-400 pointer-events-none z-10"></div>
+                <div class="absolute bottom-2 left-2 w-5 h-5 border-b-[3px] border-l-[3px] border-emerald-400 pointer-events-none z-10"></div>
+                <div class="absolute bottom-2 right-2 w-5 h-5 border-b-[3px] border-r-[3px] border-emerald-400 pointer-events-none z-10"></div>
               </div>
 
               <div id="loyalty-scanner-status" class="text-center">
@@ -25926,8 +25965,13 @@ Esperamos atenderle pronto de nuevo.`;
       </div>
     `;
 
+    this._isStampModalOpening = false;
+
     let html5QrCode = null;
+    let isStartingScanner = false;
     const startScanner = async () => {
+      if (isStartingScanner) return;
+      isStartingScanner = true;
       try {
         await this.stopActiveCamera();
 
@@ -25946,7 +25990,7 @@ Esperamos atenderle pronto de nuevo.`;
 
         await html5QrCode.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 200, height: 200 } },
+          { fps: 10 },
           async (decodedText) => {
             console.log("QR Detectado:", decodedText);
             this.playSuccessChime();
@@ -25999,6 +26043,8 @@ Esperamos atenderle pronto de nuevo.`;
           `;
         }
         document.getElementById('loyalty-scanner-fallback')?.classList.remove('hidden');
+      } finally {
+        isStartingScanner = false;
       }
     };
 
@@ -26689,12 +26735,7 @@ Esperamos atenderle pronto de nuevo.`;
       console.warn('Error cargando ajustes de fidelización:', e);
     }
 
-    // 2. Botón abrir escáner
-    document.getElementById('dash-open-stamp-scanner-btn')?.addEventListener('click', () => {
-      this.renderStampModal(currentBiz.id);
-    });
-
-    // 3. Guardar configuración
+    // 2. Guardar configuración
     document.getElementById('save-loyalty-settings-btn')?.addEventListener('click', async () => {
       const btn = document.getElementById('save-loyalty-settings-btn');
       const originalHtml = btn ? btn.innerHTML : '';
