@@ -14438,7 +14438,22 @@ Esperamos atenderle pronto de nuevo.`;
         startDate: this.commissionsFilterStartDate || '',
         endDate: this.commissionsFilterEndDate || ''
       });
-      this.cachedCommissionsData = data;
+      if (Array.isArray(data)) {
+        this.cachedCommissionsData = {
+          summary: {
+            totalGross: data.reduce((sum, s) => sum + (s.grossServices || s.totalServiceRevenue || 0), 0),
+            totalCommissions: data.reduce((sum, s) => sum + (s.totalCommissions || s.totalCommissionEarned || 0), 0),
+            totalAdvances: data.reduce((sum, s) => sum + (s.totalAdvances || 0), 0),
+            totalSettled: data.reduce((sum, s) => sum + (s.totalSettled || s.totalPaidOut || 0), 0),
+            totalPending: data.reduce((sum, s) => sum + (s.pendingCommission || s.balanceDue || 0), 0)
+          },
+          staff: data
+        };
+      } else if (data && data.staff) {
+        this.cachedCommissionsData = data;
+      } else {
+        this.cachedCommissionsData = { summary: {}, staff: [] };
+      }
       this.commissionsDataLoadedBizId = currentBiz.id;
       if (this.activeDashboardTab === 'team' && this.teamSubTab === 'commissions') {
         const tabContent = document.getElementById('dashboard-tab-content');
@@ -14473,8 +14488,13 @@ Esperamos atenderle pronto de nuevo.`;
     }
 
     const data = this.cachedCommissionsData || { summary: {}, staff: [] };
-    const summary = data.summary || {};
-    const staffList = data.staff || [];
+    const staffList = Array.isArray(data.staff) ? data.staff : (Array.isArray(data) ? data : []);
+    const summary = data.summary || {
+      totalGross: staffList.reduce((sum, s) => sum + (s.grossServices || s.totalServiceRevenue || 0), 0),
+      totalCommissions: staffList.reduce((sum, s) => sum + (s.totalCommissions || s.totalCommissionEarned || 0), 0),
+      totalAdvances: staffList.reduce((sum, s) => sum + (s.totalAdvances || 0), 0),
+      totalPending: staffList.reduce((sum, s) => sum + (s.pendingCommission || s.balanceDue || 0), 0)
+    };
     const isProOrPremium = currentBiz.plan === 'pro' || currentBiz.plan === 'unlimited';
 
     return `
@@ -14655,21 +14675,21 @@ Esperamos atenderle pronto de nuevo.`;
                         <div class="flex items-center justify-center gap-1.5">
                           <button 
                             class="staff-give-vale-btn p-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 transition-colors cursor-pointer" 
-                            data-staff-id="${st.id}" 
+                            data-staff-id="${st.id || st.staffId}" 
                             title="Entregar Vale / Anticipo"
                           >
                             <i class="fas fa-hand-holding-dollar text-xs"></i>
                           </button>
                           <button 
                             class="staff-settle-payout-btn p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-colors cursor-pointer ${!hasPending ? 'opacity-50 pointer-events-none' : ''}" 
-                            data-staff-id="${st.id}" 
+                            data-staff-id="${st.id || st.staffId}" 
                             title="Liquidar Comisiones"
                           >
                             <i class="fas fa-money-bill-wave text-xs"></i>
                           </button>
                           <button 
                             class="staff-whatsapp-report-btn p-2 rounded-lg bg-green-50 hover:bg-green-100 text-green-700 transition-colors cursor-pointer" 
-                            data-staff-id="${st.id}" 
+                            data-staff-id="${st.id || st.staffId}" 
                             title="Enviar Estado de Cuenta por WhatsApp"
                           >
                             <i class="fab fa-whatsapp text-xs"></i>
@@ -14782,8 +14802,8 @@ Esperamos atenderle pronto de nuevo.`;
     document.querySelectorAll('.staff-give-vale-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const staffId = btn.getAttribute('data-staff-id');
-        const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || storage.getBusinessStaffSync(currentBiz.id);
-        const st = staffList.find(s => s.id === staffId);
+        const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || storage.getBusinessStaffSync(currentBiz.id) || [];
+        const st = staffList.find(s => (s.id || s.staffId) === staffId);
         this.openStaffValeModal(st, currentBiz);
       });
     });
@@ -14792,7 +14812,7 @@ Esperamos atenderle pronto de nuevo.`;
       btn.addEventListener('click', () => {
         const staffId = btn.getAttribute('data-staff-id');
         const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || [];
-        const st = staffList.find(s => s.id === staffId);
+        const st = staffList.find(s => (s.id || s.staffId) === staffId);
         if (st) {
           this.openStaffPayoutModal(st, currentBiz);
         }
@@ -14803,7 +14823,7 @@ Esperamos atenderle pronto de nuevo.`;
       btn.addEventListener('click', () => {
         const staffId = btn.getAttribute('data-staff-id');
         const staffList = (this.cachedCommissionsData && this.cachedCommissionsData.staff) || [];
-        const st = staffList.find(s => s.id === staffId);
+        const st = staffList.find(s => (s.id || s.staffId) === staffId);
         if (st) {
           this.sendStaffCommissionWhatsApp(st, currentBiz);
         }
@@ -15090,7 +15110,7 @@ Esperamos atenderle pronto de nuevo.`;
 
       try {
         await storage.recordStaffPayout(currentBiz.id, {
-          staffId: staff.id,
+          staffId: staff.id || staff.staffId,
           amount,
           paymentMethod,
           notes

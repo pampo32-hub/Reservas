@@ -1433,20 +1433,115 @@ class StorageService {
   }
 
   // --- MÓDULO DE COMISIONES Y LIQUIDACIONES ---
-  async getStaffCommissions(businessId, startDate = null, endDate = null) {
-    let url = `${this.apiBase}/businesses/${businessId}/staff-commissions`;
-    const params = [];
-    if (startDate) params.push(`startDate=${startDate}`);
-    if (endDate) params.push(`endDate=${endDate}`);
-    if (params.length > 0) url += `?${params.join('&')}`;
+  async getStaffCommissions(businessId, options = null) {
+    if (!businessId) return { summary: {}, staff: [] };
+    const biz = this.getBusinessById(businessId);
+    const canonicalId = biz ? biz.id : businessId;
 
-    const res = await this.fetchWithAuth(url);
-    if (!res.ok) return [];
-    return await res.json();
+    let startDate = null;
+    let endDate = null;
+    if (options && typeof options === 'object') {
+      startDate = options.startDate || null;
+      endDate = options.endDate || null;
+    } else if (typeof options === 'string') {
+      startDate = options;
+      if (arguments.length > 2) endDate = arguments[2];
+    }
+
+    if (this.isOnlineApi) {
+      try {
+        let url = `${this.apiBase}/businesses/${canonicalId}/staff-commissions`;
+        const params = [];
+        if (startDate && startDate !== '[object Object]') params.push(`startDate=${encodeURIComponent(startDate)}`);
+        if (endDate && endDate !== '[object Object]') params.push(`endDate=${encodeURIComponent(endDate)}`);
+        if (params.length > 0) url += `?${params.join('&')}`;
+
+        const res = await this.fetchWithAuth(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const staff = data.map(s => ({
+              ...s,
+              id: s.id || s.staffId,
+              completedAppointments: s.completedAppointments !== undefined ? s.completedAppointments : (s.appointmentsCount || 0),
+              grossServices: s.grossServices !== undefined ? s.grossServices : (s.totalServiceRevenue || 0),
+              totalCommissions: s.totalCommissions !== undefined ? s.totalCommissions : (s.totalCommissionEarned || 0),
+              totalAdvances: s.totalAdvances || 0,
+              totalSettled: s.totalSettled !== undefined ? s.totalSettled : (s.totalPaidOut || 0),
+              pendingCommission: s.pendingCommission !== undefined ? s.pendingCommission : (s.balanceDue || 0)
+            }));
+            const summary = {
+              totalGross: staff.reduce((acc, s) => acc + (s.grossServices || 0), 0),
+              totalCommissions: staff.reduce((acc, s) => acc + (s.totalCommissions || 0), 0),
+              totalAdvances: staff.reduce((acc, s) => acc + (s.totalAdvances || 0), 0),
+              totalPending: staff.reduce((acc, s) => acc + (s.pendingCommission || 0), 0)
+            };
+            return { summary, staff };
+          }
+          if (data && data.staff) {
+            return data;
+          }
+        }
+      } catch (e) {
+        console.warn('Fallback local para staff commissions:', e);
+      }
+    }
+
+    // Fallback local: calcular a partir de las citas locales y personal
+    const staffMembers = this.getBusinessStaffSync(canonicalId) || [];
+    const appointments = (this.getAppointmentsByBusiness(canonicalId) || []).filter(
+      a => (a.status === 'completed' || a.paymentStatus === 'paid' || a.payment_status === 'paid')
+    );
+
+    const staff = staffMembers.map(s => {
+      const sApts = appointments.filter(a => a.staffId === s.id || (a.staffName && s.name && a.staffName.trim().toLowerCase() === s.name.trim().toLowerCase()));
+      const grossServices = sApts.reduce((sum, a) => sum + (parseFloat(a.servicePrice || a.service_price || 0)), 0);
+      const rate = parseFloat(s.commissionRate !== null && s.commissionRate !== undefined ? s.commissionRate : 50.0);
+      const totalCommissions = sApts.reduce((sum, a) => {
+        const p = parseFloat(a.servicePrice || a.service_price || 0);
+        return sum + (s.commissionType === 'fixed' ? rate : Math.round((p * rate) / 100));
+      }, 0);
+
+      return {
+        id: s.id,
+        staffId: s.id,
+        name: s.name,
+        roleTitle: s.roleTitle || s.role_title || 'Especialista',
+        avatarUrl: s.avatarUrl || s.avatar_url || '',
+        phone: s.phone || '',
+        email: s.email || '',
+        commissionType: s.commissionType || 'percentage',
+        commissionRate: rate,
+        pinCode: s.pinCode || '',
+        completedAppointments: sApts.length,
+        appointmentsCount: sApts.length,
+        grossServices,
+        totalServiceRevenue: grossServices,
+        totalCommissions,
+        totalCommissionEarned: totalCommissions,
+        totalAdvances: 0,
+        totalPaidOut: 0,
+        totalSettled: 0,
+        pendingCommission: totalCommissions,
+        balanceDue: totalCommissions,
+        payoutsHistory: []
+      };
+    });
+
+    const summary = {
+      totalGross: staff.reduce((acc, s) => acc + (s.grossServices || 0), 0),
+      totalCommissions: staff.reduce((acc, s) => acc + (s.totalCommissions || 0), 0),
+      totalAdvances: 0,
+      totalPending: staff.reduce((acc, s) => acc + (s.pendingCommission || 0), 0)
+    };
+
+    return { summary, staff };
   }
 
   async recordStaffPayout(businessId, payoutData) {
-    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${businessId}/staff-payouts`, {
+    const biz = this.getBusinessById(businessId);
+    const canonicalId = biz ? biz.id : businessId;
+    const res = await this.fetchWithAuth(`${this.apiBase}/businesses/${canonicalId}/staff-payouts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payoutData)

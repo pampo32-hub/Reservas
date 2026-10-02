@@ -3296,7 +3296,12 @@ app.post('/api/businesses/:id/pos/charge-appointment', async (req, res) => {
 // 6. Registrar Gasto / Egreso de Caja Chica / Adelanto de Staff
 app.post('/api/businesses/:id/pos/expense', async (req, res) => {
   try {
-    const { id: businessId } = req.params;
+    const { id: rawBusinessId } = req.params;
+    let businessId = rawBusinessId;
+    const bizCheck = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
+    if (bizCheck.rows.length > 0) {
+      businessId = bizCheck.rows[0].id;
+    }
     const { 
       amount, 
       category = 'petty_cash', 
@@ -3419,12 +3424,17 @@ app.get('/api/businesses/:id/pos/transactions', async (req, res) => {
 // 8. Resumen consolidado de comisiones por especialista
 app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
   try {
-    const { id: businessId } = req.params;
+    const { id: rawBusinessId } = req.params;
+    let businessId = rawBusinessId;
+    const bizCheck = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
+    if (bizCheck.rows.length > 0) {
+      businessId = bizCheck.rows[0].id;
+    }
     const { startDate, endDate } = req.query;
 
     // Obtener todos los especialistas
     const staffRes = await pool.query(
-      'SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY name ASC',
+      'SELECT * FROM reservas_staff WHERE business_id = $1 ORDER BY created_at ASC',
       [businessId]
     );
 
@@ -3434,11 +3444,11 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
       WHERE business_id = $1 AND (payment_status = 'paid' OR status = 'completed')
     `;
     const aptParams = [businessId];
-    if (startDate) {
+    if (startDate && startDate !== '[object Object]') {
       aptParams.push(startDate);
       aptQuery += ` AND date >= $${aptParams.length}`;
     }
-    if (endDate) {
+    if (endDate && endDate !== '[object Object]') {
       aptParams.push(endDate);
       aptQuery += ` AND date <= $${aptParams.length}`;
     }
@@ -3452,7 +3462,7 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
     );
 
     const report = staffRes.rows.map(s => {
-      const staffApts = aptRes.rows.filter(a => a.staff_id === s.id);
+      const staffApts = aptRes.rows.filter(a => a.staff_id === s.id || (a.staff_name && s.name && a.staff_name.trim().toLowerCase() === s.name.trim().toLowerCase()));
       const staffPayouts = payoutsRes.rows.filter(p => p.staff_id === s.id);
 
       const totalServiceRevenue = staffApts.reduce((sum, a) => sum + parseFloat(a.service_price || 0), 0);
@@ -3463,7 +3473,7 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
           return sum + parseFloat(a.commission_amount);
         }
         const price = parseFloat(a.service_price || 0);
-        const rate = parseFloat(s.commission_rate || 50.0);
+        const rate = parseFloat(s.commission_rate !== null ? s.commission_rate : 50.0);
         return sum + (s.commission_type === 'fixed' ? rate : Math.round((price * rate) / 100));
       }, 0);
 
@@ -3478,21 +3488,27 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
       const balanceDue = Math.max(0, totalCommissionEarned - totalAdvances - totalPaidOut);
 
       return {
+        id: s.id,
         staffId: s.id,
         name: s.name,
-        roleTitle: s.role_title,
-        avatarUrl: s.avatar_url,
-        phone: s.phone,
-        email: s.email,
+        roleTitle: s.role_title || 'Especialista',
+        avatarUrl: s.avatar_url || '',
+        phone: s.phone || '',
+        email: s.email || '',
         commissionType: s.commission_type || 'percentage',
-        commissionRate: parseFloat(s.commission_rate || 50.0),
+        commissionRate: parseFloat(s.commission_rate !== null ? s.commission_rate : 50.0),
         pinCode: s.pin_code || '',
         appointmentsCount: staffApts.length,
+        completedAppointments: staffApts.length,
         totalServiceRevenue,
+        grossServices: totalServiceRevenue,
         totalCommissionEarned,
+        totalCommissions: totalCommissionEarned,
         totalAdvances,
         totalPaidOut,
+        totalSettled: totalPaidOut,
         balanceDue,
+        pendingCommission: balanceDue,
         payoutsHistory: staffPayouts.map(p => ({
           id: p.id,
           type: p.type,
@@ -3503,7 +3519,19 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
       };
     });
 
-    res.json(report);
+    const summary = {
+      totalGross: report.reduce((sum, s) => sum + (s.totalServiceRevenue || 0), 0),
+      totalCommissions: report.reduce((sum, s) => sum + (s.totalCommissionEarned || 0), 0),
+      totalAdvances: report.reduce((sum, s) => sum + (s.totalAdvances || 0), 0),
+      totalSettled: report.reduce((sum, s) => sum + (s.totalPaidOut || 0), 0),
+      totalPending: report.reduce((sum, s) => sum + (s.balanceDue || 0), 0),
+      netBalance: report.reduce((sum, s) => sum + (s.balanceDue || 0), 0)
+    };
+
+    res.json({
+      summary,
+      staff: report
+    });
   } catch (error) {
     console.error('Error calculando comisiones:', error);
     res.status(500).json({ error: 'Error al generar reporte de comisiones.' });
@@ -3513,7 +3541,12 @@ app.get('/api/businesses/:id/staff-commissions', async (req, res) => {
 // 9. Registrar liquidación de comisión o vale/adelanto
 app.post('/api/businesses/:id/staff-payouts', async (req, res) => {
   try {
-    const { id: businessId } = req.params;
+    const { id: rawBusinessId } = req.params;
+    let businessId = rawBusinessId;
+    const bizCheck = await pool.query('SELECT id FROM reservas_businesses WHERE id = $1 OR LOWER(slug) = LOWER($1) LIMIT 1', [rawBusinessId]);
+    if (bizCheck.rows.length > 0) {
+      businessId = bizCheck.rows[0].id;
+    }
     const { staffId, type = 'commission_payout', amount, notes = '', periodStart = null, periodEnd = null } = req.body;
 
     if (!staffId) {
