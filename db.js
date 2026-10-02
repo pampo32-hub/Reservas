@@ -567,12 +567,34 @@ export async function initDatabase(customPool = null) {
         ]);
       }
 
-      // Asignar código de colaborador basado en su primer nombre si está nulo o vacío
-      await client.query(`
-        UPDATE reservas_staff 
-        SET staff_code = UPPER(REGEXP_REPLACE(SPLIT_PART(TRIM(name), ' ', 1), '[^a-zA-Z0-9]', '', 'g'))
-        WHERE staff_code IS NULL OR TRIM(staff_code) = ''
-      `);
+      // Asignar código de colaborador único garantizado por negocio si está nulo o vacío
+      const allStaffRows = await client.query('SELECT id, business_id, name, staff_code FROM reservas_staff ORDER BY business_id, created_at ASC');
+      const usedCodesByBiz = new Map();
+
+      for (const row of allStaffRows.rows) {
+        if (!usedCodesByBiz.has(row.business_id)) {
+          usedCodesByBiz.set(row.business_id, new Set());
+        }
+        const bizSet = usedCodesByBiz.get(row.business_id);
+        if (row.staff_code && row.staff_code.trim()) {
+          bizSet.add(row.staff_code.trim().toLowerCase());
+        }
+      }
+
+      for (const row of allStaffRows.rows) {
+        const bizSet = usedCodesByBiz.get(row.business_id);
+        if (!row.staff_code || !row.staff_code.trim()) {
+          const baseName = (row.name || 'COLAB').trim().split(' ')[0].replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || 'COLAB';
+          let candidate = baseName;
+          let counter = 1;
+          while (bizSet.has(candidate.toLowerCase())) {
+            counter++;
+            candidate = `${baseName}${counter}`;
+          }
+          bizSet.add(candidate.toLowerCase());
+          await client.query('UPDATE reservas_staff SET staff_code = $1 WHERE id = $2', [candidate, row.id]);
+        }
+      }
 
       // Asegurar que TODOS los especialistas tengan PIN de 6 dígitos ('123456' por defecto) y requieran cambio inicial
       await client.query(`
@@ -581,7 +603,7 @@ export async function initDatabase(customPool = null) {
         WHERE pin_code IS NULL OR LENGTH(TRIM(pin_code)) < 6 OR pin_code = '1234'
       `);
 
-      console.log('✨ Especialistas demo sembrados/verificados en base de datos con código y PIN de 6 dígitos.');
+      console.log('✨ Especialistas demo sembrados/verificados en base de datos con código único y PIN de 6 dígitos.');
     }
 
     // Asegurar planes adecuados y límites exactos para todos los negocios
