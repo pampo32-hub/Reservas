@@ -374,6 +374,7 @@ app.get('/robots.txt', (req, res) => {
 // CANAL REALTIME EN VIVO (SERVER-SENT EVENTS - SSE)
 // ==========================================
 const sseBusinessClients = new Map(); // businessId -> Set of express response objects
+const sseClientSessions = new Map();  // phone or clientId -> Set of express response objects
 
 function broadcastBusinessSSE(businessId, eventType, data) {
   if (!businessId) return;
@@ -387,15 +388,45 @@ function broadcastBusinessSSE(businessId, eventType, data) {
         clients.delete(clientRes);
       }
     });
-    console.log(`⚡ [Realtime SSE] Notificación '${eventType}' enviada en vivo a ${clients.size} sesión(es) del negocio ${businessId}.`);
+    console.log(`⚡ [Realtime SSE Negocio] Notificación '${eventType}' enviada en vivo a ${clients.size} sesión(es) del negocio ${businessId}.`);
   }
 }
 
-// Endpoint de conexión SSE para pantalla de comercio
+function broadcastClientLoyaltySSE(phoneOrId, eventType, data) {
+  if (!phoneOrId) return;
+  const rawKey = String(phoneOrId).trim();
+  const cleanPhone = rawKey.replace(/\D/g, '');
+  const phone8 = cleanPhone.length === 11 && cleanPhone.startsWith('506') ? cleanPhone.substring(3) : cleanPhone;
+
+  const targetSets = [];
+  if (sseClientSessions.has(rawKey)) targetSets.push(sseClientSessions.get(rawKey));
+  if (cleanPhone && sseClientSessions.has(cleanPhone)) targetSets.push(sseClientSessions.get(cleanPhone));
+  if (phone8 && sseClientSessions.has(phone8)) targetSets.push(sseClientSessions.get(phone8));
+
+  const payload = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
+  let sentCount = 0;
+  targetSets.forEach(clients => {
+    if (clients) {
+      clients.forEach(clientRes => {
+        try {
+          clientRes.write(payload);
+          sentCount++;
+        } catch (e) {
+          clients.delete(clientRes);
+        }
+      });
+    }
+  });
+  if (sentCount > 0) {
+    console.log(`⚡ [Realtime SSE Cliente] Evento '${eventType}' transmitido en vivo a ${sentCount} dispositivo(s) del cliente (${rawKey}).`);
+  }
+}
+
+// Endpoint de conexión SSE para pantalla de comercio o cliente
 app.get('/api/realtime/stream', (req, res) => {
-  const { businessId } = req.query;
-  if (!businessId) {
-    return res.status(400).json({ error: 'Falta businessId para conectar el canal en tiempo real.' });
+  const { businessId, clientPhone, clientId } = req.query;
+  if (!businessId && !clientPhone && !clientId) {
+    return res.status(400).json({ error: 'Falta identificador para conectar el canal en tiempo real.' });
   }
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -404,13 +435,32 @@ app.get('/api/realtime/stream', (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
-  if (!sseBusinessClients.has(businessId)) {
-    sseBusinessClients.set(businessId, new Set());
+  if (businessId) {
+    if (!sseBusinessClients.has(businessId)) {
+      sseBusinessClients.set(businessId, new Set());
+    }
+    sseBusinessClients.get(businessId).add(res);
   }
-  sseBusinessClients.get(businessId).add(res);
+
+  const cleanPhone = clientPhone ? String(clientPhone).replace(/\D/g, '') : null;
+  const phone8 = cleanPhone && cleanPhone.length === 11 && cleanPhone.startsWith('506') ? cleanPhone.substring(3) : cleanPhone;
+  const cId = clientId ? String(clientId) : null;
+
+  if (cleanPhone) {
+    if (!sseClientSessions.has(cleanPhone)) sseClientSessions.set(cleanPhone, new Set());
+    sseClientSessions.get(cleanPhone).add(res);
+    if (phone8 && phone8 !== cleanPhone) {
+      if (!sseClientSessions.has(phone8)) sseClientSessions.set(phone8, new Set());
+      sseClientSessions.get(phone8).add(res);
+    }
+  }
+  if (cId) {
+    if (!sseClientSessions.has(cId)) sseClientSessions.set(cId, new Set());
+    sseClientSessions.get(cId).add(res);
+  }
 
   // Handshake inicial
-  res.write(`event: connected\ndata: ${JSON.stringify({ status: 'connected', businessId, timestamp: new Date().toISOString() })}\n\n`);
+  res.write(`event: connected\ndata: ${JSON.stringify({ status: 'connected', businessId, cleanPhone, clientId: cId, timestamp: new Date().toISOString() })}\n\n`);
 
   // Mantener viva la conexión con ping cada 20 segundos
   const keepAliveInterval = setInterval(() => {
@@ -423,12 +473,24 @@ app.get('/api/realtime/stream', (req, res) => {
 
   req.on('close', () => {
     clearInterval(keepAliveInterval);
-    const clients = sseBusinessClients.get(businessId);
-    if (clients) {
-      clients.delete(res);
-      if (clients.size === 0) {
-        sseBusinessClients.delete(businessId);
+    if (businessId) {
+      const clients = sseBusinessClients.get(businessId);
+      if (clients) {
+        clients.delete(res);
+        if (clients.size === 0) sseBusinessClients.delete(businessId);
       }
+    }
+    if (cleanPhone) {
+      const c1 = sseClientSessions.get(cleanPhone);
+      if (c1) { c1.delete(res); if (c1.size === 0) sseClientSessions.delete(cleanPhone); }
+      if (phone8) {
+        const c2 = sseClientSessions.get(phone8);
+        if (c2) { c2.delete(res); if (c2.size === 0) sseClientSessions.delete(phone8); }
+      }
+    }
+    if (cId) {
+      const c3 = sseClientSessions.get(cId);
+      if (c3) { c3.delete(res); if (c3.size === 0) sseClientSessions.delete(cId); }
     }
   });
 });
@@ -4041,6 +4103,30 @@ app.post('/api/loyalty/stamp', async (req, res) => {
       rewardUnlocked ? `Sello otorgado. ¡Completó meta de ${program.target_stamps} sellos!` : 'Sello regular otorgado'
     ]);
 
+    // Transmitir en tiempo real al teléfono del cliente y al panel del negocio
+    try {
+      const bizInfoRes = await pool.query('SELECT name, image FROM reservas_businesses WHERE id = $1', [businessId]);
+      const bizInfo = bizInfoRes.rows[0] || {};
+      const stampRealtimePayload = {
+        cardId: card.id,
+        businessId,
+        businessName: bizInfo.name || 'Comercio',
+        businessImage: bizInfo.image || '',
+        currentStamps: card.current_stamps,
+        targetStamps: program.target_stamps,
+        rewardDescription: program.reward_description,
+        rewardUnlocked,
+        action: 'stamp',
+        timestamp: Date.now()
+      };
+      broadcastClientLoyaltySSE(cleanPhone, 'loyalty_card_updated', stampRealtimePayload);
+      if (phone8 && phone8 !== cleanPhone) broadcastClientLoyaltySSE(phone8, 'loyalty_card_updated', stampRealtimePayload);
+      if (finalClientId) broadcastClientLoyaltySSE(finalClientId, 'loyalty_card_updated', stampRealtimePayload);
+      broadcastBusinessSSE(businessId, 'loyalty_card_updated', stampRealtimePayload);
+    } catch (sseErr) {
+      console.warn('Aviso emitiendo realtime SSE de fidelización:', sseErr);
+    }
+
     res.json({
       success: true,
       card,
@@ -4098,6 +4184,22 @@ app.post('/api/loyalty/redeem', async (req, res) => {
       staffName || '',
       `Premio canjeado: ${program.reward_description}. Tarjeta reiniciada a 0 sellos.`
     ]);
+
+    // Transmitir en tiempo real
+    try {
+      const redeemRealtimePayload = {
+        cardId: card.id,
+        businessId,
+        currentStamps: 0,
+        targetStamps: program.target_stamps,
+        rewardDescription: program.reward_description,
+        action: 'redeem',
+        timestamp: Date.now()
+      };
+      broadcastClientLoyaltySSE(card.client_phone, 'loyalty_card_updated', redeemRealtimePayload);
+      if (card.client_id) broadcastClientLoyaltySSE(card.client_id, 'loyalty_card_updated', redeemRealtimePayload);
+      broadcastBusinessSSE(businessId, 'loyalty_card_updated', redeemRealtimePayload);
+    } catch (sseErr) {}
 
     res.json({
       success: true,
@@ -4166,6 +4268,20 @@ app.post('/api/loyalty/remove-stamp', async (req, res) => {
       `Sello restado manualmente. Balance anterior: ${prevStamps}, nuevo balance: ${nextStamps}`
     ]);
 
+    // Transmitir en tiempo real
+    try {
+      const removeRealtimePayload = {
+        cardId: card.id,
+        businessId,
+        currentStamps: nextStamps,
+        action: 'remove_stamp',
+        timestamp: Date.now()
+      };
+      broadcastClientLoyaltySSE(card.client_phone, 'loyalty_card_updated', removeRealtimePayload);
+      if (card.client_id) broadcastClientLoyaltySSE(card.client_id, 'loyalty_card_updated', removeRealtimePayload);
+      broadcastBusinessSSE(businessId, 'loyalty_card_updated', removeRealtimePayload);
+    } catch (sseErr) {}
+
     res.json({
       success: true,
       card: updateRes.rows[0],
@@ -4214,6 +4330,20 @@ app.post('/api/loyalty/set-stamps', async (req, res) => {
       staffName || '',
       `Sellos ajustados manualmente de ${prevStamps} a ${numStamps}`
     ]);
+
+    // Transmitir en tiempo real
+    try {
+      const setRealtimePayload = {
+        cardId: card.id,
+        businessId,
+        currentStamps: numStamps,
+        action: 'set_stamps',
+        timestamp: Date.now()
+      };
+      broadcastClientLoyaltySSE(card.client_phone, 'loyalty_card_updated', setRealtimePayload);
+      if (card.client_id) broadcastClientLoyaltySSE(card.client_id, 'loyalty_card_updated', setRealtimePayload);
+      broadcastBusinessSSE(businessId, 'loyalty_card_updated', setRealtimePayload);
+    } catch (sseErr) {}
 
     res.json({
       success: true,

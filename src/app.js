@@ -821,9 +821,10 @@ class App {
       console.warn('Storage sync warning:', err);
     }
 
-    // Inicializar canal push en tiempo real (SSE) y auto-sync en vivo para la agenda
+    // Inicializar canal push en tiempo real (SSE) y auto-sync en vivo para la agenda y fidelización
     try {
       this.initRealtimePush();
+      this.initClientRealtimePush();
       this.startBackgroundAutoSync();
     } catch (e) {
       console.warn('Realtime init notice:', e);
@@ -1175,6 +1176,9 @@ class App {
       this.initRealtimePush();
       this.preloadPayPalSDK();
     }
+    if (view === 'client-wallet' || view === 'my-client-bookings') {
+      this.initClientRealtimePush();
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1425,7 +1429,339 @@ class App {
     }, 8000);
   }
 
-  // --- NOTIFICACIONES TOAST ---
+  // --- CONEXIÓN REALTIME PUSH CLIENTE (FIDELIZACIÓN & SELLOS EN VIVO) ---
+  initClientRealtimePush() {
+    const clientUser = storage.getClientUser();
+    if (!clientUser || (!clientUser.phone && !clientUser.id)) {
+      if (this._clientRealtimeSource) {
+        this._clientRealtimeSource.close();
+        this._clientRealtimeSource = null;
+        this._activeClientRealtimeKey = null;
+      }
+      return;
+    }
+
+    const cleanPhone = (clientUser.phone || '').toString().replace(/\D/g, '');
+    const clientKey = `${cleanPhone}_${clientUser.id || ''}`;
+    if (this._clientRealtimeSource && this._activeClientRealtimeKey === clientKey) {
+      return; // Ya conectado para este cliente
+    }
+
+    if (this._clientRealtimeSource) {
+      this._clientRealtimeSource.close();
+    }
+
+    this._activeClientRealtimeKey = clientKey;
+
+    try {
+      const url = `/api/realtime/stream?clientPhone=${encodeURIComponent(cleanPhone)}&clientId=${encodeURIComponent(clientUser.id || '')}`;
+      const es = new EventSource(url);
+      this._clientRealtimeSource = es;
+
+      es.addEventListener('connected', () => {
+        console.log('⚡ [Realtime SSE Cliente] Conectado para fidelización en vivo:', clientUser.name);
+      });
+
+      es.addEventListener('loyalty_card_updated', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          console.log('⚡ [Realtime SSE Cliente] ¡Actualización de tarjeta en vivo recibida!', data);
+          this.handleLiveLoyaltyCardUpdate(data);
+        } catch (err) {
+          console.warn('Error procesando evento loyalty_card_updated:', err);
+        }
+      });
+
+      es.onerror = () => {
+        if (this._clientRealtimeSource) {
+          this._clientRealtimeSource.close();
+          this._clientRealtimeSource = null;
+          this._activeClientRealtimeKey = null;
+          // Reintento en 5 segundos si sigue logueado
+          setTimeout(() => {
+            if (storage.getClientUser()) this.initClientRealtimePush();
+          }, 5000);
+        }
+      };
+    } catch (e) {
+      console.warn('No se pudo inicializar SSE de cliente:', e);
+    }
+  }
+
+  // --- SONDEO ACTIVO EN VIVO PARA MODAL DE SELLOS (FALLBACK GARANTIZADO DE 2s) ---
+  startLoyaltyModalLivePolling(initialCard, clientUser) {
+    if (this._loyaltyModalPollInterval) {
+      clearInterval(this._loyaltyModalPollInterval);
+      this._loyaltyModalPollInterval = null;
+    }
+
+    let lastKnownStamps = initialCard.current_stamps || 0;
+    const cardId = initialCard.card_id || initialCard.id;
+    const bizId = initialCard.business_id;
+
+    this._loyaltyModalPollInterval = setInterval(async () => {
+      // Si el modal ya no está abierto en pantalla, detener sondeo inmediatamente
+      if (!document.getElementById('close-loyalty-detail-modal-btn')) {
+        clearInterval(this._loyaltyModalPollInterval);
+        this._loyaltyModalPollInterval = null;
+        return;
+      }
+
+      try {
+        const walletRes = await storage.getClientLoyaltyWallet(clientUser.phone, clientUser.id);
+        if (walletRes && walletRes.success && Array.isArray(walletRes.cards)) {
+          const fresh = walletRes.cards.find(c => (cardId && (c.card_id === cardId || c.id === cardId)) || c.business_id === bizId);
+          if (fresh) {
+            const newStamps = fresh.current_stamps || 0;
+            if (newStamps !== lastKnownStamps) {
+              const diff = newStamps - lastKnownStamps;
+              const prev = lastKnownStamps;
+              lastKnownStamps = newStamps;
+              console.log(`⚡ [Loyalty Live Poll] Sellos cambiaron de ${prev} a ${newStamps}!`);
+              this.handleLiveLoyaltyCardUpdate({
+                cardId: fresh.card_id || fresh.id,
+                businessId: fresh.business_id,
+                businessName: fresh.business_name,
+                businessImage: fresh.business_image,
+                currentStamps: newStamps,
+                targetStamps: fresh.target_stamps || 8,
+                rewardDescription: fresh.reward_description,
+                rewardUnlocked: newStamps >= (fresh.target_stamps || 8) && prev < (fresh.target_stamps || 8),
+                action: diff > 0 ? 'stamp' : 'remove_stamp',
+                fullCard: fresh
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error en sondeo en vivo de sellos:', err);
+      }
+    }, 2000);
+  }
+
+  // --- MANEJADOR CENTRAL DE ACTUALIZACIÓN DE SELLOS EN VIVO ---
+  handleLiveLoyaltyCardUpdate(data) {
+    const dedupeKey = `${data.cardId || data.businessId}_${data.currentStamps}_${data.action}`;
+    if (this._lastLoyaltyUpdateDedupe === dedupeKey && (Date.now() - (this._lastLoyaltyUpdateTime || 0)) < 2500) {
+      return;
+    }
+    this._lastLoyaltyUpdateDedupe = dedupeKey;
+    this._lastLoyaltyUpdateTime = Date.now();
+
+    const clientUser = storage.getClientUser();
+    if (!clientUser) return;
+
+    const target = data.targetStamps || 8;
+    const current = data.currentStamps || 0;
+    const isRewardUnlocked = Boolean(data.rewardUnlocked) || (current >= target && data.action === 'stamp');
+
+    // 1. SI SE DESBLOQUEÓ EL PREMIO (META ALCANZADA - EJ. 8VO SELLO)
+    if (isRewardUnlocked) {
+      this.playCelebrationFanfare();
+      if (navigator.vibrate) {
+        try { navigator.vibrate([150, 80, 150, 80, 300, 100, 400]); } catch (_) {}
+      }
+      this.triggerCelebrationConfetti();
+      this.renderRewardUnlockedCelebrationModal(data);
+    } else if (data.action === 'stamp') {
+      this.playSuccessChime();
+      if (navigator.vibrate) {
+        try { navigator.vibrate([80, 50, 80]); } catch (_) {}
+      }
+      this.showToast(`✓ ¡Nuevo sello acumulado! (${current} de ${target})`, 'success', 4000);
+    } else if (data.action === 'remove_stamp') {
+      this.showToast(`Sello ajustado. Balance actual: ${current} sellos.`, 'info', 3000);
+    }
+
+    // 2. Si el modal de la tarjeta está abierto en pantalla, actualizarlo inmediatamente
+    if (document.getElementById('close-loyalty-detail-modal-btn')) {
+      const freshCard = data.fullCard || {
+        card_id: data.cardId,
+        business_id: data.businessId,
+        business_name: data.businessName,
+        business_image: data.businessImage,
+        current_stamps: current,
+        target_stamps: target,
+        reward_description: data.rewardDescription
+      };
+      if (typeof this._renderLoyaltyModalContentFn === 'function') {
+        this._renderLoyaltyModalContentFn(freshCard);
+      }
+    }
+
+    // 3. Si la vista de billetera está abierta en pantalla, refrescarla en vivo
+    if (this.currentView === 'client-wallet') {
+      const main = document.getElementById('main-content');
+      if (main) {
+        this.renderClientWalletView(main);
+      }
+    }
+  }
+
+  // --- AUDIO FANFARRIA TRIUNFAL DE PREMIO (WEB AUDIO API SINTETIZADO) ---
+  playCelebrationFanfare() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // Notas de fanfarria triunfal: C5, E5, G5, C6 (Acorde mayor brillante y festivo)
+      const notes = [
+        { freq: 523.25, start: 0.0, dur: 0.14 },
+        { freq: 659.25, start: 0.14, dur: 0.14 },
+        { freq: 783.99, start: 0.28, dur: 0.18 },
+        { freq: 1046.50, start: 0.46, dur: 0.70 }
+      ];
+
+      notes.forEach(({ freq, start, dur }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + start);
+
+        gain.gain.setValueAtTime(0, now + start);
+        gain.gain.linearRampToValueAtTime(0.3, now + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+
+        osc.start(now + start);
+        osc.stop(now + start + dur + 0.05);
+      });
+    } catch (e) {
+      console.warn('Fanfarria de audio no pudo reproducirse:', e);
+    }
+  }
+
+  // --- EXPLOSIÓN DE CONFETI DE CELEBRACIÓN ---
+  triggerCelebrationConfetti() {
+    if (typeof confetti === 'function') {
+      try {
+        const count = 200;
+        const defaults = { origin: { y: 0.65 }, zIndex: 9999 };
+
+        const fire = (particleRatio, opts) => {
+          confetti(Object.assign({}, defaults, opts, {
+            particleCount: Math.floor(count * particleRatio)
+          }));
+        };
+
+        fire(0.25, { spread: 26, startVelocity: 55, colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6'] });
+        fire(0.2, { spread: 60, colors: ['#fcd34d', '#34d399', '#60a5fa', '#f472b6'] });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['#ffd700', '#ffae19', '#ffffff'] });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+        return;
+      } catch (e) {
+        console.warn('Canvas confetti error, falling back:', e);
+      }
+    }
+    this.renderDomConfetti();
+  }
+
+  renderDomConfetti() {
+    const container = document.createElement('div');
+    container.className = 'fixed inset-0 pointer-events-none z-[80] overflow-hidden';
+    const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#eab308', '#06b6d4'];
+    const count = 70;
+
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      const size = Math.random() * 8 + 6;
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const left = Math.random() * 100;
+      const animDuration = Math.random() * 2 + 1.8;
+      const animDelay = Math.random() * 0.8;
+      const rot = Math.random() * 360;
+
+      p.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size * (Math.random() > 0.5 ? 1.5 : 1)}px;
+        background-color: ${color};
+        top: -20px;
+        left: ${left}%;
+        opacity: 0.9;
+        border-radius: ${Math.random() > 0.5 ? '2px' : '50%'};
+        transform: rotate(${rot}deg);
+        animation: confetti-fall ${animDuration}s linear ${animDelay}s forwards;
+      `;
+      container.appendChild(p);
+    }
+
+    document.body.appendChild(container);
+    setTimeout(() => container.remove(), 4000);
+  }
+
+  // --- MODAL DE CELEBRACIÓN ÉPICO DE PREMIO DESBLOQUEADO ---
+  renderRewardUnlockedCelebrationModal(data) {
+    if (document.getElementById('celebration-reward-overlay')) return;
+
+    const celebrationContainer = document.createElement('div');
+    celebrationContainer.id = 'celebration-reward-overlay';
+    celebrationContainer.className = 'fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in select-none';
+    celebrationContainer.innerHTML = `
+      <div class="relative bg-gradient-to-b from-amber-400 via-amber-500 to-yellow-600 p-1.5 rounded-3xl shadow-[0_0_50px_rgba(251,191,36,0.6)] max-w-sm w-full animate-bounce-subtle">
+        
+        <div class="bg-slate-900 rounded-[22px] p-6 text-center text-white space-y-4 relative overflow-hidden">
+          
+          <!-- Resplandor de fondo -->
+          <div class="absolute -top-12 -right-12 w-36 h-36 bg-amber-400/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-yellow-400/20 rounded-full blur-2xl pointer-events-none"></div>
+
+          <!-- Trofeo con animación -->
+          <div class="relative">
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 to-yellow-200 text-slate-950 flex items-center justify-center text-4xl shadow-[0_0_25px_rgba(251,191,36,0.8)] animate-pulse">
+              <i class="fas fa-trophy"></i>
+            </div>
+            <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-sm">
+              ¡Meta Cumplida!
+            </span>
+          </div>
+
+          <div class="pt-2">
+            <h3 class="text-2xl font-black text-white tracking-tight leading-tight">
+              🎉 ¡PREMIO DESBLOQUEADO!
+            </h3>
+            <p class="text-xs text-amber-300 font-bold mt-1">¡Has completado todos tus sellos requeridos!</p>
+          </div>
+
+          <!-- Caja de Recompensa -->
+          <div class="bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/60 rounded-2xl p-3.5 space-y-1">
+            <span class="text-[10px] uppercase font-mono tracking-widest text-amber-300 block font-semibold">TU BENEFICIO GRATIS:</span>
+            <p class="text-base font-black text-white drop-shadow-sm">"${data.rewardDescription || 'Corte o servicio gratis'}"</p>
+            ${data.businessName ? `<p class="text-xs text-amber-200/90 font-medium">en <strong>${data.businessName}</strong></p>` : ''}
+          </div>
+
+          <p class="text-xs text-slate-300 leading-relaxed">
+            ¡Muestra la pantalla de tu tarjeta con tu código QR al personal para disfrutar tu recompensa ahora mismo!
+          </p>
+
+          <button id="btn-claim-celebration-close" class="w-full py-3.5 px-4 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 rounded-xl font-black text-sm shadow-lg shadow-amber-500/40 cursor-pointer transition-all transform active:scale-95 flex items-center justify-center gap-2">
+            <i class="fas fa-gift text-base"></i>
+            <span>¡Genial, Ver Mi Pase para Canjear!</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(celebrationContainer);
+
+    // Ráfaga secundaria de confeti a los 700ms para efecto cinematográfico
+    setTimeout(() => this.triggerCelebrationConfetti(), 700);
+
+    const closeCelebration = () => {
+      celebrationContainer.classList.add('animate-fade-out');
+      setTimeout(() => celebrationContainer.remove(), 250);
+    };
+
+    document.getElementById('btn-claim-celebration-close')?.addEventListener('click', closeCelebration);
+    celebrationContainer.addEventListener('click', (e) => {
+      if (e.target === celebrationContainer) closeCelebration();
+    });
+  }
+
   // --- NOTIFICACIONES TOAST ---
   showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
@@ -24684,6 +25020,11 @@ Esperamos atenderle pronto de nuevo.`;
 
   // --- CIERRE CENTRALIZADO DE MODALES ---
   closeCurrentModal() {
+    if (this._loyaltyModalPollInterval) {
+      clearInterval(this._loyaltyModalPollInterval);
+      this._loyaltyModalPollInterval = null;
+    }
+    this._renderLoyaltyModalContentFn = null;
     this._isStampModalOpening = false;
     this.stopActiveCamera();
     this.closeBookingModal();
@@ -26563,9 +26904,17 @@ Esperamos atenderle pronto de nuevo.`;
     };
 
     // Renderizado inmediato
+    this._renderLoyaltyModalContentFn = renderModalContent;
+    this._currentOpenLoyaltyCard = card;
     renderModalContent(card);
 
-    // Consulta en vivo sin caché para garantizar sincronización perfecta de sellos
+    // Conectar canal push SSE de cliente
+    this.initClientRealtimePush();
+
+    // Activar sondeo ultra-rápido en vivo cada 2s mientras el modal esté abierto
+    this.startLoyaltyModalLivePolling(card, clientUser);
+
+    // Consulta en vivo inmediata sin caché para garantizar sincronización perfecta de sellos
     if (card.business_id && (clientUser.phone || clientUser.id)) {
       storage.getClientLoyaltyWallet(clientUser.phone, clientUser.id).then(walletRes => {
         if (walletRes && walletRes.success && Array.isArray(walletRes.cards)) {
