@@ -1923,11 +1923,11 @@ class App {
 
           <!-- 4. Para Negocio: Botón "Sellar" / Para Dev: "Dev" / Para Cliente: "Perfil" / Para Visitante: "Ingresar" -->
           ${bizUser ? `
-            <button id="mobile-nav-stamp-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-emerald-700 dark:text-emerald-400 font-black">
-              <div class="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-500/25 border border-emerald-400/40">
-                <i class="fas fa-qrcode text-base scale-105"></i>
+            <button id="mobile-nav-stamp-btn" onclick="window.openStampScannerModal && window.openStampScannerModal()" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer text-emerald-700 dark:text-emerald-400 font-black">
+              <div class="w-9 h-9 flex items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-white shadow-sm shadow-emerald-500/25 border border-emerald-400/40 pointer-events-none">
+                <i class="fas fa-qrcode text-base scale-105 pointer-events-none"></i>
               </div>
-              <span class="text-[11px] mt-0.5 tracking-tight font-black text-emerald-700 dark:text-emerald-400">Sellar</span>
+              <span class="text-[11px] mt-0.5 tracking-tight font-black text-emerald-700 dark:text-emerald-400 pointer-events-none">Sellar</span>
             </button>
           ` : (devUser ? `
             <button id="mobile-nav-dev-btn" class="app-touch-btn flex flex-col items-center justify-center py-1 px-1 rounded-2xl transition-all cursor-pointer ${isDev ? 'text-amber-600 dark:text-amber-400 font-extrabold' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 font-medium'}">
@@ -24603,6 +24603,9 @@ Esperamos atenderle pronto de nuevo.`;
     if (this.globalEventsSetup) return;
     this.globalEventsSetup = true;
 
+    // Helper global para apertura infalible del escáner de sellos
+    window.openStampScannerModal = (bizId = null) => this.renderStampModal(bizId);
+
     window.addEventListener('keydown', (e) => {
       // Escape para cerrar cualquier modal
       if (e.key === 'Escape') {
@@ -24683,6 +24686,15 @@ Esperamos atenderle pronto de nuevo.`;
         e.preventDefault();
         e.stopPropagation();
         this.closeCurrentModal();
+        return;
+      }
+
+      // Botón "Sellar" (Mobile Bottom Nav o accesos rápidos de fidelización)
+      const stampTrigger = e.target.closest('#mobile-nav-stamp-btn, .action-open-stamp-scanner, #dash-open-stamp-scanner-btn');
+      if (stampTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.renderStampModal();
         return;
       }
 
@@ -25714,7 +25726,15 @@ Esperamos atenderle pronto de nuevo.`;
   // --- MODAL DE ESCÁNER Y SELLADO DE CLIENTES (PARA COMERCIOS) ---
   async renderStampModal(businessId = null) {
     const bizUser = storage.getBusinessUser();
-    const targetBizId = businessId || (bizUser ? bizUser.id : null);
+    const staffUser = storage.getStaffUser ? storage.getStaffUser() : null;
+    const devUser = storage.getDeveloperUser ? storage.getDeveloperUser() : null;
+    const targetBizId = businessId 
+      || (bizUser ? (bizUser.businessId || bizUser.id) : null) 
+      || (staffUser ? staffUser.businessId : null) 
+      || (this.currentBusiness ? this.currentBusiness.id : null)
+      || (devUser ? (this.selectedBusinessId || storage.getActiveBusinessId()) : null)
+      || storage.getActiveBusinessId();
+
     if (!targetBizId) {
       this.showToast('Debes iniciar sesión con tu cuenta de comercio para estampar sellos.', 'warning');
       this.renderAuthModal({ mode: 'login', role: 'business' });
@@ -25724,10 +25744,18 @@ Esperamos atenderle pronto de nuevo.`;
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    let program = await storage.getLoyaltyProgram(targetBizId);
-    if (!program) {
-      program = { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
-    }
+    let program = { target_stamps: 8, reward_description: 'Corte o servicio gratis', is_active: true };
+
+    // Cargar programa en segundo plano y actualizar la meta en pantalla si difiere
+    storage.getLoyaltyProgram(targetBizId).then(loadedProg => {
+      if (loadedProg) {
+        program = loadedProg;
+        const metaLabel = document.getElementById('stamp-modal-meta-label');
+        if (metaLabel) {
+          metaLabel.textContent = `Meta: ${program.target_stamps || 8} sellos = ${program.reward_description || 'Corte o servicio gratis'}`;
+        }
+      }
+    }).catch(err => console.warn('Aviso cargando programa de fidelización:', err));
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md animate-fade-in">
@@ -25741,7 +25769,7 @@ Esperamos atenderle pronto de nuevo.`;
               </div>
               <div>
                 <h3 class="text-base font-black text-white leading-tight">Sellar Tarjeta de Cliente</h3>
-                <p class="text-[11px] text-emerald-100 font-medium">Meta: ${program.target_stamps} sellos = ${program.reward_description}</p>
+                <p id="stamp-modal-meta-label" class="text-[11px] text-emerald-100 font-medium">Meta: ${program.target_stamps} sellos = ${program.reward_description}</p>
               </div>
             </div>
             <button id="close-stamp-modal-btn" class="modal-close-btn w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all cursor-pointer">
@@ -25830,7 +25858,8 @@ Esperamos atenderle pronto de nuevo.`;
     let html5QrCode = null;
     const startScanner = async () => {
       try {
-        if (typeof Html5Qrcode === 'undefined') {
+        const QrClass = typeof Html5Qrcode !== 'undefined' ? Html5Qrcode : window.Html5Qrcode;
+        if (!QrClass) {
           console.warn('Html5Qrcode no está cargado');
           document.getElementById('loyalty-scanner-fallback')?.classList.remove('hidden');
           return;
@@ -25838,7 +25867,7 @@ Esperamos atenderle pronto de nuevo.`;
         const viewport = document.getElementById('loyalty-scanner-viewport');
         if (!viewport) return;
 
-        html5QrCode = new Html5Qrcode("loyalty-scanner-viewport");
+        html5QrCode = new QrClass("loyalty-scanner-viewport");
         this._activeQrScanner = html5QrCode;
 
         await html5QrCode.start(
@@ -25856,6 +25885,15 @@ Esperamos atenderle pronto de nuevo.`;
         );
       } catch (err) {
         console.warn('Cámara no iniciada:', err);
+        const statusEl = document.getElementById('loyalty-scanner-status');
+        if (statusEl) {
+          statusEl.innerHTML = `
+            <p class="text-xs font-bold text-amber-600 dark:text-amber-400">
+              <i class="fas fa-exclamation-triangle mr-1"></i> Cámara no disponible o sin permisos
+            </p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Puedes estampar ingresando el teléfono en la pestaña de al lado</p>
+          `;
+        }
         document.getElementById('loyalty-scanner-fallback')?.classList.remove('hidden');
       }
     };
