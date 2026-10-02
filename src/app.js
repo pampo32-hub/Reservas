@@ -8767,7 +8767,7 @@ class App {
                 ${portfolio.map((img, idx) => {
                   const url = typeof img === 'string' ? img : img.url;
                   const title = typeof img === 'string' ? '' : (img.title || '');
-                  const imgId = typeof img === 'string' ? idx : (img.id || idx);
+                  const imgId = (typeof img === 'object' && img && img.id) ? img.id : ((typeof img === 'object' && img && img.url) ? img.url : idx);
                   const isFeatured = idx === 0;
 
                   return `
@@ -8805,7 +8805,7 @@ class App {
                               <i class="fas fa-star text-xs"></i>
                             </button>
                           ` : ''}
-                          <button type="button" class="btn-delete-portfolio-photo p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" data-id="${imgId}" data-index="${idx}" title="Eliminar foto">
+                          <button type="button" class="btn-delete-portfolio-photo p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer" data-id="${this.escapeHtml(String(imgId))}" data-index="${idx}" title="Eliminar foto">
                             <i class="far fa-trash-alt text-xs"></i>
                           </button>
                         </div>
@@ -16312,7 +16312,7 @@ Esperamos atenderle pronto de nuevo.`;
         </div>
 
         <div class="text-center text-slate-500 text-[11px] py-2 flex items-center justify-center gap-1.5 flex-wrap">
-          <span>ReservasCR.app v3.46.19</span>
+          <span>ReservasCR.app v3.46.20</span>
           <span>•</span>
           <button type="button" id="staff-force-reload-btn" class="text-blue-400 hover:text-blue-300 underline cursor-pointer">
             <i class="fas fa-arrows-rotate mr-0.5"></i> Actualizar versión
@@ -18764,8 +18764,9 @@ Esperamos atenderle pronto de nuevo.`;
         if (!confirm('¿Deseas eliminar esta foto de tu portafolio?')) return;
 
         try {
-          await storage.removePortfolioImage(currentBiz.id, idOrIdx !== null ? idOrIdx : numIdx);
-          this.showToast('Foto eliminada del portafolio.', 'info');
+          const target = (idOrIdx && idOrIdx.trim() !== '') ? idOrIdx.trim() : numIdx;
+          await storage.removePortfolioImage(currentBiz.id, target);
+          this.showToast('Foto eliminada del portafolio exitosamente.', 'info');
           this.renderCurrentView();
         } catch (err) {
           this.showToast('Error al eliminar foto: ' + (err.message || 'Error'), 'error');

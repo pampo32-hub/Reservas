@@ -2074,12 +2074,18 @@ app.put('/api/businesses/:id', authenticateBusinessOwnerOrDev, async (req, res) 
     }
     if (Array.isArray(b.portfolio)) {
       b.portfolio = b.portfolio.map((item, idx) => {
+        const uniqueId = `port-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
         if (typeof item === 'string') {
-          return processAndSaveImage(item, `${bizFolder}/portafolio`, `port_${idx}`);
+          return {
+            id: uniqueId,
+            url: processAndSaveImage(item, `${bizFolder}/portafolio`, `port_${idx}`),
+            title: ''
+          };
         }
         if (item && item.url) {
           return {
             ...item,
+            id: item.id || uniqueId,
             url: processAndSaveImage(item.url, `${bizFolder}/portafolio`, `port_${idx}`)
           };
         }
@@ -2218,12 +2224,18 @@ app.post('/api/businesses', async (req, res) => {
     }
     if (Array.isArray(b.portfolio)) {
       b.portfolio = b.portfolio.map((item, idx) => {
+        const uniqueId = `port-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 6)}`;
         if (typeof item === 'string') {
-          return processAndSaveImage(item, `${bizFolder}/portafolio`, `port_${idx}`);
+          return {
+            id: uniqueId,
+            url: processAndSaveImage(item, `${bizFolder}/portafolio`, `port_${idx}`),
+            title: ''
+          };
         }
         if (item && item.url) {
           return {
             ...item,
+            id: item.id || uniqueId,
             url: processAndSaveImage(item.url, `${bizFolder}/portafolio`, `port_${idx}`)
           };
         }

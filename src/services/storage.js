@@ -792,11 +792,11 @@ class StorageService {
       const plan = b.plan || 'basic';
       const slug = b.slug ? this.slugify(b.slug) : this.slugify(b.name || b.id);
       const initMatch = INITIAL_BUSINESSES.find(ib => ib.id === b.id);
-      const isDemoBiz = Boolean(b.isDemo || (initMatch && initMatch.isDemo));
-      const portfolio = (isDemoBiz && initMatch && Array.isArray(initMatch.portfolio) && initMatch.portfolio.length > 0)
-        ? initMatch.portfolio
-        : (Array.isArray(b.portfolio) && b.portfolio.length > 0 
-            ? b.portfolio 
+      // Respetar prioritariamente las fotos reales que el negocio haya subido y guardado en base de datos
+      const portfolio = (Array.isArray(b.portfolio) && b.portfolio.length > 0)
+        ? b.portfolio
+        : (b.portfolio !== undefined && b.portfolio !== null && Array.isArray(b.portfolio)
+            ? b.portfolio
             : (initMatch && Array.isArray(initMatch.portfolio) ? initMatch.portfolio : []));
       const baseObj = { ...b, slug, portfolio, schedule: sch || b.schedule };
       if (plan === 'free') {
@@ -1065,7 +1065,10 @@ class StorageService {
     if (!Array.isArray(biz.portfolio)) {
       biz.portfolio = [];
     }
-    const item = typeof imageItem === 'string' ? { id: `port-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, url: imageItem } : imageItem;
+    const uniqueId = `port-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const item = typeof imageItem === 'string' 
+      ? { id: uniqueId, url: imageItem, title: '' } 
+      : { id: imageItem.id || uniqueId, ...imageItem };
     biz.portfolio.push(item);
     await this.saveBusiness(biz);
     return true;
@@ -1075,14 +1078,32 @@ class StorageService {
     const businesses = this.getBusinesses();
     const biz = businesses.find(b => b.id === businessId);
     if (!biz || !Array.isArray(biz.portfolio)) return false;
-    if (typeof imageIndexOrId === 'number') {
-      biz.portfolio.splice(imageIndexOrId, 1);
+
+    const numericIdx = (typeof imageIndexOrId === 'number')
+      ? imageIndexOrId
+      : (typeof imageIndexOrId === 'string' && /^\d+$/.test(imageIndexOrId) ? parseInt(imageIndexOrId, 10) : -1);
+
+    // 1. Buscar coincidencia por ID o URL
+    let targetIndex = biz.portfolio.findIndex((img) => {
+      if (!img) return false;
+      if (typeof img === 'string') return img === imageIndexOrId;
+      return img.id === imageIndexOrId || img.url === imageIndexOrId;
+    });
+
+    // 2. Si no coincide por ID/URL pero es un índice numérico válido
+    if (targetIndex === -1 && numericIdx >= 0 && numericIdx < biz.portfolio.length) {
+      targetIndex = numericIdx;
+    }
+
+    if (targetIndex !== -1) {
+      biz.portfolio.splice(targetIndex, 1);
     } else {
       biz.portfolio = biz.portfolio.filter((img, idx) => {
         if (typeof img === 'string') return img !== imageIndexOrId;
-        return img.id !== imageIndexOrId && img.url !== imageIndexOrId;
+        return img.id !== imageIndexOrId && img.url !== imageIndexOrId && idx !== numericIdx;
       });
     }
+
     await this.saveBusiness(biz);
     return true;
   }
@@ -3012,7 +3033,7 @@ class StorageService {
           }
         } catch (cleanErr) {}
 
-        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.19', { scope: '/' });
+        const registration = await navigator.serviceWorker.register('/sw-active.js?v=3.46.20', { scope: '/' });
         console.log('✅ Service Worker registrado con éxito:', registration.scope);
 
         // Forzar chequeo de actualización inmediata en el servidor
