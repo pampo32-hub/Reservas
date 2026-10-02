@@ -11808,7 +11808,7 @@ class App {
                     type="number" 
                     id="pos-cash-received" 
                     value="${balanceDue}" 
-                    step="500" 
+                    step="any" 
                     min="${balanceDue}"
                     class="w-full pl-9 pr-4 py-2.5 bg-white border border-emerald-300 rounded-xl text-base font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
@@ -12176,8 +12176,8 @@ Esperamos atenderle pronto de nuevo.`;
                   type="number" 
                   id="pos-expense-amount" 
                   required 
-                  step="500" 
-                  min="100" 
+                  step="any" 
+                  min="1" 
                   placeholder="Ej: 5000" 
                   class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-base font-black text-slate-900 focus:ring-2 focus:ring-rose-500 focus:outline-none"
                 />
@@ -12324,7 +12324,7 @@ Esperamos atenderle pronto de nuevo.`;
                     type="number" 
                     id="pos-counted-cash-input" 
                     value="${expectedCash}" 
-                    step="100" 
+                    step="any" 
                     min="0"
                     class="w-full pl-10 pr-4 py-3 bg-white border border-slate-300 rounded-2xl text-lg font-black text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
@@ -14789,8 +14789,8 @@ Esperamos atenderle pronto de nuevo.`;
                 type="number" 
                 id="vale-amount" 
                 required 
-                min="100" 
-                step="100" 
+                min="1" 
+                step="any" 
                 placeholder="Ej. 5000" 
                 class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-black text-slate-900 text-base focus:ring-2 focus:ring-amber-500 focus:outline-none"
               >
