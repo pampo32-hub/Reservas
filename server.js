@@ -5260,10 +5260,17 @@ app.put('/api/businesses/:id/client-notes/:phone', async (req, res) => {
 // Crear nueva reserva (con protección estricta anti-colisión, soporte transaccional y notificaciones)
 app.post('/api/appointments', async (req, res) => {
   const client = await pool.connect();
+  let isClientReleased = false;
+  const releaseClient = () => {
+    if (!isClientReleased) {
+      isClientReleased = true;
+      try { client.release(); } catch (_) {}
+    }
+  };
   try {
     const a = req.body;
     if (!a.businessId || !a.date || !a.time || !a.serviceId) {
-      client.release();
+      releaseClient();
       return res.status(400).json({ error: 'Faltan datos obligatorios para la reserva (comercio, fecha, hora o servicio).' });
     }
 
@@ -5273,17 +5280,17 @@ app.post('/api/appointments', async (req, res) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!cleanClientName) {
-      client.release();
+      releaseClient();
       return res.status(400).json({ error: 'El nombre completo del cliente es obligatorio para confirmar la reserva.' });
     }
 
     if (!cleanClientPhone) {
-      client.release();
+      releaseClient();
       return res.status(400).json({ error: 'El número de teléfono / WhatsApp es obligatorio para confirmar la reserva.' });
     }
 
     if (!cleanClientEmail || !emailRegex.test(cleanClientEmail)) {
-      client.release();
+      releaseClient();
       return res.status(400).json({ error: 'El correo electrónico es obligatorio y debe tener un formato válido.' });
     }
 
@@ -5298,7 +5305,7 @@ app.post('/api/appointments', async (req, res) => {
 
     if (bizCheck.rows.length === 0) {
       await client.query('ROLLBACK');
-      client.release();
+      releaseClient();
       return res.status(404).json({ error: 'Comercio no encontrado' });
     }
 
@@ -5306,7 +5313,7 @@ app.post('/api/appointments', async (req, res) => {
     a.businessId = bizData.id;
     if (bizData.is_blocked) {
       await client.query('ROLLBACK');
-      client.release();
+      releaseClient();
       return res.status(403).json({ 
         error: 'Este comercio se encuentra temporalmente suspendido / bloqueado para nuevas reservas.',
         isBlocked: true,
@@ -5329,7 +5336,7 @@ app.post('/api/appointments', async (req, res) => {
       const currentCount = parseInt(countRes.rows[0].total, 10) || 0;
       if (currentCount >= bookingLimit) {
         await client.query('ROLLBACK');
-        client.release();
+        releaseClient();
         const planName = bizData.plan === 'basic' ? 'Plan Básico ($10 / 150 citas)' : (bizData.plan === 'pro' ? 'Plan Profesional ($18 / 300 citas)' : 'su plan actual');
         return res.status(403).json({
           error: `El comercio "${bizData.name}" ha alcanzado el límite de ${bookingLimit} reservas de este mes de su ${planName}. Para recibir más citas este mes, debe actualizar a un plan superior.`,
@@ -5359,7 +5366,7 @@ app.post('/api/appointments', async (req, res) => {
     });
     if (hasBlockedConflict) {
       await client.query('ROLLBACK');
-      client.release();
+      releaseClient();
       return res.status(409).json({
         error: 'El horario seleccionado se encuentra bloqueado por el comercio. Por favor elige otro horario.',
         conflict: true
@@ -5392,7 +5399,7 @@ app.post('/api/appointments', async (req, res) => {
       });
       if (hasConflict) {
         await client.query('ROLLBACK');
-        client.release();
+        releaseClient();
         return res.status(409).json({
           error: 'El horario seleccionado ya se encuentra ocupado por otra cita. Por favor elige otro horario disponible.',
           conflict: true
@@ -5404,7 +5411,7 @@ app.post('/api/appointments', async (req, res) => {
       const targetStaff = activeStaff.find(s => s.id === a.staffId);
       if (!targetStaff) {
         await client.query('ROLLBACK');
-        client.release();
+        releaseClient();
         return res.status(404).json({ error: 'El especialista seleccionado no se encuentra disponible.' });
       }
 
@@ -5417,7 +5424,7 @@ app.post('/api/appointments', async (req, res) => {
 
       if (hasStaffConflict) {
         await client.query('ROLLBACK');
-        client.release();
+        releaseClient();
         return res.status(409).json({
           error: `El especialista ${targetStaff.name} ya tiene una reserva en ese horario (${a.time}). Por favor elige otra hora o selecciona otro especialista.`,
           conflict: true
@@ -5454,7 +5461,7 @@ app.post('/api/appointments', async (req, res) => {
 
       if (availableStaff.length - unassignedOverlapCount <= 0) {
         await client.query('ROLLBACK');
-        client.release();
+        releaseClient();
         return res.status(409).json({
           error: 'No hay especialistas disponibles en el horario seleccionado. Por favor elige otro horario.',
           conflict: true
@@ -5549,7 +5556,7 @@ app.post('/api/appointments', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    client.release();
+    releaseClient();
 
     const createdAppointment = { 
       id: newId, 
@@ -5679,7 +5686,7 @@ app.post('/api/appointments', async (req, res) => {
     res.status(201).json(createdAppointment);
   } catch (error) {
     try { await client.query('ROLLBACK'); } catch (_) {}
-    client.release();
+    releaseClient();
     console.error('Error creando cita:', error);
     res.status(500).json({ error: 'Error al registrar la reserva' });
   }
@@ -5687,29 +5694,34 @@ app.post('/api/appointments', async (req, res) => {
 
 // Endpoint de diagnóstico de servicios de notificación
 app.get('/api/notifications-status', async (req, res) => {
-  const hasResend = Boolean(process.env.RESEND_API_KEY);
-  const metaCreds = await getActiveMetaCredentials(pool);
-  const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN);
+  try {
+    const hasResend = Boolean(process.env.RESEND_API_KEY);
+    const metaCreds = await getActiveMetaCredentials(pool);
+    const hasTwilio = Boolean(process.env.TWILIO_AUTH_TOKEN);
 
-  res.json({
-    email: {
-      provider: 'Resend Email API',
-      status: hasResend ? 'configured' : 'fallback',
-      from: process.env.RESEND_FROM_EMAIL || 'Reservas Costa Rica <onboarding@resend.dev>',
-      note: 'Los correos de confirmación se envían automáticamente al cliente y al negocio.'
-    },
-    whatsapp: {
-      provider: metaCreds.isConfigured ? 'Meta WhatsApp Cloud API (Directo)' : (hasTwilio ? 'Twilio WhatsApp Sandbox' : 'Sin Configurar'),
-      status: metaCreds.isConfigured ? 'configured_meta' : (hasTwilio ? 'configured_twilio' : 'missing_credentials'),
-      hasToken: Boolean(metaCreds.token),
-      hasPhoneId: Boolean(metaCreds.phoneNumberId),
-      phoneNumberId: metaCreds.phoneNumberId ? `${metaCreds.phoneNumberId.slice(0, 4)}...${metaCreds.phoneNumberId.slice(-4)}` : null,
-      directMetaEnabled: metaCreds.isConfigured,
-      note: metaCreds.isConfigured 
-        ? 'Conexión directa con Meta WhatsApp Cloud API activa (1.000 conversaciones gratis/mes).' 
-        : 'Puedes configurar tu Token y Phone ID directamente en la pestaña WhatsApp del panel Developer.'
-    }
-  });
+    res.json({
+      email: {
+        provider: 'Resend Email API',
+        status: hasResend ? 'configured' : 'fallback',
+        from: process.env.RESEND_FROM_EMAIL || 'Reservas Costa Rica <onboarding@resend.dev>',
+        note: 'Los correos de confirmación se envían automáticamente al cliente y al negocio.'
+      },
+      whatsapp: {
+        provider: metaCreds.isConfigured ? 'Meta WhatsApp Cloud API (Directo)' : (hasTwilio ? 'Twilio WhatsApp Sandbox' : 'Sin Configurar'),
+        status: metaCreds.isConfigured ? 'configured_meta' : (hasTwilio ? 'configured_twilio' : 'missing_credentials'),
+        hasToken: Boolean(metaCreds.token),
+        hasPhoneId: Boolean(metaCreds.phoneNumberId),
+        phoneNumberId: metaCreds.phoneNumberId ? `${metaCreds.phoneNumberId.slice(0, 4)}...${metaCreds.phoneNumberId.slice(-4)}` : null,
+        directMetaEnabled: metaCreds.isConfigured,
+        note: metaCreds.isConfigured 
+          ? 'Conexión directa con Meta WhatsApp Cloud API activa (1.000 conversaciones gratis/mes).' 
+          : 'Puedes configurar tu Token y Phone ID directamente en la pestaña WhatsApp del panel Developer.'
+      }
+    });
+  } catch (err) {
+    console.error('Error al consultar estado de notificaciones:', err);
+    res.status(500).json({ error: 'Error al consultar estado de notificaciones' });
+  }
 });
 
 // Obtener configuración de WhatsApp para Developer
@@ -8372,35 +8384,35 @@ app.get('/api/auth/google', (req, res) => {
 
 // Callback oficial de Google OAuth 2.0
 app.get('/api/auth/google/callback', async (req, res) => {
-  const { code, state, error, error_description } = req.query;
-
-  if (error) {
-    console.error('❌ Error recibido en Google OAuth callback:', error, error_description);
-    return res.redirect(`/directorio?oauth_error=${encodeURIComponent(error_description || error)}`);
-  }
-
-  if (!code) {
-    return res.redirect('/directorio?oauth_error=no_authorization_code');
-  }
-
-  let role = 'auto';
-  let action = 'login';
-  let businessId = null;
-  let returnTo = '/mis-reservas';
-
-  if (state) {
-    try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
-      role = decoded.role || 'auto';
-      action = decoded.action || 'login';
-      businessId = decoded.businessId || null;
-      returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : (role === 'developer' ? '/developer-dashboard' : '/mis-reservas'));
-    } catch (e) {
-      console.warn('No se pudo decodificar state de Google OAuth:', e.message);
-    }
-  }
-
   try {
+    const { code, state, error, error_description } = req.query;
+
+    if (error) {
+      console.error('❌ Error recibido en Google OAuth callback:', error, error_description);
+      return res.redirect(`/directorio?oauth_error=${encodeURIComponent(error_description || error)}`);
+    }
+
+    if (!code) {
+      return res.redirect('/directorio?oauth_error=no_authorization_code');
+    }
+
+    let role = 'auto';
+    let action = 'login';
+    let businessId = null;
+    let returnTo = '/mis-reservas';
+
+    if (state) {
+      try {
+        const decoded = JSON.parse(Buffer.from(state, 'base64url').toString('utf8'));
+        role = decoded.role || 'auto';
+        action = decoded.action || 'login';
+        businessId = decoded.businessId || null;
+        returnTo = decoded.returnTo || (role === 'business' ? '/panel-negocio' : (role === 'developer' ? '/developer-dashboard' : '/mis-reservas'));
+      } catch (e) {
+        console.warn('No se pudo decodificar state de Google OAuth:', e.message);
+      }
+    }
+
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/auth/google/callback`;
