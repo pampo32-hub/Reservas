@@ -3609,9 +3609,9 @@ app.post('/api/auth/staff/login', async (req, res) => {
       return res.status(400).json({ error: 'Debes ingresar el identificador del comercio y tu PIN de 4 dígitos.' });
     }
 
-    // Buscar negocio por slug o id
+    // Buscar negocio por slug, id o nombre
     const bizRes = await pool.query(
-      'SELECT id, name, slug, image FROM reservas_businesses WHERE LOWER(slug) = LOWER($1) OR id = $1',
+      'SELECT id, name, slug, image FROM reservas_businesses WHERE LOWER(slug) = LOWER($1) OR id = $1 OR LOWER(name) = LOWER($1)',
       [businessIdentifier.trim()]
     );
 

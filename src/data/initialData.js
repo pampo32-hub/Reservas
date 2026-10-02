@@ -2486,6 +2486,7 @@ export const INITIAL_STAFF = [
     phone: '+506 8877 6651',
     services: ['all'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
   {
@@ -2497,6 +2498,7 @@ export const INITIAL_STAFF = [
     phone: '+506 8877 6652',
     services: ['srv-102', 'srv-103', 'srv-104'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
   {
@@ -2508,6 +2510,7 @@ export const INITIAL_STAFF = [
     phone: '+506 8877 6653',
     services: ['srv-101', 'srv-103'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
 
@@ -2523,6 +2526,7 @@ export const INITIAL_STAFF = [
     phone: '+506 8344 1123',
     services: ['srv-201', 'srv-202'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
   {
@@ -2534,6 +2538,7 @@ export const INITIAL_STAFF = [
     phone: '+506 8344 1124',
     services: ['srv-203'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
   {
@@ -2545,6 +2550,7 @@ export const INITIAL_STAFF = [
     phone: '+506 8344 1125',
     services: ['all'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
 
@@ -2560,6 +2566,7 @@ export const INITIAL_STAFF = [
     phone: '+506 2271 8891',
     services: ['all'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   },
   {
@@ -2571,6 +2578,7 @@ export const INITIAL_STAFF = [
     phone: '+506 2271 8892',
     services: ['srv-301', 'srv-302'],
     schedule: null,
+    pinCode: '1234',
     isActive: true
   }
 ];

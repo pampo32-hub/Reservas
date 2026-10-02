@@ -16169,7 +16169,16 @@ Esperamos atenderle pronto de nuevo.`;
     }
 
     // Pantalla de Login de Colaborador con PIN (Mobile First)
-    const allBusinesses = storage.getBusinessesSync() || [];
+    let allBusinesses = (typeof storage.getBusinesses === 'function' ? storage.getBusinesses() : []) || [];
+    if (allBusinesses.length === 0 && storage.isOnlineApi) {
+      try {
+        await storage.loadFromApi();
+        allBusinesses = storage.getBusinesses() || [];
+      } catch (e) {
+        console.warn('Error cargando comercios para portal colaborador:', e);
+      }
+    }
+    const preselectedBiz = this.selectedBusinessId || storage.getActiveBusinessId();
 
     container.innerHTML = `
       <div class="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 flex flex-col justify-between p-4 sm:p-6 text-white">
@@ -16199,7 +16208,10 @@ Esperamos atenderle pronto de nuevo.`;
               ${allBusinesses.length > 0 ? `
                 <select id="staff-login-biz" required class="w-full px-4 py-3 bg-slate-900/90 border border-slate-700 rounded-xl text-white font-medium text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
                   <option value="">Selecciona tu negocio...</option>
-                  ${allBusinesses.map(b => `<option value="${b.slug || b.id}">${b.name}</option>`).join('')}
+                  ${allBusinesses.map(b => {
+                    const isSel = preselectedBiz && (b.id === preselectedBiz || b.slug === preselectedBiz);
+                    return `<option value="${b.slug || b.id}" ${isSel ? 'selected' : ''}>${this.escapeHtml(b.name)}</option>`;
+                  }).join('')}
                 </select>
               ` : `
                 <input 

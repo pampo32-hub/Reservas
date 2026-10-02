@@ -754,6 +754,10 @@ class StorageService {
   }
 
   // --- NEGOCIOS ---
+  getBusinessesSync() {
+    return this.getBusinesses();
+  }
+
   getBusinesses() {
     let list = (this.businessesCache && this.businessesCache.length > 0)
       ? this.businessesCache
