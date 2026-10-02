@@ -26398,26 +26398,26 @@ Esperamos atenderle pronto de nuevo.`;
 
     modalContainer.innerHTML = `
       <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl p-5 sm:p-7 max-w-md w-full space-y-5 shadow-2xl relative border border-slate-100 my-auto">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl relative border border-slate-100 my-auto max-h-[92vh] overflow-y-auto">
           
           <!-- Botón Cerrar -->
-          <button id="close-loyalty-detail-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-all">
+          <button id="close-loyalty-detail-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-all shadow-xs">
             <i class="fas fa-times text-xs"></i>
           </button>
 
           <!-- Cabecera del Comercio -->
           <div class="flex items-center gap-3.5 pr-8">
-            <div class="w-13 h-13 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-xs">
-              <img src="${card.business_image || '/src/assets/logo.png'}" alt="${card.business_name}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+            <div class="w-14 h-14 min-w-[56px] min-h-[56px] max-w-[56px] max-h-[56px] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-xs">
+              <img src="${card.business_image || '/src/assets/logo.png'}" alt="${card.business_name}" class="w-full h-full object-cover" style="width: 56px; height: 56px; object-fit: cover;" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase">
                   ${card.business_category || 'Comercio'}
                 </span>
                 ${card.business_phone ? `<span class="text-[11px] text-slate-400">• <i class="fas fa-phone text-[9px]"></i> ${card.business_phone}</span>` : ''}
               </div>
-              <h3 class="text-lg font-black text-slate-900 truncate leading-snug mt-0.5">${card.business_name}</h3>
+              <h3 class="text-base sm:text-lg font-black text-slate-900 truncate leading-snug mt-0.5">${card.business_name}</h3>
             </div>
           </div>
 
@@ -26699,8 +26699,8 @@ Esperamos atenderle pronto de nuevo.`;
             <!-- Parte Superior: Info Negocio & Estado -->
             <div class="flex items-start justify-between gap-3 relative z-10">
               <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 p-0.5 shrink-0 shadow-sm">
-                  <img src="${c.business_image || '/src/assets/logo.png'}" alt="${c.business_name}" class="w-full h-full object-cover rounded-xl" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+                <div class="w-11 h-11 min-w-[44px] min-h-[44px] max-w-[44px] max-h-[44px] rounded-2xl overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 p-0.5 shrink-0 shadow-sm">
+                  <img src="${c.business_image || '/src/assets/logo.png'}" alt="${c.business_name}" class="w-full h-full object-cover rounded-xl" style="width: 44px; height: 44px; object-fit: cover;" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
                 </div>
                 <div>
                   <h4 class="text-sm sm:text-base font-black text-white leading-tight drop-shadow-sm line-clamp-1">${c.business_name}</h4>
