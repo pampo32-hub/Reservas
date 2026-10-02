@@ -26195,6 +26195,13 @@ Esperamos atenderle pronto de nuevo.`;
             </button>
           `}
 
+          ${currentStamps > 0 ? `
+            <button id="btn-remove-stamp-action" class="w-full py-2 bg-slate-800/90 hover:bg-slate-700 text-rose-300 hover:text-rose-200 border border-slate-700 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98" title="Restar 1 sello en caso de error">
+              <i class="fas fa-minus-circle text-rose-400"></i>
+              <span>Restar 1 Sello (Corregir error)</span>
+            </button>
+          ` : ''}
+
           <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1">
             <button id="btn-stamp-another-client" class="text-slate-300 hover:text-white underline cursor-pointer">
               ← Escanear a otro cliente
@@ -26231,6 +26238,34 @@ Esperamos atenderle pronto de nuevo.`;
         if (btn) {
           btn.disabled = false;
           btn.innerHTML = '<i class="fas fa-stamp text-base"></i> <span>✓ Estampar Sello (+1)</span>';
+        }
+      }
+    });
+
+    document.getElementById('btn-remove-stamp-action')?.addEventListener('click', async () => {
+      if (confirm(`¿Restar 1 sello a ${clientData.name || 'el cliente'}? (Sellos actuales: ${currentStamps} ➔ ${currentStamps - 1})`)) {
+        const btn = document.getElementById('btn-remove-stamp-action');
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restando...';
+        }
+
+        const removeRes = await storage.removeLoyaltyStamp({
+          businessId,
+          cardId: card ? card.id : null,
+          clientPhone: clientData.phone,
+          clientId: clientData.id
+        });
+
+        if (removeRes && removeRes.success) {
+          this.showToast(removeRes.message || 'Sello restado con éxito.', 'success');
+          this.handleStampPreview(businessId, search, program);
+        } else {
+          this.showToast(removeRes?.error || 'No se pudo restar el sello.', 'error');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-minus-circle text-rose-400"></i> <span>Restar 1 Sello (Corregir error)</span>';
+          }
         }
       }
     });
@@ -26359,173 +26394,192 @@ Esperamos atenderle pronto de nuevo.`;
     const modalContainer = document.getElementById('modal-container');
     if (!modalContainer) return;
 
-    const target = card.target_stamps || 8;
-    const current = card.current_stamps || 0;
-    const isCompleted = current >= target;
-    const pct = Math.min(100, Math.round((current / target) * 100));
-    const cardNumber = this.formatNumericCardId(card, clientUser);
+    const renderModalContent = (cardData) => {
+      const target = cardData.target_stamps || 8;
+      const current = cardData.current_stamps || 0;
+      const isCompleted = current >= target;
+      const pct = Math.min(100, Math.round((current / target) * 100));
+      const cardNumber = this.formatNumericCardId(cardData, clientUser);
 
-    // Ranuras visuales de sellos
-    let slots = '';
-    for (let i = 1; i <= target; i++) {
-      const isStamped = i <= current;
-      const isTarget = i === target;
-      if (isStamped) {
-        slots += `
-          <div class="loyalty-stamp-slot stamped w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-md">
-            <i class="fas fa-check text-xs"></i>
-          </div>
-        `;
-      } else if (isTarget) {
-        slots += `
-          <div class="loyalty-stamp-slot reward-slot w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-md border-2 border-dashed border-amber-300">
-            <i class="fas fa-gift text-xs"></i>
-          </div>
-        `;
-      } else {
-        slots += `
-          <div class="loyalty-stamp-slot w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-xs">
-            ${i}
-          </div>
-        `;
+      // Ranuras visuales de sellos
+      let slots = '';
+      for (let i = 1; i <= target; i++) {
+        const isStamped = i <= current;
+        const isTarget = i === target;
+        if (isStamped) {
+          slots += `
+            <div class="loyalty-stamp-slot stamped w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-md">
+              <i class="fas fa-check text-xs"></i>
+            </div>
+          `;
+        } else if (isTarget) {
+          slots += `
+            <div class="loyalty-stamp-slot reward-slot w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center font-black text-white text-xs shadow-md border-2 border-dashed border-amber-300">
+              <i class="fas fa-gift text-xs"></i>
+            </div>
+          `;
+        } else {
+          slots += `
+            <div class="loyalty-stamp-slot w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center font-bold text-xs">
+              ${i}
+            </div>
+          `;
+        }
       }
-    }
 
-    // QR específico del cliente
-    const cleanPhone = (clientUser.phone || '').toString().replace(/\s+/g, '');
-    const clientSafeName = encodeURIComponent(clientUser.name || 'Cliente');
-    const qrPayload = `rcr_loyalty:${clientUser.id || 'client'}:${cleanPhone}:${clientSafeName}`;
+      // QR específico del cliente
+      const cleanPhone = (clientUser.phone || '').toString().replace(/\s+/g, '');
+      const clientSafeName = encodeURIComponent(clientUser.name || 'Cliente');
+      const qrPayload = `rcr_loyalty:${clientUser.id || 'client'}:${cleanPhone}:${clientSafeName}`;
 
-    modalContainer.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-        <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl relative border border-slate-100 my-auto max-h-[92vh] overflow-y-auto">
-          
-          <!-- Botón Cerrar -->
-          <button id="close-loyalty-detail-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-all shadow-xs">
-            <i class="fas fa-times text-xs"></i>
-          </button>
-
-          <!-- Cabecera del Comercio -->
-          <div class="flex items-center gap-3.5 pr-8">
-            <div class="w-14 h-14 min-w-[56px] min-h-[56px] max-w-[56px] max-h-[56px] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-xs">
-              <img src="${card.business_image || '/src/assets/logo.png'}" alt="${card.business_name}" class="w-full h-full object-cover" style="width: 56px; height: 56px; object-fit: cover;" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase">
-                  ${card.business_category || 'Comercio'}
-                </span>
-                ${card.business_phone ? `<span class="text-[11px] text-slate-400">• <i class="fas fa-phone text-[9px]"></i> ${card.business_phone}</span>` : ''}
-              </div>
-              <h3 class="text-base sm:text-lg font-black text-slate-900 truncate leading-snug mt-0.5">${card.business_name}</h3>
-            </div>
-          </div>
-
-          <!-- Banner de Recompensa -->
-          ${isCompleted ? `
-            <div class="bg-gradient-to-r from-amber-500/15 via-yellow-400/20 to-amber-500/15 border border-amber-300/80 rounded-2xl p-3.5 flex items-start gap-3 text-amber-950">
-              <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm text-sm">
-                <i class="fas fa-trophy"></i>
-              </div>
-              <div class="text-xs">
-                <p class="font-black text-amber-900 text-sm">🎉 ¡Tarjeta Completada!</p>
-                <p class="text-amber-800 font-bold mt-0.5">Premio: <span class="underline">${card.reward_description}</span></p>
-                <p class="text-amber-700 text-[11px] mt-0.5">Muestra el código QR abajo al personal para canjear tu premio.</p>
-              </div>
-            </div>
-          ` : `
-            <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex items-start gap-3 text-slate-800">
-              <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm text-sm">
-                <i class="fas fa-gift"></i>
-              </div>
-              <div class="text-xs min-w-0">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="font-black text-slate-900">Recompensa al completar:</span>
-                  <span class="text-emerald-700 font-black text-[11px] shrink-0">${current}/${target} sellos</span>
-                </div>
-                <p class="text-slate-600 font-bold mt-0.5 text-xs truncate">"${card.reward_description}"</p>
-                <p class="text-slate-400 text-[11px] mt-0.5">Te faltan <strong>${target - current} sellos</strong> para ganar este beneficio.</p>
-              </div>
-            </div>
-          `}
-
-          <!-- Ranuras de Sellos -->
-          <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-3">
-            <div class="flex items-center justify-between text-xs font-bold text-slate-600">
-              <span>Tus Sellos Acumulados</span>
-              <span class="text-emerald-600 font-black">${current} de ${target} (${pct}%)</span>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 py-1">
-              ${slots}
-            </div>
-
-            <!-- Barra Progreso -->
-            <div class="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
-            </div>
-          </div>
-
-          <!-- Código QR para Sellar -->
-          <div class="bg-gradient-to-b from-slate-900 to-slate-950 text-white p-4 sm:p-5 rounded-2xl text-center space-y-3 shadow-lg border border-slate-800">
-            <div>
-              <span class="text-[10px] font-black uppercase tracking-wider text-amber-400">
-                <i class="fas fa-qrcode mr-1"></i> QR para Sellar o Canjear
-              </span>
-              <p class="text-xs text-slate-300 mt-0.5">
-                Presenta este código en el mostrador de <strong>${card.business_name}</strong>
-              </p>
-            </div>
-
-            <div class="bg-white p-3 rounded-2xl inline-block shadow-inner mx-auto">
-              <div id="card-modal-qr-display" class="w-[180px] h-[180px] flex items-center justify-center">
-                <i class="fas fa-spinner fa-spin text-slate-400 text-2xl"></i>
-              </div>
-            </div>
-
-            <div class="text-[11px] text-slate-400 flex items-center justify-center gap-2 font-mono flex-wrap">
-              <span class="text-amber-400 font-bold"><i class="fas fa-credit-card text-[10px] mr-1"></i>${cardNumber}</span>
-              <span>•</span>
-              <span>${clientUser.name}</span>
-              ${clientUser.phone ? `<span>•</span><span>${clientUser.phone}</span>` : ''}
-            </div>
-          </div>
-
-          <!-- Acciones: Agendar Cita & Cerrar -->
-          <div class="flex items-center gap-2 pt-1">
-            <button id="modal-card-book-btn" class="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all">
-              <i class="fas fa-calendar-plus"></i>
-              <span>Agendar Cita en ${card.business_name}</span>
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div class="bg-white rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-2xl relative border border-slate-100 my-auto max-h-[92vh] overflow-y-auto">
+            
+            <!-- Botón Cerrar -->
+            <button id="close-loyalty-detail-modal-btn" class="modal-close-btn absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer transition-all shadow-xs">
+              <i class="fas fa-times text-xs"></i>
             </button>
+
+            <!-- Cabecera del Comercio -->
+            <div class="flex items-center gap-3.5 pr-8">
+              <div class="w-14 h-14 min-w-[56px] min-h-[56px] max-w-[56px] max-h-[56px] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0 shadow-xs">
+                <img src="${cardData.business_image || '/src/assets/logo.png'}" alt="${cardData.business_name}" class="w-full h-full object-cover" style="width: 56px; height: 56px; object-fit: cover;" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black uppercase">
+                    ${cardData.business_category || 'Comercio'}
+                  </span>
+                  ${cardData.business_phone ? `<span class="text-[11px] text-slate-400">• <i class="fas fa-phone text-[9px]"></i> ${cardData.business_phone}</span>` : ''}
+                </div>
+                <h3 class="text-base sm:text-lg font-black text-slate-900 truncate leading-snug mt-0.5">${cardData.business_name}</h3>
+              </div>
+            </div>
+
+            <!-- Banner de Recompensa -->
+            ${isCompleted ? `
+              <div class="bg-gradient-to-r from-amber-500/15 via-yellow-400/20 to-amber-500/15 border border-amber-300/80 rounded-2xl p-3.5 flex items-start gap-3 text-amber-950">
+                <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm text-sm">
+                  <i class="fas fa-trophy"></i>
+                </div>
+                <div class="text-xs">
+                  <p class="font-black text-amber-900 text-sm">🎉 ¡Tarjeta Completada!</p>
+                  <p class="text-amber-800 font-bold mt-0.5">Premio: <span class="underline">${cardData.reward_description}</span></p>
+                  <p class="text-amber-700 text-[11px] mt-0.5">Muestra el código QR abajo al personal para canjear tu premio.</p>
+                </div>
+              </div>
+            ` : `
+              <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex items-start gap-3 text-slate-800">
+                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm text-sm">
+                  <i class="fas fa-gift"></i>
+                </div>
+                <div class="text-xs min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="font-black text-slate-900">Recompensa al completar:</span>
+                    <span class="text-emerald-700 font-black text-[11px] shrink-0">${current}/${target} sellos</span>
+                  </div>
+                  <p class="text-slate-600 font-bold mt-0.5 text-xs truncate">"${cardData.reward_description}"</p>
+                  <p class="text-slate-400 text-[11px] mt-0.5">Te faltan <strong>${target - current} sellos</strong> para ganar este beneficio.</p>
+                </div>
+              </div>
+            `}
+
+            <!-- Ranuras de Sellos -->
+            <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+              <div class="flex items-center justify-between text-xs font-bold text-slate-600">
+                <span>Tus Sellos Acumulados</span>
+                <span class="text-emerald-600 font-black">${current} de ${target} (${pct}%)</span>
+              </div>
+
+              <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 py-1">
+                ${slots}
+              </div>
+
+              <!-- Barra Progreso -->
+              <div class="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+            </div>
+
+            <!-- Código QR para Sellar -->
+            <div class="bg-gradient-to-b from-slate-900 to-slate-950 text-white p-4 sm:p-5 rounded-2xl text-center space-y-3 shadow-lg border border-slate-800">
+              <div>
+                <span class="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                  <i class="fas fa-qrcode mr-1"></i> QR para Sellar o Canjear
+                </span>
+                <p class="text-xs text-slate-300 mt-0.5">
+                  Presenta este código en el mostrador de <strong>${cardData.business_name}</strong>
+                </p>
+              </div>
+
+              <div class="bg-white p-3 rounded-2xl inline-block shadow-inner mx-auto">
+                <div id="card-modal-qr-display" class="w-[180px] h-[180px] flex items-center justify-center">
+                  <i class="fas fa-spinner fa-spin text-slate-400 text-2xl"></i>
+                </div>
+              </div>
+
+              <div class="text-[11px] text-slate-400 flex items-center justify-center gap-2 font-mono flex-wrap">
+                <span class="text-amber-400 font-bold"><i class="fas fa-credit-card text-[10px] mr-1"></i>${cardNumber}</span>
+                <span>•</span>
+                <span>${clientUser.name}</span>
+                ${clientUser.phone ? `<span>•</span><span>${clientUser.phone}</span>` : ''}
+              </div>
+            </div>
+
+            <!-- Acciones: Agendar Cita & Cerrar -->
+            <div class="flex items-center gap-2 pt-1">
+              <button id="modal-card-book-btn" class="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all">
+                <i class="fas fa-calendar-plus"></i>
+                <span>Agendar Cita en ${cardData.business_name}</span>
+              </button>
+            </div>
+
           </div>
-
         </div>
-      </div>
-    `;
+      `;
 
-    setTimeout(() => {
-      this.renderWalletQrElement(document.getElementById('card-modal-qr-display'), qrPayload, 180);
-    }, 50);
+      setTimeout(() => {
+        this.renderWalletQrElement(document.getElementById('card-modal-qr-display'), qrPayload, 180);
+      }, 50);
 
-    // Cierre en botón X
-    document.getElementById('close-loyalty-detail-modal-btn')?.addEventListener('click', () => {
-      this.closeCurrentModal();
-    });
-
-    // Cierre al pulsar el fondo exterior oscuro
-    const overlay = modalContainer.querySelector('.fixed.inset-0');
-    overlay?.addEventListener('click', (e) => {
-      if (e.target === overlay) {
+      document.getElementById('close-loyalty-detail-modal-btn')?.addEventListener('click', () => {
         this.closeCurrentModal();
-      }
-    });
+      });
 
-    document.getElementById('modal-card-book-btn')?.addEventListener('click', () => {
-      this.closeCurrentModal();
-      if (card.business_id) {
-        this.navigateTo('business-detail', { businessId: card.business_id });
-      }
-    });
+      const overlay = modalContainer.querySelector('.fixed.inset-0');
+      overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          this.closeCurrentModal();
+        }
+      });
+
+      document.getElementById('modal-card-book-btn')?.addEventListener('click', () => {
+        this.closeCurrentModal();
+        if (cardData.business_id) {
+          this.navigateTo('business-detail', { businessId: cardData.business_id });
+        }
+      });
+    };
+
+    // Renderizado inmediato
+    renderModalContent(card);
+
+    // Consulta en vivo sin caché para garantizar sincronización perfecta de sellos
+    if (card.business_id && (clientUser.phone || clientUser.id)) {
+      storage.getClientLoyaltyWallet(clientUser.phone, clientUser.id).then(walletRes => {
+        if (walletRes && walletRes.success && Array.isArray(walletRes.cards)) {
+          const fresh = walletRes.cards.find(c => (c.card_id && c.card_id === card.card_id) || c.business_id === card.business_id);
+          if (fresh && (fresh.current_stamps !== card.current_stamps || fresh.target_stamps !== card.target_stamps)) {
+            renderModalContent(fresh);
+            if (this.currentView === 'client-wallet') {
+              const main = document.getElementById('main-content');
+              if (main) this.renderClientWalletView(main);
+            }
+          }
+        }
+      }).catch(err => console.warn('Aviso sincronizando tarjeta en vivo:', err));
+    }
   }
 
   // --- VISTA PRINCIPAL DE LA BILLETERA DEL CLIENTE ---
@@ -26575,7 +26629,11 @@ Esperamos atenderle pronto de nuevo.`;
               Toca tu tarjeta para abrir los sellos acumulados y tu código QR de cliente para sellar en el negocio.
             </p>
           </div>
-          <div>
+          <div class="flex items-center gap-2 flex-wrap justify-end">
+            <button id="btn-wallet-refresh-cards" class="px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer transition-all active:scale-95" title="Actualizar sellos">
+              <i class="fas fa-sync-alt text-slate-400"></i>
+              <span>Actualizar</span>
+            </button>
             <button id="btn-show-qr-fullscreen" class="px-4 py-2.5 bg-gradient-to-r from-slate-950 to-blue-950 hover:from-slate-900 hover:to-blue-900 text-white rounded-xl text-xs font-black flex items-center gap-2 shadow-md cursor-pointer transition-all">
               <i class="fas fa-qrcode text-amber-400"></i>
               <span>Mi Pase QR General</span>
@@ -26603,6 +26661,24 @@ Esperamos atenderle pronto de nuevo.`;
 
       </div>
     `;
+
+    // Botón de refresco manual
+    document.getElementById('btn-wallet-refresh-cards')?.addEventListener('click', () => {
+      const icon = document.querySelector('#btn-wallet-refresh-cards i');
+      if (icon) icon.classList.add('fa-spin');
+      this.renderClientWalletView(container);
+    });
+
+    // Sincronización automática si el usuario regresa de otra app o pestaña
+    if (!this._walletVisibilityListenerBound) {
+      this._walletVisibilityListenerBound = true;
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && this.currentView === 'client-wallet') {
+          const main = document.getElementById('main-content');
+          if (main) this.renderClientWalletView(main);
+        }
+      });
+    }
 
     // Generar código QR universal del cliente
     const cleanPhone = (clientUser.phone || '').toString().replace(/\s+/g, '');
@@ -27020,6 +27096,9 @@ Esperamos atenderle pronto de nuevo.`;
                       <button class="quick-stamp-btn px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer flex items-center gap-1 transition-all" data-card-phone="${c.client_phone}" data-card-name="${c.client_name || ''}">
                         <i class="fas fa-plus"></i> Sello
                       </button>
+                      <button class="quick-remove-stamp-btn px-2 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 rounded-lg text-xs font-bold shadow-2xs cursor-pointer flex items-center gap-1 transition-all" data-card-id="${c.id}" data-card-phone="${c.client_phone}" data-card-name="${c.client_name || ''}" data-stamps="${c.current_stamps || 0}" title="Restar 1 sello en caso de error">
+                        <i class="fas fa-minus"></i> Sello
+                      </button>
                       ${isCompleted ? `
                         <button class="quick-redeem-btn px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-lg text-xs font-black shadow-2xs cursor-pointer flex items-center gap-1 transition-all" data-card-id="${c.id}" data-card-name="${c.client_name || ''}">
                           <i class="fas fa-gift"></i> Canjear
@@ -27050,6 +27129,34 @@ Esperamos atenderle pronto de nuevo.`;
             this.setupLoyaltyTabEvents(currentBiz);
           } else {
             this.showToast(res?.error || 'Error al estampar.', 'error');
+          }
+        });
+      });
+
+      document.querySelectorAll('.quick-remove-stamp-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const cardId = btn.getAttribute('data-card-id');
+          const phone = btn.getAttribute('data-card-phone');
+          const name = btn.getAttribute('data-card-name') || 'el cliente';
+          const stamps = parseInt(btn.getAttribute('data-stamps') || '0', 10);
+
+          if (stamps <= 0) {
+            this.showToast('Esta tarjeta ya tiene 0 sellos.', 'warning');
+            return;
+          }
+
+          if (confirm(`¿Restar 1 sello a ${name}? (Sellos actuales: ${stamps} ➔ ${stamps - 1})`)) {
+            const res = await storage.removeLoyaltyStamp({
+              businessId: currentBiz.id,
+              cardId,
+              clientPhone: phone
+            });
+            if (res && res.success) {
+              this.showToast(res.message || 'Sello restado con éxito.', 'success');
+              this.setupLoyaltyTabEvents(currentBiz);
+            } else {
+              this.showToast(res?.error || 'Error al restar sello.', 'error');
+            }
           }
         });
       });

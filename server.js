@@ -3820,6 +3820,12 @@ app.put('/api/businesses/:id/loyalty/program', async (req, res) => {
 // 3. Obtener todas las tarjetas de fidelización de un comercio (para panel del negocio)
 app.get('/api/businesses/:id/loyalty/cards', async (req, res) => {
   try {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
     const { id } = req.params;
     const cardsRes = await pool.query(`
       SELECT c.*, 
@@ -3841,6 +3847,12 @@ app.get('/api/businesses/:id/loyalty/cards', async (req, res) => {
 // 4. Preview / Búsqueda de tarjeta por QR o teléfono
 app.get('/api/loyalty/card-preview', async (req, res) => {
   try {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
     const { businessId, search } = req.query;
     if (!businessId || !search) {
       return res.status(400).json({ error: 'Faltan parámetros requeridos.' });
@@ -4099,9 +4111,130 @@ app.post('/api/loyalty/redeem', async (req, res) => {
   }
 });
 
+// 6b. Restar sello (-1) o corregir estampación
+app.post('/api/loyalty/remove-stamp', async (req, res) => {
+  try {
+    const { businessId, cardId, clientPhone, clientId, staffName } = req.body;
+    if (!businessId || (!cardId && !clientPhone && !clientId)) {
+      return res.status(400).json({ error: 'Comercio y datos de la tarjeta requeridos.' });
+    }
+
+    let card;
+    if (cardId) {
+      const cardRes = await pool.query('SELECT * FROM reservas_loyalty_cards WHERE id = $1 AND business_id = $2', [cardId, businessId]);
+      card = cardRes.rows[0];
+    } else {
+      const cleanPhone = clientPhone ? clientPhone.toString().replace(/\D/g, '') : '';
+      const phone8 = cleanPhone.length === 11 && cleanPhone.startsWith('506') ? cleanPhone.substring(3) : cleanPhone;
+      const cardRes = await pool.query(`
+        SELECT * FROM reservas_loyalty_cards 
+        WHERE business_id = $1 AND (
+          (client_phone IS NOT NULL AND (client_phone = $2 OR client_phone = $3))
+          OR (client_id IS NOT NULL AND client_id = $4)
+        ) LIMIT 1
+      `, [businessId, cleanPhone, phone8, clientId || null]);
+      card = cardRes.rows[0];
+    }
+
+    if (!card) {
+      return res.status(404).json({ error: 'Tarjeta no encontrada para este cliente.' });
+    }
+
+    const prevStamps = card.current_stamps || 0;
+    if (prevStamps <= 0) {
+      return res.status(400).json({ error: 'La tarjeta ya tiene 0 sellos.' });
+    }
+
+    const nextStamps = Math.max(0, prevStamps - 1);
+    const updateRes = await pool.query(`
+      UPDATE reservas_loyalty_cards
+      SET current_stamps = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [nextStamps, card.id]);
+
+    await pool.query(`
+      INSERT INTO reservas_loyalty_stamps_log (
+        id, card_id, business_id, action, stamps_change, staff_name, notes, created_at
+      ) VALUES ($1, $2, $3, 'remove_stamp', -1, $4, $5, NOW())
+    `, [
+      `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      card.id,
+      businessId,
+      staffName || '',
+      `Sello restado manualmente. Balance anterior: ${prevStamps}, nuevo balance: ${nextStamps}`
+    ]);
+
+    res.json({
+      success: true,
+      card: updateRes.rows[0],
+      message: `✓ Sello restado con éxito. Balance actual: ${nextStamps} sellos.`
+    });
+  } catch (err) {
+    console.error('Error al restar sello:', err);
+    res.status(500).json({ error: 'Error al restar sello de la tarjeta.' });
+  }
+});
+
+// 6c. Ajustar / Fijar cantidad exacta de sellos
+app.post('/api/loyalty/set-stamps', async (req, res) => {
+  try {
+    const { businessId, cardId, stamps, staffName } = req.body;
+    if (!businessId || !cardId || stamps === undefined) {
+      return res.status(400).json({ error: 'Comercio, tarjeta y cantidad de sellos requeridos.' });
+    }
+
+    const numStamps = Math.max(0, parseInt(stamps, 10) || 0);
+
+    const cardRes = await pool.query('SELECT * FROM reservas_loyalty_cards WHERE id = $1 AND business_id = $2', [cardId, businessId]);
+    if (cardRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Tarjeta no encontrada.' });
+    }
+    const card = cardRes.rows[0];
+    const prevStamps = card.current_stamps || 0;
+
+    const updateRes = await pool.query(`
+      UPDATE reservas_loyalty_cards
+      SET current_stamps = $1,
+          updated_at = NOW()
+      WHERE id = $2
+      RETURNING *
+    `, [numStamps, card.id]);
+
+    await pool.query(`
+      INSERT INTO reservas_loyalty_stamps_log (
+        id, card_id, business_id, action, stamps_change, staff_name, notes, created_at
+      ) VALUES ($1, $2, $3, 'set_stamps', $4, $5, $6, NOW())
+    `, [
+      `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      card.id,
+      businessId,
+      numStamps - prevStamps,
+      staffName || '',
+      `Sellos ajustados manualmente de ${prevStamps} a ${numStamps}`
+    ]);
+
+    res.json({
+      success: true,
+      card: updateRes.rows[0],
+      message: `✓ Tarjeta actualizada a ${numStamps} sellos.`
+    });
+  } catch (err) {
+    console.error('Error al ajustar sellos:', err);
+    res.status(500).json({ error: 'Error al ajustar sellos de la tarjeta.' });
+  }
+});
+
 // 7. Billetera Digital del Cliente (Wallet Multi-Negocio)
 app.get('/api/clients/loyalty/wallet', async (req, res) => {
   try {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Surrogate-Control': 'no-store'
+    });
     const { phone, clientId } = req.query;
     if (!phone && !clientId) {
       return res.status(400).json({ error: 'Teléfono o ID de cliente requerido.' });

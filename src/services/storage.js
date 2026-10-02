@@ -3366,7 +3366,7 @@ class StorageService {
 
   async getLoyaltyCards(businessId) {
     try {
-      const res = await this.fetchWithAuth(`/api/businesses/${businessId}/loyalty/cards`);
+      const res = await this.fetchWithAuth(`/api/businesses/${businessId}/loyalty/cards?_t=${Date.now()}`);
       return await res.json();
     } catch (e) {
       console.error('Error al obtener tarjetas del comercio:', e);
@@ -3376,7 +3376,7 @@ class StorageService {
 
   async previewLoyaltyCard(businessId, search) {
     try {
-      const res = await this.fetchWithAuth(`/api/loyalty/card-preview?businessId=${encodeURIComponent(businessId)}&search=${encodeURIComponent(search)}`);
+      const res = await this.fetchWithAuth(`/api/loyalty/card-preview?businessId=${encodeURIComponent(businessId)}&search=${encodeURIComponent(search)}&_t=${Date.now()}`);
       return await res.json();
     } catch (e) {
       console.error('Error en preview de tarjeta:', e);
@@ -3394,6 +3394,34 @@ class StorageService {
       return await res.json();
     } catch (e) {
       console.error('Error al estampar tarjeta:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async removeLoyaltyStamp(data) {
+    try {
+      const res = await this.fetchWithAuth('/api/loyalty/remove-stamp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Error al restar sello:', e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  async setLoyaltyCardStamps(data) {
+    try {
+      const res = await this.fetchWithAuth('/api/loyalty/set-stamps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    } catch (e) {
+      console.error('Error al ajustar sellos:', e);
       return { success: false, error: e.message };
     }
   }
@@ -3417,6 +3445,7 @@ class StorageService {
       const params = new URLSearchParams();
       if (phone) params.set('phone', phone);
       if (clientId) params.set('clientId', clientId);
+      params.set('_t', Date.now().toString()); // Cache buster inmediato
       const res = await this.fetchWithAuth(`/api/clients/loyalty/wallet?${params.toString()}`);
       return await res.json();
     } catch (e) {
