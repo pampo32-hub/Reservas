@@ -15220,7 +15220,7 @@ Esperamos atenderle pronto de nuevo.`;
 
     // Fallback: endpoint del servidor autenticado
     try {
-      const exportUrl = storage.getBusinessExportExcelUrl ? storage.getBusinessExportExcelUrl(currentBiz.id) : `${storage.apiBase}/businesses/${encodeURIComponent(currentBiz.id)}/export/appointments-excel?token=${encodeURIComponent(storage.getToken() || '')}&status=all`;
+      const exportUrl = storage.getBusinessExportExcelUrl ? storage.getBusinessExportExcelUrl(currentBiz.id) : `${storage.apiBase}/businesses/${encodeURIComponent(currentBiz.id)}/export/appointments-excel?token=${encodeURIComponent(storage.getAuthToken() || '')}&status=all`;
       window.open(exportUrl, '_blank');
       this.showToast('Descargando reporte Excel...', 'info');
     } catch (fbErr) {
@@ -21259,21 +21259,159 @@ Esperamos atenderle pronto de nuevo.`;
       });
 
       // Submit exportación Excel
-      document.getElementById('dev-export-excel-form')?.addEventListener('submit', (e) => {
+      document.getElementById('dev-export-excel-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const bizSelect = document.getElementById('dev-export-biz-select');
-        const statusSelect = document.getElementById('dev-export-status-select');
-        const startInput = document.getElementById('dev-export-start-date');
-        const endInput = document.getElementById('dev-export-end-date');
+        const submitBtn = document.getElementById('dev-btn-download-excel');
+        const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
 
-        const businessId = bizSelect ? bizSelect.value : 'all';
-        const status = statusSelect ? statusSelect.value : 'completed';
-        const startDate = startInput ? startInput.value : '';
-        const endDate = endInput ? endInput.value : '';
+        try {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-base"></i> <span>Generando Excel...</span>';
+          }
 
-        const downloadUrl = storage.getExportExcelUrl({ businessId, status, startDate, endDate });
-        this.showToast('Generando reporte Excel...', 'info');
-        window.open(downloadUrl, '_blank');
+          const bizSelect = document.getElementById('dev-export-biz-select');
+          const statusSelect = document.getElementById('dev-export-status-select');
+          const startInput = document.getElementById('dev-export-start-date');
+          const endInput = document.getElementById('dev-export-end-date');
+
+          const businessId = bizSelect ? bizSelect.value : 'all';
+          const status = statusSelect ? statusSelect.value : 'completed';
+          const startDate = startInput ? startInput.value : '';
+          const endDate = endInput ? endInput.value : '';
+
+          const token = storage.getAuthToken();
+          if (!token) {
+            this.showToast('Sesión de Developer no activa. Por favor vuelve a iniciar sesión.', 'error');
+            return;
+          }
+
+          const downloadUrl = storage.getExportExcelUrl({ businessId, status, startDate, endDate });
+          this.showToast('Generando reporte Excel estructurado...', 'info');
+
+          // Intento 1: Descarga directa y limpia vía Fetch Blob (evita bloqueadores de popups y maneja errores HTTP)
+          try {
+            const response = await fetch(downloadUrl, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (response.ok) {
+              const blob = await response.blob();
+              const blobUrl = window.URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = blobUrl;
+              const bizSlug = businessId && businessId !== 'all' ? `Comercio_${businessId}` : 'Todos_Comercios';
+              link.download = `Reporte_Clientes_ReservasCR_${bizSlug}_${new Date().toISOString().split('T')[0]}.xlsx`;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(blobUrl);
+
+              this.showToast('¡Archivo Excel (.xlsx) descargado exitosamente!', 'success');
+              return;
+            }
+
+            console.warn('Endpoint de servidor devolvió error HTTP:', response.status);
+          } catch (fetchErr) {
+            console.warn('Error en fetch de Excel al servidor, intentando fallback SheetJS local:', fetchErr);
+          }
+
+          // Intento 2 (Fallback): Generación con SheetJS local en el navegador
+          await this.ensureXlsxLoaded();
+          if (typeof window.XLSX !== 'undefined') {
+            let filteredApts = appointments || [];
+            if (businessId && businessId !== 'all') {
+              filteredApts = filteredApts.filter(a => a.businessId === businessId);
+            }
+            if (status && status !== 'all') {
+              filteredApts = filteredApts.filter(a => a.status === status);
+            }
+            if (startDate) {
+              filteredApts = filteredApts.filter(a => (a.date || '') >= startDate);
+            }
+            if (endDate) {
+              filteredApts = filteredApts.filter(a => (a.date || '') <= endDate);
+            }
+
+            const statusLabels = {
+              'completed': 'Completada / Atendida',
+              'confirmed': 'Confirmada',
+              'pending': 'Pendiente',
+              'cancelled': 'Cancelada'
+            };
+
+            const bizMap = new Map();
+            (businesses || []).forEach(b => bizMap.set(b.id, b));
+
+            const excelData = filteredApts.map((a, i) => {
+              const b = bizMap.get(a.businessId) || {};
+              return {
+                '#': i + 1,
+                'ID Reserva': a.id || '',
+                'Fecha Cita': a.date || '',
+                'Hora': a.time || '',
+                'Estado': statusLabels[a.status] || a.status || 'Completada',
+                'Comercio': b.name || a.businessName || 'Comercio',
+                'Categoría Comercio': b.category || b.categoryLabel || 'General',
+                'Ciudad / Cantón': b.city || 'Costa Rica',
+                'Teléfono Comercio': b.phone || '',
+                'Nombre Cliente': a.clientName || 'Cliente',
+                'Teléfono Cliente': a.clientPhone || '',
+                'WhatsApp Enlace': a.clientPhone ? this.getWhatsAppUrl(a.clientPhone) : '',
+                'Correo Cliente': a.clientEmail || 'Sin correo',
+                'Servicio': a.serviceName || 'Servicio General',
+                'Especialista': a.staffName || 'Sin asignar / General',
+                'Duración (min)': a.serviceDuration || 30,
+                'Monto (CRC ₡)': Number(a.servicePrice) || 0,
+                'Notas / Observaciones': a.notes || '',
+                'Fecha de Registro': a.createdAt ? new Date(a.createdAt).toLocaleString('es-CR') : (a.date || '')
+              };
+            });
+
+            const wb = window.XLSX.utils.book_new();
+            const ws = window.XLSX.utils.json_to_sheet(excelData);
+            ws['!cols'] = [
+              { wch: 5 },  // #
+              { wch: 14 }, // ID
+              { wch: 12 }, // Fecha
+              { wch: 10 }, // Hora
+              { wch: 22 }, // Estado
+              { wch: 28 }, // Comercio
+              { wch: 18 }, // Cat
+              { wch: 18 }, // Ciudad
+              { wch: 18 }, // Tel Biz
+              { wch: 26 }, // Cliente
+              { wch: 16 }, // Tel Cli
+              { wch: 28 }, // WhatsApp
+              { wch: 26 }, // Email Cli
+              { wch: 28 }, // Servicio
+              { wch: 24 }, // Especialista
+              { wch: 14 }, // Duración
+              { wch: 16 }, // Monto
+              { wch: 30 }, // Notas
+              { wch: 22 }  // Registro
+            ];
+            window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte de Citas y Clientes');
+            const bizSlug = businessId && businessId !== 'all' ? `Comercio_${businessId}` : 'Todos_Comercios';
+            const fileName = `Reporte_Clientes_ReservasCR_${bizSlug}_${new Date().toISOString().split('T')[0]}.xlsx`;
+            window.XLSX.writeFile(wb, fileName);
+            this.showToast('¡Archivo Excel (.xlsx) generado y descargado exitosamente!', 'success');
+            return;
+          }
+
+          // Intento 3: Apertura en ventana nueva como último recurso
+          window.open(downloadUrl, '_blank');
+        } catch (err) {
+          console.error('Error al exportar Excel estructurado:', err);
+          this.showToast('Error al exportar a Excel: ' + (err.message || 'Error inesperado'), 'error');
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+          }
+        }
       });
 
       // Botón: Activar Comercio por SINPE Móvil

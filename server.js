@@ -6425,6 +6425,7 @@ app.get('/api/developer/export/appointments-excel', async (req, res) => {
     let query = `
       SELECT a.id, a.date, a.time, a.status, a.client_name, a.client_phone, a.client_email,
              a.service_name, a.service_price, a.service_duration, a.notes, a.created_at,
+             a.staff_name,
              b.name as business_name, b.category as business_category, b.city as business_city, b.phone as business_phone
       FROM reservas_appointments a
       LEFT JOIN reservas_businesses b ON a.business_id = b.id
@@ -6482,6 +6483,7 @@ app.get('/api/developer/export/appointments-excel', async (req, res) => {
       'WhatsApp Enlace': r.client_phone && formatMetaPhone(r.client_phone) ? `https://wa.me/${formatMetaPhone(r.client_phone)}` : '',
       'Correo Cliente': r.client_email || 'Sin correo',
       'Servicio': r.service_name || 'Servicio General',
+      'Especialista': r.staff_name || 'Sin asignar / General',
       'Duración (min)': r.service_duration || 30,
       'Monto (CRC ₡)': parseFloat(r.service_price) || 0,
       'Notas / Observaciones': r.notes || '',
@@ -6507,6 +6509,7 @@ app.get('/api/developer/export/appointments-excel', async (req, res) => {
       { wch: 28 }, // WhatsApp link
       { wch: 26 }, // Email Cli
       { wch: 28 }, // Servicio
+      { wch: 24 }, // Especialista
       { wch: 14 }, // Duración
       { wch: 16 }, // Monto
       { wch: 30 }, // Notas

@@ -42,6 +42,10 @@ class StorageService {
     return token;
   }
 
+  getToken() {
+    return this.getAuthToken();
+  }
+
   setAuthToken(token, remember = true) {
     if (token) {
       if (remember) {
@@ -727,15 +731,6 @@ class StorageService {
       return data;
     }
     return { success: true, message: 'Limpieza simulada en modo local.', totalPurged: 0 };
-  }
-
-  getExportExcelUrl(params = {}) {
-    const query = new URLSearchParams();
-    if (params.businessId) query.append('businessId', params.businessId);
-    if (params.status) query.append('status', params.status);
-    if (params.startDate) query.append('startDate', params.startDate);
-    if (params.endDate) query.append('endDate', params.endDate);
-    return `${this.apiBase}/developer/export/appointments-excel?${query.toString()}`;
   }
 
   // --- CATEGORÍAS (INCLUYE CATEGORÍAS PERSONALIZADAS DINÁMICAS) ---
@@ -3015,7 +3010,7 @@ class StorageService {
     if (status) params.append('status', status);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    const token = this.getToken();
+    const token = this.getAuthToken();
     if (token) params.append('token', token);
     return `${this.apiBase}/developer/export/appointments-excel?${params.toString()}`;
   }
@@ -3025,7 +3020,7 @@ class StorageService {
     if (status) params.append('status', status);
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    const token = this.getToken();
+    const token = this.getAuthToken();
     if (token) params.append('token', token);
     return `${this.apiBase}/businesses/${encodeURIComponent(businessId)}/export/appointments-excel?${params.toString()}`;
   }
