@@ -754,12 +754,144 @@ button[id^="close-"][id$="-btn2"] * {
   -webkit-user-select: none;
 }
 
-.business-card:hover {
+.business-card:not(.tilt-card):hover {
   transform: translateY(-4px);
 }
 
-.business-card:active {
+.business-card:not(.tilt-card):active {
   transform: scale(0.985) translateY(-1px);
+}
+
+/* ==========================================================================
+   EFECTO 3D TILT CON REFLEJO RADIAL (SPOTLIGHT INTERACTIVO)
+   ========================================================================== */
+.tilt-card {
+  --tilt-rx: 0deg;
+  --tilt-ry: 0deg;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --spotlight-opacity: 0;
+  transform: perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+  will-change: transform;
+  position: relative;
+}
+
+/* Reflejo radial holográfico que sigue el cursor */
+.tilt-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    420px circle at var(--mouse-x) var(--mouse-y),
+    rgba(59, 130, 246, 0.22),
+    rgba(255, 255, 255, 0.12) 35%,
+    transparent 75%
+  );
+  opacity: var(--spotlight-opacity);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 8;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tilt-card:hover {
+    transform: perspective(1000px) translateY(-5px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+    box-shadow: 0 22px 42px -12px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.28) !important;
+  }
+}
+
+.tilt-card:active {
+  transform: perspective(1000px) scale(0.985) translateY(-1px) rotateX(0deg) rotateY(0deg) !important;
+}
+
+/* ==========================================================================
+   BORDER BEAM (HAZ DE LUZ PERIMETRAL EN LOOP CONTINUO)
+   ========================================================================== */
+.border-beam-container {
+  position: relative !important;
+}
+
+.border-beam-btn {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.border-beam-btn > *:not(.border-beam) {
+  position: relative;
+  z-index: 10;
+}
+
+.border-beam {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 6;
+  padding: 2px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  overflow: hidden;
+}
+
+.border-beam::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 320%;
+  height: 320%;
+  transform: translate(-50%, -50%) rotate(0deg);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(59, 130, 246, 0.4) 310deg,
+    rgba(96, 165, 250, 0.95) 340deg,
+    #ffffff 355deg,
+    transparent 360deg
+  );
+  animation: borderBeamSpin 3.5s linear infinite;
+  will-change: transform;
+}
+
+/* Variante Ámbar / Oro (Planes destacados / Pro) */
+.border-beam-gold .border-beam::after {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(217, 119, 6, 0.4) 310deg,
+    rgba(245, 158, 11, 0.95) 340deg,
+    #ffffff 355deg,
+    transparent 360deg
+  );
+}
+
+/* Variante Púrpura / Índigo (Plan Unlimited / Comercios Preferenciales) */
+.border-beam-purple .border-beam::after {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 280deg,
+    rgba(124, 58, 237, 0.4) 310deg,
+    rgba(168, 85, 247, 0.95) 340deg,
+    #ffffff 355deg,
+    transparent 360deg
+  );
+}
+
+@keyframes borderBeamSpin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 /* Custom Scrollbar in Dark Mode */

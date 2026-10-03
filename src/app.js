@@ -2074,7 +2074,8 @@ class App {
 
             ${!clientUser && !bizUser && !devUser ? `
               ${SHOW_15_DAYS_FREE_BUTTON ? `
-              <button id="mobile-top-prereg-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis del Plan Pro">
+              <button id="mobile-top-prereg-btn" class="border-beam-container border-beam-btn px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis del Plan Pro">
+                <span class="border-beam"></span>
                 <i class="fas fa-gift text-blue-200 text-xs"></i>
                 <span>15 Días Pro</span>
               </button>
@@ -2096,7 +2097,8 @@ class App {
             
             <!-- Botón Pre-Registro 15 Días Gratis del Plan Pro (Desktop) -->
             ${SHOW_15_DAYS_FREE_BUTTON ? `
-            <button id="nav-prereg-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis del Plan Pro a partir del lanzamiento">
+            <button id="nav-prereg-btn" class="border-beam-container border-beam-btn px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis del Plan Pro a partir del lanzamiento">
+              <span class="border-beam"></span>
               <i class="fas fa-gift text-blue-200 text-xs"></i>
               <span class="hidden 2xl:inline">15 Días Pro Gratis</span><span class="inline 2xl:hidden">15 Días Pro</span>
             </button>
@@ -2306,6 +2308,59 @@ class App {
         }
       });
     }
+  }
+
+  // --- EFECTO 3D TILT CON REFLEJO RADIAL (SPOTLIGHT INTERACTIVO) ---
+  initTiltCards(container = document) {
+    if (typeof window === 'undefined' || !container) return;
+    
+    // Solo activar en dispositivos con mouse o trackpad preciso (evitar en pantallas puramente táctiles)
+    const isTouchOnly = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (isTouchOnly) return;
+
+    const cards = container.querySelectorAll('.tilt-card:not([data-tilt-ready="true"])');
+    cards.forEach(card => {
+      card.setAttribute('data-tilt-ready', 'true');
+
+      let ticking = false;
+      let mouseX = 0;
+      let mouseY = 0;
+
+      const onMouseMove = (e) => {
+        const rect = card.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            // Inclinación máxima suave de 5.5 grados para un toque refinado y no exagerado
+            const rotateX = (((mouseY - centerY) / centerY) * -5.5).toFixed(2);
+            const rotateY = (((mouseX - centerX) / centerX) * 5.5).toFixed(2);
+            const pctX = ((mouseX / rect.width) * 100).toFixed(1);
+            const pctY = ((mouseY / rect.height) * 100).toFixed(1);
+
+            card.style.setProperty('--tilt-rx', `${rotateX}deg`);
+            card.style.setProperty('--tilt-ry', `${rotateY}deg`);
+            card.style.setProperty('--mouse-x', `${pctX}%`);
+            card.style.setProperty('--mouse-y', `${pctY}%`);
+            card.style.setProperty('--spotlight-opacity', '1');
+            ticking = false;
+          });
+          ticking = true;
+        }
+      };
+
+      const onMouseLeave = () => {
+        card.style.setProperty('--tilt-rx', '0deg');
+        card.style.setProperty('--tilt-ry', '0deg');
+        card.style.setProperty('--spotlight-opacity', '0');
+      };
+
+      card.addEventListener('mousemove', onMouseMove, { passive: true });
+      card.addEventListener('mouseleave', onMouseLeave, { passive: true });
+    });
   }
 
   // --- CIERRE DE SESIÓN DE CLIENTE CENTRALIZADO (INFALIBLE) ---
@@ -2645,13 +2700,14 @@ class App {
 
     return `
       <div 
-        class="business-card bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md' : isPro ? 'border-amber-300 shadow-sm' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative cursor-pointer"
+        class="business-card tilt-card bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md border-beam-container border-beam-purple' : isPro ? 'border-amber-300 shadow-sm border-beam-container border-beam-gold' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group relative cursor-pointer"
         data-business-id="${biz.id}"
         data-is-blocked="${isBlocked}"
         role="button"
         tabindex="0"
         title="${isBlocked ? 'Comercio suspendido' : `Ver servicios y reservar en ${this.escapeHtml(biz.name)}`}"
       >
+        ${!isBlocked && (isUnlimited || isPro) ? '<span class="border-beam"></span>' : ''}
         <!-- Image Header -->
         <div class="relative h-52 overflow-hidden bg-slate-100">
           <img src="${biz.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(biz.name)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isBlocked ? 'grayscale filter' : ''}" loading="lazy">
@@ -2914,8 +2970,9 @@ class App {
                   ${SHOW_15_DAYS_FREE_BUTTON ? `
                   <button 
                     id="banner-prereg-btn" 
-                    class="px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+                    class="border-beam-container border-beam-btn px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer overflow-hidden"
                   >
+                    <span class="border-beam"></span>
                     <i class="fas fa-gift text-blue-300 text-sm sm:text-base"></i>
                     <span>¡Pre-registrarme y Asegurar mis 15 Días Pro Gratis!</span>
                   </button>
@@ -2933,7 +2990,7 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
-                <div class="w-full max-w-[270px] sm:max-w-[290px] bg-slate-900/95 rounded-3xl p-4 sm:p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3">
+                <div class="tilt-card w-full max-w-[270px] sm:max-w-[290px] bg-slate-900/95 rounded-3xl p-4 sm:p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3">
                   <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
                       <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
@@ -3433,6 +3490,9 @@ class App {
           }
         });
       });
+
+      // Inicializar inclinación 3D y reflejo radial en las tarjetas
+      this.initTiltCards(catalogGridContainer || document);
 
       document.getElementById('reset-filter-btn')?.addEventListener('click', () => {
         this.searchQuery = '';
@@ -24809,7 +24869,8 @@ Esperamos atenderle pronto de nuevo.`;
                 const isUnlimited = plan.id === 'unlimited';
 
                 return `
-                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isPro ? 'border-blue-600 shadow-lg ring-1 ring-blue-500/30' : isFree ? 'border-slate-300 shadow-sm' : isUnlimited ? 'border-indigo-400 shadow-md ring-1 ring-indigo-500/20' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-blue-400">
+                  <div class="relative bg-white rounded-2xl p-4 border-2 ${isPro ? 'border-blue-600 shadow-lg ring-1 ring-blue-500/30 border-beam-container border-beam-gold' : isUnlimited ? 'border-indigo-400 shadow-md ring-1 ring-indigo-500/20 border-beam-container border-beam-purple' : isFree ? 'border-slate-300 shadow-sm' : 'border-slate-200 shadow-xs'} flex flex-col justify-between transition-all hover:border-blue-400 tilt-card overflow-hidden">
+                    ${isPro || isUnlimited ? '<span class="border-beam"></span>' : ''}
                     
                     ${plan.badge ? `
                       <div class="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -24936,6 +24997,9 @@ Esperamos atenderle pronto de nuevo.`;
         }
       });
     });
+
+    // Inicializar inclinación 3D y reflejo radial en las tarjetas de planes
+    this.initTiltCards(modalContainer);
   }
 
   // ==========================================
