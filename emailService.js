@@ -1037,9 +1037,9 @@ export async function sendBusinessEmailVerificationCode({ to, name = '', busines
 }
 
 /**
- * Envía correo oficial de bienvenida y confirmación de negocio registrado
+ * Envía correo oficial de confirmación de pre-registro para comercios
  */
-export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessName = '', provider = null }) {
+export async function sendBusinessPreRegistrationEmail({ to, ownerName = '', businessName = '', provider = null }) {
   if (!to || !to.includes('@')) {
     return { success: false, reason: 'invalid_recipient' };
   }
@@ -1047,7 +1047,7 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
   const safeOwner = String(ownerName || '').trim() || 'Emprendedor/a';
   const safeBiz = String(businessName || '').trim() || 'Tu Comercio';
   const verificationNote = provider
-    ? `Tu cuenta ha sido verificada y vinculada exitosamente mediante tu inicio de sesión seguro con <strong>${provider}</strong>.`
+    ? `Tu cuenta ha sido vinculada exitosamente mediante tu inicio de sesión seguro con <strong>${provider}</strong>.`
     : `Tu dirección de correo ha sido confirmada y verificada exitosamente con tu código de seguridad.`;
 
   const htmlContent = `
@@ -1056,8 +1056,14 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>¡Bienvenido/a a Reservas Costa Rica!</title>
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>¡Pre-registro confirmado en Reservas Costa Rica!</title>
   <style>
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: #f1f5f9;
@@ -1075,37 +1081,33 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
       border: 1px solid #e2e8f0;
     }
     .header {
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+      background-color: #0f172a !important;
       padding: 36px 28px;
       text-align: center;
-      color: #ffffff;
     }
-    .badge {
-      display: inline-block;
-      background: rgba(34, 197, 94, 0.2);
-      color: #86efac;
-      border: 1px solid rgba(134, 239, 172, 0.35);
-      font-size: 11px;
-      font-weight: 800;
-      padding: 5px 14px;
-      border-radius: 9999px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 12px;
+    /* Reglas para asegurar contraste en Modo Oscuro (Gmail, Apple Mail, Outlook) */
+    @media (prefers-color-scheme: dark) {
+      .header {
+        background-color: #0f172a !important;
+      }
+      .header-title, .header-title span {
+        color: #ffffff !important;
+      }
+      .header-subtitle, .header-subtitle span {
+        color: #e2e8f0 !important;
+      }
+      .header-badge, .header-badge span {
+        background-color: #1d4ed8 !important;
+        color: #ffffff !important;
+        border-color: #3b82f6 !important;
+      }
     }
-    .title {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      color: #ffffff;
-    }
-    .subtitle {
-      margin: 8px 0 0 0;
-      font-size: 13px;
-      color: #cbd5e1;
-      font-weight: 500;
-    }
+    [data-ogsc] .header-title { color: #ffffff !important; }
+    [data-ogsc] .header-subtitle { color: #e2e8f0 !important; }
+    [data-ogsb] .header { background-color: #0f172a !important; }
+    u + .body .header-title { color: #ffffff !important; }
+    u + .body .header-subtitle { color: #e2e8f0 !important; }
+
     .content {
       padding: 32px 28px;
     }
@@ -1119,12 +1121,19 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
       font-size: 14px;
       color: #334155;
       line-height: 1.6;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
+    }
+    .status-card {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 18px;
+      padding: 18px 20px;
+      margin: 20px 0;
     }
     .plan-card {
       background: #f8fafc;
       border: 1.5px solid #e2e8f0;
-      border-radius: 20px;
+      border-radius: 18px;
       padding: 20px;
       margin: 20px 0;
     }
@@ -1150,20 +1159,14 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
       flex-shrink: 0;
       margin-top: 1px;
     }
-    .btn-container {
-      text-align: center;
-      margin: 28px 0 16px 0;
-    }
-    .btn-panel {
-      display: inline-block;
-      background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-      color: #ffffff !important;
-      font-weight: 800;
-      font-size: 14px;
-      padding: 14px 32px;
-      border-radius: 16px;
-      text-decoration: none;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+    .help-card {
+      background: #f1f5f9;
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 24px 0 10px 0;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.6;
     }
     .footer {
       background: #f8fafc;
@@ -1177,60 +1180,108 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <div class="badge">Cuenta Verificada Oficial 🇨🇷</div>
-      <h1 class="title">¡Bienvenido a Reservas CR!</h1>
-      <p class="subtitle">Tu comercio está listo para recibir citas en línea</p>
-    </div>
+    <!-- Header compatible con Modo Claro y Modo Oscuro -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0f172a" style="background-color: #0f172a !important; width: 100%; border-collapse: collapse;">
+      <tr>
+        <td align="center" bgcolor="#0f172a" style="background-color: #0f172a !important; padding: 36px 24px 30px 24px; text-align: center;">
+          <!-- Badge -->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 16px auto;">
+            <tr>
+              <td align="center" bgcolor="#1d4ed8" style="background-color: #1d4ed8 !important; border: 1px solid #60a5fa; border-radius: 9999px; padding: 6px 16px;">
+                <span class="header-badge" style="color: #ffffff !important; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; display: inline-block;">
+                  🚀 ACCESO ANTICIPADO • PRE-LANZAMIENTO OFICIAL 🇨🇷
+                </span>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Título Principal -->
+          <h1 class="header-title" style="margin: 0; color: #ffffff !important; font-size: 23px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.3;">
+            <font color="#ffffff">
+              <span style="color: #ffffff !important;">¡Tu Pre-registro ha sido confirmado con éxito!</span>
+            </font>
+          </h1>
+
+          <!-- Subtítulo -->
+          <p class="header-subtitle" style="margin: 10px 0 0 0; color: #e2e8f0 !important; font-size: 14px; font-weight: 500; line-height: 1.4;">
+            <font color="#e2e8f0">
+              <span style="color: #e2e8f0 !important;">Hemos reservado el cupo y los beneficios de estreno para <strong style="color: #ffffff !important;">${safeBiz}</strong>.</span>
+            </font>
+          </p>
+        </td>
+      </tr>
+    </table>
 
     <div class="content">
       <div class="greeting">¡Hola, ${safeOwner}! 👋</div>
       <div class="message">
-        ¡Felicidades! Tu negocio <strong>${safeBiz}</strong> ha quedado registrado exitosamente en la plataforma oficial de <strong>Reservas Costa Rica</strong>.<br><br>
+        Te confirmamos que hemos recibido y registrado correctamente los datos de <strong>${safeBiz}</strong> en la etapa de prelanzamiento de <strong>Reservas Costa Rica</strong>.<br><br>
         ${verificationNote}
       </div>
 
+      <!-- Estado Actual de la Cuenta -->
+      <div class="status-card">
+        <div style="font-size: 13px; font-weight: 800; color: #92400e; margin-bottom: 8px;">
+          ⏳ ¿En qué estado se encuentra tu cuenta hoy?
+        </div>
+        <p style="font-size: 12px; color: #78350f; line-height: 1.5; margin: 0 0 10px 0;">
+          Queremos que tengas total tranquilidad y claridad:
+        </p>
+        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #78350f; line-height: 1.6;">
+          <li style="margin-bottom: 6px;"><strong>Tu cuenta está en fase de Pre-registro:</strong> La plataforma pública de reservas aún se encuentra en sus preparativos finales para el estreno oficial.</li>
+          <li><strong>Aún no está activa ni publicada:</strong> Tu perfil no está recibiendo citas de clientes todavía ni necesitas configurar servicios u horarios hoy mismo.</li>
+        </ul>
+      </div>
+
+      <!-- Beneficios Asegurados al Lanzamiento -->
       <div class="plan-card">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 1px; margin-bottom: 4px;">Tu Plan Actual</div>
-        <div style="font-size: 18px; font-weight: 900; color: #0f172a;">Plan Gratis de Por Vida 🇨🇷</div>
-        <div style="font-size: 12px; color: #64748b; margin-top: 4px; line-height: 1.6;">
-          ✓ Costo mensual: ₡0 / mes<br>
-          ✓ Hasta 25 reservas mensuales incluidas<br>
-          ✓ Catálogo digital y enlace directo para tus clientes
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #2563eb; letter-spacing: 1px; margin-bottom: 6px;">
+          🎁 Beneficios asegurados al día del lanzamiento
+        </div>
+        <div style="font-size: 16px; font-weight: 900; color: #0f172a; margin-bottom: 12px;">
+          15 Días de Prueba Gratis del Plan Profesional (Pro) ⭐
+        </div>
+        <div style="font-size: 13px; color: #334155; line-height: 1.6;">
+          <div style="margin-bottom: 8px;">
+            <strong>✓ Acceso total al Plan Pro:</strong> Recordatorios automáticos por WhatsApp para clientes, hasta 5 especialistas con horarios propios, punto de venta (Caja POS) y reportes financieros avanzados.
+          </div>
+          <div style="margin-bottom: 8px;">
+            <strong>✓ Cero compromisos y sin tarjeta bancaria:</strong> No requieres ingresar tarjeta de crédito ni se generará ningún cargo automático.
+          </div>
+          <div>
+            <strong>✓ Plan Gratis de por vida garantizado:</strong> Al terminar tus 15 días Pro de prueba, podrás elegir el plan que más te convenga o continuar con el <strong>Plan Gratis (₡0 / mes de por vida)</strong> sin pagar nada.
+          </div>
         </div>
       </div>
 
-      <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 20px 0 12px 0;">
-        🚀 Siguientes pasos recomendados:
+      <!-- Siguientes Pasos -->
+      <div style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 24px 0 14px 0;">
+        📅 ¿Cuáles son los siguientes pasos?
       </div>
 
       <div class="step-item">
         <div class="step-num">1</div>
-        <div><strong>Configura tus servicios:</strong> Agrega los tratamientos, cortes o servicios con su precio en colones y duración.</div>
+        <div><strong>Te avisaremos por correo y WhatsApp:</strong> Apenas se realice el lanzamiento oficial de la plataforma, te enviaremos una notificación con tu enlace directo de activación de cuenta.</div>
       </div>
       <div class="step-item">
         <div class="step-num">2</div>
-        <div><strong>Ajusta tus horarios:</strong> Define tus días y horas hábiles de atención en tu perfil de comercio.</div>
+        <div><strong>Acompañamiento en la configuración:</strong> Nuestro equipo te estará contactando para guiarte paso a paso (o ayudarte de manera asistida) a cargar tus fotos, servicios y horarios para que tu agenda quede impecable.</div>
       </div>
       <div class="step-item">
         <div class="step-num">3</div>
-        <div><strong>Comparte tu enlace:</strong> Pon el link de tu negocio en tu WhatsApp Business, biografía de Instagram o envíalo a tus clientes.</div>
-      </div>
-      <div class="step-item">
-        <div class="step-num">4</div>
-        <div><strong>Mejora cuando lo necesites:</strong> Si requieres citas ilimitadas o recordatorios por WhatsApp, puedes pasar a un plan de pago (Básico, Pro o Premium) desde tu panel con SINPE Móvil o tarjeta.</div>
+        <div><strong>¡A recibir citas!:</strong> Tu enlace personalizado quedará listo para compartirlo en tus redes sociales y WhatsApp para que tus clientes comiencen a agendar 24/7.</div>
       </div>
 
-      <div class="btn-container">
-        <a href="https://reservascr.app/panel-negocio" class="btn-panel">
-          Abrir Mi Panel de Negocio →
-        </a>
+      <!-- Ayuda y Soporte -->
+      <div class="help-card">
+        <strong>¿Tienes alguna duda o consulta mientras llega el estreno?</strong><br>
+        Puedes responder directamente a este correo o escribirnos a nuestro canal oficial de soporte en Costa Rica: <a href="mailto:soporte@reservascr.app" style="color: #2563eb; font-weight: 700; text-decoration: underline;">soporte@reservascr.app</a>.
       </div>
     </div>
 
     <div class="footer">
       <p style="margin: 0 0 4px 0; font-weight: 700; color: #475569;">Directorio & Sistema de Reservas de Costa Rica 🇨🇷</p>
-      <p style="margin: 0;">¿Necesitas ayuda para configurar tu negocio? Escríbenos directamente o responde a este correo.</p>
+      <p style="margin: 0;">¡Gracias por ser parte del lanzamiento de la nueva era de reservas en Costa Rica!</p>
     </div>
   </div>
 </body>
@@ -1238,16 +1289,23 @@ export async function sendBusinessWelcomeEmail({ to, ownerName = '', businessNam
   `;
 
   try {
-    console.log(`✉️ Enviando correo oficial de bienvenida a comercio (${to})...`);
+    console.log(`✉️ Enviando correo oficial de pre-registro a comercio (${to})...`);
     return await sendEmailCore({
       to,
-      subject: `🎉 ¡Bienvenido/a a Reservas Costa Rica! Tu negocio "${safeBiz}" está listo 🇨🇷`,
+      subject: `🎉 ¡Pre-registro confirmado! Tu cupo y 15 Días Gratis del Plan Pro están asegurados - Reservas CR 🇨🇷`,
       html: htmlContent
     });
   } catch (err) {
-    console.error('❌ Error enviando correo de bienvenida a comercio:', err.message);
+    console.error('❌ Error enviando correo de pre-registro a comercio:', err.message);
     return { success: false, error: err.message };
   }
+}
+
+/**
+ * Alias de compatibilidad: envía el correo de pre-registro/bienvenida a comercio
+ */
+export async function sendBusinessWelcomeEmail(params) {
+  return await sendBusinessPreRegistrationEmail(params);
 }
 
 /**

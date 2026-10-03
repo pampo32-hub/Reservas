@@ -1661,6 +1661,18 @@ app.post('/api/pre-registrations', async (req, res) => {
       console.error('⚠️ Error no bloqueante enviando correo de pre-registro al admin:', err.message);
     });
 
+    // Enviar correo oficial de confirmación de pre-registro al comercio (si proporcionó correo)
+    if (cleanEmail && cleanEmail.includes('@')) {
+      sendBusinessWelcomeEmail({
+        to: cleanEmail,
+        ownerName: cleanContact || cleanBizName,
+        businessName: cleanBizName,
+        provider: null
+      }).catch(err => {
+        console.error('⚠️ Error no bloqueante enviando correo de pre-registro al comercio:', err.message);
+      });
+    }
+
     // Enviar confirmación automática por WhatsApp al cliente (no bloqueante)
     if (cleanPhone) {
       sendPreRegistrationConfirmationWhatsApp({

@@ -24487,7 +24487,7 @@ Esperamos atenderle pronto de nuevo.`;
         if (modalContainer) modalContainer.innerHTML = '';
         this.renderHeader();
         this.navigateTo('owner-dashboard');
-        this.showToast('¡Cuenta y correo verificados con éxito! Bienvenido a Reservas Costa Rica.', 'success');
+        this.showToast('¡Pre-registro y correo verificados con éxito! Bienvenido a Reservas Costa Rica.', 'success');
       } catch (err) {
         this.setButtonLoading(verifyBtn, false);
         if (errBox) {
