@@ -3809,7 +3809,7 @@ class App {
                 <div class="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 font-black text-base flex items-center justify-center flex-shrink-0 border border-blue-500/30">1</div>
                 <div>
                   <h4 class="font-black text-white text-base">El cliente entra a tu propio enlace</h4>
-                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Colocas tu link <code class="text-blue-300 bg-slate-900 px-1.5 py-0.5 rounded">reservas.cr/tu-negocio</code> en tu biografía de Instagram o estados de WhatsApp.</p>
+                  <p class="text-xs sm:text-sm text-slate-400 mt-1">Colocas tu link <code class="text-blue-300 bg-slate-900 px-1.5 py-0.5 rounded">reservascr.app/tu-negocio</code> en tu biografía de Instagram o estados de WhatsApp.</p>
                 </div>
               </div>
 

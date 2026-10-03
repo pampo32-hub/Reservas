@@ -541,7 +541,7 @@ export async function initDatabase(customPool = null) {
 
 
     // Sembrar cuenta Master Developer si no existe
-    const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservas.cr';
+    const devEmail = process.env.DEVELOPER_EMAIL || 'admin@reservascr.app';
     const devPassword = process.env.DEVELOPER_PASSWORD || 'admin123';
     await client.query(`
       INSERT INTO reservas_developer_users (id, name, email, password, role)
