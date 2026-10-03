@@ -369,6 +369,58 @@ app.get([
   res.sendFile(htmlPath);
 });
 
+// Rutas directas para los Volantes Publicitarios Media Carta (HTML, PDF, PNG)
+app.get([
+  '/volante-pdf',
+  '/volantes-pdf',
+  '/Volante_Comercios_ReservasCR.pdf',
+  '/public/Volante_Comercios_ReservasCR.pdf'
+], (req, res) => {
+  const pdfPath = path.join(__dirname, 'public', 'Volante_Comercios_ReservasCR.pdf');
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'inline; filename="Volante_Comercios_ReservasCR.pdf"');
+  res.sendFile(pdfPath);
+});
+
+app.get([
+  '/volante',
+  '/volante-comercios',
+  '/volante-media-carta'
+], (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'volante_comercios.html');
+  res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+  res.sendFile(htmlPath);
+});
+
+app.get([
+  '/volantes-carta',
+  '/volantes-imprimir',
+  '/volante-2x'
+], (req, res) => {
+  const htmlPath = path.join(__dirname, 'public', 'volante_comercios_2x_carta.html');
+  res.setHeader('Content-Type', 'text/html; charset=UTF-8');
+  res.sendFile(htmlPath);
+});
+
+app.get([
+  '/volante-img',
+  '/volante.png',
+  '/volante-media-carta.png'
+], (req, res) => {
+  const imgPath = path.join(__dirname, 'public', 'volante_media_carta.png');
+  res.setHeader('Content-Type', 'image/png');
+  res.sendFile(imgPath);
+});
+
+app.get([
+  '/volantes-hoja-img',
+  '/hoja_completa_2_volantes.png'
+], (req, res) => {
+  const imgPath = path.join(__dirname, 'public', 'hoja_completa_2_volantes.png');
+  res.setHeader('Content-Type', 'image/png');
+  res.sendFile(imgPath);
+});
+
 // Rutas directas para Landing B2B, Directorio, Pruebas y Paneles (SPA HTML5 History)
 app.get([
   '/',
