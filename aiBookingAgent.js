@@ -46,6 +46,59 @@ export async function getAiAgentConfig(pool = null) {
 }
 
 /**
+ * Convierte hora HH:mm a formato amigable 12h (ej: 08:30 -> 8:30 AM)
+ */
+export function formatTime12h(timeStr) {
+  if (!timeStr) return '';
+  const [hStr, mStr] = timeStr.split(':');
+  let h = parseInt(hStr, 10);
+  const m = mStr || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+/**
+ * Convierte la configuración de horario en texto natural comprensible para el LLM
+ */
+export function formatBusinessSchedule(sch) {
+  if (!sch || typeof sch !== 'object') {
+    return 'Lunes a Sábado de 8:00 AM a 6:00 PM';
+  }
+
+  const dayNames = {
+    1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo', 0: 'Domingo'
+  };
+
+  const days = Array.isArray(sch.days) ? sch.days.map(Number) : [1, 2, 3, 4, 5, 6];
+  let daysText = 'Lunes a Sábado';
+
+  const isMonToFri = days.length === 5 && [1, 2, 3, 4, 5].every(d => days.includes(d));
+  const isMonToSat = days.length === 6 && [1, 2, 3, 4, 5, 6].every(d => days.includes(d));
+  const isAllWeek = days.length >= 7;
+
+  if (isMonToFri) {
+    daysText = 'Lunes a Viernes (Sábados y Domingos cerrado)';
+  } else if (isMonToSat) {
+    daysText = 'Lunes a Sábado (Domingos cerrado)';
+  } else if (isAllWeek) {
+    daysText = 'Todos los días (Lunes a Domingo)';
+  } else {
+    daysText = days.map(d => dayNames[d] || d).join(', ');
+  }
+
+  const openStr = formatTime12h(sch.openTime || '08:00');
+  const closeStr = formatTime12h(sch.closeTime || '18:00');
+  let text = `${daysText} de ${openStr} a ${closeStr}`;
+
+  if (sch.breakStart && sch.breakEnd) {
+    text += ` (Receso/Almuerzo de ${formatTime12h(sch.breakStart)} a ${formatTime12h(sch.breakEnd)}: no disponible para citas)`;
+  }
+
+  return text;
+}
+
+/**
  * Obtiene el contexto completo del negocio (información, servicios, especialistas y agenda próxima)
  */
 export async function getBusinessContext(pool, businessId) {
@@ -60,7 +113,10 @@ export async function getBusinessContext(pool, businessId) {
 
   try {
     const bizRes = await pool.query(`
-      SELECT id, name, phone, address, city, category, bio, sinpe_phone, working_hours, auto_confirm, deposit_percentage, require_deposit
+      SELECT 
+        id, name, phone, address, city, category, category_label, description, 
+        sinpe_phone, sinpe_holder_name, schedule, auto_confirm_appointments, 
+        require_deposit, deposit_percentage, deposit_instructions
       FROM reservas_businesses 
       WHERE id = $1 OR LOWER(name) = LOWER($1) OR slug = $1
       LIMIT 1
@@ -69,14 +125,20 @@ export async function getBusinessContext(pool, businessId) {
     const biz = bizRes.rows[0] || { name: 'Comercio', city: 'Costa Rica' };
     const realBizId = biz.id || businessId;
 
+    if (biz.schedule && typeof biz.schedule === 'string') {
+      try {
+        biz.schedule = JSON.parse(biz.schedule);
+      } catch (_) {}
+    }
+
     const servicesRes = await pool.query(`
-      SELECT id, name, price, duration, description, category
-      FROM reservas_services WHERE business_id = $1 AND is_active = true
+      SELECT id, name, price, duration, description
+      FROM reservas_services WHERE business_id = $1
       ORDER BY price ASC
     `, [realBizId]);
 
     const staffRes = await pool.query(`
-      SELECT id, name, specialty, phone
+      SELECT id, name, role_title as specialty, phone
       FROM reservas_staff WHERE business_id = $1 AND (is_active = true OR is_active IS NULL)
     `, [realBizId]);
 
@@ -248,9 +310,14 @@ export async function processCustomerMessageWithGemini(pool, {
     ? staff.map(st => `• ${st.name} (${st.specialty || 'Especialista'})`).join('\n')
     : 'Atención personalizada por el equipo del local.';
 
+  const horarioNegocio = formatBusinessSchedule(business.schedule);
+  const openTimeStr = formatTime12h(business.schedule?.openTime || '08:00');
+  const closeTimeStr = formatTime12h(business.schedule?.closeTime || '18:00');
+  const slotMin = business.schedule?.slotDuration || 30;
+
   const citasOcupadasListado = upcomingBookings.length > 0
     ? upcomingBookings.map(b => `[Ocupado: ${b.date} a las ${b.time} con ${b.staff_name || 'Especialista'}]`).join(', ')
-    : 'No hay citas registradas recientemente (todos los horarios habituales de 9:00 AM a 7:00 PM están libres).';
+    : 'No hay citas registradas recientemente (todos los horarios habituales de atención están libres).';
 
   const systemInstruction = `
 Eres "${config.agentName}", el asistente virtual oficial con Inteligencia Artificial de "${business.name}" a través de la plataforma Reservas CR.
@@ -260,7 +327,7 @@ INFORMACIÓN DEL LOCAL:
 - Establecimiento: ${business.name}
 - Ubicación / Dirección: ${business.address || ''}${business.address && business.city ? ', ' : ''}${business.city || 'Costa Rica'}
 - Teléfono del local: ${business.phone || ''}
-${business.sinpe_phone ? `- Teléfono SINPE Móvil: ${business.sinpe_phone}` : ''}
+${business.sinpe_phone ? `- Teléfono SINPE Móvil: ${business.sinpe_phone} (${business.sinpe_holder_name || 'A nombre del negocio'})` : ''}
 ${business.require_deposit ? `- Requiere adelanto SINPE: Sí (${business.deposit_percentage || 25}%)` : ''}
 
 FECHA ACTUAL EN COSTA RICA:
@@ -272,20 +339,24 @@ ${serviciosListado}
 ESPECIALISTAS DISPONIBLES:
 ${especialistasListado}
 
+HORARIO OFICIAL DE ATENCIÓN:
+${horarioNegocio}
+Intervalos de atención habituales: cada ${slotMin} minutos (ej: ${openTimeStr}, ...).
+
 TURNOS ACTUALMENTE OCUPADOS (NO DISPONIBLES):
 ${citasOcupadasListado}
 
-HORARIOS DISPONIBLES HABITUALES:
-Lunes a Sábado de 09:00 AM a 07:00 PM (turnos cada 30 o 45 minutos: 09:00 AM, 10:00 AM, 11:30 AM, 01:00 PM, 02:30 PM, 04:00 PM, 05:30 PM, etc.). No ofrezcas turnos que figuren como ocupados arriba.
-
-REGLAS DE ATENCIÓN:
-1. Respuestas amables, claras y concisas adecuadas para WhatsApp (máximo 2 a 4 párrafos cortos). Usa emojis con buen gusto.
-2. Todos los precios cítalos siempre en Colones costarricenses (₡).
-3. Si el cliente pregunta por un servicio o precio, explícaselo claramente y pregúntale amablemente qué día le gustaría visitarnos para agendarle.
-4. Si el cliente solicita una fecha (ej: "mañana", "el viernes a las 3"), ofrece de 2 a 3 opciones de horarios que estén libres.
-5. ACCIÓN DE AGENDAR: Cuando el cliente acepte y confirme explícitamente el servicio, la fecha y la hora, debes incluir AL FINAL de tu respuesta el siguiente bloque especial invisible (no lo pongas si aún están cotizando o indecisos):
+REGLAS DE ATENCIÓN Y HORARIOS (CRÍTICO):
+1. El negocio abre oficialmente a las ${openTimeStr} y cierra a las ${closeTimeStr}. NUNCA digas que abre a las 9:00 AM si el horario oficial indica ${openTimeStr}. Ofrece siempre turnos dentro de su jornada laboral real.
+2. Respeta los días laborales (${horarioNegocio}). Si un cliente pide cita en un día que el local está cerrado (por ejemplo fin de semana si solo abren de lunes a viernes o durante el receso de almuerzo), indícale amablemente los días y horas hábiles y ofrécele opciones disponibles.
+3. No ofrezcas turnos que figuren en la lista de turnos ocupados arriba.
+4. Respuestas amables, claras y concisas adecuadas para WhatsApp (máximo 2 a 4 párrafos cortos). Usa emojis con buen gusto.
+5. Todos los precios cítalos siempre en Colones costarricenses (₡).
+6. Si el cliente pregunta por un servicio o precio, explícaselo claramente y pregúntale amablemente qué día y hora le gustaría visitarnos para agendarle.
+7. Si el cliente solicita una fecha (ej: "lunes", "mañana"), ofrece de 2 a 3 opciones de horarios que estén dentro del horario oficial (${openTimeStr} a ${closeTimeStr}) y que estén libres.
+8. ACCIÓN DE AGENDAR: Cuando el cliente acepte y confirme explícitamente el servicio, la fecha y la hora, debes incluir AL FINAL de tu respuesta el siguiente bloque especial invisible (no lo pongas si aún están cotizando o indecisos):
 <!--RESERVA_CONFIRMADA:{"serviceName":"NOMBRE_DEL_SERVICIO","date":"YYYY-MM-DD","time":"HH:MM AM/PM","staffName":"NOMBRE_ESPECIALISTA"}-->
-6. Al confirmar, dile al cliente que su turno ha quedado apartado con éxito en la agenda del negocio y que recibirá los detalles con enlaces para Waze y calendario.
+9. Al confirmar, dile al cliente que su turno ha quedado apartado con éxito en la agenda del negocio y que recibirá los detalles con confirmación.
 `.trim();
 
   // Historial de mensajes
