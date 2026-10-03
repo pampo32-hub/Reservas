@@ -4884,6 +4884,11 @@ class App {
     const hasSocial = Boolean(igUrl || fbUrl || ttUrl || webUrl);
     const vitrinaItems = storage.getVitrinaItemsSync(biz.id) || [];
 
+    // Enlace directo al Asistente IA en WhatsApp con referencia del negocio
+    const centralAiPhone = '50670371302';
+    const aiInitialText = `Hola, me gustaría consultar servicios y agendar una cita en ${biz.name} [Ref: ${biz.id}]`;
+    const aiWhatsAppUrl = this.getWhatsAppUrl(centralAiPhone, aiInitialText);
+
     container.innerHTML = `
       <div class="animate-fade-in pb-20">
         <!-- Cover Banner Hero -->
@@ -4895,10 +4900,24 @@ class App {
             <button id="back-to-directory-btn" class="px-4 py-2 rounded-xl bg-white/90 hover:bg-white text-slate-800 text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-md transition-all cursor-pointer">
               <i class="fas fa-arrow-left"></i> Volver al Directorio
             </button>
-            <button id="share-biz-profile-btn" data-url="${window.location.origin}/#/${biz.slug || storage.slugify(biz.name || biz.id)}" class="px-4 py-2 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-md transition-all cursor-pointer">
-              <i class="fas fa-share-alt"></i>
-              <span class="hidden sm:inline">Compartir Enlace</span>
-            </button>
+            <div class="flex items-center gap-2">
+              <a 
+                href="${aiWhatsAppUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="px-3.5 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/30 backdrop-blur-md transition-all cursor-pointer border border-emerald-300/50"
+                title="Agendar cita por WhatsApp con Asistente IA"
+              >
+                <i class="fab fa-whatsapp text-base"></i>
+                <span class="hidden sm:inline">Agendar con Asistente IA</span>
+                <span class="inline sm:hidden">Asistente IA</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-950 animate-ping"></span>
+              </a>
+              <button id="share-biz-profile-btn" data-url="${window.location.origin}/#/${biz.slug || storage.slugify(biz.name || biz.id)}" class="px-4 py-2 rounded-xl bg-blue-600/90 hover:bg-blue-600 text-white text-sm font-bold flex items-center gap-2 shadow-lg backdrop-blur-md transition-all cursor-pointer">
+                <i class="fas fa-share-alt"></i>
+                <span class="hidden sm:inline">Compartir Enlace</span>
+              </button>
+            </div>
           </div>
 
           <div class="absolute bottom-6 left-4 sm:left-8 right-4 sm:right-8 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 text-white">
@@ -4959,6 +4978,24 @@ class App {
                   </a>
                 </span>
               </div>
+            </div>
+
+            <div class="mt-3 sm:mt-0 shrink-0">
+              <a 
+                href="${aiWhatsAppUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2.5 shadow-xl shadow-emerald-500/30 transition-all hover:scale-105 shrink-0 border border-emerald-300/60"
+                title="Agendar por WhatsApp con Asistente IA"
+              >
+                <div class="w-8 h-8 rounded-xl bg-slate-950/10 flex items-center justify-center text-lg text-slate-950">
+                  <i class="fab fa-whatsapp"></i>
+                </div>
+                <div class="text-left">
+                  <span class="block text-[9px] uppercase tracking-wider font-extrabold text-emerald-950 leading-tight">Asistente IA 24/7</span>
+                  <span class="block font-black text-xs sm:text-sm leading-tight text-slate-950">Agendar por WhatsApp</span>
+                </div>
+              </a>
             </div>
           </div>
         </div>
@@ -5142,6 +5179,44 @@ class App {
 
           <!-- Columna Derecha: Información de Contacto y Horarios (1 col) -->
           <div class="space-y-6">
+
+            <!-- TARJETA DESTACADA: ASISTENTE VIRTUAL IA DE WHATSAPP -->
+            <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950 text-white rounded-3xl border-2 border-emerald-500/50 p-6 shadow-lg relative overflow-hidden space-y-4">
+              <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-emerald-500/20 rounded-full blur-xl pointer-events-none"></div>
+
+              <div class="flex items-center justify-between">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[11px] font-bold border border-emerald-500/30">
+                  <i class="fas fa-robot text-xs"></i> Asistente IA WhatsApp
+                </div>
+                <span class="text-[10px] text-emerald-400 font-bold flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> En Línea 24/7
+                </span>
+              </div>
+
+              <div>
+                <h4 class="text-base font-black text-white flex items-center gap-2">
+                  <span>¿Deseas agendar con IA?</span>
+                </h4>
+                <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Consulta precios, tratamientos o aparta tu turno al instante chateando directamente con nuestro Asistente Inteligente en WhatsApp.
+                </p>
+              </div>
+
+              <a 
+                href="${aiWhatsAppUrl}" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-emerald-500/25 hover:scale-[1.02] cursor-pointer"
+              >
+                <i class="fab fa-whatsapp text-lg text-slate-950"></i>
+                <span>Chatear y Agendar por WhatsApp</span>
+              </a>
+
+              <div class="text-[10px] text-slate-400 flex items-center justify-center gap-1.5 pt-1">
+                <i class="fas fa-bolt text-amber-400"></i> Respuestas y confirmación automática sin esperas
+              </div>
+            </div>
+
             <!-- Contact Box -->
             <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
               <h3 class="font-bold text-base text-slate-900">Contacto Directo</h3>
@@ -5254,6 +5329,24 @@ class App {
             </div>
           </div>
         </div>
+
+        <!-- Botón Flotante de WhatsApp IA (Esquina inferior derecha) -->
+        <a 
+          href="${aiWhatsAppUrl}" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="fixed bottom-20 md:bottom-8 right-4 md:right-6 z-40 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white p-3.5 sm:px-4 sm:py-3 rounded-full sm:rounded-2xl shadow-2xl shadow-emerald-600/40 flex items-center gap-2.5 font-bold transition-all hover:scale-105 group border-2 border-emerald-400/40 backdrop-blur-md cursor-pointer"
+          title="Agendar cita por WhatsApp con Asistente IA"
+        >
+          <div class="relative flex items-center justify-center">
+            <i class="fab fa-whatsapp text-2xl sm:text-xl"></i>
+            <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full animate-ping"></span>
+          </div>
+          <div class="hidden sm:block text-left">
+            <span class="block text-[9px] text-emerald-200 uppercase tracking-wider font-extrabold leading-none">Asistente IA</span>
+            <span class="block text-xs font-black leading-tight">Agendar por WhatsApp</span>
+          </div>
+        </a>
       </div>
     `;
 
