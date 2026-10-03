@@ -18751,11 +18751,11 @@ Esperamos atenderle pronto de nuevo.`;
 
     document.getElementById('staff-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = document.getElementById('staff-name-input').value.trim();
-      const roleTitle = document.getElementById('staff-role-input').value.trim();
-      const phone = document.getElementById('staff-phone-input').value.trim();
+      const name = document.getElementById('staff-name-input')?.value?.trim() || '';
+      const roleTitle = document.getElementById('staff-role-input')?.value?.trim() || 'Especialista';
+      const phone = document.getElementById('staff-phone-input')?.value?.trim() || '';
       const avatarUrl = document.getElementById('staff-avatar-input')?.value?.trim() || '';
-      const email = document.getElementById('staff-email-input')?.value?.trim() || null;
+      const email = document.getElementById('staff-email-input')?.value?.trim() || '';
       const commissionType = document.getElementById('staff-commission-type')?.value || 'percentage';
       const commissionRate = parseFloat(document.getElementById('staff-commission-rate')?.value) || 0;
       const staffCode = document.getElementById('staff-code-input')?.value?.trim().toUpperCase() || null;

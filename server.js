@@ -3210,15 +3210,15 @@ app.put('/api/businesses/:id/staff/:staffId', async (req, res) => {
         is_active = COALESCE($13, is_active)
       WHERE id = $14 AND business_id = $15
     `, [
-      s.name ? s.name.trim() : null,
-      s.roleTitle ? s.roleTitle.trim() : null,
+      s.name ? String(s.name).trim() : null,
+      s.roleTitle ? String(s.roleTitle).trim() : null,
       cleanUpdateAvatar,
-      s.phone !== undefined ? s.phone.trim() : null,
-      s.email !== undefined ? s.email.trim() : null,
+      s.phone !== undefined ? (s.phone ? String(s.phone).trim() : '') : null,
+      s.email !== undefined ? (s.email ? String(s.email).trim() : '') : null,
       s.services ? JSON.stringify(s.services) : null,
       s.schedule ? JSON.stringify(s.schedule) : null,
       s.commissionType !== undefined ? s.commissionType : null,
-      s.commissionRate !== undefined ? parseFloat(s.commissionRate) : null,
+      s.commissionRate !== undefined && s.commissionRate !== null && !isNaN(parseFloat(s.commissionRate)) ? parseFloat(s.commissionRate) : null,
       pinCode !== undefined ? pinCode : null,
       staffCode !== undefined ? staffCode : null,
       mustChangePin !== undefined ? mustChangePin : null,
