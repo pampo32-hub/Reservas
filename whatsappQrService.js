@@ -315,8 +315,6 @@ export async function startWhatsAppQrConnection() {
             }
           }
 
-          // Pequeña pausa de 1 segundo para simular respuesta humana natural
-          await new Promise(r => setTimeout(r, 1000));
 
           if (aiResponse?.reply) {
             const sent = await sock.sendMessage(remoteJid, { text: aiResponse.reply });

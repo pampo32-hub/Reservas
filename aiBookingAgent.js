@@ -11,14 +11,21 @@ dotenv.config();
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-const CANDIDATE_MODELS = ['gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-3.8-flash'];
+const CANDIDATE_MODELS = [
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-flash-latest',
+  'gemini-3.5-flash',
+  'gemini-3.7-flash'
+];
 
 /**
  * Obtiene la configuración del motor de IA (DB primero, luego .env)
  */
 export async function getAiAgentConfig(pool = null) {
   let apiKey = process.env.GEMINI_API_KEY || '';
-  let model = process.env.AI_MODEL || 'gemini-3.7-flash';
+  let model = process.env.AI_MODEL || 'gemini-flash-lite-latest';
   let agentName = process.env.AI_AGENT_NAME || 'Nico';
   let isEnabled = process.env.AI_AGENT_ENABLED !== 'false';
 
@@ -37,9 +44,15 @@ export async function getAiAgentConfig(pool = null) {
     } catch (_) {}
   }
 
+  // Modelos como 3.8-flash tienen límites estrictos de cuota diaria (20 req) y 3.7-flash sufre de colas de espera
+  let selectedModel = model.trim();
+  if (!selectedModel || selectedModel === 'gemini-3.8-flash' || selectedModel === 'gemini-3.7-flash') {
+    selectedModel = 'gemini-flash-lite-latest';
+  }
+
   return {
     apiKey: apiKey.trim(),
-    model: model.trim() || 'gemini-3.7-flash',
+    model: selectedModel,
     agentName: agentName.trim() || 'Nico',
     isEnabled: Boolean(apiKey.trim() && isEnabled)
   };
@@ -392,14 +405,15 @@ REGLAS DE ATENCIÓN Y HORARIOS (CRÍTICO):
       const response = await fetch(requestUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(5000), // Si un modelo tarda más de 5s, saltar de inmediato al siguiente
         body: JSON.stringify({
           contents,
           systemInstruction: {
             parts: [{ text: systemInstruction }]
           },
           generationConfig: {
-            temperature: 0.35,
-            maxOutputTokens: 1000
+            temperature: 0.3,
+            maxOutputTokens: 350
           }
         })
       });
