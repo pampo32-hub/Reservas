@@ -6752,35 +6752,6 @@ class App {
             </h3>
             <p class="text-xs text-slate-500 mt-1">Código de prueba: <strong class="text-slate-800 font-mono">${(appointment.id || '').toUpperCase()}</strong></p>
 
-            <!-- Aviso Informativo de Prelanzamiento -->
-            <div class="mt-4 p-4 bg-gradient-to-br from-blue-50 via-indigo-50/80 to-emerald-50/70 rounded-2xl border-2 border-blue-200 text-left space-y-2.5 animate-fade-in shadow-2xs">
-              <div class="flex items-center gap-2 font-black text-blue-950 text-xs sm:text-sm">
-                <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs shadow-2xs">
-                  <i class="fas fa-bullhorn"></i>
-                </div>
-                <span>Aviso Informativo • Modo Prelanzamiento</span>
-              </div>
-              
-              <p class="text-xs text-slate-700 leading-relaxed font-medium">
-                ¡Has completado con éxito esta prueba de reserva en <strong>Reservas CR</strong>!
-              </p>
-
-              <div class="p-3.5 bg-white/95 rounded-xl border border-blue-100 text-slate-800 text-[11px] leading-relaxed space-y-2 shadow-2xs">
-                <div class="font-extrabold text-blue-900 flex items-center gap-1.5 text-xs">
-                  <i class="fab fa-whatsapp text-emerald-600 text-sm"></i>
-                  <i class="fas fa-envelope text-blue-600 text-sm"></i>
-                  <span>¿Qué sucede cuando la plataforma esté 100% activa?</span>
-                </div>
-                <p class="text-slate-600">
-                  Al confirmar una reserva con la página activa, <strong>en ese momento recibirías automáticamente un mensaje de texto por WhatsApp y un correo electrónico</strong> confirmando la cita, tu cita quedaría activada en tiempo real en la agenda del comercio y recibirías recordatorios previos a tu turno.
-                </p>
-                <div class="pt-1.5 border-t border-slate-100 flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold">
-                  <i class="fas fa-check text-emerald-600"></i>
-                  <span>No se ha realizado ningún cobro ni envío de mensajes reales durante esta prueba.</span>
-                </div>
-              </div>
-            </div>
-
             <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left text-xs space-y-2.5">
               <div class="flex justify-between">
                 <span class="text-slate-500">Establecimiento:</span>
