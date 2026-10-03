@@ -2700,7 +2700,7 @@ class App {
 
     return `
       <div 
-        class="business-card tilt-card bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md border-beam-container border-beam-purple' : isPro ? 'border-amber-300 shadow-sm border-beam-container border-beam-gold' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group relative cursor-pointer"
+        class="business-card bg-white rounded-3xl border ${isBlocked ? 'border-rose-300 ring-2 ring-rose-500/20 shadow-md bg-rose-50/10' : (isUnlimited ? 'border-purple-300 ring-2 ring-purple-500/10 shadow-md border-beam-container border-beam-purple' : isPro ? 'border-amber-300 shadow-sm border-beam-container border-beam-gold' : 'border-slate-200 shadow-xs')} overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col group hover:-translate-y-1 relative cursor-pointer"
         data-business-id="${biz.id}"
         data-is-blocked="${isBlocked}"
         role="button"
@@ -2990,7 +2990,7 @@ class App {
 
               <!-- Columna Ilustrativa / Preview Card de Expectativa -->
               <div class="lg:col-span-4 flex justify-center">
-                <div class="tilt-card w-full max-w-[270px] sm:max-w-[290px] bg-slate-900/95 rounded-3xl p-4 sm:p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3">
+                <div class="w-full max-w-[270px] sm:max-w-[290px] bg-slate-900/95 rounded-3xl p-4 sm:p-5 border border-blue-500/40 shadow-2xl backdrop-blur-md space-y-3">
                   <div class="flex items-center justify-between pb-2.5 border-b border-slate-800">
                     <div class="flex items-center gap-2.5">
                       <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-slate-900 to-blue-600 flex items-center justify-center text-white text-xs sm:text-sm font-black shadow-md shadow-blue-500/20 border border-blue-400/30">
@@ -3490,9 +3490,6 @@ class App {
           }
         });
       });
-
-      // Inicializar inclinación 3D y reflejo radial en las tarjetas
-      this.initTiltCards(catalogGridContainer || document);
 
       document.getElementById('reset-filter-btn')?.addEventListener('click', () => {
         this.searchQuery = '';
