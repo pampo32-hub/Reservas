@@ -21537,6 +21537,8 @@ Esperamos atenderle pronto de nuevo.`;
                     </div>
                   </div>
                 </div>
+              ` : ''}
+
               <!-- PESTAÑA: ASISTENTE VIRTUAL IA CON GOOGLE GEMINI -->
               ${this.activeDevTab === 'ai-agent' ? `
                 <div class="space-y-6 animate-fade-in">
@@ -21669,7 +21671,6 @@ Esperamos atenderle pronto de nuevo.`;
                           </span>
                           <h3 class="text-lg font-black text-slate-900">Depuración y Limpieza de Base de Datos</h3>
                         </div>
-                        <p class="text-xs text-slate-500 m
                         <p class="text-xs text-slate-500 mt-1">
                           Selecciona con las casillas de verificación únicamente los datos temporales o expirados que deseas depurar para optimizar el rendimiento.
                         </p>
