@@ -9,154 +9,183 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 async function main() {
-  console.log('🚀 Generando volantes publicitarios media carta de alto impacto...');
+  console.log('🚀 Generando volantes horizontales media carta para Reservas CR...');
 
-  // 1. Generar Código QR de alta resolución hacia la página de registro
+  // 1. Cargar el logo oficial de la página (reservas_cr_clean_badge_1.png) en base64
+  const logoPath = path.join(rootDir, 'src', 'assets', 'reservas_cr_clean_badge_1.png');
+  let logoBase64 = '';
+  if (fs.existsSync(logoPath)) {
+    const imgBuffer = fs.readFileSync(logoPath);
+    logoBase64 = `data:image/png;base64,${imgBuffer.toString('base64')}`;
+  }
+
+  // Copiar también el logo a public/ para acceso web directo
+  const publicLogoPath = path.join(rootDir, 'public', 'reservas_cr_clean_badge_1.png');
+  if (fs.existsSync(logoPath) && !fs.existsSync(publicLogoPath)) {
+    fs.copyFileSync(logoPath, publicLogoPath);
+  }
+
+  // 2. Generar Código QR de alta resolución hacia la página de registro
   const qrUrl = 'https://reservascr.app/unete';
   const qrDataUrl = await QRCode.toDataURL(qrUrl, {
     errorCorrectionLevel: 'H',
     margin: 1,
-    width: 650,
+    width: 700,
     color: {
       dark: '#0f172a',
       light: '#ffffff'
     }
   });
 
-  // Bandera oficial de Costa Rica en SVG puro de alta nitidez
+  // Bandera de Costa Rica en SVG nítido
   const crFlagSvg = `
-    <svg width="26" height="16" viewBox="0 0 5 3" style="border-radius: 3px; display: inline-block; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.25);">
+    <svg width="24" height="15" viewBox="0 0 5 3" style="border-radius: 2px; display: inline-block; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.25);">
       <rect width="5" height="3" fill="#002B7F"/>
       <rect width="5" height="2" y="0.5" fill="#FFFFFF"/>
       <rect width="5" height="1" y="1" fill="#CE1126"/>
     </svg>
   `;
 
-  // 2. Contenido interno de cada volante (diseñado para 1100px x 1700px a escala)
+  // 3. Contenido interno de CADA volante HORIZONTAL (Landscape 8.5in x 5.5in / 1700px x 1100px)
   const flyerInnerContent = `
-    <!-- HEADER -->
+    <!-- HEADER SUPERIOR -->
     <div class="f-header">
       <div class="f-brand">
-        <div class="f-logo-box">
-          <svg width="54" height="54" viewBox="0 0 512 512" fill="none">
-            <rect width="512" height="512" rx="120" fill="url(#brandGrad)"/>
-            <defs>
-              <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#2563eb"/>
-                <stop offset="100%" stop-color="#059669"/>
-              </linearGradient>
-              <linearGradient id="checkG" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#34d399"/>
-                <stop offset="100%" stop-color="#10b981"/>
-              </linearGradient>
-            </defs>
-            <path d="M256 75C160 75 82 153 82 249C82 342 232 433 247 442C252.5 445.5 259.5 445.5 265 442C280 433 430 342 430 249C430 153 352 75 256 75Z" fill="white" fill-opacity="0.22" stroke="white" stroke-width="26" stroke-linecap="round"/>
-            <circle cx="256" cy="240" r="105" fill="white" fill-opacity="0.1" stroke="white" stroke-width="16" stroke-dasharray="16 16"/>
-            <path d="M185 240L245 300L380 155" stroke="url(#checkG)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
+        <img src="${logoBase64 || '/src/assets/reservas_cr_clean_badge_1.png'}" alt="Reservas CR Logo" class="f-brand-logo" />
         <div>
           <div class="f-brand-title">RESERVAS CR ${crFlagSvg}</div>
-          <div class="f-brand-sub">Directorio Digital & Plataforma de Citas Oficial</div>
+          <div class="f-brand-sub">Directorio Digital & Sistema de Citas Oficial de Costa Rica</div>
         </div>
       </div>
-      <div class="f-pill-badge">PARA COMERCIOS 🇨🇷</div>
+      <div class="f-pill-badge">🇨🇷 EXCLUSIVO PARA COMERCIOS</div>
     </div>
 
-    <!-- TITULAR GANCHO -->
-    <div class="f-hook-section">
-      <div class="f-hook-eyebrow">⚡ AUTOMATIZA TU NEGOCIO EN COSTA RICA</div>
-      <h1 class="f-hook-title">
-        ¿Cansado de perder citas y contestar WhatsApp a deshoras?
-      </h1>
-      <p class="f-hook-desc">
-        Pon tu agenda en piloto automático. Permite que tus clientes vean tus servicios, precios y horarios en tiempo real para <strong>agendar solos 24/7</strong>.
-      </p>
+    <!-- CUERPO PRINCIPAL EN 2 COLUMNAS (62% IZQUIERDA / 38% DERECHA) -->
+    <div class="f-body-grid">
+      <!-- COLUMNA IZQUIERDA: BENEFICIOS, PROMO Y PLANES SIN PRECIOS -->
+      <div class="f-left-col">
+        <!-- GANCHO PRINCIPAL -->
+        <div class="f-hook-box">
+          <div class="f-hook-eyebrow">⚡ AUTOMATIZA TU NEGOCIO Y LIBERA TU TIEMPO</div>
+          <h1 class="f-hook-title">
+            ¿Cansado de perder citas y contestar WhatsApp a deshoras?
+          </h1>
+          <p class="f-hook-desc">
+            Pon tu agenda en piloto automático. Permite que tus clientes vean tus servicios y horarios libres para que <strong>agenden solos las 24 horas del día</strong>.
+          </p>
+        </div>
+
+        <!-- 4 BENEFICIOS CLAVE -->
+        <div class="f-features-grid">
+          <div class="f-feature-card">
+            <div class="f-f-icon">🔗</div>
+            <div class="f-f-info">
+              <strong>Tu Propio Link en la Bio (Instagram, TikTok & WhatsApp)</strong>
+              <p>Tus clientes entran, ven tus servicios, precios y horarios libres para reservar en 30 segundos sin esperas.</p>
+            </div>
+          </div>
+
+          <div class="f-feature-card">
+            <div class="f-f-icon">📲</div>
+            <div class="f-f-info">
+              <strong>Recordatorios y Confirmación por WhatsApp</strong>
+              <p>Reduce hasta un 80% las citas olvidadas y los clientes ausentes con avisos automáticos antes de cada cita.</p>
+            </div>
+          </div>
+
+          <div class="f-feature-card">
+            <div class="f-f-icon">💼</div>
+            <div class="f-f-info">
+              <strong>Caja POS, Comisiones y Control de Ingresos</strong>
+              <p>Cobro rápido con SINPE Móvil, <strong>cálculo automático de comisiones para tus colaboradores</strong> y reportes claros.</p>
+            </div>
+          </div>
+
+          <div class="f-feature-card">
+            <div class="f-f-icon">🎁</div>
+            <div class="f-f-info">
+              <strong>Fidelización con Sellos QR y Vitrina en el Directorio</strong>
+              <p>Premia a tus clientes frecuentes con tarjetas de sellos digitales y atrae clientes nuevos desde el directorio.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MEGA BANNER DE LANZAMIENTO -->
+        <div class="f-promo-banner">
+          <div class="f-promo-tag">🎉 BENEFICIO DE ESTRENO EXCLUSIVO</div>
+          <div class="f-promo-main">¡15 DÍAS GRATIS DEL PLAN PROFESIONAL!</div>
+          <div class="f-promo-sub">Sin contratos forzosos · 0% de comisiones por reserva · Sin ingresar tarjeta de crédito</div>
+        </div>
+
+        <!-- RESUMEN DE PLANES (SIN PRECIOS) -->
+        <div class="f-plans-box">
+          <div class="f-plans-header">
+            <span>PLANES A TU MEDIDA:</span>
+            <span class="f-plans-note">✓ Planes accesibles para todo tamaño de negocio · Cancela cuando quieras</span>
+          </div>
+          <div class="f-plans-grid">
+            <div class="f-plan-pill">
+              <span class="f-plan-name">Plan Básico</span>
+              <span class="f-plan-desc">1 Especialista · 150 citas/mes<br>Alertas WhatsApp</span>
+            </div>
+            <div class="f-plan-pill f-plan-pill-pop">
+              <span class="f-plan-pop-badge">MÁS POPULAR</span>
+              <span class="f-plan-name">Plan Profesional</span>
+              <span class="f-plan-desc">Hasta 5 Colaboradores · 300 citas/mes<br>Caja POS y Comisiones</span>
+            </div>
+            <div class="f-plan-pill">
+              <span class="f-plan-name">Plan Premium</span>
+              <span class="f-plan-desc">Colaboradores Ilimitados · 600 citas/mes<br>Destacado en Directorio</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: CONVERSIÓN Y QR GIGANTE -->
+      <div class="f-right-col">
+        <div class="f-cta-card">
+          <!-- BLOQUE SUPERIOR CTA -->
+          <div class="f-cta-block-top">
+            <div class="f-cta-badge">⚡ REGISTRO RÁPIDO DE COMERCIOS</div>
+            <h2 class="f-cta-title">¡Activa tu agenda en 2 minutos!</h2>
+            <p class="f-cta-desc">Apunta con la cámara de tu celular al código QR:</p>
+          </div>
+          
+          <!-- BLOQUE CENTRAL CON QR GIGANTE -->
+          <div class="f-cta-block-mid">
+            <div class="f-qr-container">
+              <img src="${qrDataUrl}" alt="Escanear QR Reservas CR" class="f-qr-image" />
+              <div class="f-qr-label">📱 ESCANÉAME CON TU CÁMARA</div>
+            </div>
+            <div class="f-steps-mini">
+              <span>1️⃣ Escanea el QR</span>
+              <span>2️⃣ Registra tu negocio</span>
+              <span>3️⃣ ¡Recibe citas 24/7!</span>
+            </div>
+          </div>
+
+          <!-- BLOQUE INFERIOR CON ENLACE Y SOPORTE -->
+          <div class="f-cta-block-bot">
+            <div class="f-url-box">
+              <span class="f-url-label">O entra directo en tu navegador a:</span>
+              <div class="f-url-btn">reservascr.app/unete</div>
+            </div>
+
+            <div class="f-support-line">
+              ${crFlagSvg} Soporte oficial en Costa Rica: <strong>soporte@reservascr.app</strong>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- 3 BENEFICIOS PRINCIPALES -->
-    <div class="f-features-grid">
-      <div class="f-feature-item">
-        <div class="f-f-icon-wrap">🔗</div>
-        <div class="f-f-content">
-          <strong>Tu Propio Link en la Bio (Instagram, TikTok & WhatsApp)</strong>
-          <p>Tus clientes entran, eligen servicio, horario y especialista en 30 segundos sin esperar respuesta.</p>
-        </div>
-      </div>
-
-      <div class="f-feature-item">
-        <div class="f-f-icon-wrap">📲</div>
-        <div class="f-f-content">
-          <strong>Recordatorios y Confirmación por WhatsApp</strong>
-          <p>Reduce hasta un 80% las citas olvidadas y los clientes ausentes con notificaciones automáticas.</p>
-        </div>
-      </div>
-
-      <div class="f-feature-item">
-        <div class="f-f-icon-wrap">💼</div>
-        <div class="f-f-content">
-          <strong>Caja POS, Comisiones & Sellos QR de Fidelización</strong>
-          <p>Cobro rápido con SINPE Móvil, cálculo automático de comisiones y tarjetas de sellos digitales.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- MEGA BANNER DE OFERTA -->
-    <div class="f-promo-banner">
-      <div class="f-promo-tag">🎉 BENEFICIO DE ESTRENO EXCLUSIVO</div>
-      <div class="f-promo-main">¡15 DÍAS GRATIS DEL PLAN PRO!</div>
-      <div class="f-promo-sub">Sin contratos forzosos · 0% de comisiones por reserva · Sin tarjeta requerida</div>
-    </div>
-
-    <!-- RESUMEN DE PLANES EN COLONES -->
-    <div class="f-plans-container">
-      <div class="f-plans-header">
-        <span>PLANES TRANSPARENTES (EN COLONES):</span>
-        <span class="f-plans-sub">✓ Sin costos ocultos · Cancela cuando quieras</span>
-      </div>
-      <div class="f-plans-grid">
-        <div class="f-plan-col">
-          <div class="f-p-name">Plan Básico</div>
-          <div class="f-p-price">₡5.200 <small>/mes</small></div>
-          <div class="f-p-detail">1 Especialista · 150 citas/mes<br>Recordatorios WhatsApp</div>
-        </div>
-        <div class="f-plan-col f-plan-highlight">
-          <div class="f-p-pop">MÁS POPULAR</div>
-          <div class="f-p-name">Plan Profesional</div>
-          <div class="f-p-price">₡9.400 <small>/mes</small></div>
-          <div class="f-p-detail">Hasta 5 Colab. · 300 citas/mes<br>Caja POS & Comisiones</div>
-        </div>
-        <div class="f-plan-col">
-          <div class="f-p-name">Plan Premium</div>
-          <div class="f-p-price">₡18.200 <small>/mes</small></div>
-          <div class="f-p-detail">Equipo Ilimitado · 600 citas<br>Destacado en Directorio</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- BLOQUE DE LLAMADO A LA ACCIÓN CON CÓDIGO QR -->
-    <div class="f-cta-box">
-      <div class="f-qr-wrap">
-        <img src="${qrDataUrl}" alt="Escanear QR Reservas CR" class="f-qr-img" />
-        <div class="f-qr-scan-badge">📱 ESCANEA CON TU CÁMARA</div>
-      </div>
-      <div class="f-cta-text">
-        <div class="f-cta-h1">¡Activa tu agenda en 2 minutos!</div>
-        <div class="f-cta-p">Apunta con la cámara de tu celular al código QR o entra directo desde tu navegador a:</div>
-        <div class="f-cta-url">reservascr.app/unete</div>
-        <div class="f-cta-contact">
-          ${crFlagSvg} Soporte oficial en Costa Rica: <strong>soporte@reservascr.app</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- FOOTER -->
+    <!-- FOOTER INFERIOR -->
     <div class="f-footer">
-      Ideal para Barberías, Salones de Belleza, Estéticas, Spas, Uñas, Tatuajes, Fisioterapia, Clínicas, Psicología y Talleres.
+      Ideal para Barberías, Salones de Belleza, Estéticas, Spas, Uñas, Tatuajes, Fisioterapia, Clínicas, Psicología, Veterinarias y Talleres.
     </div>
   `;
 
-  // Estilos CSS proporcionados y de alto contraste
+  // Estilos CSS optimizados para el formato HORIZONTAL (1700px x 1100px)
   const sharedStyles = `
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
@@ -177,15 +206,16 @@ async function main() {
       -webkit-font-smoothing: antialiased;
     }
 
-    .flyer-card {
+    /* CONTENEDOR DEL VOLANTE HORIZONTAL (LANDSCAPE 8.5in x 5.5in) */
+    .flyer-card-horizontal {
       background: #ffffff;
-      padding: 34px 34px 22px 34px;
+      padding: 24px 34px 16px 34px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       overflow: hidden;
       position: relative;
-      height: 100vh;
+      height: 100%;
     }
 
     /* HEADER */
@@ -200,51 +230,68 @@ async function main() {
     .f-brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
     }
 
-    .f-logo-box {
-      width: 54px;
-      height: 54px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .f-brand-logo {
+      width: 58px;
+      height: 58px;
+      object-fit: cover;
+      border-radius: 50%;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      border: 1px solid rgba(0,0,0,0.1);
     }
 
     .f-brand-title {
-      font-size: 26px;
+      font-size: 27px;
       font-weight: 900;
       letter-spacing: -0.5px;
       color: #0f172a;
       line-height: 1.1;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .f-brand-sub {
-      font-size: 11px;
+      font-size: 11.5px;
       color: #64748b;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.6px;
-      margin-top: 2px;
+      margin-top: 3px;
     }
 
     .f-pill-badge {
       background: #0f172a;
       color: #38bdf8;
-      font-size: 11.5px;
+      font-size: 13px;
       font-weight: 800;
-      padding: 6px 14px;
+      padding: 7px 16px;
       border-radius: 9999px;
       letter-spacing: 0.5px;
       white-space: nowrap;
     }
 
+    /* GRID CUERPO PRINCIPAL */
+    .f-body-grid {
+      display: grid;
+      grid-template-columns: 63% 37%;
+      gap: 24px;
+      align-items: stretch;
+      margin: 12px 0 10px 0;
+      flex: 1;
+    }
+
+    .f-left-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
     /* GANCHO */
-    .f-hook-section {
-      margin-top: 6px;
+    .f-hook-box {
+      margin-bottom: 4px;
     }
 
     .f-hook-eyebrow {
@@ -252,22 +299,22 @@ async function main() {
       font-weight: 900;
       color: #0284c7;
       letter-spacing: 1px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .f-hook-title {
-      font-size: 28px;
+      font-size: 29px;
       font-weight: 900;
-      line-height: 1.2;
+      line-height: 1.18;
       color: #0f172a;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       letter-spacing: -0.4px;
     }
 
     .f-hook-desc {
       font-size: 15px;
       color: #334155;
-      line-height: 1.38;
+      line-height: 1.36;
     }
 
     .f-hook-desc strong {
@@ -279,25 +326,25 @@ async function main() {
     .f-features-grid {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      margin: 8px 0;
+      gap: 7px;
+      margin: 7px 0;
     }
 
-    .f-feature-item {
+    .f-feature-card {
       display: flex;
       align-items: center;
       gap: 14px;
       background: #f8fafc;
       border: 1.5px solid #e2e8f0;
       border-radius: 12px;
-      padding: 10px 14px;
+      padding: 9px 14px;
     }
 
-    .f-f-icon-wrap {
-      font-size: 24px;
+    .f-f-icon {
+      font-size: 22px;
       line-height: 1;
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       background: #ffffff;
       border: 1px solid #cbd5e1;
       border-radius: 10px;
@@ -307,46 +354,52 @@ async function main() {
       flex-shrink: 0;
     }
 
-    .f-f-content strong {
+    .f-f-info strong {
       display: block;
-      font-size: 15px;
+      font-size: 14.5px;
       color: #0f172a;
       font-weight: 800;
       line-height: 1.2;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
     }
 
-    .f-f-content p {
+    .f-f-info p {
       font-size: 12.5px;
       color: #64748b;
-      line-height: 1.3;
+      line-height: 1.28;
+    }
+
+    .f-f-info p strong {
+      display: inline;
+      color: #047857;
+      font-weight: 800;
     }
 
     /* PROMO BANNER */
     .f-promo-banner {
       background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%);
       color: #ffffff;
-      padding: 14px 20px;
+      padding: 12px 18px;
       border-radius: 14px;
       text-align: center;
-      box-shadow: 0 6px 16px rgba(5, 150, 105, 0.22);
-      margin: 4px 0 10px 0;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.22);
+      margin: 4px 0 8px 0;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .f-promo-tag {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 900;
       letter-spacing: 1.2px;
       color: #a7f3d0;
       text-transform: uppercase;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .f-promo-main {
-      font-size: 26px;
+      font-size: 23px;
       font-weight: 900;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
       color: #ffffff;
       line-height: 1.15;
     }
@@ -355,27 +408,27 @@ async function main() {
       font-size: 12px;
       color: #d1fae5;
       font-weight: 600;
-      margin-top: 4px;
+      margin-top: 3px;
     }
 
-    /* PLANES */
-    .f-plans-container {
-      margin-bottom: 8px;
+    /* PLANES SIN PRECIOS */
+    .f-plans-box {
+      margin-top: 2px;
     }
 
     .f-plans-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 800;
       color: #475569;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 5px;
     }
 
-    .f-plans-sub {
+    .f-plans-note {
       color: #059669;
       font-weight: 800;
       text-transform: none;
@@ -383,178 +436,234 @@ async function main() {
 
     .f-plans-grid {
       display: grid;
-      grid-template-columns: 1fr 1.08fr 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr 1.18fr 1fr;
+      gap: 8px;
     }
 
-    .f-plan-col {
+    .f-plan-pill {
       border: 1.5px solid #cbd5e1;
-      border-radius: 12px;
-      padding: 10px 8px;
-      text-align: center;
+      border-radius: 10px;
+      padding: 8px 8px;
       background: #ffffff;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       position: relative;
     }
 
-    .f-plan-highlight {
-      border: 2.5px solid #2563eb;
+    .f-plan-pill-pop {
+      border: 2px solid #2563eb;
       background: #eff6ff;
-      transform: scale(1.02);
-      z-index: 1;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.14);
     }
 
-    .f-p-pop {
+    .f-plan-pop-badge {
       position: absolute;
-      top: -10px;
+      top: -9px;
       left: 50%;
       transform: translateX(-50%);
       background: #2563eb;
       color: #ffffff;
-      font-size: 9.5px;
+      font-size: 8.5px;
       font-weight: 900;
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 9999px;
       white-space: nowrap;
       letter-spacing: 0.5px;
     }
 
-    .f-p-name {
-      font-size: 13.5px;
-      font-weight: 800;
-      color: #0f172a;
-    }
-
-    .f-p-price {
-      font-size: 22px;
+    .f-plan-name {
+      font-size: 13px;
       font-weight: 900;
       color: #0f172a;
-      margin: 2px 0;
-      line-height: 1.1;
+      display: block;
+      margin-bottom: 2px;
     }
 
-    .f-p-price small {
-      font-size: 11px;
-      font-weight: 600;
+    .f-plan-desc {
+      font-size: 10px;
       color: #64748b;
-    }
-
-    .f-p-detail {
-      font-size: 10.5px;
-      color: #475569;
       line-height: 1.25;
-      margin-top: 2px;
+      display: block;
     }
 
-    /* CTA CON QR */
-    .f-cta-box {
+    /* COLUMNA DERECHA: CTA CON QR GIGANTE */
+    .f-right-col {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .f-cta-card {
       border: 2.5px solid #0f172a;
       background: #f8fafc;
-      border-radius: 14px;
-      padding: 14px 18px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 6px;
-    }
-
-    .f-qr-wrap {
-      flex-shrink: 0;
-      text-align: center;
+      border-radius: 18px;
+      padding: 24px 22px 20px 22px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: space-around;
+      text-align: center;
+      width: 100%;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.09);
+      position: relative;
     }
 
-    .f-qr-img {
-      width: 136px;
-      height: 136px;
-      border-radius: 10px;
-      border: 1.5px solid #cbd5e1;
-      display: block;
-      background: #ffffff;
-      padding: 4px;
+    .f-cta-block-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
     }
 
-    .f-qr-scan-badge {
-      font-size: 9.5px;
-      font-weight: 900;
-      color: #ffffff;
+    .f-cta-badge {
       background: #0f172a;
-      padding: 4px 8px;
-      border-radius: 6px;
-      margin-top: 5px;
-      letter-spacing: 0.4px;
-      white-space: nowrap;
+      color: #38bdf8;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
     }
 
-    .f-cta-text {
-      flex: 1;
-    }
-
-    .f-cta-h1 {
-      font-size: 19px;
+    .f-cta-title {
+      font-size: 21px;
       font-weight: 900;
       color: #0f172a;
       line-height: 1.2;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
-    .f-cta-p {
-      font-size: 12.5px;
+    .f-cta-desc {
+      font-size: 13.5px;
       color: #475569;
-      line-height: 1.35;
-      margin-bottom: 8px;
+      line-height: 1.3;
     }
 
-    .f-cta-url {
-      display: inline-block;
-      background: #2563eb;
-      color: #ffffff;
-      font-size: 17px;
-      font-weight: 900;
-      padding: 6px 18px;
-      border-radius: 8px;
-      letter-spacing: 0.3px;
-      margin-bottom: 6px;
-      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
-    }
-
-    .f-cta-contact {
-      font-size: 11.5px;
-      color: #64748b;
+    .f-cta-block-mid {
       display: flex;
+      flex-direction: column;
       align-items: center;
+      width: 100%;
+      margin: 4px 0;
+    }
+
+    .f-qr-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .f-qr-image {
+      width: 235px;
+      height: 235px;
+      border-radius: 14px;
+      border: 2px solid #cbd5e1;
+      display: block;
+      background: #ffffff;
+      padding: 6px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    }
+
+    .f-qr-label {
+      font-size: 11px;
+      font-weight: 900;
+      color: #ffffff;
+      background: #0f172a;
+      padding: 5px 14px;
+      border-radius: 6px;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .f-steps-mini {
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+      font-size: 10px;
+      font-weight: 800;
+      color: #334155;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 8px;
+      margin-top: 4px;
+    }
+
+    .f-cta-block-bot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
       gap: 6px;
     }
 
-    .f-cta-contact strong {
+    .f-url-box {
+      width: 100%;
+    }
+
+    .f-url-label {
+      font-size: 11px;
+      color: #64748b;
+      display: block;
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+
+    .f-url-btn {
+      display: block;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 18px;
+      font-weight: 900;
+      padding: 8px 18px;
+      border-radius: 10px;
+      letter-spacing: 0.3px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+    }
+
+    .f-support-line {
+      font-size: 11.5px;
+      color: #64748b;
+      line-height: 1.3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .f-support-line strong {
       color: #0f172a;
     }
 
     /* FOOTER */
     .f-footer {
-      font-size: 11px;
+      font-size: 11.5px;
       color: #94a3b8;
       text-align: center;
       font-weight: 700;
-      padding-top: 4px;
+      padding-top: 8px;
+      border-top: 1px solid #f1f5f9;
       line-height: 1.3;
     }
   `;
 
-  // 3. Documento HTML para la Hoja Carta Completa (2 volantes lado a lado con canal de corte limpio)
+  // 4. Documento HTML para la Hoja Carta Completa (Vertical: 8.5in x 11in)
+  // con 2 volantes horizontales apilados (arriba y abajo) y corte horizontal
   const getSheetHtml = (withFloatingBar = false) => `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Volantes Media Carta - Reservas CR (2 por Hoja Carta)</title>
+  <title>Volantes Horizontales Media Carta - Reservas CR (2 por Hoja Carta)</title>
   <style>
     ${sharedStyles}
 
     @page {
-      size: 11in 8.5in;
+      size: 8.5in 11in;
       margin: 0;
     }
 
@@ -565,62 +674,54 @@ async function main() {
       background: #ffffff;
     }
 
-    .sheet-wrapper {
+    .sheet-wrapper-vertical {
       width: 100vw;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       position: relative;
       background: #ffffff;
     }
 
-    .flyer-half {
-      width: calc(50% - 10px);
-      height: 100vh;
+    .flyer-horizontal-half {
+      width: 100vw;
+      height: calc(50% - 10px);
     }
 
-    /* CANAL Y LÍNEA DE CORTE CENTRAL */
-    .cut-gutter {
-      width: 20px;
-      height: 100vh;
+    /* CANAL Y LÍNEA DE CORTE HORIZONTAL AL CENTRO */
+    .cut-gutter-horizontal {
+      height: 20px;
+      width: 100vw;
       display: flex;
-      flex-direction: column;
       justify-content: space-between;
       align-items: center;
       position: relative;
       background: #fafafa;
+      padding: 0 30px;
     }
 
-    .cut-line-dash {
+    .cut-line-dash-h {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 50%;
-      width: 0;
-      border-left: 2px dashed #94a3b8;
-      transform: translateX(-1px);
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 0;
+      border-top: 2px dashed #94a3b8;
+      transform: translateY(-1px);
     }
 
-    .cut-label {
+    .cut-label-h {
       position: relative;
       z-index: 5;
       background: #ffffff;
       border: 1px solid #94a3b8;
       color: #475569;
-      font-size: 8.5px;
+      font-size: 9px;
       font-weight: 800;
-      padding: 3px 6px;
+      padding: 2px 10px;
       border-radius: 4px;
       white-space: nowrap;
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      writing-mode: vertical-rl;
-      text-orientation: mixed;
-      letter-spacing: 1px;
-    }
-
-    .cut-label-top, .cut-label-bottom {
-      writing-mode: horizontal-tb;
-      font-size: 9px;
-      padding: 4px 6px;
     }
 
     /* BARRA FLOTANTE DE IMPRESIÓN */
@@ -682,29 +783,29 @@ async function main() {
   ${withFloatingBar ? `
   <!-- BARRA FLOTANTE NO IMPRIMIBLE -->
   <div class="print-floating-bar no-print">
-    <span>🖨️ <strong>Hoja Carta Lista:</strong> 2 volantes con guía de corte</span>
+    <span>🖨️ <strong>Hoja Carta Lista:</strong> 2 volantes horizontales con guía de corte</span>
     <button onclick="window.print()" class="btn-act btn-emerald">🖨️ Imprimir Ahora</button>
     <a href="/Volante_Comercios_ReservasCR.pdf" class="btn-act" target="_blank">⬇️ Descargar PDF</a>
-    <a href="/volante-img" class="btn-act" target="_blank">🖼️ Ver Imagen</a>
+    <a href="/volante-img" class="btn-act" target="_blank">🖼️ Ver Imagen Individual</a>
   </div>
   ` : ''}
 
-  <div class="sheet-wrapper">
-    <!-- VOLANTE IZQUIERDO -->
-    <div class="flyer-card flyer-half">
+  <div class="sheet-wrapper-vertical">
+    <!-- VOLANTE SUPERIOR (HORIZONTAL) -->
+    <div class="flyer-card-horizontal flyer-horizontal-half">
       ${flyerInnerContent}
     </div>
 
-    <!-- CANAL DE CORTE CENTRAL -->
-    <div class="cut-gutter">
-      <div class="cut-line-dash"></div>
-      <div class="cut-label cut-label-top" style="margin-top: 10px;">✂ CORTE</div>
-      <div class="cut-label">✂ GUÍA DE CORTE (MEDIA CARTA)</div>
-      <div class="cut-label cut-label-bottom" style="margin-bottom: 10px;">✂ CORTE</div>
+    <!-- CANAL DE CORTE HORIZONTAL CENTRAL -->
+    <div class="cut-gutter-horizontal">
+      <div class="cut-line-dash-h"></div>
+      <div class="cut-label-h">✂ CORTE</div>
+      <div class="cut-label-h">✂ GUÍA DE CORTE (MEDIA CARTA HORIZONTAL) ✂</div>
+      <div class="cut-label-h">✂ CORTE</div>
     </div>
 
-    <!-- VOLANTE DERECHO -->
-    <div class="flyer-card flyer-half">
+    <!-- VOLANTE INFERIOR (HORIZONTAL) -->
+    <div class="flyer-card-horizontal flyer-horizontal-half">
       ${flyerInnerContent}
     </div>
   </div>
@@ -712,18 +813,18 @@ async function main() {
 </html>
   `;
 
-  // 4. Documento HTML para un solo volante individual (Media Carta: 5.5in x 8.5in)
+  // 5. Documento HTML para un solo volante individual (Horizontal: 8.5in ancho x 5.5in alto)
   const singleFlyerHtml = `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Volante Media Carta - Reservas CR</title>
+  <title>Volante Media Carta Horizontal - Reservas CR</title>
   <style>
     ${sharedStyles}
 
     @page {
-      size: 5.5in 8.5in;
+      size: 8.5in 5.5in;
       margin: 0;
     }
 
@@ -734,21 +835,21 @@ async function main() {
       background: #ffffff;
     }
 
-    .single-flyer-wrap {
+    .single-flyer-wrap-h {
       width: 100vw;
       height: 100vh;
     }
   </style>
 </head>
 <body>
-  <div class="flyer-card single-flyer-wrap">
+  <div class="flyer-card-horizontal single-flyer-wrap-h">
     ${flyerInnerContent}
   </div>
 </body>
 </html>
   `;
 
-  // Guardar archivos HTML en public
+  // Guardar archivos HTML en public/
   const sheet2UpPath = path.join(rootDir, 'public', 'volante_comercios_2x_carta.html');
   const sheet2UpCleanPath = path.join(rootDir, 'public', 'volante_comercios_2x_clean.html');
   const singleFlyerPath = path.join(rootDir, 'public', 'volante_comercios.html');
@@ -758,35 +859,35 @@ async function main() {
   fs.writeFileSync(singleFlyerPath, singleFlyerHtml, 'utf8');
 
   console.log('✅ Archivos HTML guardados en public/:');
-  console.log('   - public/volante_comercios_2x_carta.html (Hoja carta interactiva con 2 volantes y botones)');
-  console.log('   - public/volante_comercios.html (Volante individual media carta)');
+  console.log('   - public/volante_comercios_2x_carta.html (Hoja carta vertical con 2 volantes horizontales apilados)');
+  console.log('   - public/volante_comercios.html (Volante individual horizontal media carta)');
 
-  // 5. Renderizar imágenes con Microsoft Edge headless
+  // 6. Renderizar imágenes con Microsoft Edge headless
   const msedgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
   if (fs.existsSync(msedgePath)) {
     console.log('🖼️ Renderizando imágenes ultra-nítidas y PDF con Microsoft Edge...');
 
-    // A) Hoja completa Carta (2 volantes lado a lado sin barras): 2200 x 1700 px (Relación 11 : 8.5)
+    // A) Hoja completa Carta Vertical (2 volantes horizontales apilados): 1700 x 2200 px (Relación 8.5 : 11)
     const outSheetPng = path.join(rootDir, 'public', 'hoja_completa_2_volantes.png');
-    const cmdSheet = `"${msedgePath}" --headless --disable-gpu --screenshot="${outSheetPng}" --window-size=2200,1700 --hide-scrollbars "file:///${sheet2UpCleanPath.replace(/\\\\/g, '/')}"`;
+    const cmdSheet = `"${msedgePath}" --headless --disable-gpu --screenshot="${outSheetPng}" --window-size=1700,2200 --hide-scrollbars "file:///${sheet2UpCleanPath.replace(/\\\\/g, '/')}"`;
     try {
       execSync(cmdSheet);
-      console.log('✅ Imagen hoja completa generada:', outSheetPng);
+      console.log('✅ Imagen hoja completa generada (1700x2200):', outSheetPng);
     } catch (e) {
       console.warn('⚠️ Error al generar imagen de hoja completa:', e.message);
     }
 
-    // B) Volante individual Media Carta: 1100 x 1700 px (Relación 5.5 : 8.5)
+    // B) Volante individual Media Carta Horizontal: 1700 x 1100 px (Relación 8.5 : 5.5)
     const outSinglePng = path.join(rootDir, 'public', 'volante_media_carta.png');
-    const cmdSingle = `"${msedgePath}" --headless --disable-gpu --screenshot="${outSinglePng}" --window-size=1100,1700 --hide-scrollbars "file:///${singleFlyerPath.replace(/\\\\/g, '/')}"`;
+    const cmdSingle = `"${msedgePath}" --headless --disable-gpu --screenshot="${outSinglePng}" --window-size=1700,1100 --hide-scrollbars "file:///${singleFlyerPath.replace(/\\\\/g, '/')}"`;
     try {
       execSync(cmdSingle);
-      console.log('✅ Imagen volante individual generada:', outSinglePng);
+      console.log('✅ Imagen volante individual generada (1700x1100):', outSinglePng);
     } catch (e) {
       console.warn('⚠️ Error al generar imagen individual:', e.message);
     }
 
-    // C) Documento PDF listo para imprimir en tamaño Carta (Landscape)
+    // C) Documento PDF listo para imprimir en tamaño Carta (Portrait)
     const outPdf = path.join(rootDir, 'public', 'Volante_Comercios_ReservasCR.pdf');
     const cmdPdf = `"${msedgePath}" --headless --disable-gpu --print-to-pdf="${outPdf}" --no-margins "file:///${sheet2UpCleanPath.replace(/\\\\/g, '/')}"`;
     try {
@@ -802,7 +903,7 @@ async function main() {
     } catch (_) {}
   }
 
-  console.log('🎉 ¡Volantes media carta generados y listos para imprimir y compartir!');
+  console.log('🎉 ¡Volantes horizontales media carta listos!');
 }
 
 main().catch(err => {
