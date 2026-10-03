@@ -4942,7 +4942,8 @@ class App {
                     href="${this.generateWazeUrl(biz)}" 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    class="px-2.5 py-0.5 rounded-full bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-sm transition-all"
+                    class="px-2.5 py-0.5 rounded-full btn-waze-nav bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold inline-flex items-center gap-1 shadow-sm transition-all"
+                    style="background-color: #0284c7; color: #ffffff;"
                     title="Navegar con Waze"
                   >
                     <i class="fab fa-waze"></i> Waze
@@ -6831,7 +6832,8 @@ class App {
                     href="${this.generateWazeUrl(business)}" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    class="py-2 px-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                    class="py-2 px-2.5 btn-waze-nav bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                    style="background-color: #0284c7; color: #ffffff;"
                     title="Abrir ruta de navegación en Waze"
                   >
                     <i class="fab fa-waze text-white"></i>
@@ -7040,7 +7042,8 @@ class App {
                   href="${this.generateWazeUrl(business)}" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  class="py-2 px-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  class="py-2 px-2.5 btn-waze-nav bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-all text-center"
+                  style="background-color: #0284c7; color: #ffffff;"
                   title="Abrir ruta de navegación en Waze"
                 >
                   <i class="fab fa-waze text-white"></i>
