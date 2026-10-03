@@ -28,8 +28,36 @@ let currentQrDataUrl = null;
 let connectionStatus = 'disconnected'; // 'disconnected' | 'connecting' | 'qr_ready' | 'connected'
 let connectedUser = null;
 let lastError = null;
+let lastMessageError = null;
 let dbPool = null;
 let isStarting = false;
+
+// Memoria de sesiones conversacionales por número de teléfono (expira tras 2 horas de inactividad)
+const phoneSessions = new Map();
+const SESSION_EXPIRATION_MS = 2 * 60 * 60 * 1000;
+
+// Registro de IDs de mensajes enviados por el bot para prevenir bucles de respuesta
+const botSentMessageIds = new Set();
+
+// Historial de actividad reciente para monitoreo en vivo (últimos 30 eventos)
+const recentActivityLogs = [];
+function logActivity(msg) {
+  const ts = new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  console.log(`[WhatsApp QR] [${ts}] ${msg}`);
+  recentActivityLogs.unshift(`[${ts}] ${msg}`);
+  if (recentActivityLogs.length > 30) recentActivityLogs.pop();
+}
+
+// Normalizador de texto para detección flexible de nombres sin importar tildes ni mayúsculas
+function normalizeText(str) {
+  return (str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 /**
  * Inicializa el servicio de WhatsApp por QR
@@ -157,11 +185,21 @@ export async function startWhatsAppQrConnection() {
 
       for (const m of messages) {
         try {
-          // Ignorar mensajes enviados por nosotros mismos o de grupos
-          if (m.key.fromMe) continue;
           if (!m.message) continue;
           if (m.key.remoteJid === 'status@broadcast') continue;
           if (m.key.remoteJid.endsWith('@g.us')) continue; // Solo chats directos 1 a 1
+
+          const remoteJid = m.key.remoteJid;
+          const senderPhone = remoteJid.replace(/@.*$/, '').replace(/:.*$/, '');
+          const myPhone = connectedUser?.phone || '';
+          const isSelfChat = Boolean(myPhone && (senderPhone === myPhone || remoteJid.startsWith(myPhone)));
+
+          if (m.key.fromMe) {
+            // Ignorar siempre si el mensaje fue enviado por el bot para evitar bucles
+            if (botSentMessageIds.has(m.key.id)) continue;
+            // Si no es un mensaje en el chat consigo mismo (Note to self), ignorar
+            if (!isSelfChat) continue;
+          }
 
           const text = (
             m.message.conversation || 
@@ -172,11 +210,8 @@ export async function startWhatsAppQrConnection() {
 
           if (!text) continue;
 
-          const remoteJid = m.key.remoteJid;
-          const senderPhone = remoteJid.replace(/@.*$/, '').replace(/:.*$/, '');
           const senderName = m.pushName || 'Cliente';
-
-          console.log(`📥 [WhatsApp QR] Mensaje de ${senderName} (+${senderPhone}): "${text}"`);
+          logActivity(`📥 Mensaje de ${senderName} (+${senderPhone}): "${text}"`);
 
           // Obtener o inicializar sesión para este número telefónico
           let session = phoneSessions.get(senderPhone);
@@ -199,28 +234,49 @@ export async function startWhatsAppQrConnection() {
             businessId = bizRefMatch[1].trim();
           }
 
-          // 2. Si no tiene tag [Ref: ...], detectar el nombre del comercio directamente en la oración
+          // 2. Si no tiene tag [Ref: ...], detectar el nombre del comercio directamente en el texto
           if (!businessId && dbPool) {
             try {
-              const bizMatchRes = await dbPool.query(`
-                SELECT id, name FROM reservas_businesses 
+              const bizListRes = await dbPool.query(`
+                SELECT id, name, slug FROM reservas_businesses 
                 WHERE is_blocked = false 
-                  AND (
-                    POSITION(LOWER(name) IN LOWER($1)) > 0
-                    OR (slug IS NOT NULL AND slug != '' AND POSITION(LOWER(REPLACE(slug, '-', ' ')) IN LOWER($1)) > 0)
-                  )
-                ORDER BY LENGTH(name) DESC 
-                LIMIT 1
-              `, [text]);
+                ORDER BY LENGTH(name) DESC
+              `);
 
-              if (bizMatchRes.rows.length > 0) {
-                businessId = bizMatchRes.rows[0].id;
-                session.businessId = businessId;
-                session.businessName = bizMatchRes.rows[0].name;
-                console.log(`🎯 [WhatsApp QR] Negocio identificado por nombre en el texto: "${bizMatchRes.rows[0].name}" (ID: ${businessId})`);
+              const normText = normalizeText(text);
+
+              // Buscar comercio cuyo nombre normalizado o slug esté contenido en el texto recibido
+              for (const biz of bizListRes.rows) {
+                const normName = normalizeText(biz.name);
+                const normSlug = biz.slug ? normalizeText(biz.slug.replace(/-/g, ' ')) : '';
+
+                if ((normName && normText.includes(normName)) || (normSlug && normText.includes(normSlug))) {
+                  businessId = biz.id;
+                  session.businessId = businessId;
+                  session.businessName = biz.name;
+                  logActivity(`🎯 Negocio detectado por nombre: "${biz.name}" (ID: ${businessId})`);
+                  break;
+                }
+              }
+
+              // Si aún no hace match exacto, verificar si al menos contiene las 2 palabras clave más representativas
+              if (!businessId) {
+                for (const biz of bizListRes.rows) {
+                  const words = normalizeText(biz.name).split(' ').filter(w => w.length > 3);
+                  if (words.length >= 2) {
+                    const matchedWords = words.filter(w => normText.includes(w));
+                    if (matchedWords.length >= 2) {
+                      businessId = biz.id;
+                      session.businessId = businessId;
+                      session.businessName = biz.name;
+                      logActivity(`🎯 Negocio detectado por palabras clave: "${biz.name}" (ID: ${businessId})`);
+                      break;
+                    }
+                  }
+                }
               }
             } catch (err) {
-              console.warn('Error identificando negocio por nombre:', err.message);
+              logActivity(`⚠️ Error buscando negocio en DB: ${err.message}`);
             }
           }
 
@@ -238,6 +294,8 @@ export async function startWhatsAppQrConnection() {
           try {
             await sock.sendPresenceUpdate('composing', remoteJid);
           } catch (_) {}
+
+          logActivity(`🤖 Procesando con Gemini para: ${session.businessName || businessId || 'General'}...`);
 
           // Procesar con la IA de Gemini conectada a PostgreSQL con memoria conversacional
           const aiResponse = await processCustomerMessageWithGemini(dbPool, {
@@ -257,12 +315,21 @@ export async function startWhatsAppQrConnection() {
             }
           }
 
-          // Pequeña pausa de 1.2 segundos para simular respuesta humana natural
-          await new Promise(r => setTimeout(r, 1200));
+          // Pequeña pausa de 1 segundo para simular respuesta humana natural
+          await new Promise(r => setTimeout(r, 1000));
 
           if (aiResponse?.reply) {
-            await sock.sendMessage(remoteJid, { text: aiResponse.reply });
-            console.log(`📤 [WhatsApp QR] Respuesta IA enviada a +${senderPhone}`);
+            const sent = await sock.sendMessage(remoteJid, { text: aiResponse.reply });
+            if (sent?.key?.id) {
+              botSentMessageIds.add(sent.key.id);
+              if (botSentMessageIds.size > 200) {
+                const firstKey = botSentMessageIds.values().next().value;
+                botSentMessageIds.delete(firstKey);
+              }
+            }
+            logActivity(`📤 Respuesta enviada a +${senderPhone}`);
+          } else {
+            logActivity(`⚠️ Gemini no devolvió respuesta para +${senderPhone}`);
           }
 
           try {
@@ -270,6 +337,8 @@ export async function startWhatsAppQrConnection() {
           } catch (_) {}
 
         } catch (msgErr) {
+          lastMessageError = msgErr.message;
+          logActivity(`💥 ERROR en mensaje: ${msgErr.message}`);
           console.error('Error procesando mensaje entrante en WhatsApp QR:', msgErr);
         }
       }
@@ -321,7 +390,9 @@ export function getWhatsAppQrStatus() {
     isConnected: connectionStatus === 'connected',
     qr: currentQrDataUrl,
     user: connectedUser,
-    error: lastError
+    error: lastError,
+    lastMessageError,
+    logs: recentActivityLogs.slice(0, 15)
   };
 }
 
