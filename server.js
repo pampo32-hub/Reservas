@@ -1048,26 +1048,28 @@ app.post('/api/auth/business/register', async (req, res) => {
     const payMethod = 'free';
     const socialLinks = business.socialLinks || business.social_links || {};
     const autoConfirm = business.autoConfirmAppointments !== undefined ? Boolean(business.autoConfirmAppointments) : true;
+    const bizSlug = slugify(business.slug || business.name || newBizId);
 
-    // Insertar negocio
+    // Insertar negocio (queda oculto en el directorio público hasta revisión y aprobación manual del superadmin)
     await pool.query(`
       INSERT INTO reservas_businesses (
-        id, name, category, category_label, rating, reviews_count,
+        id, name, slug, category, category_label, rating, reviews_count,
         price_range, address, city, phone, email, description,
         image, cover_image, schedule, features, is_demo,
         plan, plan_price_usd, monthly_booking_limit, social_links,
         auto_confirm_appointments, subscription_status, payment_method,
-        is_email_verified
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+        is_email_verified, is_hidden
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
     `, [
-      newBizId, business.name, business.category, business.categoryLabel || 'Servicios',
+      newBizId, business.name, bizSlug, business.category, business.categoryLabel || 'Servicios',
       5.0, 0, business.priceRange || '₡₡',
       business.address || '', business.city || '', business.phone || '', cleanEmail,
       business.description || '', business.image || '', business.coverImage || '',
       JSON.stringify(schedule), JSON.stringify(features), false,
       planId, planPriceUsd, bookingLimit, JSON.stringify(socialLinks),
       autoConfirm, subStatus, payMethod,
-      true
+      true, // is_email_verified
+      true  // is_hidden: oculto inicialmente para revisión del administrador
     ]);
 
     // Si es una categoría personalizada, registrar alerta para el Developer
@@ -2351,7 +2353,7 @@ app.put('/api/businesses/:id', authenticateBusinessOwnerOrDev, async (req, res) 
         b.plan || 'free',
         Boolean(b.isBlocked),
         b.blockReason || '',
-        Boolean(b.isHidden),
+        b.isHidden !== undefined ? Boolean(b.isHidden) : true,
         Boolean(b.isVerified),
         b.portfolio ? JSON.stringify(b.portfolio) : JSON.stringify([])
       ]);
@@ -2450,7 +2452,7 @@ app.post('/api/businesses', async (req, res) => {
       b.plan || 'free',
       Boolean(b.isBlocked),
       b.blockReason || '',
-      Boolean(b.isHidden),
+      b.isHidden !== undefined ? Boolean(b.isHidden) : true,
       Boolean(b.isVerified),
       b.portfolio ? JSON.stringify(b.portfolio) : JSON.stringify([])
     ]);
@@ -8826,8 +8828,8 @@ app.get('/api/auth/google/callback', async (req, res) => {
               image, cover_image, schedule, features, is_demo,
               plan, plan_price_usd, monthly_booking_limit,
               auto_confirm_appointments, subscription_status, payment_method,
-              nylas_provider, is_email_verified
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+              nylas_provider, is_email_verified, is_hidden
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
           `, [
             newBizId, `Negocio de ${fullName}`, bizSlug, 'belleza', 'Salud y Belleza',
             5.0, 0, '₡₡',
@@ -8838,7 +8840,8 @@ app.get('/api/auth/google/callback', async (req, res) => {
             JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
             'free', 0, 25,
             true, 'active', 'free',
-            'google', true
+            'google', true,
+            true // is_hidden: oculto por defecto para revisión del administrador
           ]);
 
           const srvId = `srv-${Date.now()}`;
@@ -9313,8 +9316,8 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
               image, cover_image, schedule, features, is_demo,
               plan, plan_price_usd, monthly_booking_limit,
               auto_confirm_appointments, subscription_status, payment_method,
-              nylas_provider, is_email_verified
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
+              nylas_provider, is_email_verified, is_hidden
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
           `, [
             newBizId, `Negocio de ${fullName}`, bizSlug, 'belleza', 'Salud y Belleza',
             5.0, 0, '₡₡',
@@ -9325,7 +9328,8 @@ app.get(['/api/auth/microsoft/callback', '/api/auth/outlook/callback'], async (r
             JSON.stringify(defaultSchedule), JSON.stringify(defaultFeatures), false,
             'free', 0, 25,
             true, 'active', 'free',
-            'microsoft', true
+            'microsoft', true,
+            true // is_hidden: oculto por defecto para revisión del administrador
           ]);
 
           const srvId = `srv-${Date.now()}`;

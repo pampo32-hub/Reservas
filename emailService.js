@@ -1526,6 +1526,10 @@ export async function sendAdminBusinessRegistrationNotificationEmail({
           <span class="label">⭐ Plan:</span>
           <span class="val">${(business?.plan || 'free').toUpperCase()}</span>
         </div>
+        <div class="info-row" style="background: #fffbeb; padding: 10px 14px; border-radius: 10px; margin-top: 8px; border: 1px dashed #f59e0b;">
+          <span class="label" style="color: #92400e; font-weight: 700;">👁️ Directorio Público:</span>
+          <span class="val" style="color: #b45309; font-weight: 900;">🔒 Oculto (Requiere revisión manual)</span>
+        </div>
       </div>
 
       <div style="text-align: center; margin-top: 24px;">
@@ -1533,8 +1537,8 @@ export async function sendAdminBusinessRegistrationNotificationEmail({
         <a href="${waLink}" class="btn btn-wa" target="_blank" style="margin-right: 8px;">
           💬 Escribir por WhatsApp
         </a>` : ''}
-        <a href="${APP_URL}" class="btn" target="_blank">
-          🌐 Ver Directorio
+        <a href="${APP_URL}/#developer-dashboard" class="btn" target="_blank" style="background: #0f172a !important;">
+          🛠️ Revisar en Panel Developer
         </a>
       </div>
     </div>

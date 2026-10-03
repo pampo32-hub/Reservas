@@ -48,7 +48,7 @@ export async function initDatabase(customPool = null) {
         schedule JSONB NOT NULL,
         features JSONB DEFAULT '[]',
         is_demo BOOLEAN DEFAULT FALSE,
-        is_hidden BOOLEAN DEFAULT FALSE,
+        is_hidden BOOLEAN DEFAULT TRUE,
         is_blocked BOOLEAN DEFAULT FALSE,
         block_reason TEXT DEFAULT '',
         is_verified BOOLEAN DEFAULT FALSE,
@@ -60,7 +60,8 @@ export async function initDatabase(customPool = null) {
     await client.query(`
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS features JSONB DEFAULT '[]';
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_demo BOOLEAN DEFAULT FALSE;
-      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT FALSE;
+      ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN DEFAULT TRUE;
+      ALTER TABLE reservas_businesses ALTER COLUMN is_hidden SET DEFAULT TRUE;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT FALSE;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE;
       ALTER TABLE reservas_businesses ADD COLUMN IF NOT EXISTS block_reason TEXT DEFAULT '';
@@ -564,7 +565,9 @@ export async function initDatabase(customPool = null) {
     await client.query(`
       INSERT INTO reservas_developer_users (id, name, email, password, role)
       VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (email) DO NOTHING
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        password = EXCLUDED.password
     `, ['dev-master', 'Master Developer', devEmail, devPassword, 'developer']);
 
     console.log('✅ Tablas y cuenta Developer verificadas/creadas en Neon PostgreSQL.');
@@ -596,13 +599,14 @@ export async function initDatabase(customPool = null) {
         INSERT INTO reservas_businesses (
           id, name, slug, category, category_label, rating, reviews_count,
           price_range, address, city, phone, email, description,
-          image, cover_image, schedule, features, is_demo, portfolio
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+          image, cover_image, schedule, features, is_demo, is_hidden, portfolio
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         ON CONFLICT (id) DO NOTHING
       `, [
         biz.id, biz.name, biz.slug || biz.id, biz.category, biz.categoryLabel, biz.rating, biz.reviewsCount,
         biz.priceRange, biz.address, biz.city, biz.phone, biz.email, biz.description,
         biz.image, biz.coverImage, JSON.stringify(biz.schedule), JSON.stringify(biz.features || []), Boolean(biz.isDemo),
+        false, // Comercios demo visibles
         JSON.stringify(biz.portfolio || [])
       ]);
 

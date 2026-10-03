@@ -8324,6 +8324,31 @@ class App {
           </div>
         ` : ''}
 
+        <!-- Aviso si el comercio está oculto en el directorio público por revisión inicial -->
+        ${currentBiz.isHidden ? `
+          <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 p-4 sm:p-5 rounded-3xl mb-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+              <div class="w-10 h-10 rounded-2xl bg-amber-200/90 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 text-lg shadow-xs">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-black text-amber-950 dark:text-amber-100 text-sm">Perfil Registrado • En proceso de revisión inicial</span>
+                  <span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded-full text-[10px] font-black uppercase tracking-wider">Oculto en Directorio</span>
+                </div>
+                <p class="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed max-w-2xl">
+                  ¡Tu cuenta y correo están verificados! Puedes configurar tus horarios, servicios, colaboradores y empezar a usar tu enlace directo y QR. Tu vitrina pública en el directorio se activará en breve una vez que el equipo de soporte complete la revisión de seguridad.
+                </p>
+              </div>
+            </div>
+            <div class="shrink-0 w-full sm:w-auto text-right">
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-800 bg-amber-100/80 px-3 py-1.5 rounded-xl border border-amber-300/50">
+                <i class="fas fa-clock text-amber-600"></i> Revisión en curso
+              </span>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Banner de Suscripción y Cuota Mensual de WhatsApp -->
         <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-lg mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 w-full">
           <div class="space-y-1.5 max-w-xl">
@@ -20423,7 +20448,14 @@ Esperamos atenderle pronto de nuevo.`;
               </div>
               <div>
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Comercios</span>
-                <span class="text-2xl font-extrabold text-slate-900">${stats.totalBusinesses || businesses.length}</span>
+                <div class="flex items-baseline gap-2 flex-wrap">
+                  <span class="text-2xl font-extrabold text-slate-900">${stats.totalBusinesses || businesses.length}</span>
+                  ${hiddenBusinessesCount > 0 ? `
+                    <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-0.5 rounded-full cursor-pointer transition-colors border border-amber-300" onclick="document.querySelector('[data-filter=\\'hidden\\']')?.click()" title="Filtrar comercios pendientes de revisión para el directorio">
+                      <i class="fas fa-eye-slash text-[10px] text-amber-600"></i> ${hiddenBusinessesCount} por revisar
+                    </span>
+                  ` : ''}
+                </div>
               </div>
             </div>
 
