@@ -1275,7 +1275,7 @@ export async function sendBusinessPreRegistrationEmail({ to, ownerName = '', bus
       <!-- Ayuda y Soporte -->
       <div class="help-card">
         <strong>¿Tienes alguna duda o consulta mientras llega el estreno?</strong><br>
-        Puedes responder directamente a este correo o escribirnos a nuestro canal oficial de soporte en Costa Rica: <a href="mailto:soporte@reservascr.app" style="color: #2563eb; font-weight: 700; text-decoration: underline;">soporte@reservascr.app</a>.
+        Puedes escribirnos a nuestro canal oficial de soporte en Costa Rica: <a href="mailto:soporte@reservascr.app" style="color: #2563eb; font-weight: 700; text-decoration: underline;">soporte@reservascr.app</a>.
       </div>
     </div>
 
