@@ -531,6 +531,24 @@ export async function initDatabase(customPool = null) {
       CREATE INDEX IF NOT EXISTS idx_vitrina_available ON reservas_vitrina_items (is_available);
     `);
 
+    // 17. Módulo de Registro y Monitoreo de Consumo de Tokens de Inteligencia Artificial (Google Gemini)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS reservas_ai_usage_logs (
+        id SERIAL PRIMARY KEY,
+        business_id VARCHAR(50),
+        customer_phone VARCHAR(50),
+        customer_name VARCHAR(255),
+        model VARCHAR(100),
+        prompt_tokens INT DEFAULT 0,
+        candidates_tokens INT DEFAULT 0,
+        total_tokens INT DEFAULT 0,
+        estimated_cost_usd NUMERIC(10, 6) DEFAULT 0,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_created ON reservas_ai_usage_logs (created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_ai_usage_biz ON reservas_ai_usage_logs (business_id);
+    `);
+
     // Migración para actualizar textos de fidelización antiguos por defecto a uno universal y claro
     await client.query(`
       UPDATE reservas_loyalty_programs

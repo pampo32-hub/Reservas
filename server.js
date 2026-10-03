@@ -8025,6 +8025,81 @@ app.post('/api/ai-agent/chat', async (req, res) => {
   }
 });
 
+// Obtener estadísticas de consumo de tokens y costos de IA
+app.get('/api/developer/ai-usage', async (req, res) => {
+  try {
+    // Totales históricos
+    const totalsRes = await pool.query(`
+      SELECT 
+        COUNT(*) as total_requests,
+        COALESCE(SUM(total_tokens), 0) as total_tokens,
+        COALESCE(SUM(prompt_tokens), 0) as total_prompt_tokens,
+        COALESCE(SUM(candidates_tokens), 0) as total_candidates_tokens,
+        COALESCE(SUM(estimated_cost_usd), 0) as total_cost_usd
+      FROM reservas_ai_usage_logs
+    `);
+
+    // Totales hoy (UTC / Costa Rica)
+    const todayRes = await pool.query(`
+      SELECT 
+        COUNT(*) as today_requests,
+        COALESCE(SUM(total_tokens), 0) as today_tokens,
+        COALESCE(SUM(estimated_cost_usd), 0) as today_cost_usd
+      FROM reservas_ai_usage_logs
+      WHERE created_at >= CURRENT_DATE
+    `);
+
+    // Totales del mes en curso
+    const monthRes = await pool.query(`
+      SELECT 
+        COUNT(*) as month_requests,
+        COALESCE(SUM(total_tokens), 0) as month_tokens,
+        COALESCE(SUM(estimated_cost_usd), 0) as month_cost_usd
+      FROM reservas_ai_usage_logs
+      WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+    `);
+
+    // Últimos 15 registros de uso
+    const recentRes = await pool.query(`
+      SELECT 
+        id, business_id, customer_phone, customer_name, model, 
+        prompt_tokens, candidates_tokens, total_tokens, estimated_cost_usd, created_at
+      FROM reservas_ai_usage_logs
+      ORDER BY created_at DESC
+      LIMIT 15
+    `);
+
+    const totals = totalsRes.rows[0] || {};
+    const today = todayRes.rows[0] || {};
+    const month = monthRes.rows[0] || {};
+
+    const totalCostUsd = parseFloat(totals.total_cost_usd || 0);
+    const monthCostUsd = parseFloat(month.month_cost_usd || 0);
+    const todayCostUsd = parseFloat(today.today_cost_usd || 0);
+
+    res.json({
+      totalTokens: parseInt(totals.total_tokens, 10) || 0,
+      totalRequests: parseInt(totals.total_requests, 10) || 0,
+      totalCostUsd: Number(totalCostUsd.toFixed(6)),
+      totalCostCrc: Number((totalCostUsd * 515).toFixed(2)),
+
+      todayTokens: parseInt(today.today_tokens, 10) || 0,
+      todayRequests: parseInt(today.today_requests, 10) || 0,
+      todayCostUsd: Number(todayCostUsd.toFixed(6)),
+
+      monthTokens: parseInt(month.month_tokens, 10) || 0,
+      monthRequests: parseInt(month.month_requests, 10) || 0,
+      monthCostUsd: Number(monthCostUsd.toFixed(6)),
+      monthCostCrc: Number((monthCostUsd * 515).toFixed(2)),
+
+      recentLogs: recentRes.rows
+    });
+  } catch (error) {
+    console.error('Error en /api/developer/ai-usage:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 5. Guardar Configuración de PayPal desde el Panel Developer
 app.post('/api/developer/paypal-settings', async (req, res) => {
   try {

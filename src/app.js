@@ -20271,7 +20271,7 @@ Esperamos atenderle pronto de nuevo.`;
     }
 
     try {
-      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats, aiConfig, waQrStatus] = await Promise.all([
+      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats, aiConfig, waQrStatus, aiUsage] = await Promise.all([
         storage.getDeveloperStats(),
         storage.getDeveloperBusinesses(),
         storage.getDeveloperClients(),
@@ -20282,7 +20282,8 @@ Esperamos atenderle pronto de nuevo.`;
         storage.getPayPalConfig(),
         storage.getCleanupStats(),
         storage.getAiAgentConfig(),
-        storage.getWhatsAppQrStatus()
+        storage.getWhatsAppQrStatus(),
+        storage.getAiUsageStats()
       ]);
 
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
@@ -21783,6 +21784,153 @@ Esperamos atenderle pronto de nuevo.`;
                       </form>
                     </div>
                   </div>
+
+                  <!-- TARJETA: MONITOR DE CONSUMO DE TOKENS & ESTIMACIÓN DE SALDO (GOOGLE GEMINI) -->
+                  <div class="bg-white rounded-3xl border border-indigo-200/80 p-6 sm:p-7 shadow-xs space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold mb-1 border border-indigo-100">
+                          <i class="fas fa-chart-line text-indigo-500"></i> Métricas de Consumo en Vivo
+                        </div>
+                        <h4 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                          <span>Consumo de Tokens & Estimación de Saldo (Gemini AI)</span>
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Seguimiento transparente de tokens de entrada (preguntas de clientes) y salida (respuestas del asistente) procesados en WhatsApp y en el simulador.
+                        </p>
+                      </div>
+
+                      <div class="flex items-center gap-2">
+                        <button 
+                          type="button" 
+                          id="dev-ai-refresh-usage-btn" 
+                          class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                          title="Actualizar métricas"
+                        >
+                          <i class="fas fa-sync-alt text-[10px]"></i>
+                          <span>Actualizar</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- 4 Tarjetas de Métricas -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      <!-- Tokens Hoy -->
+                      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Tokens Hoy</span>
+                        <span class="text-xl sm:text-2xl font-black text-indigo-600 block">
+                          ${(aiUsage?.todayTokens || 0).toLocaleString('en-US')}
+                        </span>
+                        <span class="text-[10px] text-slate-400 block">
+                          ${aiUsage?.todayRequests || 0} peticiones hoy
+                        </span>
+                      </div>
+
+                      <!-- Tokens del Mes -->
+                      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Tokens este Mes</span>
+                        <span class="text-xl sm:text-2xl font-black text-blue-600 block">
+                          ${(aiUsage?.monthTokens || 0).toLocaleString('en-US')}
+                        </span>
+                        <span class="text-[10px] text-slate-400 block">
+                          ${aiUsage?.monthRequests || 0} peticiones este mes
+                        </span>
+                      </div>
+
+                      <!-- Total Histórico -->
+                      <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Total Acumulado</span>
+                        <span class="text-xl sm:text-2xl font-black text-slate-800 block">
+                          ${(aiUsage?.totalTokens || 0).toLocaleString('en-US')}
+                        </span>
+                        <span class="text-[10px] text-slate-400 block">
+                          ${aiUsage?.totalRequests || 0} interacciones totales
+                        </span>
+                      </div>
+
+                      <!-- Costo Estimado -->
+                      <div class="p-4 bg-emerald-50/60 rounded-2xl border border-emerald-200 space-y-1">
+                        <span class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">Costo Estimado</span>
+                        <span class="text-xl sm:text-2xl font-black text-emerald-700 block">
+                          $${(aiUsage?.totalCostUsd || 0).toFixed(4)} <span class="text-xs font-bold text-emerald-600">USD</span>
+                        </span>
+                        <span class="text-[10px] text-emerald-700 font-bold block">
+                          ~₡${(aiUsage?.totalCostCrc || 0).toFixed(2)} colones
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Alerta informativa del Plan de Google -->
+                    <div class="p-4 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 rounded-2xl border border-blue-200 text-xs text-blue-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div class="flex items-start gap-2.5">
+                        <i class="fas fa-info-circle text-blue-600 text-base mt-0.5 flex-shrink-0"></i>
+                        <div>
+                          <span class="font-bold text-blue-950 block">Cuota Gratuita de Google AI Studio:</span>
+                          <span class="text-[11px] text-blue-800 block mt-0.5">
+                            Google ofrece hasta <strong>1.500 peticiones diarias</strong> y <strong>1.000.000 de tokens por minuto</strong> 100% gratis en modelos Flash. Si usas facturación de Google Cloud, los tokens de Gemini Flash cuestan apenas ~$0.075 USD por millón.
+                          </span>
+                        </div>
+                      </div>
+                      <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-[11px] whitespace-nowrap shadow-xs inline-flex items-center gap-1.5 flex-shrink-0">
+                        <span>Google AI Studio</span>
+                        <i class="fas fa-external-link-alt text-[9px]"></i>
+                      </a>
+                    </div>
+
+                    <!-- Historial de Últimas Interacciones con Tokens Exactos -->
+                    <div class="space-y-3">
+                      <h5 class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <i class="fas fa-history text-slate-400"></i> Últimas interacciones procesadas:
+                      </h5>
+
+                      ${(aiUsage?.recentLogs && aiUsage.recentLogs.length > 0) ? `
+                        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+                          <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-[10px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                              <tr>
+                                <th class="px-4 py-2.5">Fecha y Hora</th>
+                                <th class="px-4 py-2.5">Usuario / Teléfono</th>
+                                <th class="px-4 py-2.5">Modelo</th>
+                                <th class="px-4 py-2.5 text-right">Tokens Prompt</th>
+                                <th class="px-4 py-2.5 text-right">Tokens Respuesta</th>
+                                <th class="px-4 py-2.5 text-right">Total Tokens</th>
+                                <th class="px-4 py-2.5 text-right">Costo Estimado</th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                              ${aiUsage.recentLogs.map(log => {
+                                const dateFormatted = new Date(log.created_at).toLocaleString('es-CR', {
+                                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                });
+                                const cost = parseFloat(log.estimated_cost_usd || 0);
+                                return `
+                                  <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="px-4 py-2.5 text-[11px] text-slate-500 whitespace-nowrap font-mono">${dateFormatted}</td>
+                                    <td class="px-4 py-2.5 font-bold text-slate-800 whitespace-nowrap">
+                                      ${log.customer_name || 'Cliente'} 
+                                      <span class="text-[10px] font-normal text-slate-400 font-mono block">${log.customer_phone || ''}</span>
+                                    </td>
+                                    <td class="px-4 py-2.5 whitespace-nowrap font-mono text-[10px] text-blue-700">
+                                      <span class="px-2 py-0.5 rounded-md bg-blue-50 border border-blue-100">${log.model || 'gemini-3.7-flash'}</span>
+                                    </td>
+                                    <td class="px-4 py-2.5 text-right font-mono text-[11px] text-slate-600">${(log.prompt_tokens || 0).toLocaleString()}</td>
+                                    <td class="px-4 py-2.5 text-right font-mono text-[11px] text-slate-600">${(log.candidates_tokens || 0).toLocaleString()}</td>
+                                    <td class="px-4 py-2.5 text-right font-mono text-[11px] font-black text-indigo-700">${(log.total_tokens || 0).toLocaleString()}</td>
+                                    <td class="px-4 py-2.5 text-right font-mono text-[10px] text-emerald-700 font-bold">$${cost.toFixed(6)}</td>
+                                  </tr>
+                                `;
+                              }).join('')}
+                            </tbody>
+                          </table>
+                        </div>
+                      ` : `
+                        <div class="p-6 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-xs">
+                          <i class="fas fa-info-circle text-lg mb-1 block"></i>
+                          Aún no hay interacciones registradas. Los mensajes que envíes en el simulador o por WhatsApp aparecerán aquí con su conteo exacto de tokens.
+                        </div>
+                      `}
+                    </div>
+                  </div>
                 </div>
               ` : ''}
 
@@ -22674,6 +22822,11 @@ Esperamos atenderle pronto de nuevo.`;
             saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Configuración en Base de Datos';
           }
         }
+      });
+
+      // Actualizar métricas de tokens de IA
+      document.getElementById('dev-ai-refresh-usage-btn')?.addEventListener('click', () => {
+        this.renderDeveloperDashboardView(container);
       });
 
       // Historial para el simulador de chat en vivo

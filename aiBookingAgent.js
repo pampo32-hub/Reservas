@@ -346,6 +346,29 @@ REGLAS DE ATENCIÓN:
 
       if (fullReply) {
         callSuccess = true;
+
+        // Extraer y registrar consumo de tokens devuelto por la API de Gemini
+        const usage = data.usageMetadata || {};
+        const promptTokens = usage.promptTokenCount || 0;
+        const candidatesTokens = usage.candidatesTokenCount || 0;
+        const totalTokens = usage.totalTokenCount || (promptTokens + candidatesTokens);
+        // Costos estándar Google Gemini Flash: $0.075 / 1M prompt, $0.30 / 1M respuesta
+        const costUsd = (promptTokens * 0.000000075) + (candidatesTokens * 0.00000030);
+
+        if (pool) {
+          try {
+            await pool.query(`
+              INSERT INTO reservas_ai_usage_logs (
+                business_id, customer_phone, customer_name, model, 
+                prompt_tokens, candidates_tokens, total_tokens, estimated_cost_usd, created_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+            `, [businessId || null, customerPhone || null, customerName || 'Cliente', currentModel, promptTokens, candidatesTokens, totalTokens, costUsd]);
+            console.log(`📊 [Gemini IA] Tokens usados: ${totalTokens} (Prompt: ${promptTokens}, Respuesta: ${candidatesTokens}) - Costo: $${costUsd.toFixed(6)}`);
+          } catch (logErr) {
+            console.warn('⚠️ No se pudo registrar log de uso de tokens:', logErr.message);
+          }
+        }
+
         break; // Éxito con este modelo
       }
     } catch (modelErr) {

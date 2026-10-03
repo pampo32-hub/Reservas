@@ -2588,6 +2588,32 @@ class StorageService {
     }
   }
 
+  // --- ESTADÍSTICAS Y CONSUMO DE TOKENS DE IA ---
+  async getAiUsageStats() {
+    if (this.isOnlineApi) {
+      try {
+        const res = await this.fetchWithAuth(`${this.apiBase}/developer/ai-usage`);
+        if (res.ok) return await res.json();
+      } catch (e) {
+        console.warn('Fallback al obtener estadísticas de IA:', e);
+      }
+    }
+    return {
+      totalTokens: 0,
+      totalRequests: 0,
+      totalCostUsd: 0,
+      totalCostCrc: 0,
+      todayTokens: 0,
+      todayRequests: 0,
+      todayCostUsd: 0,
+      monthTokens: 0,
+      monthRequests: 0,
+      monthCostUsd: 0,
+      monthCostCrc: 0,
+      recentLogs: []
+    };
+  }
+
   // --- WHATSAPP CONEXIÓN POR CÓDIGO QR ---
   async getWhatsAppQrStatus() {
     try {
