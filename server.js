@@ -32,6 +32,7 @@ import {
   buildBookingConfirmationText, 
   formatMetaPhone 
 } from './whatsappService.js';
+import { processCustomerMessageWithGemini, getAiAgentConfig } from './aiBookingAgent.js';
 import { 
   initPushService, 
   getVapidPublicKey, 
@@ -7844,18 +7845,113 @@ app.get('/api/webhooks/whatsapp', (req, res) => {
   }
 });
 
-app.post('/api/webhooks/whatsapp', (req, res) => {
+app.post('/api/webhooks/whatsapp', async (req, res) => {
   try {
     const body = req.body;
     if (body.object) {
       console.log('🔔 Evento Webhook WhatsApp recibido:', JSON.stringify(body, null, 2));
       res.status(200).send('EVENT_RECEIVED');
+
+      // Procesar mensajes entrantes de clientes con el Asistente Virtual IA
+      try {
+        const entry = body.entry?.[0];
+        const change = entry?.changes?.[0]?.value;
+        const message = change?.messages?.[0];
+        const contact = change?.contacts?.[0];
+
+        if (message && message.type === 'text' && message.text?.body) {
+          const fromPhone = message.from;
+          const senderName = contact?.profile?.name || 'Cliente';
+          const textBody = message.text.body.trim();
+
+          console.log(`🤖 Mensaje entrante de WhatsApp [${fromPhone} - ${senderName}]: "${textBody}"`);
+
+          const aiResponse = await processCustomerMessageWithGemini(pool, {
+            customerPhone: fromPhone,
+            customerName: senderName,
+            messageText: textBody
+          });
+
+          if (aiResponse?.reply) {
+            console.log(`🤖 Respuesta de IA para ${fromPhone}: "${aiResponse.reply.substring(0, 80)}..."`);
+            await sendViaMetaCloudApi(fromPhone, aiResponse.reply);
+          }
+        }
+      } catch (aiErr) {
+        console.error('Error procesando mensaje entrante con IA:', aiErr);
+      }
     } else {
       res.sendStatus(404);
     }
   } catch (err) {
     console.error('Error procesando webhook WhatsApp:', err);
     res.status(200).send('ERROR_HANDLED');
+  }
+});
+
+// --- ENDPOINTS ASISTENTE VIRTUAL IA (GEMINI) ---
+app.get('/api/ai-agent/config', async (req, res) => {
+  try {
+    const config = await getAiAgentConfig(pool);
+    res.json({
+      agentName: config.agentName,
+      model: config.model,
+      isEnabled: config.isEnabled,
+      hasApiKey: Boolean(config.apiKey)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ai-agent/config', async (req, res) => {
+  try {
+    const { apiKey, model, agentName, isEnabled } = req.body;
+
+    const updates = [
+      ['AI_MODEL', (model || 'gemini-3.7-flash').trim()],
+      ['AI_AGENT_NAME', (agentName || 'Nico').trim()],
+      ['AI_AGENT_ENABLED', isEnabled ? 'true' : 'false']
+    ];
+
+    if (apiKey !== undefined && apiKey.trim()) {
+      updates.push(['GEMINI_API_KEY', apiKey.trim()]);
+    }
+
+    for (const [key, val] of updates) {
+      await pool.query(`
+        INSERT INTO reservas_system_settings (key, value, updated_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+      `, [key, val]);
+    }
+
+    res.json({ success: true, message: 'Configuración de IA guardada exitosamente.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ai-agent/chat', async (req, res) => {
+  try {
+    const { businessId, customerPhone, customerName, message, history } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'El mensaje no puede estar vacío.' });
+    }
+
+    const aiRes = await processCustomerMessageWithGemini(pool, {
+      businessId: businessId || null,
+      customerPhone: customerPhone || '50688880000',
+      customerName: customerName || 'Usuario Demo',
+      messageText: message.trim(),
+      conversationHistory: history || []
+    });
+
+    res.json(aiRes);
+  } catch (error) {
+    console.error('Error en /api/ai-agent/chat:', error);
+    res.status(500).json({ error: error.message || 'Error procesando mensaje con IA' });
   }
 });
 

@@ -20266,7 +20266,7 @@ Esperamos atenderle pronto de nuevo.`;
     `;
 
     try {
-      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats] = await Promise.all([
+      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats, aiConfig] = await Promise.all([
         storage.getDeveloperStats(),
         storage.getDeveloperBusinesses(),
         storage.getDeveloperClients(),
@@ -20275,7 +20275,8 @@ Esperamos atenderle pronto de nuevo.`;
         storage.getWhatsAppSettings(),
         storage.getPreRegistrations(),
         storage.getPayPalConfig(),
-        storage.getCleanupStats()
+        storage.getCleanupStats(),
+        storage.getAiAgentConfig()
       ]);
 
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
@@ -20488,6 +20489,12 @@ Esperamos atenderle pronto de nuevo.`;
                   <i class="fab fa-paypal text-blue-600"></i>
                   <span>PayPal & Suscripciones</span>
                   <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold">Activo</span>
+                </button>
+
+                <button id="dev-tab-ai-agent" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'ai-agent' ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
+                  <i class="fas fa-robot text-sky-400"></i>
+                  <span>Asistente IA (Gemini)</span>
+                  ${aiConfig?.hasApiKey ? '<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-xs"></span>' : '<span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] rounded-full font-bold">Configurar</span>'}
                 </button>
 
                 <button id="dev-tab-maintenance" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${this.activeDevTab === 'maintenance' ? 'bg-amber-500 text-slate-950 shadow-xs' : 'text-slate-600 hover:bg-slate-100'}">
@@ -21530,6 +21537,122 @@ Esperamos atenderle pronto de nuevo.`;
                     </div>
                   </div>
                 </div>
+              <!-- PESTAÑA: ASISTENTE VIRTUAL IA CON GOOGLE GEMINI -->
+              ${this.activeDevTab === 'ai-agent' ? `
+                <div class="space-y-6 animate-fade-in">
+                  <!-- Header de la Pestaña -->
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl border border-indigo-900/50 shadow-md">
+                    <div>
+                      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-sky-300 text-[11px] font-bold uppercase tracking-wider mb-2 border border-sky-400/30">
+                        <i class="fas fa-robot text-sky-400"></i> Asistente de Reservas Inteligente
+                      </div>
+                      <h3 class="text-xl font-black text-white flex items-center gap-2">
+                        <span>Asistente Virtual con IA (Google Gemini)</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">En Línea</span>
+                      </h3>
+                      <p class="text-xs text-slate-300 mt-1 max-w-2xl">
+                        Atiende a los clientes por WhatsApp automáticamente, responde consultas de precios, consulta la disponibilidad de horarios en tiempo real y agenda turnos sin cruces.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Configuración del Asistente (Columna Izquierda) -->
+                    <div class="lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <div class="flex items-center gap-2 text-indigo-700">
+                          <i class="fas fa-sliders-h"></i>
+                          <h4 class="text-sm font-black text-slate-900">Configuración del Motor</h4>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-extrabold font-mono">${aiConfig?.model || 'Gemini 3.7 Flash'}</span>
+                      </div>
+
+                      <form id="dev-ai-config-form" class="space-y-4 text-xs">
+                        <div>
+                          <label class="block font-bold text-slate-700 mb-1">Nombre del Asistente</label>
+                          <input type="text" id="dev-ai-agent-name" value="${aiConfig?.agentName || 'Nico'}" placeholder="Ej. Nico, Capi, Wanda..." class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                          <span class="text-[10px] text-slate-400 block mt-1">Es el nombre con el que se presentará a tus clientes en el chat.</span>
+                        </div>
+
+                        <div>
+                          <label class="block font-bold text-slate-700 mb-1">Modelo de Gemini</label>
+                          <select id="dev-ai-model-select" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="gemini-3.7-flash" ${aiConfig?.model === 'gemini-3.7-flash' ? 'selected' : ''}>gemini-3.7-flash (Recomendado - Ultra Rápido & Inteligente)</option>
+                            <option value="gemini-3.5-flash" ${aiConfig?.model === 'gemini-3.5-flash' ? 'selected' : ''}>gemini-3.5-flash (Estable)</option>
+                            <option value="gemini-3.8-flash" ${aiConfig?.model === 'gemini-3.8-flash' ? 'selected' : ''}>gemini-3.8-flash (Avanzado)</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <div class="flex items-center justify-between mb-1">
+                            <label class="block font-bold text-slate-700">API Key de Google Gemini *</label>
+                            ${aiConfig?.hasApiKey ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1"><i class="fas fa-check-circle text-emerald-600"></i> Conectada</span>' : '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Sin configurar</span>'}
+                          </div>
+                          <div class="relative">
+                            <input type="password" id="dev-ai-api-key" placeholder="${aiConfig?.hasApiKey ? '•••••••••••••••••••••••••••••••••••• (API Key configurada)' : 'Pega tu clave AQ.Ab8... o AIzaSy...'}" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <button type="button" id="dev-ai-key-toggle" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                              <i class="fas fa-eye"></i>
+                            </button>
+                          </div>
+                          <span class="text-[10px] text-slate-400 block mt-1">Obtenida desde Google AI Studio (aistudio.google.com). Puedes cambiar de cuenta o clave cuando desees.</span>
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                          <div>
+                            <span class="font-bold text-slate-800 block text-xs">Estado del Asistente</span>
+                            <span class="text-[10px] text-slate-500">Permite a la IA responder mensajes de clientes por WhatsApp</span>
+                          </div>
+                          <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="dev-ai-enabled-toggle" class="sr-only peer" ${aiConfig?.isEnabled !== false ? 'checked' : ''}>
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                          </label>
+                        </div>
+
+                        <button type="submit" id="dev-ai-save-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                          <i class="fas fa-save"></i>
+                          <span>Guardar Configuración en Base de Datos</span>
+                        </button>
+                      </form>
+                    </div>
+
+                    <!-- Simulador de WhatsApp en Vivo (Columna Derecha) -->
+                    <div class="lg:col-span-6 bg-[#0b141a] text-slate-100 p-5 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between h-[520px]">
+                      <div>
+                        <!-- Header del chat WhatsApp -->
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                          <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 flex items-center justify-center font-bold text-base shadow-sm">
+                              <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                              <h5 id="dev-sim-agent-name" class="font-bold text-sm text-white">${aiConfig?.agentName || 'Nico'} (IA Reservas CR)</h5>
+                              <span class="text-[10px] text-emerald-400 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> en línea
+                              </span>
+                            </div>
+                          </div>
+                          <span class="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] text-slate-400 font-mono">Simulador WhatsApp</span>
+                        </div>
+
+                        <!-- Área de Mensajes -->
+                        <div id="dev-ai-chat-messages" class="mt-4 space-y-3 overflow-y-auto max-h-[340px] pr-1 text-xs">
+                          <div class="p-3 bg-[#202c33] rounded-2xl rounded-tl-none max-w-[85%] text-slate-200 leading-relaxed shadow-sm">
+                            ¡Hola! 👋 Soy <strong>${aiConfig?.agentName || 'Nico'}</strong>, tu asistente virtual de Reservas CR. Puedes preguntarme por servicios, precios o pedirme agendar una cita de prueba. ¿Qué te gustaría consultar?
+                            <span class="block text-[9px] text-slate-400 text-right mt-1">Ahora</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Input de Envío -->
+                      <form id="dev-ai-sim-form" class="mt-3 flex gap-2 pt-2 border-t border-slate-800">
+                        <input type="text" id="dev-ai-sim-input" placeholder="Escribe un mensaje de prueba (ej: ¿Qué servicios tienen?)..." class="flex-1 px-4 py-2.5 bg-[#202c33] text-white border border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <button type="submit" id="dev-ai-sim-send-btn" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                          <i class="fas fa-paper-plane"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
               ` : ''}
 
               <!-- PESTAÑA 8: MANTENIMIENTO DE BASE DE DATOS Y EXPORTACIÓN A EXCEL -->
@@ -21833,6 +21956,7 @@ Esperamos atenderle pronto de nuevo.`;
       document.getElementById('dev-tab-preregistrations')?.addEventListener('click', () => setDevTab('preregistrations'));
       document.getElementById('dev-tab-sinpe')?.addEventListener('click', () => setDevTab('sinpe'));
       document.getElementById('dev-tab-paypal')?.addEventListener('click', () => setDevTab('paypal'));
+      document.getElementById('dev-tab-ai-agent')?.addEventListener('click', () => setDevTab('ai-agent'));
       document.getElementById('dev-tab-maintenance')?.addEventListener('click', () => setDevTab('maintenance'));
       document.getElementById('dev-btn-test-sinpe')?.addEventListener('click', () => {
         this.navigateTo('business-test-pricing');
@@ -22263,6 +22387,131 @@ Esperamos atenderle pronto de nuevo.`;
             testBtn.disabled = false;
             testBtn.innerHTML = '<i class="fas fa-play text-[10px]"></i> <span>Enviar Test</span>';
           }
+        }
+      });
+
+      // --- ASISTENTE IA (GOOGLE GEMINI) LISTENERS ---
+      // Toggle visibilidad de la API Key de Gemini
+      document.getElementById('dev-ai-key-toggle')?.addEventListener('click', () => {
+        const keyInput = document.getElementById('dev-ai-api-key');
+        if (keyInput) {
+          keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+        }
+      });
+
+      // Guardar Configuración del Asistente IA
+      document.getElementById('dev-ai-config-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('dev-ai-agent-name');
+        const modelSelect = document.getElementById('dev-ai-model-select');
+        const keyInput = document.getElementById('dev-ai-api-key');
+        const enabledToggle = document.getElementById('dev-ai-enabled-toggle');
+        const saveBtn = document.getElementById('dev-ai-save-btn');
+
+        const agentName = nameInput?.value?.trim() || 'Nico';
+        const model = modelSelect?.value || 'gemini-3.7-flash';
+        const apiKey = keyInput?.value?.trim() || '';
+        const isEnabled = enabledToggle ? enabledToggle.checked : true;
+
+        if (saveBtn) {
+          saveBtn.disabled = true;
+          saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Guardando...';
+        }
+
+        try {
+          await storage.saveAiAgentConfig({ agentName, model, apiKey, isEnabled });
+          this.showToast('¡Configuración de Asistente IA guardada exitosamente!', 'success');
+          this.renderDeveloperDashboardView(container);
+        } catch (err) {
+          this.showToast(err.message || 'Error guardando configuración de IA.', 'error');
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save mr-1"></i> Guardar Configuración en Base de Datos';
+          }
+        }
+      });
+
+      // Historial para el simulador de chat en vivo
+      if (!this.aiSimChatHistory) {
+        this.aiSimChatHistory = [];
+      }
+
+      document.getElementById('dev-ai-sim-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const inputEl = document.getElementById('dev-ai-sim-input');
+        const sendBtn = document.getElementById('dev-ai-sim-send-btn');
+        const messagesBox = document.getElementById('dev-ai-chat-messages');
+
+        const userMsg = inputEl?.value?.trim();
+        if (!userMsg || !messagesBox) return;
+
+        inputEl.value = '';
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // 1. Burbuja de mensaje del usuario
+        const userBubble = document.createElement('div');
+        userBubble.className = 'flex justify-end';
+        userBubble.innerHTML = `
+          <div class="p-3 bg-[#005c4b] text-white rounded-2xl rounded-tr-none max-w-[85%] leading-relaxed shadow-sm">
+            <span>${this.escapeHtml ? this.escapeHtml(userMsg) : userMsg}</span>
+            <span class="block text-[9px] text-emerald-200 text-right mt-1">${timeStr} <i class="fas fa-check-double text-[8px] text-sky-300"></i></span>
+          </div>
+        `;
+        messagesBox.appendChild(userBubble);
+
+        // 2. Indicador "Escribiendo..."
+        const typingBubble = document.createElement('div');
+        typingBubble.className = 'flex justify-start';
+        typingBubble.id = 'dev-ai-typing-indicator';
+        typingBubble.innerHTML = `
+          <div class="p-3 bg-[#202c33] text-slate-300 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed shadow-sm flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.2s]"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-bounce [animation-delay:0.4s]"></span>
+            <span class="text-[10px] text-slate-400 ml-1">Escribiendo...</span>
+          </div>
+        `;
+        messagesBox.appendChild(typingBubble);
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+
+        if (sendBtn) sendBtn.disabled = true;
+
+        try {
+          const res = await storage.sendAiAgentChatMessage(userMsg, this.aiSimChatHistory);
+          document.getElementById('dev-ai-typing-indicator')?.remove();
+
+          const replyText = res.reply || 'Disculpa, no pude procesar tu solicitud.';
+
+          this.aiSimChatHistory.push({ role: 'user', content: userMsg });
+          this.aiSimChatHistory.push({ role: 'assistant', content: replyText });
+
+          // 3. Burbuja de respuesta del asistente
+          const aiBubble = document.createElement('div');
+          aiBubble.className = 'flex justify-start';
+          aiBubble.innerHTML = `
+            <div class="p-3 bg-[#202c33] text-slate-200 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed shadow-sm">
+              <span class="whitespace-pre-line">${replyText}</span>
+              ${res.appointmentCreated ? '<div class="mt-2 p-2 bg-emerald-950/80 border border-emerald-500/40 rounded-lg text-emerald-300 font-bold text-[10px] flex items-center gap-1.5"><i class="fas fa-calendar-check text-emerald-400"></i> ¡Cita agendada automáticamente en el sistema!</div>' : ''}
+              <span class="block text-[9px] text-slate-400 text-right mt-1">${timeStr}</span>
+            </div>
+          `;
+          messagesBox.appendChild(aiBubble);
+          messagesBox.scrollTop = messagesBox.scrollHeight;
+        } catch (err) {
+          document.getElementById('dev-ai-typing-indicator')?.remove();
+          const errBubble = document.createElement('div');
+          errBubble.className = 'flex justify-start';
+          errBubble.innerHTML = `
+            <div class="p-3 bg-rose-950/80 text-rose-200 border border-rose-800 rounded-2xl rounded-tl-none max-w-[85%] text-xs leading-relaxed">
+              <i class="fas fa-exclamation-triangle text-rose-400 mr-1"></i> Error: ${err.message || 'No se pudo conectar con el motor de IA.'}
+            </div>
+          `;
+          messagesBox.appendChild(errBubble);
+          messagesBox.scrollTop = messagesBox.scrollHeight;
+        } finally {
+          if (sendBtn) sendBtn.disabled = false;
         }
       });
 

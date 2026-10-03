@@ -2545,6 +2545,49 @@ class StorageService {
     }
   }
 
+  // --- ASISTENTE IA (GOOGLE GEMINI) ---
+  async getAiAgentConfig() {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/ai-agent/config`);
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.error('Error fetching ai agent config:', e);
+    }
+    return { agentName: 'Nico', model: 'gemini-3.7-flash', isEnabled: true, hasApiKey: false };
+  }
+
+  async saveAiAgentConfig(config) {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/ai-agent/config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json();
+      throw new Error(err.error || 'Error al guardar configuración de IA.');
+    } catch (e) {
+      console.error('Error saving ai agent config:', e);
+      throw e;
+    }
+  }
+
+  async sendAiAgentChatMessage(message, history = []) {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/ai-agent/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, history })
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json();
+      throw new Error(err.error || 'Error procesando respuesta con IA.');
+    } catch (e) {
+      console.error('Error chatting with ai agent:', e);
+      throw e;
+    }
+  }
+
   // --- RESEÑAS Y CALIFICACIONES VERIFICADAS ---
   async getReviewInfo(appointmentId) {
     try {
