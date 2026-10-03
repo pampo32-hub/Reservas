@@ -178,25 +178,84 @@ export async function startWhatsAppQrConnection() {
 
           console.log(`📥 [WhatsApp QR] Mensaje de ${senderName} (+${senderPhone}): "${text}"`);
 
-          // Extraer posible ID o nombre de comercio del mensaje si viene desde un enlace web
+          // Obtener o inicializar sesión para este número telefónico
+          let session = phoneSessions.get(senderPhone);
+          const now = Date.now();
+          if (!session || (now - session.lastActive > SESSION_EXPIRATION_MS)) {
+            session = {
+              businessId: null,
+              businessName: null,
+              history: [],
+              lastActive: now
+            };
+            phoneSessions.set(senderPhone, session);
+          }
+          session.lastActive = now;
+
+          // 1. Detección por tag [Ref: id] si existiera (retrocompatibilidad)
           let businessId = null;
           const bizRefMatch = text.match(/\[(?:Ref|ID):\s*([a-zA-Z0-9_\-]+)\]/i);
           if (bizRefMatch && bizRefMatch[1]) {
             businessId = bizRefMatch[1].trim();
           }
 
+          // 2. Si no tiene tag [Ref: ...], detectar el nombre del comercio directamente en la oración
+          if (!businessId && dbPool) {
+            try {
+              const bizMatchRes = await dbPool.query(`
+                SELECT id, name FROM reservas_businesses 
+                WHERE is_blocked = false 
+                  AND (
+                    POSITION(LOWER(name) IN LOWER($1)) > 0
+                    OR (slug IS NOT NULL AND slug != '' AND POSITION(LOWER(REPLACE(slug, '-', ' ')) IN LOWER($1)) > 0)
+                  )
+                ORDER BY LENGTH(name) DESC 
+                LIMIT 1
+              `, [text]);
+
+              if (bizMatchRes.rows.length > 0) {
+                businessId = bizMatchRes.rows[0].id;
+                session.businessId = businessId;
+                session.businessName = bizMatchRes.rows[0].name;
+                console.log(`🎯 [WhatsApp QR] Negocio identificado por nombre en el texto: "${bizMatchRes.rows[0].name}" (ID: ${businessId})`);
+              }
+            } catch (err) {
+              console.warn('Error identificando negocio por nombre:', err.message);
+            }
+          }
+
+          // 3. Si el cliente no repite el nombre en su segundo/tercer mensaje, recordar el negocio activo de su sesión
+          if (!businessId && session.businessId) {
+            businessId = session.businessId;
+          } else if (businessId) {
+            session.businessId = businessId;
+          }
+
+          // 4. Limpiar cualquier tag técnico residual del texto para procesar
+          const cleanUserText = text.replace(/\[(?:Ref|ID):\s*([a-zA-Z0-9_\-]+)\]/gi, '').trim();
+
           // Indicar "Escribiendo..." en el chat de WhatsApp
           try {
             await sock.sendPresenceUpdate('composing', remoteJid);
           } catch (_) {}
 
-          // Procesar con la IA de Gemini conectada a PostgreSQL
+          // Procesar con la IA de Gemini conectada a PostgreSQL con memoria conversacional
           const aiResponse = await processCustomerMessageWithGemini(dbPool, {
             businessId,
             customerPhone: senderPhone,
             customerName: senderName,
-            messageText: text
+            messageText: cleanUserText,
+            conversationHistory: session.history.slice(-8)
           });
+
+          // Registrar en la memoria conversacional de este cliente
+          session.history.push({ role: 'user', text: cleanUserText });
+          if (aiResponse?.reply) {
+            session.history.push({ role: 'assistant', text: aiResponse.reply });
+            if (session.history.length > 16) {
+              session.history = session.history.slice(-16);
+            }
+          }
 
           // Pequeña pausa de 1.2 segundos para simular respuesta humana natural
           await new Promise(r => setTimeout(r, 1200));

@@ -4884,9 +4884,9 @@ class App {
     const hasSocial = Boolean(igUrl || fbUrl || ttUrl || webUrl);
     const vitrinaItems = storage.getVitrinaItemsSync(biz.id) || [];
 
-    // Enlace directo al Asistente IA en WhatsApp con referencia del negocio
+    // Enlace directo al Asistente IA en WhatsApp con saludo 100% natural
     const centralAiPhone = '50670371302';
-    const aiInitialText = `Hola, me gustaría consultar servicios y agendar una cita en ${biz.name} [Ref: ${biz.id}]`;
+    const aiInitialText = `Hola, me gustaría consultar servicios y agendar una cita en ${biz.name}`;
     const aiWhatsAppUrl = this.getWhatsAppUrl(centralAiPhone, aiInitialText);
 
     container.innerHTML = `

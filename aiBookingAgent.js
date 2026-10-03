@@ -61,21 +61,24 @@ export async function getBusinessContext(pool, businessId) {
   try {
     const bizRes = await pool.query(`
       SELECT id, name, phone, address, city, category, bio, sinpe_phone, working_hours, auto_confirm, deposit_percentage, require_deposit
-      FROM reservas_businesses WHERE id = $1
+      FROM reservas_businesses 
+      WHERE id = $1 OR LOWER(name) = LOWER($1) OR slug = $1
+      LIMIT 1
     `, [businessId]);
 
     const biz = bizRes.rows[0] || { name: 'Comercio', city: 'Costa Rica' };
+    const realBizId = biz.id || businessId;
 
     const servicesRes = await pool.query(`
       SELECT id, name, price, duration, description, category
       FROM reservas_services WHERE business_id = $1 AND is_active = true
       ORDER BY price ASC
-    `, [businessId]);
+    `, [realBizId]);
 
     const staffRes = await pool.query(`
       SELECT id, name, specialty, phone
       FROM reservas_staff WHERE business_id = $1 AND (is_active = true OR is_active IS NULL)
-    `, [businessId]);
+    `, [realBizId]);
 
     // Consultar citas de los próximos 7 días para saber qué horarios están ocupados
     const todayStr = new Date().toISOString().split('T')[0];
@@ -84,7 +87,7 @@ export async function getBusinessContext(pool, businessId) {
       FROM reservas_appointments 
       WHERE business_id = $1 AND date >= $2 AND status NOT IN ('cancelled', 'rechazada')
       ORDER BY date ASC, time ASC
-    `, [businessId, todayStr]);
+    `, [realBizId, todayStr]);
 
     return {
       business: biz,
