@@ -6106,7 +6106,7 @@ class App {
                     <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">
                       <i class="fas fa-bolt"></i>
                     </div>
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-1">
                       <div class="text-xs font-bold text-slate-900 truncate">Cualquiera</div>
                       <div class="text-[10px] text-slate-500 truncate">Más turnos libres</div>
                     </div>
@@ -6120,15 +6120,15 @@ class App {
                       data-staff-id="${st.id}"
                     >
                       ${st.avatarUrl ? `
-                        <img src="${st.avatarUrl}" alt="${st.name}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200">
+                        <img src="${st.avatarUrl}" alt="${this.escapeHtml(st.name)}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200">
                       ` : `
                         <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-900 text-white flex items-center justify-center text-xs font-black shrink-0">
                           ${st.name.charAt(0).toUpperCase()}
                         </div>
                       `}
-                      <div class="min-w-0">
-                        <div class="text-xs font-bold text-slate-900 truncate">${st.name.split(' ')[0]}</div>
-                        <div class="text-[10px] text-slate-500 truncate">${st.roleTitle || 'Especialista'}</div>
+                      <div class="min-w-0 flex-1">
+                        <div class="text-xs font-bold text-slate-900 truncate" title="${this.escapeHtml(st.name)}">${this.escapeHtml(st.name)}</div>
+                        <div class="text-[10px] text-slate-500 truncate" title="${this.escapeHtml(st.roleTitle || 'Especialista')}">${this.escapeHtml(st.roleTitle || 'Especialista')}</div>
                       </div>
                     </button>
                   `).join('')}
