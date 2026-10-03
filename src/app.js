@@ -20335,10 +20335,14 @@ Esperamos atenderle pronto de nuevo.`;
 
       // Filtrado por buscador
       const filteredBusinesses = devBusinessesList.filter(b => 
-        !q || (b.name && b.name.toLowerCase().includes(q)) || 
+        !q || 
+        (b.id && b.id.toLowerCase().includes(q)) ||
+        (b.name && b.name.toLowerCase().includes(q)) || 
         (b.categoryLabel && b.categoryLabel.toLowerCase().includes(q)) || 
         (b.email && b.email.toLowerCase().includes(q)) || 
-        (b.city && b.city.toLowerCase().includes(q))
+        (b.city && b.city.toLowerCase().includes(q)) ||
+        (b.ownerName && b.ownerName.toLowerCase().includes(q)) ||
+        (b.ownerEmail && b.ownerEmail.toLowerCase().includes(q))
       );
 
       const filteredClients = clients.filter(c => 
@@ -20845,12 +20849,10 @@ Esperamos atenderle pronto de nuevo.`;
               <!-- PESTAÑA 2: DIRECTORIO DE NEGOCIOS -->
               ${this.activeDevTab === 'businesses' ? `
                 <div class="space-y-4">
-                  <div class="flex items-center justify-between">
-                <div class="space-y-5">
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <h3 class="text-base font-bold text-slate-900">Directorio General de Comercios</h3>
-                      <p class="text-xs text-slate-500">Administra todos los comercios: verifica comercios reales, ocúltalos de la portada, bloquéalos o modifícalos.</p>
+                      <p class="text-xs text-slate-500">Administra todos los comercios: edita datos, verifica comercios reales, ocúltalos del inicio, bloquéalos o elimínalos.</p>
                     </div>
 
                     <!-- Mini resumen en badges -->
@@ -20895,31 +20897,40 @@ Esperamos atenderle pronto de nuevo.`;
                     </button>
                   </div>
 
+                  <!-- Banner indicador de acciones -->
+                  <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl font-medium">
+                      <i class="fas fa-bolt text-blue-600"></i>
+                      <span><strong>Acciones Directas fijadas a la derecha:</strong> Modificar, Ocultar/Mostrar, Bloquear y Eliminar permanecen siempre visibles al desplazarte.</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">${filteredBusinesses.length} comercios</span>
+                  </div>
+
                   ${filteredBusinesses.length === 0 ? `
                     <div class="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100 text-slate-400">
                       <i class="fas fa-store-slash text-3xl mb-2"></i>
                       <p class="text-sm font-bold text-slate-700">No se encontraron comercios en esta categoría o filtro</p>
                     </div>
                   ` : `
-                    <div class="overflow-x-auto">
-                      <table class="w-full text-left text-xs text-slate-600">
-                        <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                    <div class="overflow-x-auto rounded-2xl border border-slate-200 shadow-xs max-w-full">
+                      <table class="w-full text-left text-xs text-slate-600 border-separate border-spacing-0">
+                        <thead class="bg-slate-50 text-slate-700 font-bold">
                           <tr>
-                            <th class="p-3">Comercio</th>
-                            <th class="p-3">Categoría</th>
-                            <th class="p-3">Verificación</th>
-                            <th class="p-3">Plan Activo</th>
-                            <th class="p-3">Ubicación / Contacto</th>
-                            <th class="p-3">Dueño / Correo</th>
-                            <th class="p-3">Servicios</th>
-                            <th class="p-3">Estado</th>
-                            <th class="p-3 text-right">Acciones Developer</th>
+                            <th class="p-3 border-b border-slate-200">Comercio</th>
+                            <th class="p-3 border-b border-slate-200">Categoría</th>
+                            <th class="p-3 border-b border-slate-200">Verificación</th>
+                            <th class="p-3 border-b border-slate-200">Plan Activo</th>
+                            <th class="p-3 border-b border-slate-200">Ubicación / Contacto</th>
+                            <th class="p-3 border-b border-slate-200">Dueño / Correo</th>
+                            <th class="p-3 border-b border-slate-200">Servicios</th>
+                            <th class="p-3 border-b border-slate-200">Estado</th>
+                            <th class="p-3 text-center sticky right-0 bg-slate-100 shadow-[-6px_0_12px_rgba(0,0,0,0.06)] border-b border-l border-slate-200 z-20 min-w-[270px]">Acciones Developer</th>
                           </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 font-medium">
+                        <tbody class="font-medium">
                           ${filteredBusinesses.map(b => `
-                            <tr class="hover:bg-slate-50/80 transition-colors ${b.isBlocked ? 'bg-rose-50/30' : b.isHidden ? 'bg-amber-50/30' : ''}">
-                              <td class="p-3">
+                            <tr class="hover:bg-slate-50/80 transition-colors ${b.isBlocked ? 'bg-rose-50/30' : b.isHidden ? 'bg-amber-50/30' : 'bg-white'}">
+                              <td class="p-3 border-b border-slate-100">
                                 <div class="flex items-center gap-3">
                                   <img src="${b.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80'}" alt="${this.escapeHtml(b.name)}" class="w-10 h-10 rounded-xl object-cover border border-slate-200 shadow-xs flex-shrink-0">
                                   <div>
@@ -20928,10 +20939,10 @@ Esperamos atenderle pronto de nuevo.`;
                                   </div>
                                 </div>
                               </td>
-                              <td class="p-3">
+                              <td class="p-3 border-b border-slate-100">
                                 <span class="px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-[11px] block whitespace-nowrap">${this.escapeHtml(b.categoryLabel || b.category)}</span>
                               </td>
-                              <td class="p-3 whitespace-nowrap">
+                              <td class="p-3 whitespace-nowrap border-b border-slate-100">
                                 ${b.isVerified ? `
                                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
                                     <i class="fas fa-shield-alt text-emerald-600"></i> Verificado
@@ -20942,7 +20953,7 @@ Esperamos atenderle pronto de nuevo.`;
                                   </span>
                                 `}
                               </td>
-                              <td class="p-3 whitespace-nowrap">
+                              <td class="p-3 whitespace-nowrap border-b border-slate-100">
                                 <select 
                                   class="dev-change-plan-select text-xs font-bold px-2.5 py-1.5 rounded-xl border cursor-pointer transition-all shadow-2xs focus:ring-2 focus:ring-indigo-500 focus:outline-none ${b.plan === 'unlimited' ? 'bg-purple-100 text-purple-900 border-purple-300' : (b.plan === 'basic' ? 'bg-blue-50 text-blue-900 border-blue-200' : (b.plan === 'free' ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : 'bg-amber-100 text-amber-900 border-amber-300'))}" 
                                   data-id="${b.id}" 
@@ -20954,18 +20965,18 @@ Esperamos atenderle pronto de nuevo.`;
                                   <option value="unlimited" ${b.plan === 'unlimited' ? 'selected' : ''}>Premium ($35 • 600)</option>
                                 </select>
                               </td>
-                              <td class="p-3">
+                              <td class="p-3 border-b border-slate-100">
                                 <span class="block text-slate-800 font-semibold">${this.escapeHtml(b.city || 'Costa Rica')}</span>
                                 <span class="text-[10px] text-slate-400">${this.escapeHtml(b.phone || 'Sin teléfono')}</span>
                               </td>
-                              <td class="p-3">
+                              <td class="p-3 border-b border-slate-100">
                                 <span class="block text-slate-800">${this.escapeHtml(b.ownerName || (b.isDemo ? 'Demo Admin' : 'Registrado'))}</span>
                                 <span class="text-[10px] text-slate-400">${this.escapeHtml(b.ownerEmail || b.email || 'N/A')}</span>
                               </td>
-                              <td class="p-3">
+                              <td class="p-3 border-b border-slate-100">
                                 <span class="font-bold text-slate-800">${b.servicesCount !== undefined ? b.servicesCount : (b.services ? b.services.length : 0)} servicios</span>
                               </td>
-                              <td class="p-3 whitespace-nowrap">
+                              <td class="p-3 whitespace-nowrap border-b border-slate-100">
                                 ${b.isBlocked ? `
                                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200" title="Suspendido: ${b.blockReason || 'Sin motivo'}">
                                     <i class="fas fa-ban text-rose-600"></i> Bloqueado
@@ -20980,57 +20991,59 @@ Esperamos atenderle pronto de nuevo.`;
                                   </span>
                                 `}
                               </td>
-                              <td class="p-3 text-right whitespace-nowrap">
+                              <td class="p-3 text-right whitespace-nowrap sticky right-0 ${b.isBlocked ? 'bg-rose-50' : (b.isHidden ? 'bg-amber-50' : 'bg-white')} shadow-[-6px_0_12px_rgba(0,0,0,0.06)] border-b border-l border-slate-200 z-10">
                                 <div class="flex items-center justify-end gap-1.5">
-                                  <!-- Verificar / Desverificar Oficialmente -->
-                                  ${b.isVerified ? `
-                                    <button class="dev-toggle-verify-btn px-2.5 py-1.5 bg-emerald-100 hover:bg-rose-100 text-emerald-900 hover:text-rose-900 border border-emerald-300 hover:border-rose-300 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${b.id}" data-action="unverify" data-name="${this.escapeHtml(b.name)}" title="Quitar insignia de verificado">
-                                      <i class="fas fa-shield-alt text-emerald-600"></i>
-                                      <span>Verificado</span>
-                                    </button>
-                                  ` : `
-                                    <button class="dev-toggle-verify-btn px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${b.id}" data-action="verify" data-name="${this.escapeHtml(b.name)}" title="Otorgar insignia oficial de Comercio Verificado">
-                                      <i class="fas fa-check-circle"></i>
-                                      <span>Verificar</span>
-                                    </button>
-                                  `}
-
-                                  <!-- Ver en Directorio -->
-                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all cursor-pointer" data-id="${b.id}" title="Ver página del comercio">
-                                    <i class="fas fa-external-link-alt text-xs"></i>
-                                  </button>
-
                                   <!-- Modificar / Editar Negocio -->
-                                  <button class="dev-edit-biz-btn px-2.5 py-1.5 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-2xs cursor-pointer" data-id="${b.id}" data-name="${this.escapeHtml(b.name)}" title="Modificar datos completos del negocio">
-                                    <i class="fas fa-edit text-xs"></i>
-                                    <span>Modificar</span>
+                                  <button class="dev-edit-biz-btn px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95" data-id="${b.id}" data-name="${this.escapeHtml(b.name)}" title="Modificar datos completos del negocio">
+                                    <i class="fas fa-edit text-xs pointer-events-none"></i>
+                                    <span>Editar</span>
                                   </button>
 
                                   <!-- Ocultar / Mostrar en Inicio -->
                                   ${b.isHidden ? `
-                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${b.id}" data-action="show" data-name="${this.escapeHtml(b.name)}" title="Hacer visible en la página principal">
-                                      <i class="fas fa-eye text-emerald-600"></i> Mostrar
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-amber-100 hover:bg-emerald-100 text-amber-900 hover:text-emerald-900 border border-amber-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer active:scale-95" data-id="${b.id}" data-action="show" data-name="${this.escapeHtml(b.name)}" title="Hacer visible en la página principal">
+                                      <i class="fas fa-eye text-emerald-600 pointer-events-none"></i>
+                                      <span>Mostrar</span>
                                     </button>
                                   ` : `
-                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" data-id="${b.id}" data-action="hide" data-name="${this.escapeHtml(b.name)}" title="Ocultar de la página principal">
-                                      <i class="fas fa-eye-slash text-amber-600"></i> Ocultar
+                                    <button class="dev-toggle-visibility-btn px-2.5 py-1.5 bg-slate-100 hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95" data-id="${b.id}" data-action="hide" data-name="${this.escapeHtml(b.name)}" title="Ocultar de la página principal">
+                                      <i class="fas fa-eye-slash text-amber-600 pointer-events-none"></i>
+                                      <span>Ocultar</span>
                                     </button>
                                   `}
 
                                   <!-- Bloquear / Desbloquear -->
                                   ${b.isBlocked ? `
-                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer" data-id="${b.id}" data-action="unblock" data-name="${this.escapeHtml(b.name)}" title="Desbloquear este comercio">
-                                      <i class="fas fa-unlock text-emerald-600"></i> Desbloquear
+                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-rose-100 hover:bg-emerald-100 text-rose-900 hover:text-emerald-900 border border-rose-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer active:scale-95" data-id="${b.id}" data-action="unblock" data-name="${this.escapeHtml(b.name)}" title="Desbloquear este comercio">
+                                      <i class="fas fa-unlock text-emerald-600 pointer-events-none"></i>
+                                      <span>Desbloquear</span>
                                     </button>
                                   ` : `
-                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer" data-id="${b.id}" data-action="block" data-name="${this.escapeHtml(b.name)}" title="Bloquear / Suspender reservas">
-                                      <i class="fas fa-ban text-rose-600"></i> Bloquear
+                                    <button class="dev-toggle-block-btn px-2.5 py-1.5 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95" data-id="${b.id}" data-action="block" data-name="${this.escapeHtml(b.name)}" title="Bloquear / Suspender reservas">
+                                      <i class="fas fa-ban text-rose-600 pointer-events-none"></i>
+                                      <span>Bloquear</span>
                                     </button>
                                   `}
 
                                   <!-- Eliminar definitivamente -->
-                                  <button class="dev-delete-biz-btn p-2 bg-slate-100 hover:bg-rose-600 hover:text-white text-slate-500 rounded-xl transition-all cursor-pointer" data-id="${b.id}" data-name="${this.escapeHtml(b.name)}" title="Eliminar Comercio Permanentemente">
-                                    <i class="fas fa-trash-alt text-xs"></i>
+                                  <button class="dev-delete-biz-btn p-2 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 border border-rose-200 rounded-xl transition-all cursor-pointer active:scale-95" data-id="${b.id}" data-name="${this.escapeHtml(b.name)}" title="Eliminar Comercio Permanentemente">
+                                    <i class="fas fa-trash-alt text-xs pointer-events-none"></i>
+                                  </button>
+
+                                  <!-- Verificar / Desverificar Oficialmente -->
+                                  ${b.isVerified ? `
+                                    <button class="dev-toggle-verify-btn p-2 bg-emerald-100 hover:bg-rose-100 text-emerald-900 hover:text-rose-900 border border-emerald-300 hover:border-rose-300 rounded-xl text-xs font-black transition-all shadow-2xs cursor-pointer active:scale-95" data-id="${b.id}" data-action="unverify" data-name="${this.escapeHtml(b.name)}" title="Quitar insignia de verificado">
+                                      <i class="fas fa-shield-alt text-emerald-600 pointer-events-none"></i>
+                                    </button>
+                                  ` : `
+                                    <button class="dev-toggle-verify-btn p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all shadow-xs cursor-pointer active:scale-95" data-id="${b.id}" data-action="verify" data-name="${this.escapeHtml(b.name)}" title="Otorgar insignia oficial de Comercio Verificado">
+                                      <i class="fas fa-check-circle pointer-events-none"></i>
+                                    </button>
+                                  `}
+
+                                  <!-- Ver en Directorio -->
+                                  <button class="dev-view-biz-btn p-2 bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-xl transition-all cursor-pointer active:scale-95" data-id="${b.id}" title="Ver página del comercio">
+                                    <i class="fas fa-external-link-alt text-xs pointer-events-none"></i>
                                   </button>
                                 </div>
                               </td>
