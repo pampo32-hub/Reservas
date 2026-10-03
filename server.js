@@ -42,6 +42,12 @@ import {
 } from './pushService.js';
 import { parseSinpeEmail } from './src/services/sinpeParser.js';
 import { startSinpeImapWorker } from './sinpeImapService.js';
+import { 
+  initWhatsAppQrService, 
+  startWhatsAppQrConnection, 
+  getWhatsAppQrStatus, 
+  disconnectWhatsAppQr 
+} from './whatsappQrService.js';
 
 dotenv.config();
 
@@ -7889,6 +7895,33 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
   }
 });
 
+// --- ENDPOINTS WHATSAPP QR (CONEXIÓN WEB MULTI-DISPOSITIVO) ---
+app.get('/api/whatsapp-qr/status', (req, res) => {
+  try {
+    res.json(getWhatsAppQrStatus());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/whatsapp-qr/connect', async (req, res) => {
+  try {
+    const status = await startWhatsAppQrConnection();
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/whatsapp-qr/disconnect', async (req, res) => {
+  try {
+    const result = await disconnectWhatsAppQr();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --- ENDPOINTS ASISTENTE VIRTUAL IA (GEMINI) ---
 app.get('/api/ai-agent/config', async (req, res) => {
   try {
@@ -9517,6 +9550,7 @@ app.get('*', (req, res) => {
 async function startServer() {
   await initDatabase();
   await initPushService(pool);
+  await initWhatsAppQrService(pool);
   app.listen(PORT, () => {
     console.log(`🚀 Servidor de Reservas corriendo en http://localhost:${PORT}`);
     console.log(`🐘 Conectado a Neon PostgreSQL`);

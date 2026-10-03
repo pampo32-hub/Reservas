@@ -20265,8 +20265,13 @@ Esperamos atenderle pronto de nuevo.`;
       </div>
     `;
 
+    if (this._waQrPollTimer) {
+      clearInterval(this._waQrPollTimer);
+      this._waQrPollTimer = null;
+    }
+
     try {
-      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats, aiConfig] = await Promise.all([
+      const [stats, businesses, clients, appointments, alerts, waSettings, preRegistrations, paypalConfig, cleanupStats, aiConfig, waQrStatus] = await Promise.all([
         storage.getDeveloperStats(),
         storage.getDeveloperBusinesses(),
         storage.getDeveloperClients(),
@@ -20276,7 +20281,8 @@ Esperamos atenderle pronto de nuevo.`;
         storage.getPreRegistrations(),
         storage.getPayPalConfig(),
         storage.getCleanupStats(),
-        storage.getAiAgentConfig()
+        storage.getAiAgentConfig(),
+        storage.getWhatsAppQrStatus()
       ]);
 
       const pendingAlerts = alerts.filter(a => a.status === 'unread' || a.status === 'pending');
@@ -21250,6 +21256,129 @@ Esperamos atenderle pronto de nuevo.`;
               <!-- PESTAÑA 5: WHATSAPP & META CLOUD API -->
               ${this.activeDevTab === 'whatsapp' ? `
                 <div class="space-y-6">
+
+                  <!-- SECCIÓN 1: VINCULACIÓN POR CÓDIGO QR (WHATSAPP WEB MULTI-DEVICE) -->
+                  <div class="bg-white rounded-3xl border border-emerald-500/30 p-6 sm:p-7 shadow-sm space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                      <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold mb-1 border border-emerald-200">
+                          <i class="fas fa-qrcode"></i> Opción Rápida & Directa
+                        </div>
+                        <h4 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                          <span>Vincular Celular con Código QR (WhatsApp Web)</span>
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-0.5 max-w-2xl">
+                          Conecta cualquier número telefónico (personal o WhatsApp Business) escaneando el código QR con tu celular. El Asistente IA responderá automáticamente a tus clientes y agendará sus citas directamente en el sistema.
+                        </p>
+                      </div>
+
+                      <div id="dev-wa-qr-status-badge">
+                        ${waQrStatus?.isConnected ? `
+                          <span class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-emerald-500 text-white flex items-center gap-1.5 shadow-sm">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Conectado: ${waQrStatus.user?.phone ? '+' + waQrStatus.user.phone : (waQrStatus.user?.id ? '+' + waQrStatus.user.id.split(':')[0] : 'Activo')}</span>
+                          </span>
+                        ` : waQrStatus?.status === 'connecting' ? `
+                          <span class="px-3.5 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-800 flex items-center gap-1.5 border border-amber-200">
+                            <i class="fas fa-circle-notch fa-spin"></i>
+                            <span>Iniciando conexión...</span>
+                          </span>
+                        ` : `
+                          <span class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 flex items-center gap-1.5 border border-slate-200">
+                            <i class="fas fa-power-off"></i>
+                            <span>Desconectado</span>
+                          </span>
+                        `}
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                      <!-- Instrucciones y Acciones -->
+                      <div class="lg:col-span-7 space-y-4">
+                        <div class="space-y-2">
+                          <h5 class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                            <i class="fas fa-list-ol text-emerald-600"></i> Pasos para conectar tu número:
+                          </h5>
+                          <ol class="text-xs text-slate-600 space-y-2 list-decimal list-inside bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                            <li>Abre <strong>WhatsApp</strong> en tu teléfono celular.</li>
+                            <li>Toca los <strong>tres puntos (⋮)</strong> en Android o ve a <strong>Ajustes</strong> en iPhone.</li>
+                            <li>Toca en <strong>Dispositivos vinculados</strong> y luego <strong>Vincular un dispositivo</strong>.</li>
+                            <li>Presiona el botón verde abajo para generar el código QR y enfoca la pantalla con la cámara.</li>
+                          </ol>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3 pt-1">
+                          ${waQrStatus?.isConnected ? `
+                            <button 
+                              type="button" 
+                              id="dev-wa-qr-disconnect-btn" 
+                              class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer transition-colors shadow-xs"
+                            >
+                              <i class="fas fa-unlink"></i>
+                              <span>Desconectar este WhatsApp</span>
+                            </button>
+                          ` : `
+                            <button 
+                              type="button" 
+                              id="dev-wa-qr-connect-btn" 
+                              class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-md shadow-emerald-600/20"
+                            >
+                              <i class="fas fa-qrcode"></i>
+                              <span>Generar Código QR para Vincular</span>
+                            </button>
+                          `}
+                          <button 
+                            type="button" 
+                            id="dev-wa-qr-refresh-btn" 
+                            class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                            title="Recargar estado"
+                          >
+                            <i class="fas fa-rotate-right"></i>
+                            <span>Refrescar</span>
+                          </button>
+                        </div>
+
+                        <div class="text-[11px] text-slate-500 flex items-center gap-2 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
+                          <i class="fas fa-shield-alt text-emerald-600 text-sm flex-shrink-0"></i>
+                          <span>Las credenciales se guardan de forma segura en tu servidor y se reconectan automáticamente aunque se reinicie el sistema.</span>
+                        </div>
+                      </div>
+
+                      <!-- Caja Visual del QR Code -->
+                      <div class="lg:col-span-5 flex flex-col items-center justify-center p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-center min-h-[270px]" id="dev-wa-qr-container">
+                        ${waQrStatus?.isConnected ? `
+                          <div class="space-y-3 py-2">
+                            <div class="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl shadow-inner">
+                              <i class="fas fa-check"></i>
+                            </div>
+                            <h5 class="text-sm font-black text-slate-900">¡WhatsApp Vinculado con Éxito!</h5>
+                            <p class="text-xs text-slate-600 max-w-xs">
+                              El Asistente IA ya está activo en <strong>${waQrStatus.user?.phone ? '+' + waQrStatus.user.phone : 'tu celular'}</strong>. ¡Cualquier cliente que te escriba será atendido al instante!
+                            </p>
+                          </div>
+                        ` : waQrStatus?.qr ? `
+                          <div class="space-y-2">
+                            <img src="${waQrStatus.qr}" alt="Código QR WhatsApp" class="w-56 h-56 mx-auto rounded-xl border border-slate-300 shadow-sm bg-white p-2">
+                            <p class="text-[11px] font-bold text-emerald-700 animate-pulse">
+                              <i class="fas fa-camera mr-1"></i> Escanea con tu WhatsApp ahora
+                            </p>
+                          </div>
+                        ` : `
+                          <div class="space-y-3 py-4">
+                            <div class="w-14 h-14 mx-auto rounded-2xl bg-white border border-slate-200 text-slate-400 flex items-center justify-center text-2xl shadow-xs">
+                              <i class="fas fa-qrcode"></i>
+                            </div>
+                            <div>
+                              <p class="text-xs font-bold text-slate-700">Sin código activo</p>
+                              <p class="text-[11px] text-slate-400 mt-0.5">Haz clic en "Generar Código QR" para iniciar.</p>
+                            </div>
+                          </div>
+                        `}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- SECCIÓN 2: META CLOUD API (CONFIGURACIÓN ALTERNATIVA) -->
                   <!-- Header informativo -->
                   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 rounded-2xl text-white border border-emerald-500/30 shadow-md">
                     <div class="space-y-1">
@@ -22389,6 +22518,121 @@ Esperamos atenderle pronto de nuevo.`;
             testBtn.innerHTML = '<i class="fas fa-play text-[10px]"></i> <span>Enviar Test</span>';
           }
         }
+      });
+
+      // --- WHATSAPP CONEXIÓN POR CÓDIGO QR LISTENERS ---
+      const pollQrStatus = async () => {
+        try {
+          const status = await storage.getWhatsAppQrStatus();
+          const qrContainer = document.getElementById('dev-wa-qr-container');
+          const badge = document.getElementById('dev-wa-qr-status-badge');
+          
+          if (!qrContainer) {
+            if (this._waQrPollTimer) {
+              clearInterval(this._waQrPollTimer);
+              this._waQrPollTimer = null;
+            }
+            return;
+          }
+
+          if (status.isConnected) {
+            if (this._waQrPollTimer) {
+              clearInterval(this._waQrPollTimer);
+              this._waQrPollTimer = null;
+            }
+            this.showToast('¡WhatsApp conectado exitosamente con el Asistente IA!', 'success');
+            this.renderDeveloperDashboardView(container);
+            return;
+          }
+
+          if (status.status === 'qr_ready' && status.qr) {
+            qrContainer.innerHTML = `
+              <div class="space-y-2">
+                <img src="${status.qr}" alt="Código QR WhatsApp" class="w-56 h-56 mx-auto rounded-xl border border-slate-300 shadow-sm bg-white p-2">
+                <p class="text-[11px] font-bold text-emerald-700 animate-pulse">
+                  <i class="fas fa-camera mr-1"></i> Escanea con tu WhatsApp ahora
+                </p>
+              </div>
+            `;
+            if (badge) {
+              badge.innerHTML = `
+                <span class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 flex items-center gap-1.5 border border-amber-200">
+                  <i class="fas fa-qrcode"></i>
+                  <span>Código QR Listo</span>
+                </span>
+              `;
+            }
+          } else if (status.status === 'connecting') {
+            qrContainer.innerHTML = `
+              <div class="space-y-3 py-6">
+                <i class="fas fa-circle-notch fa-spin text-3xl text-emerald-600"></i>
+                <p class="text-xs font-bold text-slate-700">Generando nuevo código QR...</p>
+                <p class="text-[11px] text-slate-400">Espera un momento...</p>
+              </div>
+            `;
+          }
+        } catch (err) {
+          console.error('Error actualizando estado QR:', err);
+        }
+      };
+
+      // Si está en proceso de conexión o hay un QR activo, iniciar polling automático
+      if (waQrStatus?.status === 'connecting' || (waQrStatus?.status === 'qr_ready' && !waQrStatus?.isConnected)) {
+        if (!this._waQrPollTimer) {
+          this._waQrPollTimer = setInterval(pollQrStatus, 2000);
+        }
+      }
+
+      document.getElementById('dev-wa-qr-connect-btn')?.addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Conectando...';
+
+        const qrContainer = document.getElementById('dev-wa-qr-container');
+        if (qrContainer) {
+          qrContainer.innerHTML = `
+            <div class="space-y-3 py-6">
+              <i class="fas fa-circle-notch fa-spin text-3xl text-emerald-600"></i>
+              <p class="text-xs font-bold text-slate-700">Iniciando sesión de WhatsApp Web...</p>
+              <p class="text-[11px] text-slate-400">Generando código QR seguro...</p>
+            </div>
+          `;
+        }
+
+        try {
+          await storage.startWhatsAppQrConnect();
+          if (this._waQrPollTimer) clearInterval(this._waQrPollTimer);
+          this._waQrPollTimer = setInterval(pollQrStatus, 2000);
+          setTimeout(pollQrStatus, 1000);
+        } catch (err) {
+          this.showToast(err.message || 'Error al iniciar conexión QR', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-qrcode"></i> <span>Generar Código QR para Vincular</span>';
+        }
+      });
+
+      document.getElementById('dev-wa-qr-disconnect-btn')?.addEventListener('click', async (e) => {
+        if (!confirm('¿Seguro que deseas desconectar la sesión de WhatsApp del Asistente IA?')) return;
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Desconectando...';
+        try {
+          await storage.disconnectWhatsAppQr();
+          this.showToast('WhatsApp desconectado.', 'info');
+          if (this._waQrPollTimer) {
+            clearInterval(this._waQrPollTimer);
+            this._waQrPollTimer = null;
+          }
+          this.renderDeveloperDashboardView(container);
+        } catch (err) {
+          this.showToast(err.message || 'Error al desconectar WhatsApp', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-unlink"></i> <span>Desconectar este WhatsApp</span>';
+        }
+      });
+
+      document.getElementById('dev-wa-qr-refresh-btn')?.addEventListener('click', () => {
+        this.renderDeveloperDashboardView(container);
       });
 
       // --- ASISTENTE IA (GOOGLE GEMINI) LISTENERS ---

@@ -2588,6 +2588,45 @@ class StorageService {
     }
   }
 
+  // --- WHATSAPP CONEXIÓN POR CÓDIGO QR ---
+  async getWhatsAppQrStatus() {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/whatsapp-qr/status`);
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.error('Error fetching whatsapp qr status:', e);
+    }
+    return { status: 'disconnected', isConnected: false, qr: null, user: null };
+  }
+
+  async startWhatsAppQrConnect() {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/whatsapp-qr/connect`, {
+        method: 'POST'
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json();
+      throw new Error(err.error || 'Error al iniciar conexión QR.');
+    } catch (e) {
+      console.error('Error starting whatsapp qr connect:', e);
+      throw e;
+    }
+  }
+
+  async disconnectWhatsAppQr() {
+    try {
+      const res = await this.fetchWithAuth(`${this.apiBase}/whatsapp-qr/disconnect`, {
+        method: 'POST'
+      });
+      if (res.ok) return await res.json();
+      const err = await res.json();
+      throw new Error(err.error || 'Error al desconectar WhatsApp.');
+    } catch (e) {
+      console.error('Error disconnecting whatsapp qr:', e);
+      throw e;
+    }
+  }
+
   // --- RESEÑAS Y CALIFICACIONES VERIFICADAS ---
   async getReviewInfo(appointmentId) {
     try {

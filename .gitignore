@@ -20,3 +20,4 @@ test_*.jpg
 create_clean_reminder.js
 submit_reminder_template.js
 test_tts.ps1
+whatsapp_sessions/

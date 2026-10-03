@@ -12,6 +12,7 @@
     "restore:business": "node scripts/restore-business.js"
   },
   "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.2",
     "cors": "^2.8.5",
@@ -22,6 +23,8 @@
     "jsonwebtoken": "^9.0.3",
     "mailparser": "^3.9.28",
     "pg": "^8.12.0",
+    "pino": "^10.4.0",
+    "qrcode": "^1.5.4",
     "resend": "^6.28.0",
     "twilio": "^6.1.1",
     "web-push": "^3.6.7",
