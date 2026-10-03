@@ -42,12 +42,37 @@ import {
 } from './pushService.js';
 import { parseSinpeEmail } from './src/services/sinpeParser.js';
 import { startSinpeImapWorker } from './sinpeImapService.js';
-import { 
-  initWhatsAppQrService, 
-  startWhatsAppQrConnection, 
-  getWhatsAppQrStatus, 
-  disconnectWhatsAppQr 
-} from './whatsappQrService.js';
+import { execSync } from 'child_process';
+
+let qrServiceModule = null;
+let isInstallingQrDeps = false;
+
+async function loadWhatsAppQrModule() {
+  if (qrServiceModule) return qrServiceModule;
+  try {
+    qrServiceModule = await import('./whatsappQrService.js');
+    return qrServiceModule;
+  } catch (err) {
+    if (isInstallingQrDeps) {
+      console.warn('⚠️ [WhatsApp QR] Instalación de dependencias en curso...');
+      return null;
+    }
+    isInstallingQrDeps = true;
+    console.warn('⚠️ [WhatsApp QR] Dependencias no encontradas en servidor (' + err.message + '). Instalando con npm install...');
+    try {
+      execSync('npm install --no-audit --no-fund', { stdio: 'inherit' });
+      qrServiceModule = await import('./whatsappQrService.js');
+      console.log('✅ [WhatsApp QR] Dependencias instaladas y servicio cargado exitosamente.');
+      return qrServiceModule;
+    } catch (installErr) {
+      console.error('❌ [WhatsApp QR] Error durante auto-instalación npm:', installErr.message);
+      return null;
+    } finally {
+      isInstallingQrDeps = false;
+    }
+  }
+}
+
 
 dotenv.config();
 
@@ -7896,9 +7921,13 @@ app.post('/api/webhooks/whatsapp', async (req, res) => {
 });
 
 // --- ENDPOINTS WHATSAPP QR (CONEXIÓN WEB MULTI-DISPOSITIVO) ---
-app.get('/api/whatsapp-qr/status', (req, res) => {
+app.get('/api/whatsapp-qr/status', async (req, res) => {
   try {
-    res.json(getWhatsAppQrStatus());
+    const mod = await loadWhatsAppQrModule();
+    if (mod && mod.getWhatsAppQrStatus) {
+      return res.json(mod.getWhatsAppQrStatus());
+    }
+    res.json({ status: 'disconnected', isConnected: false, qr: null, error: 'Módulo QR inicializándose...' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -7906,8 +7935,12 @@ app.get('/api/whatsapp-qr/status', (req, res) => {
 
 app.post('/api/whatsapp-qr/connect', async (req, res) => {
   try {
-    const status = await startWhatsAppQrConnection();
-    res.json(status);
+    const mod = await loadWhatsAppQrModule();
+    if (mod && mod.startWhatsAppQrConnection) {
+      const status = await mod.startWhatsAppQrConnection();
+      return res.json(status);
+    }
+    res.status(503).json({ error: 'Módulo QR no disponible en este momento. Intenta de nuevo en unos segundos.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -7915,8 +7948,12 @@ app.post('/api/whatsapp-qr/connect', async (req, res) => {
 
 app.post('/api/whatsapp-qr/disconnect', async (req, res) => {
   try {
-    const result = await disconnectWhatsAppQr();
-    res.json(result);
+    const mod = await loadWhatsAppQrModule();
+    if (mod && mod.disconnectWhatsAppQr) {
+      const result = await mod.disconnectWhatsAppQr();
+      return res.json(result);
+    }
+    res.status(503).json({ error: 'Módulo QR no disponible.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -9550,10 +9587,19 @@ app.get('*', (req, res) => {
 async function startServer() {
   await initDatabase();
   await initPushService(pool);
-  await initWhatsAppQrService(pool);
+
   app.listen(PORT, () => {
     console.log(`🚀 Servidor de Reservas corriendo en http://localhost:${PORT}`);
     console.log(`🐘 Conectado a Neon PostgreSQL`);
+
+    // Inicializar servicio de WhatsApp QR en segundo plano con auto-instalación
+    loadWhatsAppQrModule().then(mod => {
+      if (mod && mod.initWhatsAppQrService) {
+        mod.initWhatsAppQrService(pool);
+      }
+    }).catch(err => {
+      console.warn('⚠️ No se pudo inicializar WhatsApp QR en arranque:', err.message);
+    });
 
     // Iniciar worker de correos de reseñas automáticos cada 5 minutos
     setInterval(processPendingReviewEmails, 5 * 60 * 1000);
