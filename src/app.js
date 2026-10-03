@@ -2065,9 +2065,9 @@ class App {
 
             ${!clientUser && !bizUser && !devUser ? `
               ${SHOW_15_DAYS_FREE_BUTTON ? `
-              <button id="mobile-top-prereg-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis">
+              <button id="mobile-top-prereg-btn" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-400/30 shadow-xs flex items-center gap-1 app-touch-btn cursor-pointer shrink-0 whitespace-nowrap" title="Pre-regístrate y obtén 15 Días Gratis del Plan Pro">
                 <i class="fas fa-gift text-blue-200 text-xs"></i>
-                <span>15 Días</span>
+                <span>15 Días Pro</span>
               </button>
               ` : ''}
 
@@ -2085,11 +2085,11 @@ class App {
           <!-- 4. DERECHA: Acciones, CTA y Perfil (Desktop >= md) -->
           <div class="hidden md:flex items-center gap-1.5 sm:gap-2 xl:gap-2.5 shrink-0 justify-end">
             
-            <!-- Botón Pre-Registro 15 Días Gratis (Desktop) -->
+            <!-- Botón Pre-Registro 15 Días Gratis del Plan Pro (Desktop) -->
             ${SHOW_15_DAYS_FREE_BUTTON ? `
-            <button id="nav-prereg-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis a partir del lanzamiento">
+            <button id="nav-prereg-btn" class="px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-black text-white whitespace-nowrap shrink-0 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 border border-blue-400/40 shadow-sm shadow-blue-600/25 flex items-center gap-1.5 transition-all cursor-pointer transform hover:scale-105 active:scale-98" title="Pre-regístrate y obtén 15 Días Gratis del Plan Pro a partir del lanzamiento">
               <i class="fas fa-gift text-blue-200 text-xs"></i>
-              <span class="hidden 2xl:inline">15 Días Gratis</span><span class="inline 2xl:hidden">15 Días</span>
+              <span class="hidden 2xl:inline">15 Días Pro Gratis</span><span class="inline 2xl:hidden">15 Días Pro</span>
             </button>
             ` : ''}
 
@@ -2180,8 +2180,8 @@ class App {
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
     document.getElementById('mobile-top-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
-    document.getElementById('nav-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
-    document.getElementById('mobile-top-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
+    document.getElementById('nav-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal('pro'));
+    document.getElementById('mobile-top-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal('pro'));
     document.getElementById('nav-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('mobile-top-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('nav-install-pwa-btn')?.addEventListener('click', () => this.showPwaInstallModal());
@@ -2790,11 +2790,11 @@ class App {
 
                 <!-- Titular de Impacto -->
                 <h2 class="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight leading-tight">
-                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis</span> a partir del lanzamiento!
+                  ¡Pre-regístrate y obtén <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-300">15 Días Gratis del Plan Pro</span> a partir del lanzamiento!
                 </h2>
                 
                 <p class="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-2xl">
-                  <strong>Sin necesidad de tarjeta de crédito y sin pagar nada.</strong> Regístrate hoy y a partir del día del lanzamiento oficial tendrás <strong>15 días totalmente gratis</strong> para probar la plataforma completa de reservas para tu negocio o servicios.
+                  <strong>Sin necesidad de tarjeta de crédito y sin pagar nada.</strong> Regístrate hoy y a partir del día del lanzamiento oficial tendrás <strong>15 días totalmente gratis del Plan Pro</strong> para probar la plataforma completa de reservas para tu negocio o servicios.
                 </p>
 
                 <!-- Beneficios Destacados -->
@@ -2804,8 +2804,8 @@ class App {
                       <i class="fas fa-gift"></i>
                     </div>
                     <div>
-                      <span class="text-white font-black block text-xs">15 Días Gratis</span>
-                      <span class="text-slate-300 text-[10px] sm:text-[11px]">A partir del día de estreno</span>
+                      <span class="text-white font-black block text-xs">15 Días Plan Pro</span>
+                      <span class="text-slate-300 text-[10px] sm:text-[11px]">Gratis al día de estreno</span>
                     </div>
                   </div>
                   <div class="flex items-start gap-2.5 bg-slate-900/80 p-2.5 sm:p-3 rounded-2xl border border-blue-500/30 shadow-xs">
@@ -2836,7 +2836,7 @@ class App {
                     class="px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-blue-950/40 border border-blue-400/30 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
                   >
                     <i class="fas fa-gift text-blue-300 text-sm sm:text-base"></i>
-                    <span>¡Pre-registrarme y Asegurar mis 15 Días Gratis!</span>
+                    <span>¡Pre-registrarme y Asegurar mis 15 Días Pro Gratis!</span>
                   </button>
                   ` : ''}
                   <button 
@@ -2892,7 +2892,7 @@ class App {
 
                   <div class="py-2 px-3 rounded-2xl bg-gradient-to-r from-blue-600/30 via-indigo-600/30 to-blue-600/30 border border-blue-400/50 text-center flex items-center justify-center gap-2 text-[11px] sm:text-xs font-black text-blue-300 shadow-xs">
                     <i class="fas fa-gift text-xs sm:text-sm text-blue-400"></i>
-                    <span>15 DÍAS GRATIS AL ESTRENO</span>
+                    <span>15 DÍAS PLAN PRO GRATIS AL ESTRENO</span>
                   </div>
                 </div>
               </div>
@@ -3149,7 +3149,7 @@ class App {
                 <div class="pt-4 flex flex-wrap items-center gap-3">
                   ${SHOW_15_DAYS_FREE_BUTTON ? `
                   <button id="directory-biz-prereg-btn" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-indigo-950/50 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer">
-                    <i class="fas fa-rocket text-amber-300"></i> Registrar Mi Negocio (15 Días Gratis)
+                    <i class="fas fa-rocket text-amber-300"></i> Registrar Mi Negocio (15 Días Pro Gratis)
                   </button>
                   ` : ''}
                   <button id="directory-biz-landing-btn" class="px-5 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer">
@@ -3170,8 +3170,8 @@ class App {
                         <i class="fas fa-gift"></i>
                       </div>
                       <div>
-                        <span class="text-white text-xs font-bold block">15 Días Gratis Completos</span>
-                        <span class="text-slate-400 text-[11px]">Acceso total desde el día de estreno oficial</span>
+                        <span class="text-white text-xs font-bold block">15 Días Gratis del Plan Pro</span>
+                        <span class="text-slate-400 text-[11px]">Acceso total a funciones Pro desde el día de estreno</span>
                       </div>
                     </div>
                     <div class="p-3 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center gap-3">
@@ -3601,11 +3601,11 @@ class App {
     attachCardListeners();
 
     // Listeners para Banners de Negocios y Planes
-    document.getElementById('demo-showroom-register-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
-    document.getElementById('banner-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
+    document.getElementById('demo-showroom-register-btn')?.addEventListener('click', () => this.renderPreRegisterModal('pro'));
+    document.getElementById('banner-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal('pro'));
     document.getElementById('banner-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
     document.getElementById('hero-register-biz-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
-    document.getElementById('directory-biz-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal());
+    document.getElementById('directory-biz-prereg-btn')?.addEventListener('click', () => this.renderPreRegisterModal('pro'));
     document.getElementById('directory-biz-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
     document.getElementById('cta-register-biz-btn')?.addEventListener('click', () => this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: 'free', lockRole: 'business' }));
     document.getElementById('cta-view-plans-btn')?.addEventListener('click', () => this.renderPlansModal());
@@ -3669,7 +3669,7 @@ class App {
               <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <button id="landing-hero-register-btn" class="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 hover:from-slate-900 hover:to-blue-500 text-white font-black text-base shadow-xl shadow-blue-950/25 flex items-center justify-center gap-3 transition-transform transform hover:scale-105 cursor-pointer">
                   <i class="fas fa-rocket text-lg"></i>
-                  <span>Registrar Mi Negocio Gratis</span>
+                  <span>Pre-registrar Mi Negocio (15 Días Pro Gratis)</span>
                 </button>
                 <button id="landing-scroll-demo-btn" class="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-base flex items-center justify-center gap-2.5 transition-all cursor-pointer">
                   <i class="fas fa-play-circle text-blue-400 text-lg"></i>
@@ -3679,7 +3679,7 @@ class App {
 
               <!-- Pequeño recordatorio de prueba gratis -->
               <p class="text-xs text-slate-400">
-                <i class="fas fa-gift text-blue-400 mr-1.5"></i><strong>15 días de prueba gratis</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
+                <i class="fas fa-gift text-blue-400 mr-1.5"></i><strong>15 días de prueba gratis del Plan Pro</strong> • Sin tarjeta de crédito requerida • Cancela cuando quieras
               </p>
               <div class="inline-flex items-center gap-2 p-3 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-bold shadow-sm">
                 <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs shrink-0"><i class="fas fa-gift"></i></div>
@@ -3897,7 +3897,7 @@ class App {
               <i class="fas fa-crown mr-1"></i> Precios Transparentes y Sin Letra Pequeña
             </span>
             <h2 class="text-2xl sm:text-4xl font-black text-white">Elige el plan perfecto para tu negocio</h2>
-            <p class="text-xs sm:text-sm text-slate-400">Comienza 100% gratis o aprovecha los <strong>15 Días de Prueba del Plan Profesional</strong>.</p>
+            <p class="text-xs sm:text-sm text-slate-400">Comienza 100% gratis o aprovecha los <strong>15 Días de Prueba del Plan Profesional (Pro)</strong>.</p>
           </div>
 
           <!-- Cuadrícula de 4 Planes -->
@@ -3965,7 +3965,7 @@ class App {
             <!-- PLAN 3: PROFESIONAL (PRO) -->
             <div class="p-6 rounded-3xl bg-gradient-to-b from-slate-900 via-blue-950/60 to-slate-900 border-2 border-blue-500 flex flex-col justify-between space-y-5 shadow-2xl relative">
               <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-blue-900 to-blue-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md whitespace-nowrap">
-                ⭐ Más Popular • 15 Días Gratis
+                ⭐ Más Popular • 15 Días Pro Gratis
               </div>
 
               <div class="space-y-3 pt-1">
@@ -4044,7 +4044,7 @@ class App {
           <div class="space-y-3">
             <details class="group bg-slate-900 border border-slate-800 rounded-2xl p-4.5 cursor-pointer">
               <summary class="font-bold text-white text-sm flex justify-between items-center list-none">
-                <span>¿En qué consiste la prueba de 15 días gratis?</span>
+                <span>¿En qué consiste la prueba de 15 días gratis del Plan Pro?</span>
                 <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
@@ -4098,7 +4098,7 @@ class App {
                 <i class="fas fa-chevron-down text-blue-400 group-open:rotate-180 transition-transform"></i>
               </summary>
               <p class="text-xs text-slate-400 mt-3 leading-relaxed">
-                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis o del plan gratis sin pagos previos.
+                No requieres tarjeta de crédito ni compromiso para comenzar. Creas tu cuenta y disfrutas de tus 15 días gratis del Plan Pro o del Plan Gratis de por vida sin pagos previos.
               </p>
             </details>
           </div>
@@ -8228,13 +8228,13 @@ class App {
                 <div>
                   <div class="flex items-center gap-2 flex-wrap mb-1">
                     <span class="text-xs font-black uppercase tracking-wider bg-rose-500 text-white px-3 py-0.5 rounded-full shadow-xs">
-                      Periodo de 15 Días Gratis Vencido
+                      Periodo de 15 Días Gratis del Plan Pro Vencido
                     </span>
                     <span class="text-xs font-bold text-rose-300">Renovación Requerida</span>
                   </div>
-                  <h4 class="text-base sm:text-lg font-black text-white">¡Tus 15 días de prueba gratis han finalizado!</h4>
+                  <h4 class="text-base sm:text-lg font-black text-white">¡Tus 15 días de prueba gratis del Plan Pro han finalizado!</h4>
                   <p class="text-xs text-slate-300 mt-1 leading-relaxed max-w-2xl">
-                    Tu periodo de prueba gratuita de 15 días ha concluido. Para seguir gestionando citas con tus clientes, recibir reservas 24/7 y mantener activos los recordatorios automáticos por WhatsApp, por favor renueva y elige tu plan oficial.
+                    Tu periodo de prueba gratuita de 15 días del Plan Pro ha concluido. Para seguir gestionando citas con todas las funciones avanzadas, recibir reservas 24/7 y mantener activos los recordatorios automáticos por WhatsApp, por favor renueva y elige tu plan oficial (o continúa en el Plan Gratis de por vida).
                   </p>
                 </div>
               </div>
@@ -8254,11 +8254,11 @@ class App {
                 </div>
                 <div>
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-xs font-black uppercase tracking-wider bg-blue-500 text-white px-2.5 py-0.5 rounded-full">Prueba de 15 Días Gratis</span>
+                    <span class="text-xs font-black uppercase tracking-wider bg-blue-500 text-white px-2.5 py-0.5 rounded-full">Prueba de 15 Días Gratis del Plan Pro</span>
                     <span class="text-xs font-bold text-blue-300">Te quedan ${trialDaysLeft} día(s) de prueba</span>
                   </div>
                   <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-                    Estás disfrutando de tus <strong>15 días de prueba gratis</strong>. Tienes acceso completo para configurar tus servicios, catálogo, horarios y recibir citas con WhatsApp. Al terminar tus 15 días podrás elegir tu plan preferido.
+                    Estás disfrutando de tus <strong>15 días de prueba gratis del Plan Pro</strong>. Tienes acceso completo para configurar tus servicios, catálogo, horarios y recibir citas con WhatsApp. Al terminar tus 15 días podrás elegir tu plan preferido o continuar con el Plan Gratis.
                   </p>
                 </div>
               </div>
@@ -8330,10 +8330,10 @@ class App {
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-3 py-1 rounded-full ${currentPlanId === 'unlimited' ? 'bg-purple-500 text-white' : currentPlanId === 'pro' ? 'bg-amber-400 text-slate-950' : currentPlanId === 'free' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'} text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5">
                 <i class="fas ${currentPlanId === 'unlimited' ? 'fa-crown' : currentPlanId === 'pro' ? 'fa-star' : currentPlanId === 'free' ? 'fa-gift' : 'fa-check'}"></i>
-                ${currentPlanId === 'free' ? 'Prueba Gratuita (15 Días)' : planConfig.name}
+                ${currentPlanId === 'free' ? (isTrialActive ? 'Prueba Plan Pro (15 Días)' : (isTrialExpired ? 'Prueba Plan Pro (Finalizada)' : 'Plan Gratis')) : planConfig.name}
               </span>
               <span class="text-xs ${currentPlanId === 'free' ? (isTrialExpired ? 'text-rose-300' : 'text-emerald-300') : 'text-amber-300'} font-extrabold bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">
-                ${currentPlanId === 'free' ? (isTrialExpired ? 'Prueba 15 Días (Finalizada)' : `Prueba 15 Días (${trialDaysLeft}d restantes)`) : (planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`)}
+                ${currentPlanId === 'free' ? (isTrialActive ? `Prueba Pro (${trialDaysLeft}d restantes)` : (isTrialExpired ? 'Prueba Pro Finalizada' : '₡0 / De por vida')) : (planConfig.priceUsd === 0 ? '₡0 / De por vida' : `$${planConfig.priceUsd} USD / mes (~${this.formatColones(planConfig.priceCrc || (planConfig.priceUsd * 530))})`)}
               </span>
             </div>
             <h3 class="text-base sm:text-lg font-black text-white">Consumo de Citas & WhatsApp (${new Date().toLocaleString('es-CR', { month: 'long', year: 'numeric' })})</h3>
@@ -20538,7 +20538,7 @@ Esperamos atenderle pronto de nuevo.`;
                       <p class="text-xs text-slate-500">Lista de dueños de negocio inscritos en la etapa de prelanzamiento para contactar vía WhatsApp.</p>
                     </div>
                     <span class="px-3.5 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl text-xs font-black flex items-center gap-1.5 self-start shadow-xs">
-                      <i class="fas fa-gift text-amber-600 mr-1.5"></i>15 Días Gratis + Catálogo Asistido
+                      <i class="fas fa-gift text-amber-600 mr-1.5"></i>15 Días Pro Gratis + Catálogo Asistido
                     </span>
                   </div>
 
@@ -23350,7 +23350,7 @@ Esperamos atenderle pronto de nuevo.`;
                   ${mode === 'login' ? 'Acceso Seguro' : (lockRole === 'business' ? 'Portal de Negocios' : 'Registro de Cuenta')}
                 </span>
                 <h3 class="text-base sm:text-lg font-bold">
-                  ${mode === 'login' ? 'Iniciar Sesión en tu Cuenta' : (role === 'business' ? 'Registrar mi Negocio (15 Días Gratis)' : 'Crear Cuenta de Usuario')}
+                  ${mode === 'login' ? 'Iniciar Sesión en tu Cuenta' : (role === 'business' ? 'Registrar mi Negocio (15 Días Pro Gratis)' : 'Crear Cuenta de Usuario')}
                 </h3>
               </div>
             </div>
@@ -23709,8 +23709,8 @@ Esperamos atenderle pronto de nuevo.`;
                       <i class="fas fa-gift text-sm"></i>
                     </div>
                     <div>
-                      <span class="font-extrabold text-blue-900 block text-xs">🎉 15 Días de Prueba Gratis Incluidos</span>
-                      <span class="text-blue-800/90 leading-relaxed block mt-0.5">Tu cuenta se activará con <strong>15 días de prueba gratis</strong> sin tarjeta ni compromiso. Podrás configurar tus servicios, catálogo y recibir citas desde hoy mismo.</span>
+                      <span class="font-extrabold text-blue-900 block text-xs">🎉 15 Días de Prueba Gratis del Plan Pro</span>
+                      <span class="text-blue-800/90 leading-relaxed block mt-0.5">Tu cuenta se activará con <strong>15 días de prueba gratis del Plan Profesional (Pro)</strong> sin tarjeta ni compromiso. Podrás configurar tus servicios, catálogo, especialistas y recibir citas desde hoy mismo (también puedes optar por el Plan Gratis de por vida).</span>
                     </div>
                   </div>
 
@@ -23734,7 +23734,7 @@ Esperamos atenderle pronto de nuevo.`;
 
                   <button type="submit" id="biz-reg-submit-btn" class="w-full py-4 bg-gradient-to-r from-slate-950 via-indigo-900 to-indigo-600 hover:from-slate-900 hover:to-indigo-500 text-white rounded-2xl font-black shadow-lg shadow-indigo-950/20 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer app-touch-btn active:scale-98">
                     <i class="fas fa-envelope text-indigo-300"></i>
-                    <span>Continuar y Verificar Correo (15 Días Gratis)</span>
+                    <span>Continuar y Verificar Correo (15 Días Pro Gratis)</span>
                     <i class="fas fa-arrow-right text-xs ml-1"></i>
                   </button>
 
@@ -24522,12 +24522,12 @@ Esperamos atenderle pronto de nuevo.`;
   // ==========================================
   // MODAL DE PRE-REGISTRO DE COMERCIOS (ACCESO ANTICIPADO)
   // ==========================================
-  renderPreRegisterModal(selectedPlanId = 'free') {
-    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: selectedPlanId || 'free', lockRole: 'business' });
+  renderPreRegisterModal(selectedPlanId = 'pro') {
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: selectedPlanId || 'pro', lockRole: 'business' });
   }
 
-  renderPreRegistrationModal(selectedPlanId = 'free') {
-    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: selectedPlanId || 'free', lockRole: 'business' });
+  renderPreRegistrationModal(selectedPlanId = 'pro') {
+    return this.renderAuthModal({ mode: 'register', role: 'business', selectedPlanId: selectedPlanId || 'pro', lockRole: 'business' });
   }
 
   // ==========================================
@@ -27391,7 +27391,7 @@ Esperamos atenderle pronto de nuevo.`;
         return;
       }
 
-      // Pre-Registro (15 Días Gratis) Modal
+      // Pre-Registro (15 Días Pro Gratis) Modal
       const preregTarget = e.target.closest('.open-prereg-modal, #nav-prereg-btn, #mobile-top-prereg-btn, #banner-prereg-btn, #hero-prereg-btn');
       if (preregTarget) {
         e.preventDefault();
@@ -27542,7 +27542,7 @@ Esperamos atenderle pronto de nuevo.`;
       },
       {
         q: '6. ¿Cómo registro mi negocio o comercio en Reservas CR?',
-        a: 'Presiona el botón "Registrarse" o "Pre-Registro 15 Días Gratis" en la parte superior, completa los datos básicos de tu negocio (nombre, categoría comercial, provincia, cantón y datos de contacto). Obtendrás de inmediato 15 días de prueba 100% gratuita con acceso total a tu panel de administración.'
+        a: 'Presiona el botón "Registrarse" o "Pre-Registro (15 Días Pro Gratis)" en la parte superior, completa los datos básicos de tu negocio (nombre, categoría comercial, provincia, cantón y datos de contacto). Obtendrás de inmediato 15 días de prueba 100% gratuita del Plan Profesional (Pro) con acceso total a tu panel de administración, o puedes elegir el Plan Gratis de por vida sin costo.'
       },
       {
         q: '7. ¿Cuáles son los planes de suscripción para comercios y cómo se pagan?',
@@ -27796,9 +27796,9 @@ Esperamos atenderle pronto de nuevo.`;
                       </div>
 
                       <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-crown text-amber-600 mr-1"></i> Suscripciones SaaS y Periodo de Prueba de 15 Días:</span>
+                        <span class="font-bold text-slate-900 block text-xs mb-1"><i class="fas fa-crown text-amber-600 mr-1"></i> Suscripciones SaaS y Periodo de Prueba de 15 Días del Plan Pro:</span>
                         <p class="text-xs text-slate-600">
-                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita completa</strong>, sin requerir ingreso de tarjeta bancaria ni generar cargos automáticos. Si al vencer los 15 días el comercio no contrata un plan mensual oficial (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Premium ₡18.200/mes), la agenda pasará a modo de solo lectura (no recibirá nuevas reservas automáticas de clientes), pero <strong>su catálogo, servicios y configuración se conservarán intactos</strong> para su reactivación cuando elija un plan.
+                          Los comercios que se registran disponen de un periodo inicial de <strong>15 días de prueba gratuita del Plan Profesional (Pro)</strong>, sin requerir ingreso de tarjeta bancaria ni generar cargos automáticos. Si al vencer los 15 días el comercio no contrata un plan mensual oficial (Plan Básico ₡5.200/mes, Plan Profesional ₡9.400/mes, Plan Premium ₡18.200/mes), puede continuar utilizando la plataforma con el <strong>Plan Gratis de por vida</strong> sin costo alguno o reactivar las funciones Pro en cualquier momento conservando todo su catálogo y configuración intactos.
                         </p>
                       </div>
 

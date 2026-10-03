@@ -1676,7 +1676,7 @@ app.post('/api/pre-registrations', async (req, res) => {
     res.json({
       success: true,
       id,
-      message: '¡Pre-registro completado con éxito! Tus 15 días gratis y beneficios de lanzamiento han sido reservados.',
+      message: '¡Pre-registro completado con éxito! Tus 15 días gratis del Plan Pro y beneficios de lanzamiento han sido reservados.',
       lead: {
         id,
         businessName: cleanBizName,

@@ -1288,7 +1288,7 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
     <div class="header">
       <span class="badge">🚀 Nuevo Prospecto de Preventa</span>
       <h2 style="margin: 0; font-size: 22px; font-weight: 800;">¡Nuevo Comercio Pre-Registrado!</h2>
-      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Un comercio acaba de solicitar sus 15 días gratis</p>
+      <p style="margin: 6px 0 0 0; opacity: 0.9; font-size: 13px;">Un comercio acaba de solicitar sus 15 días gratis del Plan Pro</p>
     </div>
     <div class="content">
       <div class="info-box">
@@ -1318,7 +1318,7 @@ export async function sendAdminPreRegistrationNotificationEmail(lead) {
         </div>
         <div class="info-row">
           <span class="label">⭐ Plan de Interés:</span>
-          <span class="val">${(lead.planInterest || 'pro').toUpperCase()} (15 Días Gratis)</span>
+          <span class="val">${(lead.planInterest || 'pro').toUpperCase()} (15 Días Pro Gratis)</span>
         </div>
         ${lead.notes ? `
         <div class="info-row" style="flex-direction: column; align-items: flex-start;">

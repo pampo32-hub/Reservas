@@ -394,7 +394,7 @@ export async function sendBookingConfirmationWhatsApp(appointment, business, poo
 }
 
 /**
- * Envío de confirmación de pre-registro (Leads de Preventa / 15 Días Gratis)
+ * Envío de confirmación de pre-registro (Leads de Preventa / 15 Días Pro Gratis)
  */
 export async function sendPreRegistrationConfirmationWhatsApp(lead, pool = null) {
   if (!lead || !lead.phone) return { success: false, reason: 'no_phone' };
@@ -454,7 +454,7 @@ export async function sendPreRegistrationConfirmationWhatsApp(lead, pool = null)
 
     // 2. Fallback con texto directo si Meta lo permite
     try {
-      const freeText = `¡Hola *${contactName}*! 🎉\n\nTu pre-registro para *${businessName}* en Reservas CR ha sido confirmado con éxito.\n\n🎁 Has asegurado tus *15 Días Gratis* de prueba completa a partir del día del lanzamiento oficial.\n\nTe escribiremos por aquí antes del estreno para ayudarte a configurar tus servicios y horarios sin costo.\n\n¡Bienvenido a Reservas CR! 🇨🇷\nhttps://reservascr.app`;
+      const freeText = `¡Hola *${contactName}*! 🎉\n\nTu pre-registro para *${businessName}* en Reservas CR ha sido confirmado con éxito.\n\n🎁 Has asegurado tus *15 Días Gratis del Plan Pro* de prueba completa a partir del día del lanzamiento oficial.\n\nTe escribiremos por aquí antes del estreno para ayudarte a configurar tus servicios y horarios sin costo.\n\n¡Bienvenido a Reservas CR! 🇨🇷\nhttps://reservascr.app`;
       const directRes = await sendViaMetaCloudApi(recipient, freeText, metaCreds);
       return directRes;
     } catch (e) {
