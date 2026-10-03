@@ -21558,9 +21558,9 @@ Esperamos atenderle pronto de nuevo.`;
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                     <!-- Configuración del Asistente (Columna Izquierda) -->
-                    <div class="lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <div class="w-full bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
                       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                         <div class="flex items-center gap-2 text-indigo-700">
                           <i class="fas fa-sliders-h"></i>
@@ -21618,7 +21618,7 @@ Esperamos atenderle pronto de nuevo.`;
                     </div>
 
                     <!-- Simulador de WhatsApp en Vivo (Columna Derecha) -->
-                    <div class="lg:col-span-6 bg-[#0b141a] text-slate-100 p-5 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between h-[520px]">
+                    <div class="w-full bg-[#0b141a] text-slate-100 p-5 rounded-3xl border border-slate-800 shadow-xl flex flex-col justify-between min-h-[520px]">
                       <div>
                         <!-- Header del chat WhatsApp -->
                         <div class="flex items-center justify-between pb-3 border-b border-slate-800">
