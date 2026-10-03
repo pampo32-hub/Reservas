@@ -16,9 +16,5 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          script: |
-            /home/masteradmin/deploy.sh
-            cd /home/masteradmin/reservascr || cd /var/www/reservascr || cd ~/reservascr || true
-            npm install --no-audit --no-fund || true
-            pm2 reload reservas || pm2 restart reservas || true
-
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: /home/masteradmin/deploy.sh
