@@ -289,10 +289,11 @@ REGLAS DE ATENCIÓN:
   const contents = [];
   if (Array.isArray(conversationHistory)) {
     for (const h of conversationHistory) {
-      if (h.role && h.text) {
+      const msgText = h.text || h.content || h.message;
+      if (h.role && msgText) {
         contents.push({
           role: h.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: h.text }]
+          parts: [{ text: msgText }]
         });
       }
     }
