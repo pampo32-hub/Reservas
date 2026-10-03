@@ -879,6 +879,13 @@ class App {
         setTimeout(() => this.preloadPayPalSDK(), 2500);
       }
     } catch (e) {}
+
+    // Iniciar animación 3D de moneda giratoria para el logo con intervalos dinámicos
+    try {
+      this.initLogoCoinSpinAnimation();
+    } catch (e) {
+      console.warn('Logo coin animation init warning:', e);
+    }
   }
 
   // --- RUTAS Y NAVEGACIÓN LIMPIA (HTML5 HISTORY API) ---
@@ -2005,8 +2012,10 @@ class App {
           
           <!-- 1. IZQUIERDA: Logo & Marca -->
           <div class="flex items-center gap-2 sm:gap-2.5 cursor-pointer select-none group app-touch-btn shrink-0" id="nav-logo-btn" title="Reservas CR">
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-sm flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
-              <img src="/src/assets/reservas_cr_clean_badge_1.png?v=5" alt="Reservas CR Logo" class="w-full h-full object-cover rounded-full" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+            <div class="logo-coin-wrapper shrink-0">
+              <div id="nav-logo-coin" class="logo-coin-badge w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-sm flex items-center justify-center shrink-0">
+                <img src="/src/assets/reservas_cr_clean_badge_1.png?v=5" alt="Reservas CR Logo" class="w-full h-full object-cover rounded-full pointer-events-none select-none" onerror="this.onerror=null; this.src='/src/assets/logo.png';">
+              </div>
             </div>
             <div class="shrink-0 flex flex-col justify-center">
               <span class="font-black text-base sm:text-lg xl:text-xl tracking-tight bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent leading-none">Reservas <span class="text-blue-600">CR</span></span>
@@ -2173,9 +2182,16 @@ class App {
     `;
 
     // Eventos de Navegación y Auth
-    document.getElementById('nav-logo-btn')?.addEventListener('click', () => {
-      this.navigateTo('directory');
-    });
+    const navLogoBtn = document.getElementById('nav-logo-btn');
+    if (navLogoBtn) {
+      navLogoBtn.addEventListener('click', () => {
+        this.triggerLogoCoinSpin();
+        this.navigateTo('directory');
+      });
+      navLogoBtn.addEventListener('mouseenter', () => {
+        this.triggerLogoCoinSpin();
+      });
+    }
 
     document.getElementById('nav-directory-btn')?.addEventListener('click', () => this.navigateTo('directory'));
     document.getElementById('nav-landing-btn')?.addEventListener('click', () => this.navigateTo('business-landing'));
@@ -2225,6 +2241,71 @@ class App {
 
     // Actualizar footer dinámico según estado de sesión
     this.renderFooter();
+  }
+
+  // --- ANIMACIÓN DE MONEDA 3D PARA EL LOGO CON INTERVALOS DINÁMICOS ---
+  triggerLogoCoinSpin() {
+    const coin = document.getElementById('nav-logo-coin');
+    if (!coin || coin.classList.contains('logo-coin-spinning')) return;
+
+    coin.classList.remove('logo-coin-spinning');
+    // Forzar reflow para reiniciar la animación limpiamente
+    void coin.offsetWidth;
+    coin.classList.add('logo-coin-spinning');
+
+    const cleanUp = () => {
+      coin.classList.remove('logo-coin-spinning');
+      coin.removeEventListener('animationend', cleanUp);
+    };
+    coin.addEventListener('animationend', cleanUp, { once: true });
+    // Respaldo de seguridad en caso de que animationend no se dispare
+    setTimeout(() => {
+      coin.classList.remove('logo-coin-spinning');
+    }, 2000);
+  }
+
+  initLogoCoinSpinAnimation() {
+    if (this._logoCoinTimer) {
+      clearTimeout(this._logoCoinTimer);
+      this._logoCoinTimer = null;
+    }
+
+    // Intervalos dinámicos solicitados:
+    // Primer giro: 1 minuto (60 segundos).
+    // Giros subsiguientes: alternar dinámicamente entre 20s, 30s, 40s, 45s y 60s.
+    const dynamicIntervals = [20000, 30000, 40000, 45000, 60000];
+    let isFirstSpin = true;
+    let lastInterval = 60000;
+
+    const scheduleNextSpin = (delay) => {
+      if (this._logoCoinTimer) clearTimeout(this._logoCoinTimer);
+      this._logoCoinTimer = setTimeout(() => {
+        // Solo animar si la pestaña está activa y visible
+        if (typeof document !== 'undefined' && !document.hidden) {
+          this.triggerLogoCoinSpin();
+        }
+
+        // Para los giros siguientes, seleccionar un intervalo aleatorio de la lista
+        isFirstSpin = false;
+        const candidates = dynamicIntervals.filter(i => i !== lastInterval);
+        const nextDelay = candidates[Math.floor(Math.random() * candidates.length)] || dynamicIntervals[0];
+        lastInterval = nextDelay;
+        scheduleNextSpin(nextDelay);
+      }, delay);
+    };
+
+    // Primer giro: exactamente a los 60 segundos (1 minuto)
+    scheduleNextSpin(60000);
+
+    // Si el usuario cambia de pestaña y regresa, reanudar de forma inteligente
+    if (typeof document !== 'undefined' && !this._logoCoinVisibilityBound) {
+      this._logoCoinVisibilityBound = true;
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !this._logoCoinTimer) {
+          scheduleNextSpin(isFirstSpin ? 60000 : 25000);
+        }
+      });
+    }
   }
 
   // --- CIERRE DE SESIÓN DE CLIENTE CENTRALIZADO (INFALIBLE) ---
