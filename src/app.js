@@ -15832,6 +15832,18 @@ Esperamos atenderle pronto de nuevo.`;
             <h3 class="font-bold text-slate-900 text-sm">Vitrina Digital</h3>
             <p class="text-slate-600">Exhibe productos físicos en tu perfil con fotos, precios en colones y botón de compra directa por WhatsApp.</p>
           </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-sm">15</div>
+            <h3 class="font-bold text-slate-900 text-sm">Adelanto por SINPE</h3>
+            <p class="text-slate-600">Exige anticipo configurable para confirmar reservas, aplica políticas anti-ausencias y descuenta el saldo en POS.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">16</div>
+            <h3 class="font-bold text-slate-900 text-sm">Fidelización & Wallet QR</h3>
+            <p class="text-slate-600">Estampa sellos digitales escaneando el código QR de la Wallet del cliente y premia su fidelidad sin tarjetas de papel.</p>
+          </div>
         </div>
 
         <!-- Soporte Directo para Comercios -->
