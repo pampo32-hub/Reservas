@@ -15719,7 +15719,7 @@ Esperamos atenderle pronto de nuevo.`;
             </div>
             <h2 class="text-2xl font-black text-white">Manual de Usuario para Comercios</h2>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Consulta paso a paso cómo configurar los servicios de <strong>${this.escapeHtml(currentBiz.name)}</strong>, organizar tu equipo, bloquear horarios con 1 clic, activar confirmaciones por WhatsApp y descargar tus reportes contables.
+              Consulta paso a paso cómo configurar los servicios de <strong>${this.escapeHtml(currentBiz.name)}</strong>, operar tu caja registradora (POS), cobrar citas con recibos por WhatsApp, registrar vales y cierres de caja, liquidar comisiones y vender productos con tu Vitrina Digital.
             </p>
           </div>
 
@@ -15748,7 +15748,7 @@ Esperamos atenderle pronto de nuevo.`;
         </div>
 
         <!-- Módulos de Aprendizaje Rápido -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-xs">
           <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
             <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">1</div>
             <h3 class="font-bold text-slate-900 text-sm">Perfil y Fotos</h3>
@@ -15795,6 +15795,42 @@ Esperamos atenderle pronto de nuevo.`;
             <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">8</div>
             <h3 class="font-bold text-slate-900 text-sm">Reportes Excel & PDF</h3>
             <p class="text-slate-600">Descarga tu histórico contable de ingresos por rango de fecha en formato Excel (.xlsx) y PDF oficial.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-sm">9</div>
+            <h3 class="font-bold text-slate-900 text-sm">Caja & POS Diaria</h3>
+            <p class="text-slate-600">Abre turno con fondo inicial, monitorea el efectivo en gaveta y visualiza ventas del día en tiempo real.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-teal-500 text-white flex items-center justify-center font-bold text-sm">10</div>
+            <h3 class="font-bold text-slate-900 text-sm">Cobro & Recibos WhatsApp</h3>
+            <p class="text-slate-600">Cobra en efectivo con calculadora de vuelto, SINPE o tarjeta y despacha el comprobante digital por WhatsApp.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-sm">11</div>
+            <h3 class="font-bold text-slate-900 text-sm">Registro de Vales</h3>
+            <p class="text-slate-600">Registra adelantos a especialistas y salidas de caja chica; se descuentan solos de la gaveta y de las comisiones.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">12</div>
+            <h3 class="font-bold text-slate-900 text-sm">Cierre de Caja & Arqueo</h3>
+            <p class="text-slate-600">Compara el efectivo contado con el esperado, evalúa diferencias en semáforo y consulta el historial de 30 días.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">13</div>
+            <h3 class="font-bold text-slate-900 text-sm">Comisiones & Liquidación</h3>
+            <p class="text-slate-600">Calcula pagos por porcentaje o tarifa fija, amortiza vales automáticamente y envía estados de cuenta por WhatsApp.</p>
+          </div>
+
+          <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+            <div class="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold text-sm">14</div>
+            <h3 class="font-bold text-slate-900 text-sm">Vitrina Digital</h3>
+            <p class="text-slate-600">Exhibe productos físicos en tu perfil con fotos, precios en colones y botón de compra directa por WhatsApp.</p>
           </div>
         </div>
 
